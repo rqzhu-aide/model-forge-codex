@@ -22,15 +22,25 @@ You can discuss the problem and revise your instructions throughout the workflow
 
 ## Install and start
 
-Use the **0.9.0 release tarball** from the [GitHub prerelease](https://github.com/rqzhu-aide/model-forge-codex/releases/tag/v0.9.0) or a source checkout. This prerelease has not been published to the npm registry, so use the tarball command below.
+Use the npm prerelease under **`next`**, the **0.9.0 release tarball** from the [GitHub prerelease](https://github.com/rqzhu-aide/model-forge-codex/releases/tag/v0.9.0), or a source checkout.
 
-Both routes require existing user-wide or machine-wide **Node.js 22+ with npm** and **Python 3.11+**. Model Forge does not install language runtimes or create project environments. Install the backend dependencies in your shared Python:
+All routes require existing user-wide or machine-wide **Node.js 22+ with npm** and **Python 3.11+**. Model Forge does not install language runtimes or create project environments. Install the backend dependencies in your shared Python:
 
 ```text
 python -m pip install --user "fastapi>=0.115" "uvicorn>=0.30" "jsonschema>=4.20" "httpx>=0.27" "openai-codex>=0.147,<0.148"
 ```
 
 Use `python3` or `py -3` consistently if that selects your shared Python. On managed systems that prohibit `--user`, use the supported user-wide or machine-wide installation method. The bridge currently requires the tested `openai-codex` 0.147 SDK series. Its SDK supplies a Codex CLI; the Codex desktop app is optional.
+
+### npm prerelease
+
+Start the current prerelease with:
+
+```text
+npx @rqzhu-aide/model-forge-codex@next web
+```
+
+To keep using this exact application version, replace `@next` with `@0.9.0`. The `next` tag can move to later prereleases; it is separate from `latest`. No global installation of Model Forge or frontend build is needed.
 
 ### Prepared release tarball
 
@@ -73,7 +83,14 @@ See [model access and Windows setup](docs/model-access.md) for account sign-in, 
 
 Research and settings default to `~/.model-forge-codex`, outside the checkout and npm cache. Use `--data-root PATH` or `MF_CODEX_HOME` to select another research folder. The packaged launcher accepts `--python PATH` or `MF_PYTHON` to select a shared Python; the source launcher uses the Python that invokes it. Both accept `--port NUMBER` and `--no-open`.
 
-Use `status` or `stop` in place of `web`, with the same data folder and port. For example, from the source checkout:
+Use `status` or `stop` in place of `web`, with the same data folder and port. For npm:
+
+```text
+npx @rqzhu-aide/model-forge-codex@next status
+npx @rqzhu-aide/model-forge-codex@next stop
+```
+
+From a source checkout:
 
 ```text
 python -B scripts/run_from_source.py status
