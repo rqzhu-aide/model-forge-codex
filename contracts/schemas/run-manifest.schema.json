@@ -1,0 +1,974 @@
+{
+    "$schema":  "https://json-schema.org/draft/2020-12/schema",
+    "$id":  "https://model-forge.local/architecture/schemas/run-manifest.schema.json",
+    "title":  "Immutable Controlled Research Run Manifest",
+    "description":  "The sealed prepared basis of one user-launched run. Lifecycle events and publication results are stored separately.",
+    "type":  "object",
+    "additionalProperties":  false,
+    "required":  [
+                     "schema_version",
+                     "run_id",
+                     "project_id",
+                     "command_id",
+                     "command_sha256",
+                     "command_idempotency_key",
+                     "phase",
+                     "phase_contract_version",
+                     "phase_contract_sha256",
+                     "mode",
+                     "initiated_by",
+                     "user_request",
+                     "frozen_inputs",
+                     "expected_target_generations",
+                     "publication_plan",
+                     "role_plan",
+                     "allowed_write_root",
+                     "expected_outputs",
+                     "resource_policy",
+                     "prepared_at",
+                     "manifest_sha256"
+                 ],
+    "properties":  {
+                       "schema_version":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/schemaVersion"
+                                          },
+                       "run_id":  {
+                                      "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                  },
+                       "project_id":  {
+                                          "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                      },
+                       "command_id":  {
+                                          "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                      },
+                       "command_sha256":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/sha256",
+                                              "description":  "Digest of the canonical immutable RunCommand authorized by the user."
+                                          },
+                       "command_idempotency_key":  {
+                                                       "type":  "string",
+                                                       "minLength":  8,
+                                                       "maxLength":  200
+                                                   },
+                       "phase":  {
+                                     "$ref":  "common-definitions.schema.json#/$defs/phaseId"
+                                 },
+                       "phase_contract_version":  {
+                                                      "type":  "string",
+                                                      "pattern":  "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+                                                  },
+                       "phase_contract_sha256":  {
+                                                     "$ref":  "common-definitions.schema.json#/$defs/sha256"
+                                                 },
+                       "mode":  {
+                                    "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                },
+                       "initiated_by":  {
+                                            "type":  "object",
+                                            "additionalProperties":  false,
+                                            "required":  [
+                                                             "user_id",
+                                                             "operating_actor_type"
+                                                         ],
+                                            "properties":  {
+                                                               "user_id":  {
+                                                                               "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                           },
+                                                               "operating_actor_type":  {
+                                                                                            "type":  "string",
+                                                                                            "enum":  [
+                                                                                                         "user",
+                                                                                                         "authorized_remote_operator"
+                                                                                                     ]
+                                                                                        },
+                                                               "operator_id":  {
+                                                                                   "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                               },
+                                                               "delegation_id":  {
+                                                                                     "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                 }
+                                                           },
+                                            "allOf":  [
+                                                          {
+                                                              "if":  {
+                                                                         "properties":  {
+                                                                                            "operating_actor_type":  {
+                                                                                                                         "const":  "authorized_remote_operator"
+                                                                                                                     }
+                                                                                        },
+                                                                         "required":  [
+                                                                                          "operating_actor_type"
+                                                                                      ]
+                                                                     },
+                                                              "then":  {
+                                                                           "required":  [
+                                                                                            "operator_id",
+                                                                                            "delegation_id"
+                                                                                        ]
+                                                                       }
+                                                          }
+                                                      ]
+                                        },
+                       "user_request":  {
+                                            "type":  "object",
+                                            "additionalProperties":  false,
+                                            "required":  [
+                                                             "choice_values",
+                                                             "context_policy"
+                                                         ],
+                                            "properties":  {
+                                                               "context_policy":  {
+                                                                                      "type":  "string",
+                                                                                      "enum":  [
+                                                                                                   "current_only",
+                                                                                                   "current_plus_selected_history"
+                                                                                               ]
+                                                                                  },
+                                                               "authorized_resource_constraints":  {
+                                                                                                       "type":  "object",
+                                                                                                       "additionalProperties":  false,
+                                                                                                       "properties":  {
+                                                                                                                          "wall_time_limit_seconds":  {
+                                                                                                                                                          "type":  "integer",
+                                                                                                                                                          "minimum":  1
+                                                                                                                                                      },
+                                                                                                                          "network_policy":  {
+                                                                                                                                                 "type":  "string",
+                                                                                                                                                 "enum":  [
+                                                                                                                                                              "none",
+                                                                                                                                                              "approved_resources",
+                                                                                                                                                              "user_authorized"
+                                                                                                                                                          ]
+                                                                                                                                             }
+                                                                                                                      }
+                                                                                                   },
+                                                               "choice_values":  {
+                                                                                     "type":  "object",
+                                                                                     "minProperties":  1,
+                                                                                     "propertyNames":  {
+                                                                                                           "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                       },
+                                                                                     "additionalProperties":  {
+                                                                                                                  "oneOf":  [
+                                                                                                                                {
+                                                                                                                                    "type":  "string",
+                                                                                                                                    "minLength":  1
+                                                                                                                                },
+                                                                                                                                {
+                                                                                                                                    "$ref":  "common-definitions.schema.json#/$defs/methodIdentity"
+                                                                                                                                },
+                                                                                                                                {
+                                                                                                                                    "type":  "array",
+                                                                                                                                    "items":  {
+                                                                                                                                                  "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                                                                                                              },
+                                                                                                                                    "uniqueItems":  true
+                                                                                                                                }
+                                                                                                                            ]
+                                                                                                              }
+                                                                                 }
+                                                           }
+                                        },
+                       "frozen_inputs":  {
+                                             "type":  "array",
+                                             "minItems":  1,
+                                             "items":  {
+                                                           "type":  "object",
+                                                           "additionalProperties":  false,
+                                                           "required":  [
+                                                                            "input_id",
+                                                                            "input_kind",
+                                                                            "dependency_class",
+                                                                            "selected_by",
+                                                                            "artifact",
+                                                                            "purpose"
+                                                                        ],
+                                                           "properties":  {
+                                                                              "input_id":  {
+                                                                                               "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                           },
+                                                                              "contract_binding_id":  {
+                                                                                                          "$ref":  "common-definitions.schema.json#/$defs/stableId",
+                                                                                                          "description":  "The required-input or prepared-context ID in the executable phase contract that this manifest input materializes."
+                                                                                                      },
+                                                                              "input_kind":  {
+                                                                                                 "type":  "string",
+                                                                                                 "enum":  [
+                                                                                                              "formal_record",
+                                                                                                              "artifact",
+                                                                                                              "profile",
+                                                                                                              "skill",
+                                                                                                              "tool_manifest",
+                                                                                                              "knowledge_resource",
+                                                                                                              "user_context",
+                                                                                                              "prepared_context"
+                                                                                                          ]
+                                                                                             },
+                                                                              "dependency_class":  {
+                                                                                                       "type":  "string",
+                                                                                                       "enum":  [
+                                                                                                                    "hard",
+                                                                                                                    "contextual"
+                                                                                                                ]
+                                                                                                   },
+                                                                              "selected_by":  {
+                                                                                                  "type":  "string",
+                                                                                                  "enum":  [
+                                                                                                               "phase_contract",
+                                                                                                               "user"
+                                                                                                           ]
+                                                                                              },
+                                                                              "record_basis":  {
+                                                                                                   "$ref":  "common-definitions.schema.json#/$defs/recordBasis"
+                                                                                               },
+                                                                              "artifact":  {
+                                                                                               "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                                                           },
+                                                                              "derived_from_input_ids":  {
+                                                                                                             "type":  "array",
+                                                                                                             "minItems":  1,
+                                                                                                             "items":  {
+                                                                                                                           "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                                       },
+                                                                                                             "uniqueItems":  true
+                                                                                                         },
+                                                                              "derived_from_choice_ids":  {
+                                                                                                              "type":  "array",
+                                                                                                              "items":  {
+                                                                                                                            "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                                        },
+                                                                                                              "uniqueItems":  true
+                                                                                                          },
+                                                                              "purpose":  {
+                                                                                              "type":  "string",
+                                                                                              "minLength":  1
+                                                                                          }
+                                                                          },
+                                                           "allOf":  [
+                                                                         {
+                                                                             "if":  {
+                                                                                        "properties":  {
+                                                                                                           "input_kind":  {
+                                                                                                                              "const":  "formal_record"
+                                                                                                                          }
+                                                                                                       },
+                                                                                        "required":  [
+                                                                                                         "input_kind"
+                                                                                                     ]
+                                                                                    },
+                                                                             "then":  {
+                                                                                          "required":  [
+                                                                                                           "record_basis"
+                                                                                                       ]
+                                                                                      },
+                                                                             "else":  {
+                                                                                          "not":  {
+                                                                                                      "required":  [
+                                                                                                                       "record_basis"
+                                                                                                                   ]
+                                                                                                  }
+                                                                                      }
+                                                                         },
+                                                                         {
+                                                                             "if":  {
+                                                                                        "properties":  {
+                                                                                                           "input_kind":  {
+                                                                                                                              "enum":  [
+                                                                                                                                           "formal_record",
+                                                                                                                                           "prepared_context"
+                                                                                                                                       ]
+                                                                                                                          },
+                                                                                                           "selected_by":  {
+                                                                                                                               "const":  "phase_contract"
+                                                                                                                           }
+                                                                                                       },
+                                                                                        "required":  [
+                                                                                                         "input_kind",
+                                                                                                         "selected_by"
+                                                                                                     ]
+                                                                                    },
+                                                                             "then":  {
+                                                                                          "required":  [
+                                                                                                           "contract_binding_id"
+                                                                                                       ]
+                                                                                      }
+                                                                         },
+                                                                         {
+                                                                             "if":  {
+                                                                                        "properties":  {
+                                                                                                           "input_kind":  {
+                                                                                                                              "const":  "prepared_context"
+                                                                                                                          }
+                                                                                                       },
+                                                                                        "required":  [
+                                                                                                         "input_kind"
+                                                                                                     ]
+                                                                                    },
+                                                                             "then":  {
+                                                                                          "required":  [
+                                                                                                           "derived_from_input_ids",
+                                                                                                           "derived_from_choice_ids"
+                                                                                                       ]
+                                                                                      },
+                                                                             "else":  {
+                                                                                          "not":  {
+                                                                                                      "anyOf":  [
+                                                                                                                    {
+                                                                                                                        "required":  [
+                                                                                                                                         "derived_from_input_ids"
+                                                                                                                                     ]
+                                                                                                                    },
+                                                                                                                    {
+                                                                                                                        "required":  [
+                                                                                                                                         "derived_from_choice_ids"
+                                                                                                                                     ]
+                                                                                                                    }
+                                                                                                                ]
+                                                                                                  }
+                                                                                      }
+                                                                         }
+                                                                     ]
+                                                       }
+                                         },
+                       "expected_target_generations":  {
+                                                           "type":  "array",
+                                                           "minItems":  1,
+                                                           "items":  {
+                                                                         "type":  "object",
+                                                                         "additionalProperties":  false,
+                                                                         "required":  [
+                                                                                          "target_id",
+                                                                                          "slot_id",
+                                                                                          "record_id",
+                                                                                          "record_type",
+                                                                                          "expectation"
+                                                                                      ],
+                                                                         "properties":  {
+                                                                                            "target_id":  {
+                                                                                                              "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                          },
+                                                                                            "slot_id":  {
+                                                                                                            "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                        },
+                                                                                            "record_id":  {
+                                                                                                              "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                          },
+                                                                                            "record_type":  {
+                                                                                                                "$ref":  "common-definitions.schema.json#/$defs/recordType"
+                                                                                                            },
+                                                                                            "expectation":  {
+                                                                                                                "type":  "string",
+                                                                                                                "enum":  [
+                                                                                                                             "absent",
+                                                                                                                             "current_generation"
+                                                                                                                         ]
+                                                                                                            },
+                                                                                            "expected_generation_id":  {
+                                                                                                                           "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                                       }
+                                                                                        },
+                                                                         "allOf":  [
+                                                                                       {
+                                                                                           "if":  {
+                                                                                                      "properties":  {
+                                                                                                                         "expectation":  {
+                                                                                                                                             "const":  "current_generation"
+                                                                                                                                         }
+                                                                                                                     },
+                                                                                                      "required":  [
+                                                                                                                       "expectation"
+                                                                                                                   ]
+                                                                                                  },
+                                                                                           "then":  {
+                                                                                                        "required":  [
+                                                                                                                         "expected_generation_id"
+                                                                                                                     ]
+                                                                                                    },
+                                                                                           "else":  {
+                                                                                                        "not":  {
+                                                                                                                    "required":  [
+                                                                                                                                     "expected_generation_id"
+                                                                                                                                 ]
+                                                                                                                }
+                                                                                                    }
+                                                                                       }
+                                                                                   ]
+                                                                     }
+                                                       },
+                       "publication_plan":  {
+                                                "type":  "array",
+                                                "minItems":  1,
+                                                "items":  {
+                                                              "type":  "object",
+                                                              "additionalProperties":  false,
+                                                              "required":  [
+                                                                               "publication_binding_id",
+                                                                               "operation",
+                                                                               "source_output_mappings",
+                                                                               "target",
+                                                                               "prior_target_policy",
+                                                                               "publisher_transform",
+                                                                               "may_create_scientific_content"
+                                                                           ],
+                                                              "properties":  {
+                                                                                 "publication_binding_id":  {
+                                                                                                                "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                            },
+                                                                                 "operation":  {
+                                                                                                   "type":  "string",
+                                                                                                   "enum":  [
+                                                                                                                "append",
+                                                                                                                "upsert_each",
+                                                                                                                "replace",
+                                                                                                                "bundle"
+                                                                                                            ]
+                                                                                               },
+                                                                                 "source_output_mappings":  {
+                                                                                                                "type":  "array",
+                                                                                                                "minItems":  1,
+                                                                                                                "items":  {
+                                                                                                                              "type":  "object",
+                                                                                                                              "additionalProperties":  false,
+                                                                                                                              "required":  [
+                                                                                                                                               "contract_output_id",
+                                                                                                                                               "output_id"
+                                                                                                                                           ],
+                                                                                                                              "properties":  {
+                                                                                                                                                 "contract_output_id":  {
+                                                                                                                                                                            "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                                                                                        },
+                                                                                                                                                 "output_id":  {
+                                                                                                                                                                   "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                                                                               },
+                                                                                                                                                 "component_name":  {
+                                                                                                                                                                        "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                                                                                    }
+                                                                                                                                             }
+                                                                                                                          }
+                                                                                                            },
+                                                                                 "target":  {
+                                                                                                "type":  "object",
+                                                                                                "additionalProperties":  false,
+                                                                                                "required":  [
+                                                                                                                 "kind"
+                                                                                                             ],
+                                                                                                "properties":  {
+                                                                                                                   "kind":  {
+                                                                                                                                "type":  "string",
+                                                                                                                                "enum":  [
+                                                                                                                                             "current_slot",
+                                                                                                                                             "cumulative_collection",
+                                                                                                                                             "keyed_current_slots"
+                                                                                                                                         ]
+                                                                                                                            },
+                                                                                                                   "expected_target_id":  {
+                                                                                                                                              "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                                                          },
+                                                                                                                   "collection_id":  {
+                                                                                                                                         "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                                                     },
+                                                                                                                   "object_type":  {
+                                                                                                                                       "$ref":  "common-definitions.schema.json#/$defs/cumulativeObjectType"
+                                                                                                                                   },
+                                                                                                                   "record_type":  {
+                                                                                                                                       "$ref":  "common-definitions.schema.json#/$defs/recordType"
+                                                                                                                                   },
+                                                                                                                   "item_key_pointer":  {
+                                                                                                                                            "type":  "string",
+                                                                                                                                            "pattern":  "^/[^\\s]+$"
+                                                                                                                                        },
+                                                                                                                   "slot_template":  {
+                                                                                                                                         "type":  "string",
+                                                                                                                                         "minLength":  1
+                                                                                                                                     }
+                                                                                                               },
+                                                                                                "allOf":  [
+                                                                                                              {
+                                                                                                                  "if":  {
+                                                                                                                             "properties":  {
+                                                                                                                                                "kind":  {
+                                                                                                                                                             "const":  "current_slot"
+                                                                                                                                                         }
+                                                                                                                                            },
+                                                                                                                             "required":  [
+                                                                                                                                              "kind"
+                                                                                                                                          ]
+                                                                                                                         },
+                                                                                                                  "then":  {
+                                                                                                                               "required":  [
+                                                                                                                                                "expected_target_id"
+                                                                                                                                            ]
+                                                                                                                           }
+                                                                                                              },
+                                                                                                              {
+                                                                                                                  "if":  {
+                                                                                                                             "properties":  {
+                                                                                                                                                "kind":  {
+                                                                                                                                                             "const":  "cumulative_collection"
+                                                                                                                                                         }
+                                                                                                                                            },
+                                                                                                                             "required":  [
+                                                                                                                                              "kind"
+                                                                                                                                          ]
+                                                                                                                         },
+                                                                                                                  "then":  {
+                                                                                                                               "required":  [
+                                                                                                                                                "collection_id",
+                                                                                                                                                "object_type"
+                                                                                                                                            ]
+                                                                                                                           }
+                                                                                                              },
+                                                                                                              {
+                                                                                                                  "if":  {
+                                                                                                                             "properties":  {
+                                                                                                                                                "kind":  {
+                                                                                                                                                             "const":  "keyed_current_slots"
+                                                                                                                                                         }
+                                                                                                                                            },
+                                                                                                                             "required":  [
+                                                                                                                                              "kind"
+                                                                                                                                          ]
+                                                                                                                         },
+                                                                                                                  "then":  {
+                                                                                                                               "required":  [
+                                                                                                                                                "collection_id",
+                                                                                                                                                "record_type",
+                                                                                                                                                "item_key_pointer",
+                                                                                                                                                "slot_template"
+                                                                                                                                            ]
+                                                                                                                           }
+                                                                                                              }
+                                                                                                          ]
+                                                                                            },
+                                                                                 "prior_target_policy":  {
+                                                                                                             "type":  "string",
+                                                                                                             "enum":  [
+                                                                                                                          "not_applicable",
+                                                                                                                          "absent_or_match_current",
+                                                                                                                          "must_match_current"
+                                                                                                                      ]
+                                                                                                         },
+                                                                                 "publisher_transform":  {
+                                                                                                             "type":  "string",
+                                                                                                             "enum":  [
+                                                                                                                          "none",
+                                                                                                                          "deterministic_index",
+                                                                                                                          "deterministic_bundle"
+                                                                                                                      ]
+                                                                                                         },
+                                                                                 "may_create_scientific_content":  {
+                                                                                                                       "const":  false
+                                                                                                                   },
+                                                                                 "source_input_mappings":  {
+                                                                                                               "type":  "array",
+                                                                                                               "minItems":  1,
+                                                                                                               "items":  {
+                                                                                                                             "type":  "object",
+                                                                                                                             "additionalProperties":  false,
+                                                                                                                             "required":  [
+                                                                                                                                              "contract_input_id",
+                                                                                                                                              "resolution"
+                                                                                                                                          ],
+                                                                                                                             "properties":  {
+                                                                                                                                                "contract_input_id":  {
+                                                                                                                                                                          "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                                                                                      },
+                                                                                                                                                "input_id":  {
+                                                                                                                                                                 "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                                                                             },
+                                                                                                                                                "resolution":  {
+                                                                                                                                                                   "type":  "string",
+                                                                                                                                                                   "enum":  [
+                                                                                                                                                                                "frozen_input",
+                                                                                                                                                                                "absent"
+                                                                                                                                                                            ]
+                                                                                                                                                               },
+                                                                                                                                                "absence_reason":  {
+                                                                                                                                                                       "type":  "string",
+                                                                                                                                                                       "minLength":  1
+                                                                                                                                                                   }
+                                                                                                                                            },
+                                                                                                                             "allOf":  [
+                                                                                                                                           {
+                                                                                                                                               "if":  {
+                                                                                                                                                          "properties":  {
+                                                                                                                                                                             "resolution":  {
+                                                                                                                                                                                                "const":  "frozen_input"
+                                                                                                                                                                                            }
+                                                                                                                                                                         },
+                                                                                                                                                          "required":  [
+                                                                                                                                                                           "resolution"
+                                                                                                                                                                       ]
+                                                                                                                                                      },
+                                                                                                                                               "then":  {
+                                                                                                                                                            "required":  [
+                                                                                                                                                                             "input_id"
+                                                                                                                                                                         ],
+                                                                                                                                                            "not":  {
+                                                                                                                                                                        "required":  [
+                                                                                                                                                                                         "absence_reason"
+                                                                                                                                                                                     ]
+                                                                                                                                                                    }
+                                                                                                                                                        },
+                                                                                                                                               "else":  {
+                                                                                                                                                            "required":  [
+                                                                                                                                                                             "absence_reason"
+                                                                                                                                                                         ],
+                                                                                                                                                            "not":  {
+                                                                                                                                                                        "required":  [
+                                                                                                                                                                                         "input_id"
+                                                                                                                                                                                     ]
+                                                                                                                                                                    }
+                                                                                                                                                        }
+                                                                                                                                           }
+                                                                                                                                       ]
+                                                                                                                         },
+                                                                                                               "uniqueItems":  true
+                                                                                                           }
+                                                                             },
+                                                              "allOf":  [
+                                                                            {
+                                                                                "if":  {
+                                                                                           "properties":  {
+                                                                                                              "operation":  {
+                                                                                                                                "const":  "append"
+                                                                                                                            }
+                                                                                                          },
+                                                                                           "required":  [
+                                                                                                            "operation"
+                                                                                                        ]
+                                                                                       },
+                                                                                "then":  {
+                                                                                             "properties":  {
+                                                                                                                "target":  {
+                                                                                                                               "properties":  {
+                                                                                                                                                  "kind":  {
+                                                                                                                                                               "const":  "cumulative_collection"
+                                                                                                                                                           }
+                                                                                                                                              },
+                                                                                                                               "required":  [
+                                                                                                                                                "kind"
+                                                                                                                                            ]
+                                                                                                                           },
+                                                                                                                "prior_target_policy":  {
+                                                                                                                                            "const":  "not_applicable"
+                                                                                                                                        }
+                                                                                                            }
+                                                                                         }
+                                                                            },
+                                                                            {
+                                                                                "if":  {
+                                                                                           "properties":  {
+                                                                                                              "operation":  {
+                                                                                                                                "const":  "upsert_each"
+                                                                                                                            }
+                                                                                                          },
+                                                                                           "required":  [
+                                                                                                            "operation"
+                                                                                                        ]
+                                                                                       },
+                                                                                "then":  {
+                                                                                             "properties":  {
+                                                                                                                "target":  {
+                                                                                                                               "properties":  {
+                                                                                                                                                  "kind":  {
+                                                                                                                                                               "const":  "keyed_current_slots"
+                                                                                                                                                           }
+                                                                                                                                              },
+                                                                                                                               "required":  [
+                                                                                                                                                "kind"
+                                                                                                                                            ]
+                                                                                                                           },
+                                                                                                                "prior_target_policy":  {
+                                                                                                                                            "const":  "absent_or_match_current"
+                                                                                                                                        }
+                                                                                                            }
+                                                                                         }
+                                                                            },
+                                                                            {
+                                                                                "if":  {
+                                                                                           "properties":  {
+                                                                                                              "operation":  {
+                                                                                                                                "enum":  [
+                                                                                                                                             "replace",
+                                                                                                                                             "bundle"
+                                                                                                                                         ]
+                                                                                                                            }
+                                                                                                          },
+                                                                                           "required":  [
+                                                                                                            "operation"
+                                                                                                        ]
+                                                                                       },
+                                                                                "then":  {
+                                                                                             "properties":  {
+                                                                                                                "target":  {
+                                                                                                                               "properties":  {
+                                                                                                                                                  "kind":  {
+                                                                                                                                                               "const":  "current_slot"
+                                                                                                                                                           }
+                                                                                                                                              },
+                                                                                                                               "required":  [
+                                                                                                                                                "kind"
+                                                                                                                                            ]
+                                                                                                                           }
+                                                                                                            }
+                                                                                         }
+                                                                            },
+                                                                            {
+                                                                                "if":  {
+                                                                                           "properties":  {
+                                                                                                              "operation":  {
+                                                                                                                                "const":  "bundle"
+                                                                                                                            }
+                                                                                                          },
+                                                                                           "required":  [
+                                                                                                            "operation"
+                                                                                                        ]
+                                                                                       },
+                                                                                "then":  {
+                                                                                             "properties":  {
+                                                                                                                "source_output_mappings":  {
+                                                                                                                                               "minItems":  2,
+                                                                                                                                               "items":  {
+                                                                                                                                                             "required":  [
+                                                                                                                                                                              "component_name"
+                                                                                                                                                                          ]
+                                                                                                                                                         }
+                                                                                                                                           },
+                                                                                                                "publisher_transform":  {
+                                                                                                                                            "const":  "deterministic_bundle"
+                                                                                                                                        }
+                                                                                                            }
+                                                                                         }
+                                                                            },
+                                                                            {
+                                                                                "if":  {
+                                                                                           "properties":  {
+                                                                                                              "publisher_transform":  {
+                                                                                                                                          "const":  "deterministic_index"
+                                                                                                                                      }
+                                                                                                          },
+                                                                                           "required":  [
+                                                                                                            "publisher_transform"
+                                                                                                        ]
+                                                                                       },
+                                                                                "then":  {
+                                                                                             "required":  [
+                                                                                                              "source_input_mappings"
+                                                                                                          ]
+                                                                                         }
+                                                                            }
+                                                                        ]
+                                                          }
+                                            },
+                       "role_plan":  {
+                                           "description":  "Frozen execution recipe. It declares role-stage obligations but contains no future context, output-artifact, access-ledger, start-time, or closure digest.",
+                                         "type":  "array",
+                                         "minItems":  1,
+                                         "items":  {
+                                                       "type":  "object",
+                                                       "additionalProperties":  false,
+                                                       "required":  [
+                                                                        "sequence",
+                                                                        "stage_id",
+                                                                        "execution_group_id",
+                                                                        "execution",
+                                                                        "role",
+                                                                        "profile_input_id",
+                                                                        "assignment",
+                                                                        "input_ids",
+                                                                        "output_ids",
+                                                                        "role_write_root",
+                                                                        "context_isolation"
+                                                                    ],
+                                                       "properties":  {
+                                                                          "sequence":  {
+                                                                                           "type":  "integer",
+                                                                                           "minimum":  1
+                                                                                       },
+                                                                          "stage_id":  {
+                                                                                           "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                       },
+                                                                          "execution_group_id":  {
+                                                                                                     "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                 },
+                                                                          "execution":  {
+                                                                                            "type":  "string",
+                                                                                            "enum":  [
+                                                                                                         "serial",
+                                                                                                         "parallel"
+                                                                                                     ]
+                                                                                        },
+                                                                          "role":  {
+                                                                                       "$ref":  "common-definitions.schema.json#/$defs/roleId"
+                                                                                   },
+                                                                          "profile_input_id":  {
+                                                                                                   "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                               },
+                                                                          "assignment":  {
+                                                                                             "type":  "string",
+                                                                                             "minLength":  1
+                                                                                         },
+                                                                          "input_ids":  {
+                                                                                            "type":  "array",
+                                                                                            "items":  {
+                                                                                                          "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                      },
+                                                                                            "uniqueItems":  true
+                                                                                        },
+                                                                          "output_ids":  {
+                                                                                             "type":  "array",
+                                                                                             "items":  {
+                                                                                                           "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                       },
+                                                                                             "uniqueItems":  true
+                                                                                         },
+                                                                          "role_write_root":  {
+                                                                                                  "type":  "string",
+                                                                                                  "pattern":  "^runs/(P1|P2|P3|P4|P5)/[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*/roles/[0-9]{2}-(research_lead|theorist|data_analyst|outside_reviewer)/$"
+                                                                                              },
+                                                                          "context_isolation":  {
+                                                                                                    "type":  "boolean"
+                                                                                                }
+                                                                      }
+                                                   }
+                                     },
+                       "allowed_write_root":  {
+                                                  "type":  "string",
+                                                  "pattern":  "^runs/(P1|P2|P3|P4|P5)/[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*/$",
+                                                  "description":  "The sole run directory in which role workspaces may be allocated."
+                                              },
+                       "expected_outputs":  {
+                                                "type":  "array",
+                                                "minItems":  1,
+                                                "items":  {
+                                                              "type":  "object",
+                                                              "additionalProperties":  false,
+                                                              "required":  [
+                                                                               "output_id",
+                                                                               "contract_output_id",
+                                                                               "output_kind",
+                                                                               "relative_path",
+                                                                               "schema_uri",
+                                                                               "required"
+                                                                           ],
+                                                              "properties":  {
+                                                                                 "output_id":  {
+                                                                                                   "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                               },
+                                                                                 "contract_output_id":  {
+                                                                                                            "$ref":  "common-definitions.schema.json#/$defs/stableId",
+                                                                                                            "description":  "The run-local output obligation in the executable phase contract satisfied by this artifact."
+                                                                                                        },
+                                                                                 "output_kind":  {
+                                                                                                     "type":  "string",
+                                                                                                     "enum":  [
+                                                                                                                  "primary_artifact",
+                                                                                                                  "scientific_record",
+                                                                                                                  "statement_set",
+                                                                                                                  "evidence_set",
+                                                                                                                  "decision_record",
+                                                                                                                  "handoff",
+                                                                                                                  "method_set",
+                                                                                                                  "protocol",
+                                                                                                                  "audit",
+                                                                                                                  "synthesis",
+                                                                                                                  "review_issue_set",
+                                                                                                                  "publication_package",
+                                                                                                                  "attention_item_set"
+                                                                                                              ]
+                                                                                                 },
+                                                                                 "record_type":  {
+                                                                                                     "$ref":  "common-definitions.schema.json#/$defs/recordType"
+                                                                                                 },
+                                                                                 "relative_path":  {
+                                                                                                       "type":  "string",
+                                                                                                       "minLength":  1,
+                                                                                                       "pattern":  "^(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+$"
+                                                                                                   },
+                                                                                 "schema_uri":  {
+                                                                                                    "type":  "string",
+                                                                                                    "format":  "uri-reference"
+                                                                                                },
+                                                                                 "required":  {
+                                                                                                  "type":  "boolean"
+                                                                                              }
+                                                                             }
+                                                          }
+                                            },
+                       "resource_policy":  {
+                                               "type":  "object",
+                                               "additionalProperties":  false,
+                                               "required":  [
+                                                                "network_policy",
+                                                                "secret_policy",
+                                                                "wall_time_limit_seconds"
+                                                            ],
+                                               "properties":  {
+                                                                  "network_policy":  {
+                                                                                         "type":  "string",
+                                                                                         "enum":  [
+                                                                                                      "none",
+                                                                                                      "approved_resources",
+                                                                                                      "user_authorized"
+                                                                                                  ]
+                                                                                     },
+                                                                  "secret_policy":  {
+                                                                                        "type":  "string",
+                                                                                        "enum":  [
+                                                                                                     "no_secrets",
+                                                                                                     "named_secret_references"
+                                                                                                 ]
+                                                                                    },
+                                                                  "wall_time_limit_seconds":  {
+                                                                                                  "type":  "integer",
+                                                                                                  "minimum":  1
+                                                                                              }
+                                                              }
+                                           },
+                       "prepared_at":  {
+                                           "type":  "string",
+                                           "format":  "date-time"
+                                       },
+                       "manifest_sha256":  {
+                                               "$ref":  "common-definitions.schema.json#/$defs/sha256"
+                                           }
+                   },
+    "allOf":  [
+                  {
+                      "if":  {
+                                 "properties":  {
+                                                    "user_request":  {
+                                                                         "properties":  {
+                                                                                            "context_policy":  {
+                                                                                                                   "const":  "current_only"
+                                                                                                               }
+                                                                                        },
+                                                                         "required":  [
+                                                                                          "context_policy"
+                                                                                      ]
+                                                                     }
+                                                },
+                                 "required":  [
+                                                  "user_request"
+                                              ]
+                             },
+                      "then":  {
+                                   "properties":  {
+                                                      "user_request":  {
+                                                                           "properties":  {
+                                                                                              "choice_values":  {
+                                                                                                                    "patternProperties":  {
+                                                                                                                                              "^p[1-5]\\.selected_history$":  {
+                                                                                                                                                                                  "type":  "array",
+                                                                                                                                                                                  "maxItems":  0
+                                                                                                                                                                              }
+                                                                                                                                          }
+                                                                                                                }
+                                                                                          }
+                                                                       }
+                                                  }
+                               }
+                  }
+              ]
+}

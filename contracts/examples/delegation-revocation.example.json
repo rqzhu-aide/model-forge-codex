@@ -1,0 +1,18 @@
+{
+    "schema_version":  "1.0.0",
+    "revocation_type":  "delegation_revocation",
+    "revocation_id":  "revocation.research.operator.001",
+    "grant_id":  "delegation.research.operator.001",
+    "revocation_handle":  "revocation.handle.research.operator.001",
+    "project_id":  "project.demo",
+    "user_id":  "researcher.demo",
+    "reason":  "The remote operator no longer needs project access.",
+    "revoked_at":  "2026-08-02T18:00:00Z",
+    "content_sha256":  "aee2324d3d82c1009e2415eca7d329a4f001dc409c04e24ac93cf4313852e95d",
+    "signature":  {
+                      "algorithm":  "Ed25519",
+                      "key_id":  "key.researcher.demo.001",
+                      "value":  "MEUCIQDemosignaturevalueforarchitectureonly"
+                  },
+    "revocation_sequence":  1
+}

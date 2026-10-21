@@ -1,0 +1,56 @@
+# Implementation status for 0.9.0
+
+This prerelease provides the five researcher-directed phases described in the
+[architecture guide](README.md). The pinned workflow catalog is 1.26.0:
+P1 3.7.0, P2 3.11.0, P3 2.11.0, P4 3.4.0, and P5 3.2.0.
+
+## Available behavior
+
+- Structured literature synthesis, attributed paper explanations, mathematical
+  method proposals, theory accounts, numerical evaluation, and technical reports.
+- Independent specialist review with exact source identities and retained run
+  history. Failed work remains distinguishable from published findings.
+- Consequential researcher questions with multiple-choice responses, targeted
+  discussion, Lead suggestions, and one editable effective instruction.
+  Routine choices belong to the Lead. Saved responses are routed by audience
+  and scope; specialist context excludes Lead-only instructions.
+- Managed Python and R experiments with declared source snapshots, computation
+  budgets, synthetic examples, and explicitly selected local data. Shared
+  runtimes are required. Experiment execution and model planning have separate
+  budgets.
+- Direct report reading, section comments, mathematical rendering, inspectable
+  sources, and portable HTML export. General problem elicitation stays in
+  earlier phases.
+- Blue team research, green system controls, and orange researcher interaction.
+  Card titles use 18px type and visible outlines and separators. Reading
+  position, focus, disclosure state, and editable drafts persist across supported
+  navigation paths.
+- Shared account access or per-member custom providers, connection testing,
+  and application snapshots kept separately from research data.
+
+The implementation is anchored by the [catalog](../contracts/catalog-pin.json),
+[run engine](../src/model_forge_codex/runs.py),
+[research projection](../src/model_forge_codex/research.py), and
+[interface](../web/src/components/ProjectView.jsx).
+
+## Verification and limits
+
+Automated tests cover contracts, source integrity, context routing, publication,
+recovery, reader projections, interactions, and packaging. Release checks also
+exercise the built interface and a disposable packaged launch. The release
+notes record the exact checks completed for each distributed version.
+
+Private research trials and their screenshots are kept locally rather than
+bundled with source or packages. Those trials do not certify future model output.
+Publication means the requested artifacts passed the harness checks; it does
+not establish scientific correctness, clinical usefulness, or exhaustive search.
+
+Windows is the exercised desktop environment. Clean macOS and Linux installation
+and shutdown coverage remains pending. Provider-specific tool use and sandbox
+behavior depend on the selected shared runtime and account configuration.
+
+Historical artifacts retain their producing catalog and frozen inputs. There is
+no automatic pooling of every previous experiment, universal replay of provider
+state, or automatic restart of interrupted research. Missing evidence and
+unassessed questions remain explicit. Back up the research data directory before
+adopting a new workflow or upgrading an important project.

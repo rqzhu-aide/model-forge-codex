@@ -1,0 +1,18 @@
+{
+ "claims": [
+  {
+   "statement_id": "statement.boc-v2.lp-representation",
+   "proof_status": "full",
+   "depends_on": [
+    "assumption.boc-v2.finite.stationary.bounded",
+    "statement.boc-v2.flow-equivalence"
+   ],
+   "used_by": [
+    "statement.boc-v2.screened-lp-optimality"
+   ],
+   "novelty_refs": [
+    "lit.altman-1999-cmdp"
+   ]
+  }
+ ]
+}

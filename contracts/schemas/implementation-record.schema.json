@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/implementation-record.schema.json",
+  "title": "Phase 4 Exact-Method Implementation Account",
+  "description": "The analyst's implementation account, available before independent theorist review. Retained source files use the scientific record's existing artifact pointers and digest checks. An unavailable execution or verification check must be stated explicitly; nonempty prose does not establish correctness.",
+  "allOf": [
+    {
+      "$ref": "scientific-record.schema.json"
+    }
+  ],
+  "type": "object",
+  "required": [
+    "method_identity",
+    "implementation_summary",
+    "reproduction"
+  ],
+  "properties": {
+    "phase": {
+      "const": "P4"
+    },
+    "record_type": {
+      "const": "implementation_record"
+    },
+    "method_identity": {
+      "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+    },
+    "implementation_summary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "rule",
+        "correspondence",
+        "environment",
+        "verification",
+        "limitations"
+      ],
+      "properties": {
+        "rule": {
+          "$ref": "#/$defs/account",
+          "description": "The procedure implemented from the exact selected method."
+        },
+        "correspondence": {
+          "$ref": "#/$defs/account",
+          "description": "Relevant algorithm steps or equations and exact retained code/configuration pointers, or an explicit account of unavailable correspondence."
+        },
+        "environment": {
+          "$ref": "#/$defs/account",
+          "description": "The actual shared runtime, dependencies and settings, including any access limitation."
+        },
+        "verification": {
+          "$ref": "#/$defs/account",
+          "description": "Checks actually performed and their retained support; state when a check could not run."
+        },
+        "limitations": {
+          "$ref": "#/$defs/account",
+          "description": "Unresolved departures, verification gaps and their consequences."
+        },
+        "configuration": {
+          "$ref": "#/$defs/account"
+        },
+        "choices": {
+          "$ref": "#/$defs/account"
+        },
+        "departures": {
+          "$ref": "#/$defs/account"
+        }
+      }
+    },
+    "reproduction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "language",
+        "model_entrypoint",
+        "example_generator",
+        "example_runner",
+        "readme",
+        "invocation",
+        "support_files",
+        "dependencies",
+        "runtime_identity"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "available",
+            "unavailable"
+          ]
+        },
+        "language": {
+          "enum": [
+            "python",
+            "r"
+          ]
+        },
+        "model_entrypoint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/retainedFile"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "example_generator": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/retainedFile"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "example_runner": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/retainedFile"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "readme": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/retainedFile"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "invocation": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Ordinary command and input/output contract, including seed behavior. No harness paths, provider account or required MODEL_FORGE_* variables."
+        },
+        "support_files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/retainedFile"
+          },
+          "uniqueItems": true
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dependency"
+          },
+          "uniqueItems": true
+        },
+        "runtime_identity": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Actual shared interpreter identity/version, or the precise access/setup limitation."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "available"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "model_entrypoint": {
+                "$ref": "#/$defs/retainedFile"
+              },
+              "example_generator": {
+                "$ref": "#/$defs/retainedFile"
+              },
+              "example_runner": {
+                "$ref": "#/$defs/retainedFile"
+              },
+              "readme": {
+                "$ref": "#/$defs/retainedFile"
+              }
+            }
+          }
+        }
+      ],
+      "description": "Portable model code and synthetic example. An unavailable bundle uses null for missing files and explains what is unavailable in the existing implementation account; it is never evidence of successful execution."
+    }
+  },
+  "$defs": {
+    "account": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "retainedFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "artifact"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        }
+      }
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "source"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    }
+  }
+}

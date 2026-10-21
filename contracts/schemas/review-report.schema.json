@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/review-report.schema.json",
+  "title": "Independent Outside Review Report",
+  "description": "A bounded first-reader assessment of one frozen manuscript packet, with an explicit novelty-search boundary and open prioritized findings.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_id",
+    "source_run_id",
+    "reviewer_role",
+    "review_basis_generation_id",
+    "reviewed_scope",
+    "missing_materials",
+    "overall_assessment",
+    "strengths",
+    "prioritized_issues",
+    "novelty_search_boundary",
+    "evidence_that_would_change_assessment",
+    "content_sha256",
+    "created_at",
+    "authority_at_creation"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "report_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "source_run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "reviewer_role": {
+      "const": "outside_reviewer"
+    },
+    "review_basis_generation_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "reviewed_scope": {
+      "description": "Name the exact manuscript generation and actual sections or supplements inspected. State access limits and distinguish independently checked evidence from reported claims.",
+      "type": "string",
+      "minLength": 1
+    },
+    "missing_materials": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "overall_assessment": {
+      "description": "A direct assessment of the frozen manuscript contribution, strongest support and decisive concern, within the actual reviewed scope. Explain consequences for the reader; do not claim review of later revisions or inaccessible records.",
+      "type": "string",
+      "minLength": 1
+    },
+    "strengths": {
+      "type": "array",
+      "description": "Strengths the reviewer can honestly report; may be empty when the reviewer finds none to report.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "prioritized_issues": {
+      "type": "array",
+      "description": "Open findings ordered from greatest to least scientific consequence.",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "review-finding.schema.json"
+          },
+          {
+            "properties": {
+              "raised_by": {
+                "const": "outside_reviewer"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "novelty_search_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_context_policy",
+        "external_search_performed",
+        "sources_consulted",
+        "query_concepts",
+        "access_limits",
+        "assessment_status",
+        "conclusion"
+      ],
+      "properties": {
+        "project_context_policy": {
+          "const": "frozen_review_packet_only"
+        },
+        "external_search_performed": {
+          "type": "boolean"
+        },
+        "sources_consulted": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "query_concepts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "searched_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "access_limits": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "assessment_status": {
+          "type": "string",
+          "enum": ["bounded", "provisional", "not_assessed"]
+        },
+        "conclusion": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "external_search_performed": {
+                "const": true
+              }
+            },
+            "required": ["external_search_performed"]
+          },
+          "then": {
+            "required": ["searched_at"],
+            "properties": {
+              "sources_consulted": {
+                "minItems": 1
+              },
+              "query_concepts": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "evidence_that_would_change_assessment": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authority_at_creation": {
+      "const": "run_local_candidate"
+    },
+    "method_evaluations": {
+      "type": "array",
+      "description": "Structured per-method evaluations keyed by the contracted method stable_id, within the reviewer competency axis (ADR-017).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stable_id",
+          "axis",
+          "assessment",
+          "issue_refs"
+        ],
+        "properties": {
+          "stable_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "axis": {
+            "enum": ["theoretical_validity", "empirical_feasibility"]
+          },
+          "assessment": {
+            "type": "string",
+            "minLength": 1
+          },
+          "issue_refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

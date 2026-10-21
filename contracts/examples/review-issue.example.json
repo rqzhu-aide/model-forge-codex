@@ -1,0 +1,24 @@
+{
+    "schema_version":  "1.0.0",
+    "issue_id":  "issue.review.scope_claim.001",
+    "issue_version_id":  "issue.version.review.scope_claim.001",
+    "source_run_id":  "run.p5.review_revision.20260901t100000z",
+    "raised_by":  "outside_reviewer",
+    "review_basis_generation_id":  "generation.manuscript.001",
+    "location":  "Abstract, sentence 4",
+    "affected_statement_id":  "claim.rmse.reduction",
+    "issue":  "The abstract states a general error reduction although the evidence covers only two weak-overlap simulation regimes.",
+    "severity":  "major",
+    "scientific_consequence":  "Readers could infer empirical support outside the evaluated scope.",
+    "requested_resolution":  "Restrict the abstract claim to the evaluated regimes and state that comprehensive evaluation remains pending.",
+    "disposition":  "fixed",
+    "disposition_reason":  "The lead narrowed the claim and added the unresolved comprehensive-evaluation requirement.",
+    "revision_locations":  [
+                               "Abstract, sentence 4",
+                               "Discussion, paragraph 3"
+                           ],
+    "content_sha256":  "b1ec6616d75d2caf8b92574e347d2af4bf009d01915aed5eff42b1129f50cba3",
+    "created_at":  "2026-09-01T11:00:00Z",
+    "updated_at":  "2026-09-01T13:30:00Z",
+    "authority_at_creation":  "run_local_candidate"
+}

@@ -1,0 +1,1352 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/p4-progressive-protocol.schema.json",
+  "title": "Phase 4 Progressive Evaluation Protocol",
+  "description": "The original exact-method design and append-only prospective amendments. Original cases and observations are never removed. Work is authorized within an explicit budget; severe scientific issues require researcher direction.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "protocol_id",
+    "phase",
+    "source_run_id",
+    "mode",
+    "method_identity",
+    "basis",
+    "research_question",
+    "scope",
+    "scope_justification",
+    "claim_tests",
+    "estimand",
+    "data_or_simulation_unit",
+    "baselines",
+    "implementation_strategy",
+    "tuning_budget",
+    "metrics",
+    "repetitions_and_uncertainty",
+    "multiplicity",
+    "stopping_rules",
+    "leakage_checks",
+    "decision_thresholds",
+    "deviations",
+    "protocol_status",
+    "finalized_at",
+    "content_sha256",
+    "created_at",
+    "cases",
+    "plan_revision_id",
+    "budget_seconds",
+    "decision_context",
+    "work_items",
+    "amendments",
+    "data_sources"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "protocol_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "phase": {
+      "const": "P4"
+    },
+    "source_run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "p4.preliminary",
+        "p4.comprehensive"
+      ]
+    },
+    "method_identity": {
+      "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+    },
+    "basis": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/recordBasis"
+      },
+      "uniqueItems": true
+    },
+    "research_question": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope_justification": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Explain why the selected checks are decisive for preliminary scope or sufficiently broad and claim-linked for comprehensive scope."
+    },
+    "claim_tests": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/claimTest"
+      }
+    },
+    "estimand": {
+      "$ref": "#/$defs/estimand"
+    },
+    "data_or_simulation_unit": {
+      "$ref": "#/$defs/dataOrSimulationUnit"
+    },
+    "baselines": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "$ref": "#/$defs/baseline"
+      },
+      "description": "A baseline is required when the frozen question-appropriate comparison declaration requires one. A justified noncomparative protocol may retain an empty list. The phase semantic checks enforce comparison applicability and joint scheduling."
+    },
+    "implementation_strategy": {
+      "$ref": "#/$defs/implementationStrategy"
+    },
+    "tuning_budget": {
+      "$ref": "#/$defs/tuningBudget"
+    },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/metric"
+      }
+    },
+    "repetitions_and_uncertainty": {
+      "$ref": "#/$defs/repetitionsAndUncertainty"
+    },
+    "multiplicity": {
+      "$ref": "#/$defs/multiplicity"
+    },
+    "stopping_rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/stoppingRule"
+      }
+    },
+    "leakage_checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/leakageCheck"
+      }
+    },
+    "decision_thresholds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/decisionThreshold"
+      }
+    },
+    "deviations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/deviation"
+      },
+      "description": "Append departures from the prespecified protocol after execution. Use an empty array when execution followed the protocol exactly."
+    },
+    "protocol_status": {
+      "const": "prespecified"
+    },
+    "finalized_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp at which the protocol was fixed before outcome inspection."
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "Digest of the prespecified protocol fields before deviations are appended."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/case"
+      }
+    },
+    "plan_revision_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "budget_seconds": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "decision_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent_markdown",
+        "priorities",
+        "scope_markdown"
+      ],
+      "properties": {
+        "intent_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "priorities": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "scope_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "work_items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/workItem"
+      }
+    },
+    "amendments": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "revision_id",
+          "supersedes_revision_id",
+          "created_at",
+          "reason_markdown",
+          "observed_evidence_ids",
+          "changes_markdown",
+          "inferential_consequences_markdown",
+          "deferred_work_item_ids"
+        ],
+        "properties": {
+          "revision_id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "supersedes_revision_id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason_markdown": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "observed_evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "uniqueItems": true
+          },
+          "changes_markdown": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "inferential_consequences_markdown": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "work_item_order": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "uniqueItems": true
+          },
+          "added_cases": {
+            "type": "array",
+            "minItems": 0,
+            "items": {
+              "$ref": "#/$defs/case"
+            }
+          },
+          "added_tests": {
+            "type": "array",
+            "minItems": 0,
+            "items": {
+              "$ref": "#/$defs/claimTest"
+            }
+          },
+          "added_work_items": {
+            "type": "array",
+            "minItems": 0,
+            "items": {
+              "$ref": "#/$defs/workItem"
+            }
+          },
+          "added_metrics": {
+            "type": "array",
+            "minItems": 0,
+            "items": {
+              "$ref": "#/$defs/metric"
+            }
+          },
+          "added_baselines": {
+            "type": "array",
+            "minItems": 0,
+            "items": {
+              "$ref": "#/$defs/baseline"
+            }
+          },
+          "added_decision_thresholds": {
+            "type": "array",
+            "minItems": 0,
+            "items": {
+              "$ref": "#/$defs/decisionThreshold"
+            }
+          },
+          "deferred_work_item_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "uniqueItems": true
+          },
+          "added_data_sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/dataSource"
+            },
+            "description": "New IDs only, declared before their cases run. Newly supplied actual data requires a new frozen run input; do not amend a mutable path into this run."
+          }
+        }
+      }
+    },
+    "comparison_applicability": {
+      "type": "object",
+      "required": [
+        "required",
+        "reason"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "comparative_claim_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "expectation_context_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "item_id",
+              "revision"
+            ],
+            "properties": {
+              "item_id": {
+                "type": "string"
+              },
+              "revision": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "data_sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/dataSource"
+      },
+      "description": "Original source definitions remain frozen. Append new definitions prospectively through amendments.added_data_sources where supported."
+    }
+  },
+  "$defs": {
+    "claimTest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "test_id",
+        "claim_id",
+        "target_statement_ids",
+        "hypothesis",
+        "design",
+        "falsification_rule",
+        "decision_threshold_ids",
+        "category",
+        "relevance_markdown"
+      ],
+      "properties": {
+        "test_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "claim_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "target_statement_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "uniqueItems": true
+        },
+        "hypothesis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "design": {
+          "type": "string",
+          "minLength": 1
+        },
+        "falsification_rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_threshold_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "uniqueItems": true
+        },
+        "category": {
+          "enum": [
+            "implementation",
+            "performance",
+            "cost",
+            "tuning",
+            "sensitivity",
+            "failures",
+            "other"
+          ]
+        },
+        "relevance_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "estimand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "mathematical_definition",
+        "target_population_or_distribution",
+        "analysis_unit",
+        "aggregation",
+        "conditions"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mathematical_definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_population_or_distribution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "analysis_unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aggregation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "dataOrSimulationUnit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_type",
+        "unit_definition",
+        "sampling_or_generation_process",
+        "sample_sizes",
+        "independence_structure",
+        "splits",
+        "preprocessing"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "observed_data",
+            "simulation",
+            "benchmark",
+            "hybrid"
+          ]
+        },
+        "unit_definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sampling_or_generation_process": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sample_sizes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "uniqueItems": true
+        },
+        "independence_structure": {
+          "type": "string",
+          "minLength": 1
+        },
+        "splits": {
+          "type": "string",
+          "minLength": 1
+        },
+        "preprocessing": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseline_id",
+        "name",
+        "rationale",
+        "implementation_identity",
+        "tuning_policy",
+        "compute_budget"
+      ],
+      "properties": {
+        "baseline_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "implementation_identity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tuning_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "compute_budget": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "implementationStrategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy",
+        "verification_checks",
+        "changes_from_prior",
+        "route",
+        "route_rationale",
+        "packages"
+      ],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "new",
+            "reuse_verified",
+            "adapt_verified"
+          ]
+        },
+        "prior_implementation_artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        },
+        "verification_checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "changes_from_prior": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "route": {
+          "enum": [
+            "package_reuse",
+            "package_adaptation",
+            "custom_implementation"
+          ]
+        },
+        "route_rationale": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Why this route implements the exact equations/objective, preprocessing, tuning, estimation/prediction and uncertainty; state missing pieces and code origin."
+        },
+        "packages": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "version",
+              "source",
+              "api",
+              "provides",
+              "adaptation"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "source": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "api": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "provides": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "adaptation": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "strategy": {
+                "enum": [
+                  "reuse_verified",
+                  "adapt_verified"
+                ]
+              }
+            },
+            "required": [
+              "strategy"
+            ]
+          },
+          "then": {
+            "required": [
+              "prior_implementation_artifact"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "strategy": {
+                "const": "adapt_verified"
+              }
+            },
+            "required": [
+              "strategy"
+            ]
+          },
+          "then": {
+            "properties": {
+              "changes_from_prior": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "route": {
+                "enum": [
+                  "package_reuse",
+                  "package_adaptation"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "packages": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ],
+      "description": "strategy describes prior-project lineage. route independently describes external-package use versus custom model code; first-run package use may have strategy=new."
+    },
+    "tuningBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selection_data",
+        "search_space",
+        "optimization_rule",
+        "maximum_trials",
+        "compute_limit",
+        "fairness_rule"
+      ],
+      "properties": {
+        "selection_data": {
+          "type": "string",
+          "minLength": 1
+        },
+        "search_space": {
+          "type": "string",
+          "minLength": 1
+        },
+        "optimization_rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "maximum_trials": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "compute_limit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fairness_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_id",
+        "name",
+        "definition",
+        "direction",
+        "aggregation",
+        "uncertainty_method",
+        "summary"
+      ],
+      "properties": {
+        "metric_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "minimize",
+            "maximize",
+            "target",
+            "two_sided"
+          ]
+        },
+        "aggregation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uncertainty_method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Executable summary specification",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "aggregation",
+            "uncertainty"
+          ],
+          "properties": {
+            "aggregation": {
+              "enum": [
+                "mean",
+                "median",
+                "sum",
+                "identity",
+                "custom"
+              ]
+            },
+            "uncertainty": {
+              "enum": [
+                "mcse",
+                "not_applicable",
+                "not_assessed",
+                "custom"
+              ]
+            },
+            "decision_rule": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "Replicate decision rule",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "operator",
+                "threshold"
+              ],
+              "properties": {
+                "operator": {
+                  "enum": [
+                    "<",
+                    "<=",
+                    ">",
+                    ">="
+                  ]
+                },
+                "threshold": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "repetitionsAndUncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repetitions",
+        "random_seed_policy",
+        "paired_design",
+        "interval_or_error_method",
+        "target_precision"
+      ],
+      "properties": {
+        "repetitions": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "random_seed_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "paired_design": {
+          "type": "boolean"
+        },
+        "interval_or_error_method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_precision": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "multiplicity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "family_definition",
+        "correction_method",
+        "decision_rule"
+      ],
+      "properties": {
+        "family_definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "correction_method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "stoppingRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_id",
+        "condition",
+        "action"
+      ],
+      "properties": {
+        "rule_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "condition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "leakageCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "check_id",
+        "risk",
+        "procedure",
+        "failure_action"
+      ],
+      "properties": {
+        "check_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "risk": {
+          "type": "string",
+          "minLength": 1
+        },
+        "procedure": {
+          "type": "string",
+          "minLength": 1
+        },
+        "failure_action": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "decisionThreshold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "threshold_id",
+        "claim_id",
+        "metric_id",
+        "criterion",
+        "interpretation"
+      ],
+      "properties": {
+        "threshold_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "claim_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "metric_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "criterion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "interpretation": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "deviation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deviation_id",
+        "detected_at",
+        "affected_test_ids",
+        "description",
+        "reason",
+        "impact_assessment",
+        "disposition"
+      ],
+      "properties": {
+        "deviation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "detected_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "affected_test_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "uniqueItems": true
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "impact_assessment": {
+          "type": "string",
+          "minLength": 1
+        },
+        "disposition": {
+          "type": "string",
+          "enum": [
+            "retain_with_caveat",
+            "exclude_affected_result",
+            "reanalyze_as_exploratory",
+            "rerun_required"
+          ]
+        }
+      }
+    },
+    "case": {
+      "title": "Declared empirical case",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "label",
+        "test_ids",
+        "metric_ids",
+        "comparator_id",
+        "regime",
+        "replicates",
+        "data_source_ids",
+        "replication_unit"
+      ],
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "test_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "metric_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "comparator_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "'selected_method' or a declared baseline_id."
+        },
+        "regime": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conditions": {
+          "type": "object"
+        },
+        "replicates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Planned replicate",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "replicate_id"
+            ],
+            "properties": {
+              "replicate_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "seed": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "data_source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true,
+          "minItems": 1,
+          "description": "Exact effective data_source_id values used by this case, including prospective additions."
+        },
+        "replication_unit": {
+          "enum": [
+            "independent_dataset",
+            "fixed_dataset",
+            "resample",
+            "split",
+            "deterministic_check"
+          ],
+          "description": "What a planned replicate represents. Bootstrap/internal fits from one dataset are not independent simulated datasets."
+        }
+      }
+    },
+    "workItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "work_item_id",
+        "title",
+        "question_ids",
+        "case_ids",
+        "priority",
+        "depends_on",
+        "essential",
+        "estimated_seconds",
+        "stop_conditions_markdown"
+      ],
+      "properties": {
+        "work_item_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "question_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        },
+        "case_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        },
+        "essential": {
+          "type": "boolean"
+        },
+        "estimated_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "stop_conditions_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "dataSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data_source_id",
+        "label",
+        "origin",
+        "input_ids",
+        "support_files",
+        "description_markdown",
+        "mapping_markdown"
+      ],
+      "properties": {
+        "data_source_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "origin": {
+          "enum": [
+            "researcher_observed",
+            "external_data",
+            "synthetic",
+            "computational_check"
+          ]
+        },
+        "input_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true,
+          "description": "Exact selected frozen basis.p4_inputs input_id values. A mutable original path is not an input identity."
+        },
+        "support_files": {
+          "type": "array",
+          "items": {
+            "$ref": "implementation-record.schema.json#/$defs/retainedFile"
+          },
+          "uniqueItems": true
+        },
+        "description_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Observation/sampling process or DGP equations, known target and independent truth calculation, sampling unit and dependence; distinguish illustrative assumptions from researcher facts."
+        },
+        "mapping_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Columns/types/units and their mathematical variables, preprocessing, missingness, splitting and restrictions; no raw participant records."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "origin": {
+                "enum": [
+                  "researcher_observed",
+                  "external_data"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "input_ids": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "origin": {
+                "enum": [
+                  "synthetic",
+                  "computational_check"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "support_files": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

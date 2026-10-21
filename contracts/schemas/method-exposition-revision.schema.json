@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/method-exposition-revision.schema.json",
+  "title": "Method Exposition Revision Vector",
+  "description": "A deterministic patch vector proving that exposition-only revision preserves exact mathematical identity while changing artifact and record integrity digests.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "base_example", "replacement_fields", "expected_relation"],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "base_example": {
+      "const": "method.example.json"
+    },
+    "replacement_fields": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generation_id",
+        "summary",
+        "canonical_artifact",
+        "definition_locator",
+        "lineage",
+        "created_at",
+        "updated_at",
+        "publication_receipt_id",
+        "published_at"
+      ],
+      "properties": {
+        "generation_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "summary": {"type": "string", "minLength": 1},
+        "canonical_artifact": {"$ref": "common-definitions.schema.json#/$defs/artifactPointer"},
+        "definition_locator": {"type": "string", "minLength": 1},
+        "lineage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "predecessor",
+            "predecessor_generation_id",
+            "change_class",
+            "change_summary",
+            "change_source"
+          ],
+          "properties": {
+            "predecessor": {"$ref": "common-definitions.schema.json#/$defs/methodIdentity"},
+            "predecessor_generation_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+            "change_class": {"const": "editorial"},
+            "change_summary": {"type": "string", "minLength": 1},
+            "change_source": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "run_id"],
+              "properties": {
+                "kind": {"const": "research_run"},
+                "run_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"}
+              }
+            }
+          }
+        },
+        "created_at": {"type": "string", "format": "date-time"},
+        "updated_at": {"type": "string", "format": "date-time"},
+        "publication_receipt_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "published_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "expected_relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "definition_sha256",
+        "base_content_sha256",
+        "revised_content_sha256",
+        "definition_unchanged",
+        "artifact_changed",
+        "whole_record_changed"
+      ],
+      "properties": {
+        "definition_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+        "base_content_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+        "revised_content_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+        "definition_unchanged": {"const": true},
+        "artifact_changed": {"const": true},
+        "whole_record_changed": {"const": true}
+      }
+    }
+  }
+}

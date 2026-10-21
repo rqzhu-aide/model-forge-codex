@@ -1,0 +1,312 @@
+{
+    "$schema":  "https://json-schema.org/draft/2020-12/schema",
+    "$id":  "https://model-forge.local/architecture/schemas/evidence.schema.json",
+    "title":  "Immutable Scientific Evidence Item",
+    "description":  "An immutable evidence identity with frozen method applicability, provenance, reproducibility, and scientific assessment at creation. Current eligibility and alignment are derived separately.",
+    "type":  "object",
+    "additionalProperties":  true,
+    "required":  [
+                     "schema_version",
+                     "evidence_id",
+                     "evidence_kind",
+                     "phase",
+                     "source_run_id",
+                     "claim_ids",
+                     "artifacts",
+                     "authority_at_creation",
+                     "alignment_at_creation",
+                     "research_attention_at_creation",
+                     "scientific_outcome",
+                     "applicability_at_creation",
+                     "content_sha256",
+                     "created_at"
+                 ],
+    "properties":  {
+                         "test_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+                         "case_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+                         "comparator_id": {"type": "string", "minLength": 1, "description": "selected_method or a protocol-declared baseline_id."},
+
+                       "schema_version":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/schemaVersion"
+                                          },
+                       "evidence_id":  {
+                                           "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                       },
+                       "evidence_kind":  {
+                                             "type":  "string",
+                                             "enum":  [
+                                                          "literature",
+                                                          "proof",
+                                                          "computation",
+                                                          "simulation",
+                                                          "experiment",
+                                                          "data_audit",
+                                                          "external_validation"
+                                                      ]
+                                         },
+                       "phase":  {
+                                     "$ref":  "common-definitions.schema.json#/$defs/phaseId"
+                                 },
+                       "source_run_id":  {
+                                             "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                         },
+                       "method_identity":  {
+                                               "$ref":  "common-definitions.schema.json#/$defs/methodIdentity"
+                                           },
+                       "claim_ids":  {
+                                         "type":  "array",
+                                         "items":  {
+                                                       "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                   },
+                                         "uniqueItems":  true
+                                     },
+                       "artifacts":  {
+                                         "type":  "array",
+                                         "minItems":  1,
+                                         "items":  {
+                                                       "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                   }
+                                     },
+                       "authority_at_creation":  {
+                                                     "$ref":  "common-definitions.schema.json#/$defs/creationAuthority"
+                                                 },
+                       "alignment_at_creation":  {
+                                                     "$ref":  "common-definitions.schema.json#/$defs/alignmentAssessment"
+                                                 },
+                       "research_attention_at_creation":  {
+                                                              "$ref":  "common-definitions.schema.json#/$defs/researchAttention"
+                                                          },
+                       "scientific_outcome":  {
+                                                  "$ref":  "common-definitions.schema.json#/$defs/scientificOutcome"
+                                              },
+                       "applicability_at_creation":  {
+                                                         "type":  "object",
+                                                         "additionalProperties":  true,
+                                                         "required":  [
+                                                                          "method_match",
+                                                                          "conditions",
+                                                                          "assessment"
+                                                                      ],
+                                                         "properties":  {
+                                                                            "method_match":  {
+                                                                                                 "type":  "string",
+                                                                                                 "enum":  [
+                                                                                                              "exact",
+                                                                                                              "older_method_version",
+                                                                                                              "unassessed",
+                                                                                                              "not_applicable"
+                                                                                                          ]
+                                                                                             },
+                                                                            "conditions":  {
+                                                                                               "type":  "array",
+                                                                                               "items":  {
+                                                                                                             "type":  "string",
+                                                                                                             "minLength":  1
+                                                                                                         },
+                                                                                               "uniqueItems":  true
+                                                                                           },
+                                                                            "assessment":  {
+                                                                                               "type":  "string",
+                                                                                               "minLength":  1
+                                                                                           }
+                                                                        }
+                                                     },
+                       "reproducibility":  {
+                                               "type":  "object",
+                                               "additionalProperties":  true,
+                                               "required":  [
+                                                                "code_artifacts",
+                                                                "data_artifacts",
+                                                                "configuration_artifacts",
+                                                                "random_seeds",
+                                                                "environment_artifacts"
+                                                            ],
+                                               "properties":  {
+                                                                  "code_artifacts":  {
+                                                                                         "type":  "array",
+                                                                                         "minItems": 0,
+                                                                                         "items":  {
+                                                                                                       "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                                                                   }
+                                                                                     },
+                                                                  "data_artifacts":  {
+                                                                                         "type":  "array",
+                                                                                         "items":  {
+                                                                                                       "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                                                                   }
+                                                                                     },
+                                                                  "configuration_artifacts":  {
+                                                                                                  "type":  "array",
+                                                                                                  "minItems": 0,
+                                                                                                  "items":  {
+                                                                                                                "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                                                                            }
+                                                                                              },
+                                                                  "random_seeds":  {
+                                                                                       "type":  "array",
+                                                                                       "items":  {
+                                                                                                     "type":  "integer",
+                                                                                                     "minimum":  0
+                                                                                                 },
+                                                                                       "uniqueItems":  true
+                                                                                   },
+                                                                  "environment_artifacts":  {
+                                                                                                "type":  "array",
+                                                                                                "minItems": 0,
+                                                                                                "items":  {
+                                                                                                              "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                                                                          }
+                                                                                            }
+                                                              }
+                                           },
+                       "supersedes_evidence_id":  {
+                                                      "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                  },
+                       "content_sha256":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/sha256"
+                                          },
+                       "publication_receipt_id":  {
+                                                      "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                  },
+                       "published_at":  {
+                                            "type":  "string",
+                                            "format":  "date-time"
+                                        },
+                       "created_at":  {
+                                          "type":  "string",
+                                          "format":  "date-time"
+                                      }
+                   },
+    "allOf":  [
+                  {
+                      "if":  {
+                                 "properties":  {
+                                                    "evidence_kind":  {
+                                                                          "enum":  [
+                                                                                       "proof",
+                                                                                       "computation",
+                                                                                       "simulation",
+                                                                                       "experiment",
+                                                                                       "external_validation"
+                                                                                   ]
+                                                                      }
+                                                },
+                                 "required":  [
+                                                  "evidence_kind"
+                                              ]
+                             },
+                      "then":  {
+                                   "required":  [
+                                                    "method_identity"
+                                                ]
+                               }
+                  },
+                  {
+                      "if":  {
+                                 "properties":  {
+                                                    "evidence_kind":  {
+                                                                          "enum":  [
+                                                                                       "computation",
+                                                                                       "simulation"
+                                                                                   ]
+                                                                      }
+                                                },
+                                 "required":  [
+                                                  "evidence_kind"
+                                              ]
+                             },
+                      "then":  {
+                                   "required":  [
+                                                    "reproducibility"
+                                                ]
+                               }
+                  },
+                  {
+                      "if":  {
+                                 "properties":  {
+                                                    "applicability_at_creation":  {
+                                                                                      "properties":  {
+                                                                                                         "method_match":  {
+                                                                                                                              "const":  "older_method_version"
+                                                                                                                          }
+                                                                                                     },
+                                                                                      "required":  [
+                                                                                                       "method_match"
+                                                                                                   ]
+                                                                                  }
+                                                },
+                                 "required":  [
+                                                  "applicability_at_creation"
+                                              ]
+                             },
+                      "then":  {
+                                   "properties":  {
+                                                      "alignment_at_creation":  {
+                                                                                    "properties":  {
+                                                                                                       "state":  {
+                                                                                                                     "const":  "outdated"
+                                                                                                                 }
+                                                                                                   },
+                                                                                    "required":  [
+                                                                                                     "state"
+                                                                                                 ]
+                                                                                }
+                                                  }
+                               }
+                  },
+                  {
+                      "if":  {
+                                 "properties":  {
+                                                    "authority_at_creation":  {
+                                                                                  "const":  "formal_generation"
+                                                                              }
+                                                },
+                                 "required":  [
+                                                  "authority_at_creation"
+                                              ]
+                             },
+                      "then":  {
+                                   "required":  [
+                                                    "publication_receipt_id",
+                                                    "published_at"
+                                                ]
+                               },
+                      "else":  {
+                                   "not":  {
+                                               "anyOf":  [
+                                                             {
+                                                                 "required":  [
+                                                                                  "publication_receipt_id"
+                                                                              ]
+                                                             },
+                                                             {
+                                                                 "required":  [
+                                                                                  "published_at"
+                                                                              ]
+                                                             }
+                                                         ]
+                                           }
+                               }
+                  }
+              ,
+{
+    "if": {
+        "properties": {
+            "phase": {
+                "const": "P4"
+            }
+        },
+        "required": [
+            "phase"
+        ]
+    },
+    "then": {
+        "required": [
+            "test_ids",
+            "case_ids",
+            "comparator_id"
+        ]
+    }
+}
+]
+}

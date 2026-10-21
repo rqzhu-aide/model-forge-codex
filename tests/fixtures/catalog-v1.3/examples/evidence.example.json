@@ -1,0 +1,114 @@
+{
+    "schema_version":  "1.0.0",
+    "evidence_id":  "evidence.simulation.preliminary.001",
+    "evidence_kind":  "simulation",
+    "phase":  "P4",
+    "source_run_id":  "run.p4.preliminary.20260801t140000z",
+    "method_identity":  {
+                            "stable_id":  "method.overlap_stabilized_score",
+                            "version":  1,
+                            "definition_sha256":  "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+                        },
+    "claim_ids":  [
+                      "claim.rmse.reduction"
+                  ],
+    "artifacts":  [
+                      {
+                          "artifact_id":  "artifact.preliminary_results",
+                          "uri":  "artifact://artifact.preliminary_results",
+                          "path":  "generations/empirical_evidence_index/record.empirical_evidence.overlap_stabilized_score/generation.empirical.001/results.json",
+                          "sha256":  "4444444444444444444444444444444444444444444444444444444444444444",
+                          "media_type":  "application/json"
+                      }
+                  ],
+    "scientific_outcome":  {
+                               "state":  "partially_supported",
+                               "conclusion":  "The estimator reduced root mean squared error relative to the inverse-propensity benchmark in the two simulated weak-overlap settings, with no material coverage loss.",
+                               "scope":  "Two preliminary data-generating processes with sample sizes 500 and 1000 and correctly specified outcome regression.",
+                               "assumptions":  [
+                                                   "The simulation implementation matches method version 1.",
+                                                   "Monte Carlo uncertainty is summarized using the recorded 1000 replicates per setting."
+                                               ],
+                               "strongest_evidence_ids":  [
+                                                              "evidence.simulation.preliminary.001"
+                                                          ],
+                               "strongest_counterevidence_ids":  [
+
+                                                                 ],
+                               "material_disagreement":  [
+
+                                                         ]
+                           },
+    "reproducibility":  {
+                            "code_artifacts":  [
+                                                   {
+                                                       "artifact_id":  "artifact.simulation_code",
+                                                       "uri":  "artifact://artifact.simulation_code",
+                                                       "sha256":  "5555555555555555555555555555555555555555555555555555555555555555",
+                                                       "media_type":  "text/plain"
+                                                   }
+                                               ],
+                            "data_artifacts":  [
+
+                                               ],
+                            "configuration_artifacts":  [
+                                                            {
+                                                                "artifact_id":  "artifact.simulation_config",
+                                                                "uri":  "artifact://artifact.simulation_config",
+                                                                "sha256":  "6666666666666666666666666666666666666666666666666666666666666666",
+                                                                "media_type":  "application/json"
+                                                            }
+                                                        ],
+                            "random_seeds":  [
+                                                 104729
+                                             ],
+                            "environment_artifacts":  [
+                                                          {
+                                                              "artifact_id":  "artifact.computing_environment",
+                                                              "uri":  "artifact://artifact.computing_environment",
+                                                              "sha256":  "7777777777777777777777777777777777777777777777777777777777777777",
+                                                              "media_type":  "text/plain"
+                                                          }
+                                                      ]
+                        },
+    "publication_receipt_id":  "publication.p4.001",
+    "published_at":  "2026-08-01T15:10:04Z",
+    "created_at":  "2026-08-01T15:02:00Z",
+    "authority_at_creation":  "formal_generation",
+    "alignment_at_creation":  {
+                                  "state":  "exact",
+                                  "causes":  [
+                                                 "exact_match"
+                                             ],
+                                  "assessed_at":  "2026-08-01T15:02:00Z",
+                                  "assessed_by":  "theorist",
+                                  "reasons":  [
+                                                  "The estimating equation, bounded weight, cross-fitting rule, and clipping parameter match method version 1."
+                                              ],
+                                  "assessed_method":  {
+                                                          "stable_id":  "method.overlap_stabilized_score",
+                                                          "version":  1,
+                                                          "definition_sha256":  "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+                                                      }
+                              },
+    "research_attention_at_creation":  {
+                                           "level":  "monitor",
+                                           "open_item_ids":  [
+                                                                 "attention.preliminary_scope.001"
+                                                             ],
+                                           "reasons":  [
+                                                           "The preliminary design covers only two overlap regimes and one outcome model."
+                                                       ],
+                                           "next_question":  "Does the observed error reduction persist across heterogeneous treatment effects and additional nuisance-model misspecification?"
+                                       },
+    "applicability_at_creation":  {
+                                      "method_match":  "exact",
+                                      "conditions":  [
+                                                         "Binary treatment",
+                                                         "Weak but nonzero propensity overlap",
+                                                         "Correctly specified outcome regression"
+                                                     ],
+                                      "assessment":  "The evidence is valid for the exact current method under the listed preliminary conditions."
+                                  },
+    "content_sha256":  "ac15fc1af309668f302a40f119537e270836cc392d5227ca64288f7b96fb923b"
+}

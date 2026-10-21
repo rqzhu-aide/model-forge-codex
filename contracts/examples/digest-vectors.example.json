@@ -1,0 +1,55 @@
+{
+    "schema_version":  "1.0.0",
+    "canonicalization":  "RFC8785",
+    "accepted_vectors":  [
+                             {
+                                 "vector_id":  "vector.unicode.utf16_order",
+                                 "purpose":  "Prove UTF-16 property ordering, unescaped Unicode, and deterministic control-character escaping.",
+                                 "input":  {
+                                               "\ud83d\ude00":  "astral",
+                                               "\u00e9":  "composed",
+                                               "":  "private-use",
+                                               "control":  "\u000f\n",
+                                               "\u20ac":  "euro"
+                                           },
+                                 "canonical_json":  "{\"control\":\"\\u000f\\n\",\"é\":\"composed\",\"€\":\"euro\",\"😀\":\"astral\",\"\":\"private-use\"}",
+                                 "sha256":  "925c10d038adc66a6aac71dc596b918d5cbe4c32e06a93ee4bbccdacd42c246f"
+                             },
+                             {
+                                 "vector_id":  "vector.numeric.safe_integers",
+                                 "purpose":  "Prove interoperable integer serialization at zero, signed values, and both safe-integer boundaries.",
+                                 "input":  {
+                                               "boundaries":  [
+                                                                  -9007199254740991,
+                                                                  9007199254740991
+                                                              ],
+                                               "ordinary":  [
+                                                                0,
+                                                                -1,
+                                                                1,
+                                                                42
+                                                            ]
+                                           },
+                                 "canonical_json":  "{\"boundaries\":[-9007199254740991,9007199254740991],\"ordinary\":[0,-1,1,42]}",
+                                 "sha256":  "3488f3f542ffcda855839a920b1afd8c0804b79671eb1af0acee50ee3fd7d270"
+                             }
+                         ],
+    "rejected_vectors":  [
+                             {
+                                 "vector_id":  "vector.numeric.binary64_unimplemented",
+                                 "purpose":  "The bundled reference must not silently use Python float formatting as an RFC 8785 number serializer.",
+                                 "input":  {
+                                               "value":  1.0
+                                           },
+                                 "error_code":  "unsupported_number"
+                             },
+                             {
+                                 "vector_id":  "vector.numeric.outside_safe_integer",
+                                 "purpose":  "The bundled reference rejects integers that may lose identity in binary64 implementations.",
+                                 "input":  {
+                                               "value":  9007199254740992
+                                           },
+                                 "error_code":  "unsupported_number"
+                             }
+                         ]
+}

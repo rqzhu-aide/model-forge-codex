@@ -1,0 +1,56 @@
+{
+  "name": "@rqzhu-aide/model-forge-codex",
+  "version": "0.9.0",
+  "description": "A local research workspace for developing and evaluating scientific methods with a coordinated AI team.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rqzhu-aide/model-forge-codex.git"
+  },
+  "homepage": "https://github.com/rqzhu-aide/model-forge-codex#readme",
+  "bugs": {
+    "url": "https://github.com/rqzhu-aide/model-forge-codex/issues"
+  },
+  "bin": {
+    "model-forge-codex": "bin/model-forge-codex.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "next"
+  },
+  "files": [
+    "bin/model-forge-codex.mjs",
+    "src/model_forge_codex/**/*.py",
+    "contracts/**/*.json",
+    "contracts/**/*.md",
+    "contracts/**/*.txt",
+    "contracts/**/*.py",
+    "contracts/**/*.svg",
+    "contracts/**/*.csv",
+    "contracts/**/.gitattributes",
+    "contracts/VERSION",
+    "contracts/MANIFEST.sha256",
+    "pyproject.toml",
+    "docs/model-access.md",
+    "docs/development.md",
+    "npm-release-manifest.json",
+    "scripts/npm_launcher.py",
+    "scripts/npm_snapshot.py",
+    "scripts/validate_local_install.py",
+    "web/package.json",
+    "web/dist",
+    "web/runtime",
+    "web/scripts/validate-math.mjs",
+    "web/scripts/math-checker.mjs",
+    "web/scripts/shared-deps.mjs",
+    "web/src/researchMath.js"
+  ],
+  "scripts": {
+    "prepack": "node scripts/prepare_npm_package.mjs",
+    "test:npm": "node --test tests/npm-*.test.mjs"
+  }
+}

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">Illustrative normal-mean reference uncertainty</title>
+  <desc id="desc">Analytic standard deviation sigma divided by square root n, with sigma one: 0.2 at n 25, 0.1 at n 100, and 0.05 at n 400. These are theoretical values, not observed simulation results.</desc>
+  <rect width="640" height="360" fill="white"/>
+  <g font-family="sans-serif" fill="#162b36">
+    <text x="36" y="34" font-size="19">Normal-mean reference uncertainty</text>
+    <text x="36" y="58" font-size="13">Analytic values only; outcome SD = 1 outcome unit</text>
+    <path d="M80 90V280H590" fill="none" stroke="#536672"/>
+    <g font-size="13">
+      <text x="40" y="106">0.20</text><text x="40" y="196">0.10</text><text x="40" y="241">0.05</text>
+      <text x="100" y="302">25</text><text x="185" y="302">100</text><text x="548" y="302">400</text>
+      <text x="280" y="330">Sample size n</text>
+      <text x="82" y="82">SD of mean (outcome units)</text>
+    </g>
+    <polyline points="110,100 200,190 560,235" fill="none" stroke="#126987" stroke-width="3"/>
+    <g fill="#126987"><circle cx="110" cy="100" r="5"/><circle cx="200" cy="190" r="5"/><circle cx="560" cy="235" r="5"/></g>
+  </g>
+</svg>

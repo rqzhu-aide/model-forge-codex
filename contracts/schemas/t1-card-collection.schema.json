@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/t1-card-collection.schema.json",
+  "title": "T1 Card Collection",
+  "description": "Array-of wrapper over t1-card so collection outputs (p1.paper_cards, p2.method_cards) validate against the single-card contract.",
+  "type": "array",
+  "items": {"$ref": "t1-card.schema.json"}
+}

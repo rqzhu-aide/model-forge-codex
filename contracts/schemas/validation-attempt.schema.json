@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/validation-attempt.schema.json",
+  "title": "Validation Attempt",
+  "description": "Immutable record of one validation pass over a candidate output, containing the complete structured findings, overall conformance decision, policy version, and links to the run, role, output, and prior attempt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "attempt_id",
+    "attempt_ordinal",
+    "run_id",
+    "stage_id",
+    "role",
+    "output_contract_id",
+    "schema_identity",
+    "phase",
+    "mode",
+    "method_identity",
+    "frozen_basis_digest",
+    "input_digest",
+    "candidate_output_digest",
+    "validator_version",
+    "policy_version",
+    "findings",
+    "conformance_decision",
+    "started_at",
+    "completed_at",
+    "previous_attempt_id",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "attempt_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "attempt_ordinal": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "stage_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role": {
+      "type": "string",
+      "minLength": 1
+    },
+    "output_contract_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_name", "schema_version_id"],
+      "properties": {
+        "schema_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_version_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "phase": {
+      "type": "string",
+      "pattern": "^P[1-5]$"
+    },
+    "mode": {
+      "type": "string",
+      "minLength": 1
+    },
+    "method_identity": {
+      "oneOf": [
+        {
+          "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "frozen_basis_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "input_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "candidate_output_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "raw_output_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "validator_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "finding_class",
+          "severity",
+          "blocks_publication",
+          "message",
+          "json_pointer"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1
+          },
+          "finding_class": {
+            "type": "string",
+            "enum": [
+              "operational_failure",
+              "integrity_blocker",
+              "correctable_contract_error",
+              "scientific_claim_blocker",
+              "scientific_attention",
+              "information"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["error", "warning", "information"]
+          },
+          "blocks_publication": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          },
+          "json_pointer": {
+            "type": "string"
+          },
+          "object_id": {
+            "type": ["string", "null"]
+          },
+          "expected_form": {
+            "type": ["string", "null"]
+          },
+          "observed_form": {
+            "type": ["string", "null"]
+          },
+          "responsible_actor": {
+            "type": "string"
+          },
+          "correction_class": {
+            "type": "string",
+            "enum": ["none", "deterministic", "packaging", "scientific"]
+          },
+          "correction_guidance": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "conformance_decision": {
+      "type": "string",
+      "enum": ["passed", "correction_required", "integrity_rejected"]
+    },
+    "transformation_records": {
+      "type": "array",
+      "items": {
+        "$ref": "output-transformation-record.schema.json#/$defs/transformationSummary"
+      }
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "previous_attempt_id": {
+      "oneOf": [
+        {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/proposal-audit.schema.json",
+  "title": "Proposal Audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "review_id",
+    "assessments"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        "1.0.0",
+        "1.1.0",
+        "1.2.0"
+      ]
+    },
+    "review_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "assessments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id",
+          "assessment_markdown",
+          "findings"
+        ],
+        "properties": {
+          "proposal_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "assessment_markdown": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Explain what is supported, what prevents the intended claim and the next work that would resolve it. Keep the opening concise and preserve exact relevant mathematics below."
+          },
+          "applicability_markdown": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Begin with a direct assessment of when this exact method is applicable, whether its conditions are supported, not yet justified or unknown, and the main caution. Distinguish formal assumptions, practical data and implementation requirements, and unchecked conditions. For each important condition, explain what it enables and what changes if it is absent or violated, using exact proposal or source references. Distinguish an undefined procedure, loss of identification, loss of a stated guarantee and demonstrated method failure only where supported. Losing a proof condition alone does not establish method failure. If the consequence is unknown, state what is unknown and the next argument, diagnostic or experiment that would resolve it. A proposed assumption is not a verified guarantee. When a caution is developed in a finding, cite its existing finding_id and briefly explain the consequence for applicability instead of repeating the full reasoning. Use existing proposal or literature IDs for source claims. Keep a brief recap where needed for this section to stand alone, and preserve independent authorship and disagreement."
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "finding_id",
+                "statement_reference",
+                "reasoning_markdown",
+                "consequence_markdown"
+              ],
+              "properties": {
+                "finding_id": {
+                  "$ref": "common-definitions.schema.json#/$defs/stableId"
+                },
+                "statement_reference": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "reasoning_markdown": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "consequence_markdown": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S",
+                  "description": "Short human-readable title stating the scientific issue, not a raw statement ID."
+                },
+                "statement_refs": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "description": "Optional exact RFC 6901 JSON Pointers into this assessment's original proposal. Point to existing equations, assumptions, algorithm steps or source fields. Preserve statement_reference as the descriptive citation. Never invent anchors or copy a repaired definition.",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^/(?:[^~]|~[01])*$"
+                  }
+                }
+              }
+            }
+          },
+          "headline": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "One concise scientific takeaway stating what the review supports and the principal unresolved issue. Do not claim a completed proof or certificate from an algebra check."
+          }
+        }
+      }
+    }
+  },
+  "description": "One specialist-authored report with a separately attributed assessment for each exact proposal. Version 1.2.0 adds applicability and cautions; 1.1.0 adds readable headlines and finding titles. Historical records remain readable without invented sections.",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "enum": ["1.1.0", "1.2.0"]
+          }
+        },
+        "required": [
+          "schema_version"
+        ]
+      },
+      "then": {
+        "properties": {
+          "assessments": {
+            "items": {
+              "required": [
+                "headline"
+              ],
+              "properties": {
+                "findings": {
+                  "items": {
+                    "required": [
+                      "title"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"schema_version": {"const": "1.2.0"}},
+        "required": ["schema_version"]
+      },
+      "then": {
+        "properties": {
+          "assessments": {"items": {"required": ["applicability_markdown"]}}
+        }
+      }
+    }
+  ]
+}

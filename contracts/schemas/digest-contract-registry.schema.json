@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/digest-contract-registry.schema.json",
+  "title": "Digest Contract Registry",
+  "description": "Machine-readable digest payload and construction rules for persisted Model Forge JSON objects and referenced immutable byte artifacts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "registry_version",
+    "canonicalization",
+    "hash_algorithm",
+    "numeric_profile",
+    "contracts"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "registry_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "canonicalization": {
+      "const": "RFC8785"
+    },
+    "hash_algorithm": {
+      "const": "SHA-256"
+    },
+    "numeric_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["normative_domain", "bundled_reference_domain", "failure_policy"],
+      "properties": {
+        "normative_domain": {
+          "const": "I-JSON numbers exactly representable as IEEE 754 binary64"
+        },
+        "bundled_reference_domain": {
+          "const": "integers from -9007199254740991 through 9007199254740991"
+        },
+        "failure_policy": {
+          "const": "reject unsupported or non-finite numbers before hashing"
+        }
+      }
+    },
+    "contracts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/digestContract"
+      }
+    }
+  },
+  "$defs": {
+    "jsonPointer": {
+      "type": "string",
+      "pattern": "^(?:|(?:/(?:[^~/]|~0|~1)*)+)$"
+    },
+    "selectorPointer": {
+      "type": "string",
+      "pattern": "^(?:|(?:/(?:\\*|(?:[^~/*]|~0|~1)*))+)$"
+    },
+    "digestLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "json_pointer"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["embedded", "referenced"]
+        },
+        "json_pointer": {
+          "$ref": "#/$defs/jsonPointer"
+        },
+        "reference_schema_files": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+\\.schema\\.json$"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"kind": {"const": "referenced"}},
+            "required": ["kind"]
+          },
+          "then": {"required": ["reference_schema_files"]},
+          "else": {"not": {"required": ["reference_schema_files"]}}
+        }
+      ]
+    },
+    "digestContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "object_kind",
+        "schema_file",
+        "instance_pointer",
+        "digest_location",
+        "construction"
+      ],
+      "properties": {
+        "contract_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]+$"
+        },
+        "object_kind": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]+$"
+        },
+        "schema_file": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+\\.schema\\.json$"
+        },
+        "instance_pointer": {
+          "$ref": "#/$defs/selectorPointer"
+        },
+        "digest_location": {
+          "$ref": "#/$defs/digestLocation"
+        },
+        "construction": {
+          "type": "string",
+          "enum": ["rfc8785_sha256", "rfc8785_projection_sha256", "sha256_hex_concat", "sha256_referenced_bytes", "copy_final_event_digest"]
+        },
+        "payload_pointer": {
+          "$ref": "#/$defs/jsonPointer"
+        },
+        "excluded_json_pointers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/jsonPointer"
+          }
+        },
+        "included_json_pointers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/jsonPointer"
+          }
+        },
+        "binary_inputs": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["json_pointer", "decoding"],
+            "properties": {
+              "json_pointer": {"$ref": "#/$defs/jsonPointer"},
+              "decoding": {"const": "lowercase_hex_32_bytes"}
+            }
+          }
+        },
+        "source_json_pointer": {
+          "$ref": "#/$defs/selectorPointer"
+        },
+        "empty_source_value": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"construction": {"const": "rfc8785_sha256"}},
+            "required": ["construction"]
+          },
+          "then": {
+            "required": ["payload_pointer", "excluded_json_pointers"],
+            "not": {"anyOf": [{"required": ["included_json_pointers"]}, {"required": ["binary_inputs"]}, {"required": ["source_json_pointer"]}, {"required": ["empty_source_value"]}]}
+          }
+        },
+        {
+          "if": {
+            "properties": {"construction": {"const": "rfc8785_projection_sha256"}},
+            "required": ["construction"]
+          },
+          "then": {
+            "required": ["included_json_pointers"],
+            "not": {"anyOf": [{"required": ["payload_pointer"]}, {"required": ["excluded_json_pointers"]}, {"required": ["binary_inputs"]}, {"required": ["source_json_pointer"]}, {"required": ["empty_source_value"]}]}
+          }
+        },
+        {
+          "if": {
+            "properties": {"construction": {"const": "sha256_hex_concat"}},
+            "required": ["construction"]
+          },
+          "then": {
+            "required": ["binary_inputs"],
+            "not": {"anyOf": [{"required": ["payload_pointer"]}, {"required": ["excluded_json_pointers"]}, {"required": ["included_json_pointers"]}, {"required": ["source_json_pointer"]}, {"required": ["empty_source_value"]}]}
+          }
+        },
+        {
+          "if": {
+            "properties": {"construction": {"const": "sha256_referenced_bytes"}},
+            "required": ["construction"]
+          },
+          "then": {
+            "required": ["source_json_pointer"],
+            "not": {"anyOf": [{"required": ["payload_pointer"]}, {"required": ["excluded_json_pointers"]}, {"required": ["included_json_pointers"]}, {"required": ["binary_inputs"]}, {"required": ["empty_source_value"]}]}
+          }
+        },
+        {
+          "if": {
+            "properties": {"construction": {"const": "copy_final_event_digest"}},
+            "required": ["construction"]
+          },
+          "then": {
+            "required": ["source_json_pointer"],
+            "not": {"anyOf": [{"required": ["payload_pointer"]}, {"required": ["excluded_json_pointers"]}, {"required": ["included_json_pointers"]}, {"required": ["binary_inputs"]}]}
+          }
+        }
+      ]
+    }
+  }
+}

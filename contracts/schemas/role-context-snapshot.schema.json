@@ -1,0 +1,785 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/role-context-snapshot.schema.json",
+  "title": "Role Context Snapshot",
+  "description": "Closed record of the deterministic context supplied to one role and every immutable artifact read on demand through the capability broker.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "snapshot_id",
+    "prepared_context_source",
+    "run_id",
+    "project_id",
+    "phase",
+    "mode",
+    "stage_id",
+    "execution_group_id",
+    "role",
+    "phase_contract",
+    "role_profile",
+    "model_capacity",
+    "packing_policy",
+    "preference_memory_binding",
+    "prepared_context",
+    "prepared_context_sha256",
+    "access_ledger",
+    "closed_at",
+    "snapshot_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "snapshot_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "prepared_context_source": {
+      "$ref": "#/$defs/preparedContextSource"
+    },
+    "run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "project_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "phase": {
+      "$ref": "common-definitions.schema.json#/$defs/phaseId"
+    },
+    "mode": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "stage_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "execution_group_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "role": {
+      "$ref": "common-definitions.schema.json#/$defs/roleId"
+    },
+    "phase_contract": {
+      "$ref": "#/$defs/versionedBinding"
+    },
+    "role_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_id", "profile_version", "artifact"],
+      "properties": {
+        "profile_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "profile_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        }
+      }
+    },
+    "model_capacity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_id",
+        "tokenizer",
+        "context_window_tokens",
+        "reserved_output_tokens",
+        "reserved_runtime_tokens",
+        "usable_input_tokens",
+        "input_byte_limit"
+      ],
+      "properties": {
+        "model_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tokenizer": {
+          "$ref": "#/$defs/versionedBinding"
+        },
+        "context_window_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reserved_output_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reserved_runtime_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "usable_input_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Must equal context_window_tokens minus reserved_output_tokens minus reserved_runtime_tokens."
+        },
+        "input_byte_limit": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "packing_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_id",
+        "policy_version",
+        "artifact",
+        "required_overflow",
+        "optional_overflow",
+        "priority_rule",
+        "tie_break_rule",
+        "supplied_order_rule"
+      ],
+      "properties": {
+        "policy_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "policy_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        },
+        "required_overflow": {
+          "type": "string",
+          "enum": ["fail", "frozen_compaction"]
+        },
+        "optional_overflow": {
+          "const": "omit_whole_item_and_record"
+        },
+        "priority_rule": {
+          "const": "required_and_user_selected_before_optional_then_ascending_priority"
+        },
+        "tie_break_rule": {
+          "const": "context_class_then_contract_order_then_item_id"
+        },
+        "supplied_order_rule": {
+          "const": "context_class_then_contract_order_then_item_id"
+        }
+      }
+    },
+    "preference_memory_binding": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status"],
+          "properties": {
+            "status": {
+              "const": "disabled"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "memory_id", "memory_version", "artifact"],
+          "properties": {
+            "status": {
+              "const": "bound"
+            },
+            "memory_id": {
+              "$ref": "common-definitions.schema.json#/$defs/stableId"
+            },
+            "memory_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "artifact": {
+              "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+            }
+          }
+        }
+      ]
+    },
+    "prepared_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_set_sha256",
+        "execution_metadata",
+        "rendered_context_artifact",
+        "context_items",
+        "omitted_optional_items",
+        "on_demand_capabilities",
+        "capacity_result",
+        "supplied_input_tokens",
+        "supplied_input_bytes",
+        "remaining_input_tokens",
+        "remaining_input_bytes",
+        "prepared_at"
+      ],
+      "properties": {
+        "candidate_set_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256",
+          "description": "Digest of the complete authorized ordered candidate manifest before packing."
+        },
+        "execution_metadata": {
+          "$ref": "#/$defs/executionMetadata"
+        },
+        "rendered_context_artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        },
+        "context_items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/contextItem"
+          }
+        },
+        "omitted_optional_items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/omittedOptionalItem"
+          }
+        },
+        "on_demand_capabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/readCapability"
+          }
+        },
+        "capacity_result": {
+          "type": "string",
+          "enum": ["within_budget", "frozen_compaction_used"]
+        },
+        "supplied_input_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Exact frozen-tokenizer count of the complete rendered role input, including execution metadata and rendering overhead."
+        },
+        "supplied_input_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Exact byte count of the complete rendered role input."
+        },
+        "remaining_input_tokens": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Token capacity remaining for all broker-supplied on-demand reads."
+        },
+        "remaining_input_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Byte capacity remaining for all broker-supplied on-demand reads."
+        },
+        "prepared_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "prepared_context_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "RFC 8785 SHA-256 over phase_contract, role_profile, model_capacity, packing_policy, preference_memory_binding, and prepared_context."
+    },
+    "access_ledger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ledger_id",
+        "broker_policy",
+        "events",
+        "head_sha256",
+        "sealed_at"
+      ],
+      "properties": {
+        "ledger_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "broker_policy": {
+          "$ref": "#/$defs/versionedBinding"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/accessEvent"
+          }
+        },
+        "head_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256",
+          "description": "Last ordered access-event digest, or 64 zeroes when the ledger is empty."
+        },
+        "sealed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "closed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "snapshot_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "RFC 8785 SHA-256 over the complete closed snapshot with this property omitted."
+    }
+  },
+  "$defs": {
+    "preparedContextSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prepared_context_id", "artifact", "content_sha256", "prepared_context_sha256"],
+      "properties": {
+        "prepared_context_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "artifact": {"$ref": "common-definitions.schema.json#/$defs/artifactPointer"},
+        "content_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+        "prepared_context_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"}
+      }
+    },
+    "versionedBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding_id", "binding_version", "artifact"],
+      "properties": {
+        "binding_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "binding_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        }
+      }
+    },
+    "executionMetadata": {
+      "type": "object",
+      "description": "Closed metadata allowlist exposed to a role. No extra command, method, record, memory, or project-storage field is permitted.",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "phase",
+        "mode",
+        "stage_id",
+        "execution_group_id",
+        "role",
+        "phase_contract_artifact",
+        "role_profile_artifact",
+        "model_id",
+        "tokenizer_artifact",
+        "input_budget_tokens",
+        "input_budget_bytes",
+        "output_contracts",
+        "role_write_root",
+        "network_policy",
+        "wall_time_limit_seconds",
+        "project_storage_credentials_exposed",
+        "formal_storage_credentials_exposed"
+      ],
+      "properties": {
+        "run_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "phase": {
+          "$ref": "common-definitions.schema.json#/$defs/phaseId"
+        },
+        "mode": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "stage_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "execution_group_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "role": {
+          "$ref": "common-definitions.schema.json#/$defs/roleId"
+        },
+        "phase_contract_artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        },
+        "role_profile_artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        },
+        "model_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tokenizer_artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        },
+        "input_budget_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "input_budget_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "output_contracts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+          }
+        },
+        "role_write_root": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z]:)(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+$"
+        },
+        "network_policy": {
+          "type": "string",
+          "enum": ["none", "approved_resources", "user_authorized"]
+        },
+        "wall_time_limit_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "project_storage_credentials_exposed": {
+          "const": false
+        },
+        "formal_storage_credentials_exposed": {
+          "const": false
+        }
+      }
+    },
+    "contextClass": {
+      "type": "string",
+      "enum": [
+        "system_and_phase_contract",
+        "user_command",
+        "current_formal_record",
+        "structured_summary_or_attention",
+        "user_selected_optional_context",
+        "accepted_same_run_handoff",
+        "primary_artifact_reference",
+        "role_profile_skill_tool_resource",
+        "review_packet"
+      ]
+    },
+    "contextItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_id",
+        "context_class",
+        "requirement",
+        "priority",
+        "contract_order",
+        "representation",
+        "source_artifacts",
+        "supplied_artifact",
+        "supplied_tokens",
+        "supplied_bytes",
+        "purpose"
+      ],
+      "properties": {
+        "item_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "contract_input_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "context_class": {
+          "$ref": "#/$defs/contextClass"
+        },
+        "requirement": {
+          "type": "string",
+          "enum": ["required", "user_selected", "optional"]
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "contract_order": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "representation": {
+          "type": "string",
+          "enum": ["exact", "frozen_compaction"]
+        },
+        "source_artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+          }
+        },
+        "supplied_artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        },
+        "compaction_contract": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        },
+        "supplied_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "supplied_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "purpose": {
+          "$ref": "common-definitions.schema.json#/$defs/nonEmptyText"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "representation": {
+                "const": "frozen_compaction"
+              }
+            },
+            "required": ["representation"]
+          },
+          "then": {
+            "required": ["compaction_contract"]
+          },
+          "else": {
+            "not": {
+              "required": ["compaction_contract"]
+            }
+          }
+        }
+      ]
+    },
+    "omittedOptionalItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_id",
+        "context_class",
+        "requirement",
+        "priority",
+        "contract_order",
+        "source_artifacts",
+        "estimated_tokens",
+        "estimated_bytes",
+        "omission_reason"
+      ],
+      "properties": {
+        "item_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "context_class": {
+          "$ref": "#/$defs/contextClass"
+        },
+        "requirement": {
+          "const": "optional"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "contract_order": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+          }
+        },
+        "estimated_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "estimated_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "omission_reason": {
+          "const": "capacity"
+        }
+      }
+    },
+    "readCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability_id",
+        "artifact",
+        "purpose",
+        "maximum_successful_reads",
+        "maximum_returned_tokens",
+        "maximum_returned_bytes",
+        "expires_at"
+      ],
+      "properties": {
+        "capability_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        },
+        "purpose": {
+          "$ref": "common-definitions.schema.json#/$defs/nonEmptyText"
+        },
+        "maximum_successful_reads": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maximum_returned_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maximum_returned_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "accessEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence",
+        "event_id",
+        "request_id",
+        "capability_id",
+        "artifact",
+        "supplied_tokens",
+        "supplied_bytes",
+        "read_at",
+        "prior_event_sha256",
+        "event_sha256"
+      ],
+      "properties": {
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "event_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "request_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "capability_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        },
+        "supplied_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "supplied_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "read_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "prior_event_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        },
+        "event_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256",
+          "description": "RFC 8785 SHA-256 over this access event with event_sha256 omitted."
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "role": {
+            "const": "outside_reviewer"
+          }
+        },
+        "required": ["role"]
+      },
+      "then": {
+        "properties": {
+          "phase": {
+            "const": "P5"
+          },
+          "mode": {
+            "const": "p5.review_revision"
+          },
+          "stage_id": {
+            "const": "p5.parallel_reviews"
+          },
+          "preference_memory_binding": {
+            "properties": {
+              "status": {
+                "const": "disabled"
+              }
+            },
+            "required": ["status"]
+          },
+          "prepared_context": {
+            "properties": {
+              "context_items": {
+                "minItems": 1,
+                "maxItems": 1,
+                "items": {
+                  "properties": {
+                    "context_class": {
+                      "const": "review_packet"
+                    },
+                    "contract_input_id": {
+                      "const": "p5.review_packet"
+                    },
+                    "requirement": {
+                      "const": "required"
+                    },
+                    "representation": {
+                      "const": "exact"
+                    }
+                  },
+                  "required": [
+                    "context_class",
+                    "contract_input_id",
+                    "requirement",
+                    "representation"
+                  ]
+                }
+              },
+              "omitted_optional_items": {
+                "maxItems": 0
+              },
+              "on_demand_capabilities": {
+                "maxItems": 0
+              },
+              "execution_metadata": {
+                "properties": {
+                  "phase": {
+                    "const": "P5"
+                  },
+                  "mode": {
+                    "const": "p5.review_revision"
+                  },
+                  "stage_id": {
+                    "const": "p5.parallel_reviews"
+                  },
+                  "role": {
+                    "const": "outside_reviewer"
+                  }
+                },
+                "required": ["phase", "mode", "stage_id", "role"]
+              }
+            }
+          },
+          "access_ledger": {
+            "properties": {
+              "events": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

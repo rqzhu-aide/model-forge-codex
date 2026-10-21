@@ -1,0 +1,9 @@
+{
+  "card_id": "card.method.warfarin_screened_burden_cmdp",
+  "subject_ref": "method.warfarin_screened_burden_cmdp",
+  "title": "Warfarin Screened-Burden CMDP (WSB-CMDP)",
+  "innovation": "Frames anticoagulation dosing as an infinite-horizon discounted CMDP whose constraint is an expected discounted treatment burden rather than a cumulative or quantile cost, keeping fixed-policy evaluation linear.",
+  "definition": "max_pi E[sum_t gamma^t b_t] s.t. E[sum_t gamma^t c_t] <= kappa, solved via the occupancy-measure LP with an ex-ante clinical support screen.",
+  "evaluation": "Coherent option-(b) controller; theory partially established (one bound false as stated); P4 computation noncertifying in round 1, feasible and reproducible in round 2 pending dual-residual verification.",
+  "created_at": "2026-09-06T05:00:00Z"
+}

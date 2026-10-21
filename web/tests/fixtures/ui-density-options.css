@@ -1,0 +1,75 @@
+/* Proposal-only overrides. Production UI and research content are unchanged. */
+#root > details { display:none; }
+.density-controls { position:fixed; right:12px; bottom:12px; z-index:100; max-width:min(350px,calc(100vw - 24px)); padding:10px 14px; background:var(--panel); color:var(--ink); border:1px solid var(--control-line); border-radius:12px; box-shadow:var(--popover-shadow); font:13px/1.5 var(--font-ui); }
+.density-controls summary { min-height:24px; display:flex; align-items:center; font-weight:600; }
+.density-controls p { margin:10px 0; }
+.density-controls div { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.density-controls button { min-height:44px; padding:8px; border:1px solid var(--control-line); border-radius:8px; background:var(--panel); color:var(--ink); font:600 13px/1.4 var(--font-ui); cursor:pointer; }
+.density-controls button[aria-pressed="true"] { background:var(--accent-soft); color:var(--accent-ink); border-color:var(--accent); }
+.density-controls button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+
+html:not([data-density="current"]) { --card-radius:14px; }
+html:not([data-density="current"]) #app > main { padding:20px 24px 36px; }
+html:not([data-density="current"]) header.page { margin-bottom:12px; padding:0 0 4px; }
+html:not([data-density="current"]) header.page h1 { font-size:28px; }
+html:not([data-density="current"]) .phase-ring { padding:4px; gap:4px; margin-bottom:16px; border-radius:12px; }
+html:not([data-density="current"]) button.phase-tab { min-height:48px; padding:6px 8px; border-radius:8px; }
+html:not([data-density="current"]) .phase-tab .pstate { margin-top:2px; }
+html:not([data-density="current"]) .branch-row { margin-bottom:16px; }
+html:not([data-density="current"]) .card,
+html:not([data-density="current"]) .phase-one-workspace > .card,
+html:not([data-density="current"]) .phase-two-workspace > .card,
+html:not([data-density="current"]) .decision-card[data-card-role] { margin-bottom:16px; border-radius:14px; }
+html:not([data-density="current"]) .card[data-card-role] > :is(.card-heading,h2,.empirical-progress-heading),
+html:not([data-density="current"]) .p2-reader-heading.card-heading { padding:10px 18px; border-radius:13px 13px 0 0; }
+html:not([data-density="current"]) :is(.card-heading h2,.card[data-card-role] > h2,.card[data-card-role] > .empirical-progress-heading h2) { font-size:20px; line-height:1.35; }
+html:not([data-density="current"]) .card[data-card-role] > .body { padding:16px 18px; }
+html:not([data-density="current"]) .card .embedded-science > .body { padding:0; }
+html:not([data-density="current"]) .decision-card[data-card-role] > :not(.card-heading) { margin:16px 18px; }
+html:not([data-density="current"]) .research-progress-strip { margin:0 0 16px; padding:12px 18px; }
+html:not([data-density="current"]) .research-progress-strip h2 { font-size:18px; }
+html:not([data-density="current"]) .research-progress-stages { gap:12px; }
+html:not([data-density="current"]) .research-progress-stages > li > .section-heading { margin-bottom:0; }
+html:not([data-density="current"]) :is(.phase-reader-tabs,.p2-reader-tabs,.empirical-tabs) { padding:4px; gap:4px; margin-bottom:8px; border-radius:10px; }
+html:not([data-density="current"]) :is(.phase-reader-tabs,.p2-reader-tabs,.empirical-tabs) > button { padding:8px 12px; min-height:44px; }
+html:not([data-density="current"]) :is(.phase-reader-panel,.empirical-tab-panel,.p2-reader-panel) { padding-top:12px; }
+html:not([data-density="current"]) .scientific-block + .scientific-block,
+html:not([data-density="current"]) .p2-reader-section + .p2-reader-section { padding-top:16px; margin-top:8px; }
+html:not([data-density="current"]) .field { margin-bottom:12px; }
+
+/* B: retain the leading overview; make supporting sections read as a document. */
+html[data-density="reader"] .card[data-card-role]:not([data-card-role="summary"]) { background:var(--panel); }
+html[data-density="reader"] .card[data-card-role]:not([data-card-role="summary"]) > :is(.card-heading,h2,.empirical-progress-heading) { padding:10px 18px; background:var(--panel); color:var(--section-ink); border-bottom:1px solid var(--section-line); }
+html[data-density="reader"] .card:not([data-card-role="summary"]) > .card-heading::after { display:none; }
+html[data-density="reader"] .literature-summary { display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:16px; row-gap:4px; align-items:center; }
+html[data-density="reader"] .literature-summary > .note { grid-column:1; grid-row:1; margin:0; }
+html[data-density="reader"] .literature-summary > .research-document { grid-column:1 / -1; grid-row:2; }
+html[data-density="reader"] .literature-summary > .source-link { grid-column:2; grid-row:1; }
+html[data-density="reader"] .literature-overview-card .scientific-passage { margin-bottom:8px; }
+html[data-density="reader"] .literature-overview-card .scientific-passage h3 { margin:8px 0 4px; }
+html[data-density="reader"] .research-progress-strip[data-work-state="published"] { display:flex; align-items:center; flex-wrap:wrap; gap:4px 16px; padding:8px 14px; }
+html[data-density="reader"] .research-progress-strip[data-work-state="published"] .section-heading { display:contents; }
+html[data-density="reader"] .research-progress-strip[data-work-state="published"] h2 { font-size:14px; }
+html[data-density="reader"] .research-progress-strip[data-work-state="published"] .research-progress-status { margin:0; }
+html[data-density="reader"] .research-progress-strip[data-work-state="published"] .research-progress-stages { display:none; }
+
+/* C: desktop evidence beside operational context. Narrow screens keep DOM order. */
+@media (min-width:1100px) {
+  html[data-density="rail"] .phase-one-workspace { display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:16px; align-items:start; }
+  html[data-density="rail"] .phase-one-workspace > :is(.card,.research-progress-strip) { margin:0; }
+  html[data-density="rail"] .phase-one-workspace > [data-card-role="summary"] { grid-column:1 / -1; grid-row:1; }
+  html[data-density="rail"] .phase-one-workspace > [data-card-role="research"] { grid-column:1; grid-row:2 / span 3; }
+  html[data-density="rail"] .phase-one-workspace > [data-card-role="progress"] { grid-column:2; grid-row:2; }
+  html[data-density="rail"] .phase-one-workspace > [data-card-role="attention"] { grid-column:2; grid-row:3; }
+  html[data-density="rail"] .phase-one-workspace > [data-card-role="action"] { grid-column:2; grid-row:4; }
+  html[data-density="rail"] .phase-one-workspace > [data-card-role="progress"] .section-heading { align-items:flex-start; flex-direction:column; }
+}
+@media (max-width:650px) {
+  html:not([data-density="current"]) #app > main { padding:16px 12px 32px; }
+  html:not([data-density="current"]) header.page h1 { font-size:26px; }
+  html:not([data-density="current"]) button.phase-tab { min-height:52px; padding:6px; }
+  html:not([data-density="current"]) .card[data-card-role] > :is(.card-heading,h2,.empirical-progress-heading) { padding:10px 14px; }
+  html:not([data-density="current"]) .card[data-card-role] > .body { padding:14px; }
+  html[data-density="reader"] .literature-summary { grid-template-columns:minmax(0,1fr); }
+  html[data-density="reader"] .literature-summary > .source-link { grid-column:1; grid-row:3; }
+}

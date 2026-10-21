@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "error_id": "error.control_head_stale.001",
+  "code": "CONTROL_HEAD_STALE",
+  "category": "concurrency",
+  "http_status": 409,
+  "retryable": true,
+  "rule_id": "MF-49",
+  "object_refs": [
+    "project.demo",
+    "command.method.retire.001",
+    "generation.current_index.040"
+  ],
+  "field_path": "expected_control_head",
+  "researcher_message": "The formal project state changed after this action was prepared, so no change was made.",
+  "smallest_correction": "Refresh the method record and review the updated action before submitting a new command.",
+  "occurred_at": "2026-08-02T14:00:00Z"
+}

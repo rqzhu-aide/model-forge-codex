@@ -1,0 +1,927 @@
+{
+ "phase_id": "P2",
+ "contract_version": "3.2.0",
+ "prose_contract": "architecture/phases/phase-2.md",
+ "name": "Method development",
+ "scientific_purpose": "Independently propose concrete methods, cross-audit the exact proposals, and publish a compared method catalog without selecting a branch for the researcher.",
+ "current_record_semantics": {
+  "strategy": "replaceable_catalog",
+  "canonical_record_types": [
+   "method_catalog",
+   "method_record",
+   "phase_decision"
+  ],
+  "research_meaning": "The catalog presents the latest structured definition and scientific assessment for each method while preserving stable identity and lineage.",
+  "history_policy": "Current in-scope method records are the default basis. Historical definitions and runs are opt-in and never silently merged."
+ },
+ "user_choices": [
+  {
+   "choice_id": "p2.selected_method",
+   "label": "Method",
+   "description": "Select the stable method ID when focused-method scope is used.",
+   "required": false,
+   "allowed_values": [],
+   "value_kind": "method_identity"
+  },
+  {
+   "choice_id": "p2.instructions",
+   "label": "Additional instructions or ideas for Phase 2",
+   "description": "Optional instructions or a method idea, delivered only to the Research Lead. Specialists develop independent methods from the shared research setting and literature, then audit any actual lead proposal.",
+   "required": false,
+   "allowed_values": [],
+   "value_kind": "text"
+  },
+  {
+   "choice_id": "p2.selected_history",
+   "label": "Selected history",
+   "description": "Optionally include named historical records for an explicit comparison.",
+   "required": false,
+   "allowed_values": [],
+   "value_kind": "artifact_pointer_list"
+  },
+  {
+   "choice_id": "p2.researcher_method_spec",
+   "label": "Previously supplied method",
+   "description": "Compatibility input preserving the exact attributed method seed from P1 or an existing API client. Delivered only to the Research Lead; the general UI uses the single additional-instructions field.",
+   "required": false,
+   "allowed_values": [],
+   "value_kind": "text"
+  }
+ ],
+ "run_modes": [
+  {
+   "mode_id": "p2.full_catalog",
+   "label": "Full catalog",
+   "purpose": "Add methods or update multiple method records as one catalog transaction.",
+   "requires_method": false,
+   "entry_conditions": [
+    "A current Phase 1 literature basis is formal and readable."
+   ],
+   "required_choice_ids": [],
+   "optional_choice_ids": [
+    "p2.selected_history",
+    "p2.researcher_method_spec",
+    "p2.instructions"
+   ]
+  },
+  {
+   "mode_id": "p2.focused_method",
+   "label": "Focused method",
+   "purpose": "Develop independent revisions or alternatives around one selected method baseline. At most one proposal may revise that existing identity; other proposals use new stable IDs, and unrelated existing methods remain unchanged.",
+   "requires_method": true,
+   "entry_conditions": [
+    "The selected method exists and is active or explicitly reactivatable.",
+    "A current Phase 1 literature basis is formal and readable."
+   ],
+   "required_choice_ids": [
+    "p2.selected_method"
+   ],
+   "optional_choice_ids": [
+    "p2.selected_history",
+    "p2.instructions"
+   ],
+   "method_choice_id": "p2.selected_method"
+  },
+  {
+   "mode_id": "p2.researcher_proposal",
+   "label": "Development with lead instructions",
+   "purpose": "The Research Lead receives the additional instructions or supplied idea while both specialists independently propose one method each. The lead develops an actual method idea or records that generic instructions require no separate proposal, then applies the instructions during reconciliation.",
+   "requires_method": false,
+   "entry_conditions": [
+    "A current Phase 1 literature basis is formal and readable.",
+    "Nonblank additional P2 instructions or an attributed supplied-method input is present."
+   ],
+   "required_choice_ids": [],
+   "optional_choice_ids": [
+    "p2.selected_history",
+    "p2.instructions",
+    "p2.researcher_method_spec"
+   ]
+  }
+ ],
+ "prerequisites": [
+  {
+   "requirement_id": "p2.current_project_brief",
+   "kind": "phase_record",
+   "description": "A formal current project brief is readable.",
+   "required": true
+  },
+  {
+   "requirement_id": "p2.current_literature",
+   "kind": "phase_record",
+   "description": "A formal current Phase 1 literature basis is readable.",
+   "required": true,
+   "phase": "P1"
+  }
+ ],
+ "required_inputs": [
+  {
+   "input_id": "p2.project_brief",
+   "record_type": "project_brief",
+   "publication_required": "formal",
+   "position_required": "current",
+   "method_match": "not_applicable",
+   "purpose": "Preserve the scientific problem and intended scope.",
+   "condition": "Always required.",
+   "presence": "always"
+  },
+  {
+   "input_id": "p2.literature_synthesis",
+   "record_type": "literature_synthesis",
+   "publication_required": "formal",
+   "position_required": "current",
+   "method_match": "not_applicable",
+   "purpose": "Ground novelty, assumptions, comparisons, and substantive relevance.",
+   "condition": "Always required.",
+   "presence": "always"
+  },
+  {
+   "input_id": "p2.literature_library",
+   "record_type": "literature_library",
+   "publication_required": "formal",
+   "position_required": "current",
+   "method_match": "not_applicable",
+   "purpose": "Resolve the formal sources supporting method statements.",
+   "condition": "Always required.",
+   "presence": "always"
+  },
+  {
+   "input_id": "p2.literature_coverage",
+   "record_type": "literature_coverage",
+   "publication_required": "formal",
+   "position_required": "current",
+   "method_match": "not_applicable",
+   "purpose": "Expose the search boundaries and evidence gaps that constrain method novelty and scope.",
+   "condition": "Always required.",
+   "presence": "always"
+  },
+  {
+   "input_id": "p2.current_catalog",
+   "record_type": "method_catalog",
+   "publication_required": "formal",
+   "position_required": "current",
+   "method_match": "not_applicable",
+   "purpose": "Preserve stable identities and constrain the authorized update scope.",
+   "condition": "Required after the first catalog run and absent on the first run.",
+   "presence": "required_on_rerun"
+  },
+  {
+   "input_id": "p2.theory_result",
+   "record_type": "theory_record",
+   "presence": "if_exists",
+   "method_match": "exact",
+   "purpose": "Expose the current theory conclusion, scope, and assumptions when revising the method.",
+   "condition": "Optional in focused_method mode when theory results exist for the selected method.",
+   "publication_required": "formal",
+   "position_required": "current"
+  },
+  {
+   "input_id": "p2.empirical_result",
+   "record_type": "empirical_synthesis",
+   "presence": "if_exists",
+   "method_match": "exact",
+   "purpose": "Expose the current empirical conclusion and boundary behavior when revising the method.",
+   "condition": "Optional in focused_method mode when empirical results exist for the selected method.",
+   "publication_required": "formal",
+   "position_required": "current"
+  },
+  {
+   "input_id": "p2.manuscript_result",
+   "record_type": "manuscript",
+   "presence": "if_exists",
+   "method_match": "exact",
+   "purpose": "Expose the current manuscript draft and its scope when revising the method.",
+   "condition": "Optional in focused_method mode when manuscript results exist for the selected method.",
+   "publication_required": "formal",
+   "position_required": "current"
+  }
+ ],
+ "supplementary_inputs": [
+  {
+   "input_id": "p2.researcher_material",
+   "record_type": "researcher_material",
+   "purpose": "Accept researcher-supplied material (for example external method notes or prior drafts) as additional context for method development. It is additive only and never substitutes for published records."
+  }
+ ],
+ "prepared_contexts": [],
+ "optional_context_policy": {
+  "default": "current_only",
+  "allows_selected_history": true,
+  "history_selection_user_controlled": true,
+  "description": "Current literature and in-scope methods are loaded by default. Historical material is included only when the user selects it.",
+  "history_choice_id": "p2.selected_history"
+ },
+ "role_stages": [
+  {
+   "sequence": 1,
+   "stage_id": "p2.independent_proposals",
+   "applicable_modes": [
+    "p2.full_catalog",
+    "p2.focused_method"
+   ],
+   "execution": "parallel",
+   "roles": [
+    "theorist",
+    "data_analyst"
+   ],
+   "objective": "The theorist and data analyst each author exactly one independently developed method proposal from the same frozen setting and literature. Include the complete structured mathematics and algorithm, defined symbols, assumptions, source relations, data requirements and proposed evaluation. Distinguish intended claims from established results. Display and reuse these fields directly without separate display cards, toy examples or presentation rewriting. In focused-method mode explain each candidate's relation to the selected baseline. Each proposal has a distinct method identity: at most one may explicitly revise the selected stable ID; other alternatives use new IDs. Do not modify an unrelated existing method. No lead proposal is scheduled when there are no additional P2 instructions and no supplied-method input.",
+   "reads": [
+    "p2.project_brief",
+    "p2.literature_synthesis",
+    "p2.literature_library",
+    "p2.literature_coverage",
+    "p2.current_catalog"
+   ],
+   "writes": [
+    "p2.theory_proposal",
+    "p2.empirical_proposal"
+   ],
+   "handoff_required": true,
+   "isolation_rule": "Each proposer uses the shared frozen research setting, relevant literature and scoped catalog. Additional P2 instructions and the raw supplied-method origin are delivered only to the lead. Specialist input views omit P1 phase2_preparation and researcher_origin while preserving exact scientific content. No proposer reads another member's current-stage proposal before all independent submissions close.",
+   "artifact_contracts": {
+    "p2.theory_proposal": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "inline"
+    },
+    "p2.empirical_proposal": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "inline"
+    }
+   }
+  },
+  {
+   "sequence": 2,
+   "stage_id": "p2.cross_review",
+   "applicable_modes": [
+    "p2.full_catalog",
+    "p2.focused_method"
+   ],
+   "execution": "parallel",
+   "roles": [
+    "theorist",
+    "data_analyst"
+   ],
+   "objective": "Each specialist authors one proposal-audit report. The theorist assesses the analyst proposal; the analyst assesses the theorist proposal. Identify the exact proposal and mathematical statement or algorithm step, give reasoning and explain its consequence. The theorist emphasizes coherence and guarantees; the analyst emphasizes estimability, data, implementation and discriminating evaluation. Both may raise any substantive issue. Do not substitute self-review, invent numeric scores or rewrite proposals for display.",
+   "reads": [
+    "p2.project_brief",
+    "p2.literature_synthesis",
+    "p2.literature_library",
+    "p2.literature_coverage",
+    "p2.current_catalog"
+   ],
+   "role_reads": [
+    {
+     "role": "theorist",
+     "input_ids": [
+      "p2.project_brief",
+      "p2.literature_synthesis",
+      "p2.literature_library",
+      "p2.literature_coverage",
+      "p2.current_catalog",
+      "p2.empirical_proposal"
+     ]
+    },
+    {
+     "role": "data_analyst",
+     "input_ids": [
+      "p2.project_brief",
+      "p2.literature_synthesis",
+      "p2.literature_library",
+      "p2.literature_coverage",
+      "p2.current_catalog",
+      "p2.theory_proposal"
+     ]
+    }
+   ],
+   "writes": [
+    "p2.theory_review",
+    "p2.empirical_review"
+   ],
+   "handoff_required": true,
+   "isolation_rule": "Reviewers assess fixed proposal targets independently without the other current-stage audit.",
+   "artifact_contracts": {
+    "p2.theory_review": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "inline"
+    },
+    "p2.empirical_review": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "inline"
+    }
+   }
+  },
+  {
+   "sequence": 3,
+   "stage_id": "p2.lead_reconciliation",
+   "applicable_modes": [
+    "p2.full_catalog",
+    "p2.focused_method"
+   ],
+   "execution": "serial",
+   "roles": [
+    "research_lead"
+   ],
+   "objective": "Author exactly one catalog assessment comparing the fixed proposals and audits. Give each proposal_id one retain/exclude disposition with mathematical rationale, unresolved disagreement and next work. Do not copy or silently repair proposal mathematics; publication extracts each retained proposal's original method unchanged. In focused-method mode retain separately identified alternatives around the selected baseline; at most one may revise its existing identity. Preserve unrelated existing methods. Material revision requires an explicit later scientific run. Add no phase summary, display rewrite or numerical scoring substitute. Publication does not select or activate a method or launch later work. Every new attention item uses schema_version 1.1.0 with kind researcher_decision or research_task, target_phase, and self-contained context_markdown: exact relevant mathematics, defined symbols, alternatives or assumptions, source references and what is needed. The original author provides this context in the ordinary deliverable; no second writer or UI classifier is involved. A researcher_decision is a choice for the researcher; a research_task is work for the team in the named phase. Omission never resolves an existing item: preserve its stable identity until an explicit answer or reasoned team disposition supersedes it. Read current open tasks addressed to this phase as frozen scientific context; do not launch work in another phase automatically.",
+   "reads": [
+    "p2.project_brief",
+    "p2.literature_synthesis",
+    "p2.literature_library",
+    "p2.literature_coverage",
+    "p2.current_catalog",
+    "p2.theory_proposal",
+    "p2.empirical_proposal",
+    "p2.theory_review",
+    "p2.empirical_review"
+   ],
+   "writes": [
+    "p2.catalog_assessment"
+   ],
+   "handoff_required": true,
+   "artifact_contracts": {
+    "p2.catalog_assessment": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "inline"
+    }
+   }
+  },
+  {
+   "sequence": 1,
+   "stage_id": "p2.supplied_method_proposals",
+   "applicable_modes": [
+    "p2.researcher_proposal"
+   ],
+   "execution": "parallel",
+   "roles": [
+    "theorist",
+    "data_analyst",
+    "research_lead"
+   ],
+   "objective": "The theorist and data analyst each author exactly one independent method proposal from the shared research setting and literature, with complete structured mathematics, algorithm, definitions, assumptions, source relations, data requirements and proposed evaluation. Additional P2 instructions or ideas are addressed only to the Research Lead. The lead interprets the exact input in this ordinary proposing turn. If it contains a method idea, develop that idea as one complete proposal, preserving researcher_origin and distinguishing extensions. If it contains only general guidance, author the explicit no_method_proposed response with a reason and apply that guidance during reconciliation. An explicit supplied-method seed without additional instructions requires its development. New instructions may override or withdraw an earlier seed, in which case explain a no-proposal response. Do not invent a method merely to fill the lead role. No extra classification, summary or presentation-repair turn is required. Specialists develop their own methods independently.",
+   "reads": [
+    "p2.project_brief",
+    "p2.literature_synthesis",
+    "p2.literature_library",
+    "p2.literature_coverage",
+    "p2.current_catalog"
+   ],
+   "writes": [
+    "p2.theory_proposal",
+    "p2.empirical_proposal",
+    "p2.lead_proposal"
+   ],
+   "handoff_required": true,
+   "isolation_rule": "Each proposer uses the shared frozen research setting, relevant literature and scoped catalog. Additional P2 instructions and the raw supplied-method origin are delivered only to the lead. Specialist input views omit P1 phase2_preparation and researcher_origin while preserving exact scientific content. No proposer reads another member's current-stage proposal before all independent submissions close.",
+   "artifact_contracts": {
+    "p2.theory_proposal": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "inline"
+    },
+    "p2.empirical_proposal": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "inline"
+    },
+    "p2.lead_proposal": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "inline"
+    }
+   }
+  },
+  {
+   "sequence": 2,
+   "stage_id": "p2.supplied_method_reviews",
+   "applicable_modes": [
+    "p2.researcher_proposal"
+   ],
+   "execution": "parallel",
+   "roles": [
+    "theorist",
+    "data_analyst"
+   ],
+   "objective": "Each specialist authors one proposal-audit report. The theorist assesses the analyst proposal; the analyst assesses the theorist proposal. Both additionally assess an actual lead method proposal as a separately identified target. A no_method_proposed response has no proposal_id and is not an audit target. Review the exact scientific proposal without the raw researcher_origin or additional P2 instructions. Identify the exact proposal and mathematical statement or algorithm step, give reasoning and explain its consequence. The theorist emphasizes coherence and guarantees; the analyst emphasizes estimability, data, implementation and discriminating evaluation. Both may raise any substantive issue. Do not substitute self-review, invent numeric scores or rewrite proposals for display.",
+   "reads": [
+    "p2.project_brief",
+    "p2.literature_synthesis",
+    "p2.literature_library",
+    "p2.literature_coverage",
+    "p2.current_catalog"
+   ],
+   "role_reads": [
+    {
+     "role": "theorist",
+     "input_ids": [
+      "p2.project_brief",
+      "p2.literature_synthesis",
+      "p2.literature_library",
+      "p2.literature_coverage",
+      "p2.current_catalog",
+      "p2.empirical_proposal",
+      "p2.lead_proposal"
+     ]
+    },
+    {
+     "role": "data_analyst",
+     "input_ids": [
+      "p2.project_brief",
+      "p2.literature_synthesis",
+      "p2.literature_library",
+      "p2.literature_coverage",
+      "p2.current_catalog",
+      "p2.theory_proposal",
+      "p2.lead_proposal"
+     ]
+    }
+   ],
+   "writes": [
+    "p2.theory_review",
+    "p2.empirical_review"
+   ],
+   "handoff_required": true,
+   "isolation_rule": "Reviewers assess fixed proposal targets independently without the other current-stage audit.",
+   "artifact_contracts": {
+    "p2.theory_review": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "inline"
+    },
+    "p2.empirical_review": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "inline"
+    }
+   }
+  },
+  {
+   "sequence": 3,
+   "stage_id": "p2.supplied_method_reconciliation",
+   "applicable_modes": [
+    "p2.researcher_proposal"
+   ],
+   "execution": "serial",
+   "roles": [
+    "research_lead"
+   ],
+   "objective": "Author exactly one catalog assessment comparing the fixed scientific proposals and audits. Apply the additional P2 instructions or ideas addressed to the lead and explain relevant implications in the comparison. Give each actual proposal_id exactly one retain/exclude disposition with mathematical rationale, unresolved disagreement and next work. If the lead returned no_method_proposed, preserve that response but do not create a method, audit target or catalog disposition for it. Do not copy or silently repair proposal mathematics; publication extracts each retained proposal's original method unchanged. Material revision requires an explicit later scientific run. Add no phase summary, display rewrite or numerical scoring substitute. Publication does not select or activate a method or launch later work. Every new attention item uses schema_version 1.1.0 with kind researcher_decision or research_task, target_phase, and self-contained context_markdown: exact relevant mathematics, defined symbols, alternatives or assumptions, source references and what is needed. The original author provides this context in the ordinary deliverable; no second writer or UI classifier is involved. A researcher_decision is a choice for the researcher; a research_task is work for the team in the named phase. Omission never resolves an existing item: preserve its stable identity until an explicit answer or reasoned team disposition supersedes it. Read current open tasks addressed to this phase as frozen scientific context; do not launch work in another phase automatically.",
+   "reads": [
+    "p2.project_brief",
+    "p2.literature_synthesis",
+    "p2.literature_library",
+    "p2.literature_coverage",
+    "p2.current_catalog",
+    "p2.theory_proposal",
+    "p2.empirical_proposal",
+    "p2.lead_proposal",
+    "p2.theory_review",
+    "p2.empirical_review"
+   ],
+   "writes": [
+    "p2.catalog_assessment"
+   ],
+   "handoff_required": true,
+   "artifact_contracts": {
+    "p2.catalog_assessment": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "inline"
+    }
+   }
+  }
+ ],
+ "run_local_outputs": [
+  {
+   "output_id": "p2.theory_proposal",
+   "output_kind": "scientific_record",
+   "producer": "theorist",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/method-proposal.schema.json",
+   "purpose": "Exactly one independent proposal or scoped revision.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p2.empirical_proposal",
+   "output_kind": "scientific_record",
+   "producer": "data_analyst",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/method-proposal.schema.json",
+   "purpose": "Exactly one independent proposal or scoped revision.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p2.lead_proposal",
+   "output_kind": "scientific_record",
+   "producer": "research_lead",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/lead-proposal.schema.json",
+   "purpose": "One lead contribution: a developed researcher method idea with preserved origin, or an explicit no-proposal response when the input is general guidance.",
+   "required": false,
+   "requirement": "required_in_modes",
+   "required_in_modes": [
+    "p2.researcher_proposal"
+   ]
+  },
+  {
+   "output_id": "p2.theory_review",
+   "output_kind": "audit",
+   "producer": "theorist",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/proposal-audit.schema.json",
+   "purpose": "One report covering the analyst proposal and optional lead proposal.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p2.empirical_review",
+   "output_kind": "audit",
+   "producer": "data_analyst",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/proposal-audit.schema.json",
+   "purpose": "One report covering the theorist proposal and optional lead proposal.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p2.catalog_assessment",
+   "output_kind": "scientific_record",
+   "producer": "research_lead",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/catalog-assessment.schema.json",
+   "purpose": "Comparison and dispositions referencing original proposals and audits, without copied mathematics.",
+   "required": true,
+   "requirement": "always"
+  }
+ ],
+ "validation_rules": [
+  {
+   "validator_id": "p2.role_sequence",
+   "category": "run_boundary",
+   "severity": "blocking",
+   "description": "Independent proposals, cross-reviews and lead reconciliation obey the declared order and visibility. Only the lead receives per-run P2 instructions or raw supplied-method origin; specialists receive the common research setting and literature, then the exact fixed scientific proposals for audit."
+  },
+  {
+   "validator_id": "p2.scope_boundary",
+   "category": "promotion_safety",
+   "severity": "blocking",
+   "description": "Focused proposals investigate the selected baseline: at most one may revise its existing stable ID, other alternatives use new stable IDs, and no unrelated existing method is modified. Full-catalog changes remain limited to the declared change set."
+  },
+  {
+   "validator_id": "p2.method_identity",
+   "category": "alignment",
+   "severity": "blocking",
+   "description": "Stable IDs remain permanent; calculation-defining changes advance the positive integer version by exactly one and change the digest; prose-only changes preserve both."
+  },
+  {
+   "validator_id": "p2.literature_authority",
+   "category": "provenance",
+   "severity": "blocking",
+   "description": "Formal claims cite formal Phase 1 sources. Unresolved new sources remain run-local until Phase 1 promotes them."
+  },
+  {
+   "validator_id": "p2.user_lifecycle_authority",
+   "category": "promotion_safety",
+   "severity": "blocking",
+   "description": "A retirement recommendation cannot change method lifecycle without a separate authenticated user action."
+  },
+  {
+   "validator_id": "p2.audit_target_coverage",
+   "category": "run_boundary",
+   "severity": "blocking",
+   "description": "Exactly one specialist proposal per role; each specialist assesses the other specialist and any actual lead proposal, without duplicate or self targets. A no_method_proposed lead response is not a proposal or audit target. Every actual proposal has one disposition; retained definitions are preserved."
+  }
+ ],
+ "publication_bindings": [
+  {
+   "binding_id": "p2.append_attention_items",
+   "applicable_modes": [
+    "p2.full_catalog",
+    "p2.focused_method"
+   ],
+   "operation": "append",
+   "output_ids": [
+    "p2.catalog_assessment"
+   ],
+   "target": {
+    "kind": "cumulative_collection",
+    "collection_id": "project.attention_history",
+    "object_type": "attention_item"
+   },
+   "prior_target_policy": "not_applicable",
+   "publisher_transform": "none",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p2.append_attention_items_supplied",
+   "applicable_modes": [
+    "p2.researcher_proposal"
+   ],
+   "operation": "append",
+   "output_ids": [
+    "p2.catalog_assessment"
+   ],
+   "target": {
+    "kind": "cumulative_collection",
+    "collection_id": "project.attention_history",
+    "object_type": "attention_item"
+   },
+   "prior_target_policy": "not_applicable",
+   "publisher_transform": "none",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p2.upsert_method_records",
+   "applicable_modes": [
+    "p2.full_catalog",
+    "p2.focused_method"
+   ],
+   "operation": "upsert_each",
+   "output_ids": [
+    "p2.theory_proposal",
+    "p2.empirical_proposal",
+    "p2.catalog_assessment"
+   ],
+   "target": {
+    "kind": "keyed_current_slots",
+    "collection_id": "p2.method_records",
+    "record_type": "method_record",
+    "item_key_pointer": "/identity/stable_id",
+    "slot_template": "methods/{item_key}/current"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "deterministic_index",
+   "may_create_scientific_content": false,
+   "source_input_ids": [
+    "p2.current_catalog"
+   ]
+  },
+  {
+   "binding_id": "p2.upsert_method_records_supplied",
+   "applicable_modes": [
+    "p2.researcher_proposal"
+   ],
+   "operation": "upsert_each",
+   "output_ids": [
+    "p2.theory_proposal",
+    "p2.empirical_proposal",
+    "p2.lead_proposal",
+    "p2.catalog_assessment"
+   ],
+   "target": {
+    "kind": "keyed_current_slots",
+    "collection_id": "p2.method_records",
+    "record_type": "method_record",
+    "item_key_pointer": "/identity/stable_id",
+    "slot_template": "methods/{item_key}/current"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "deterministic_index",
+   "may_create_scientific_content": false,
+   "source_input_ids": [
+    "p2.current_catalog"
+   ]
+  },
+  {
+   "binding_id": "p2.rebuild_method_catalog",
+   "applicable_modes": [
+    "p2.full_catalog",
+    "p2.focused_method"
+   ],
+   "operation": "replace",
+   "output_ids": [
+    "p2.theory_proposal",
+    "p2.empirical_proposal",
+    "p2.catalog_assessment"
+   ],
+   "source_input_ids": [
+    "p2.current_catalog"
+   ],
+   "target": {
+    "kind": "current_slot",
+    "slot_id": "p2.method_catalog.current",
+    "record_type": "method_catalog"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "deterministic_index",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p2.rebuild_method_catalog_supplied",
+   "applicable_modes": [
+    "p2.researcher_proposal"
+   ],
+   "operation": "replace",
+   "output_ids": [
+    "p2.theory_proposal",
+    "p2.empirical_proposal",
+    "p2.lead_proposal",
+    "p2.catalog_assessment"
+   ],
+   "source_input_ids": [
+    "p2.current_catalog"
+   ],
+   "target": {
+    "kind": "current_slot",
+    "slot_id": "p2.method_catalog.current",
+    "record_type": "method_catalog"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "deterministic_index",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p2.replace_phase_decision",
+   "applicable_modes": [
+    "p2.full_catalog",
+    "p2.focused_method"
+   ],
+   "operation": "replace",
+   "output_ids": [
+    "p2.catalog_assessment"
+   ],
+   "target": {
+    "kind": "current_slot",
+    "slot_id": "p2.phase_decision.current",
+    "record_type": "phase_decision"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "none",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p2.replace_phase_decision_supplied",
+   "applicable_modes": [
+    "p2.researcher_proposal"
+   ],
+   "operation": "replace",
+   "output_ids": [
+    "p2.catalog_assessment"
+   ],
+   "target": {
+    "kind": "current_slot",
+    "slot_id": "p2.phase_decision.current",
+    "record_type": "phase_decision"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "none",
+   "may_create_scientific_content": false
+  }
+ ],
+ "promotion": {
+  "strategy": "catalog_transaction",
+  "canonical_record_types": [
+   "method_catalog",
+   "method_record",
+   "phase_decision"
+  ],
+  "cumulative_object_types": [
+   "attention_item"
+  ],
+  "blocking_validator_ids": [
+   "p2.role_sequence",
+   "p2.scope_boundary",
+   "p2.method_identity",
+   "p2.literature_authority",
+   "p2.user_lifecycle_authority",
+   "p2.audit_target_coverage"
+  ],
+  "failure_behavior": "Keep the prior catalog and every method pointer unchanged; retain the candidate only in its run workspace.",
+  "atomic": true
+ },
+ "downstream_effects": [
+  {
+   "trigger": "mathematical_method_change",
+   "affected_phases": [
+    "P3",
+    "P4",
+    "P5"
+   ],
+   "description": "The latest method-bound records remain current in record position but cannot satisfy exact-method use until user-started replacement runs reassess the new identity.",
+   "automatic_run": false,
+   "alignment_effect": {
+    "action": "set",
+    "state": "outdated"
+   },
+   "attention_effect": {
+    "action": "create_required"
+   }
+  }
+ ],
+ "ui_projection": {
+  "researcher_questions": [
+   "Which methods are available?",
+   "What is each method's innovation and exact definition?",
+   "What changed?",
+   "Which methods have current exactly aligned P3 and P4 records?"
+  ],
+  "fields": [
+   {
+    "field_id": "p2.method_table",
+    "source": "method_catalog.current.methods",
+    "label": "Methods",
+    "meaning": "Original proposer-authored exact definitions, algorithms, assumptions and literature provenance."
+   },
+   {
+    "field_id": "p2.proposal_reviews",
+    "source": "proposal_audits.assessments",
+    "label": "Proposal assessments",
+    "meaning": "Attributed audits linked to the exact target proposal and statement."
+   },
+   {
+    "field_id": "p2.catalog_comparison",
+    "source": "catalog_assessment.comparison_markdown",
+    "label": "Method comparison",
+    "meaning": "The lead's comparison and retain/exclude rationale. Researcher method selection remains separate."
+   },
+   {
+    "field_id": "p2.phase_alignment",
+    "source": "method_catalog.current.projections",
+    "label": "P3 and P4",
+    "meaning": "Separate publication, current-position, alignment, attention, and outcome indicators."
+   }
+  ],
+  "user_action_choice_ids": [
+   "p2.selected_method",
+   "p2.instructions",
+   "p2.selected_history"
+  ]
+ },
+ "acceptance_scenarios": [
+  "s01.first_project",
+  "s02.phase2_scopes",
+  "s04.method_definition_change",
+  "s09.interrupted_promotion"
+ ]
+}

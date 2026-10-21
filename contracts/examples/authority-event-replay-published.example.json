@@ -1,0 +1,58 @@
+{
+    "schema_version":  "1.0.0",
+    "event_id":  "event.replay.theory.published.001",
+    "project_id":  "project.replay",
+    "event_sequence":  1,
+    "prior_event_root_sha256":  "0000000000000000000000000000000000000000000000000000000000000000",
+    "event_root_sha256":  "eeeef8cdfc6acbf12dbaef7ed0b92fb359bf48bc5988dfb5e47939b84e3e591a",
+    "event_type":  "published",
+    "subject":  {
+                    "kind":  "record_generation",
+                    "subject_id":  "record.theory.replay",
+                    "generation_id":  "generation.theory.replay.001",
+                    "method_identity":  {
+                                            "stable_id":  "method.replay",
+                                            "version":  1,
+                                            "definition_sha256":  "3333333333333333333333333333333333333333333333333333333333333333"
+                                        }
+                },
+    "changes":  {
+                    "publication_state":  "formal",
+                    "record_position":  "current",
+                    "alignment":  {
+                                      "state":  "unassessed",
+                                      "causes":  [
+                                                     "other"
+                                                 ],
+                                      "assessed_at":  "2026-08-01T16:00:00Z",
+                                      "assessed_by":  "system",
+                                      "reasons":  [
+                                                      "The exact-method alignment check is pending within this atomic publication transaction."
+                                                  ],
+                                      "assessed_method":  {
+                                                              "stable_id":  "method.replay",
+                                                              "version":  1,
+                                                              "definition_sha256":  "3333333333333333333333333333333333333333333333333333333333333333"
+                                                          }
+                                  },
+                    "research_attention":  {
+                                               "level":  "none",
+                                               "open_item_ids":  [
+
+                                                                 ],
+                                               "reasons":  [
+
+                                                           ]
+                                           }
+                },
+    "reason":  {
+                   "code":  "reason.replay_publication",
+                   "explanation":  "Atomic publication established formal authority and an initial unassessed alignment projection."
+               },
+    "trigger":  {
+                    "kind":  "publication_receipt",
+                    "source_id":  "publication.replay.001"
+                },
+    "content_sha256":  "0c5b7c5c4f2381cab6f13246f4a11fdcdb4e6910161c7057534f7f402d3481b9",
+    "created_at":  "2026-08-01T16:00:00Z"
+}

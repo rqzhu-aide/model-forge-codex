@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.2.0",
+  "title": "Comparison of the three method proposals",
+  "comparison_markdown": "The overlap-stabilized score keeps the orthogonal estimating equation and bounds the weights; the doubly robust series proposal replaces the nuisance fits with series estimators; the penalized inverse-propensity sieve proposal stabilizes the weights through a penalized sieve propensity model. All three target the same estimand with distinct assumptions and open obligations recorded in their proposals and audits.",
+  "method_dispositions": [
+    {
+      "proposal_id": "proposal.overlap_stabilized_score",
+      "status": "retain",
+      "rationale": "Retain for explicit investigation of the population target, without claiming that this audit proves validity."
+    },
+    {
+      "proposal_id": "proposal.doubly_robust_series",
+      "status": "retain",
+      "rationale": "Retain for its transparent series nuisance estimation; the unresolved issue is the series-order choice and its first-order effect."
+    },
+    {
+      "proposal_id": "proposal.penalized_ipw_sieve",
+      "status": "retain",
+      "rationale": "Retain as the direct stabilized-weighting alternative; the unresolved issue is whether the penalized propensity model controls the weight tails."
+    }
+  ],
+  "overview_markdown": "Three precisely specified candidates remain. They share the stated estimand and differ in how the nuisance components are estimated and stabilized. The principal unresolved issue is the population target under weighting; the next decision is which candidate the researcher investigates further.",
+  "modification_options": [
+    {
+      "option_id": "mod.proposal.overlap_stabilized_score.data_driven_clip",
+      "applies_to": "proposal.overlap_stabilized_score",
+      "title": "Data-driven clipping bound",
+      "what_changes_markdown": "Replace the prespecified constant $\\epsilon$ in $w_\\epsilon(e) = e(1-e)/[\\max\\{e,\\epsilon\\}\\max\\{1-e,\\epsilon\\}]$ with $\\hat\\epsilon_n$ chosen by the recorded overlap diagnostic quantile rule.",
+      "when_preferable_markdown": "Preferable when overlap deteriorates slowly with $n$ and a fixed $\\epsilon$ is either too conservative or too aggressive for the observed propensity range."
+    },
+    {
+      "option_id": "mod.proposal.doubly_robust_series.series_order",
+      "applies_to": "proposal.nonexistent_candidate",
+      "title": "Cross-validated series order",
+      "what_changes_markdown": "Replace the fixed series order $K_n$ in the nuisance estimators with the cross-validated choice over the prespecified grid stated in the proposal.",
+      "when_preferable_markdown": "Preferable when the covariate dimension or smoothness is uncertain enough that a single fixed order risks visible under- or over-smoothing."
+    },
+    {
+      "option_id": "mod.proposal.penalized_ipw_sieve.penalty_tuning",
+      "applies_to": "proposal.penalized_ipw_sieve",
+      "title": "Stronger tail penalty",
+      "what_changes_markdown": "Increase the sieve penalty on the propensity model's tail coefficients from $\\lambda_n$ to $2\\lambda_n$ in the stated penalized likelihood.",
+      "when_preferable_markdown": "Preferable when the estimated propensities concentrate near zero or one and the recorded weights show heavy tails under the proposed penalty."
+    }
+  ]
+}

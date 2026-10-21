@@ -1,0 +1,59 @@
+{
+    "schema_version":  "1.0.0",
+    "event_id":  "event.record.published.001",
+    "project_id":  "project.demo",
+    "event_sequence":  12,
+    "prior_event_root_sha256":  "2020202020202020202020202020202020202020202020202020202020202020",
+    "event_root_sha256":  "b09f7d3f0437b0a085c5156750f1aa60f9d68300ea8090a7f26244303fddda5f",
+    "event_type":  "published",
+    "subject":  {
+                    "kind":  "record_generation",
+                    "subject_id":  "record.empirical_evidence.overlap_stabilized_score",
+                    "generation_id":  "generation.empirical.001",
+                    "method_identity":  {
+                                            "stable_id":  "method.overlap_stabilized_score",
+                                            "version":  1,
+                                            "definition_sha256":  "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+                                        }
+                },
+    "changes":  {
+                    "publication_state":  "formal",
+                    "record_position":  "current",
+                    "alignment":  {
+                                      "state":  "exact",
+                                      "causes":  [
+                                                     "exact_match"
+                                                 ],
+                                      "assessed_at":  "2026-08-01T15:02:00Z",
+                                      "assessed_by":  "theorist",
+                                      "reasons":  [
+                                                      "The current evidence index uses only evidence generated from the exact method definition."
+                                                  ],
+                                      "assessed_method":  {
+                                                              "stable_id":  "method.overlap_stabilized_score",
+                                                              "version":  1,
+                                                              "definition_sha256":  "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+                                                          }
+                                  },
+                    "research_attention":  {
+                                               "level":  "monitor",
+                                               "open_item_ids":  [
+                                                                     "attention.preliminary_scope.001"
+                                                                 ],
+                                               "reasons":  [
+                                                               "Evidence remains preliminary and covers a narrow simulation design."
+                                                           ],
+                                               "next_question":  "Should the researcher launch a comprehensive Phase 4 run before using the performance claim in a manuscript?"
+                                           }
+                },
+    "reason":  {
+                   "code":  "reason.p4_record_publication",
+                   "explanation":  "The validated Phase 4 publication created the current empirical evidence index."
+               },
+    "trigger":  {
+                    "kind":  "publication_receipt",
+                    "source_id":  "publication.p4.001"
+                },
+    "content_sha256":  "875258a6617b08fd740c6ade786eb9d0fdf789a841f629061c687f3c382ada1d",
+    "created_at":  "2026-08-01T15:10:04Z"
+}

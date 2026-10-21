@@ -1,0 +1,416 @@
+{
+  "schema_version": "1.0.0",
+  "protocol_id": "protocol.example_p4_tapered_quantile_001",
+  "phase": "P4",
+  "source_run_id": "run.example_p4_preliminary_20260816t110000z",
+  "mode": "p4.preliminary",
+  "method_identity": {
+    "stable_id": "method.example_tapered_quantile",
+    "version": 1,
+    "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+  },
+  "basis": [
+    {
+      "record_id": "record.example_theory_tapered_quantile",
+      "record_type": "theory_record",
+      "generation_id": "generation.example_theory_001",
+      "generation_number": 1,
+      "content_sha256": "ee55555555555555555555555555555555555555555555555555555555555555",
+      "publication_state_at_use": "formal",
+      "record_position_at_use": "current",
+      "dependency_class": "hard",
+      "method_identity": {
+        "stable_id": "method.example_tapered_quantile",
+        "version": 1,
+        "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+      }
+    }
+  ],
+  "research_question": "Is the tapered quantile calculation implemented faithfully, and how does its error compare with untapered quantile regression in a small screen?",
+  "scope": "One deterministic reference calculation followed by ten paired Gaussian simulation datasets of size 200.",
+  "scope_justification": "The reference check precedes a small baseline comparison; this screen cannot establish broad improvement or asymptotic validity.",
+  "claim_tests": [
+    {
+      "test_id": "test.example_reference",
+      "claim_id": "claim.example_uniform_consistency",
+      "target_statement_ids": [],
+      "hypothesis": "Does the implementation reproduce an independently calculated reference solution?",
+      "design": "Evaluate one deterministic input with a known reference solution, comparing coefficients in absolute units.",
+      "falsification_rule": "Pause if absolute coefficient discrepancy exceeds 1e-8.",
+      "decision_threshold_ids": [
+        "threshold.example_reference"
+      ],
+      "category": "implementation",
+      "relevance_markdown": "Check the implemented calculation against a reference before interpreting comparisons."
+    },
+    {
+      "test_id": "test.example_comparison",
+      "claim_id": "claim.example_bootstrap_coverage",
+      "target_statement_ids": [],
+      "hypothesis": "How does coefficient error compare with the untapered baseline in the small Gaussian setting?",
+      "design": "Run both methods on the same ten generated datasets and report errors, paired differences and elapsed time.",
+      "falsification_rule": "Report no observed advantage if the selected method has no lower mean error; ten repetitions cannot establish a general benefit.",
+      "decision_threshold_ids": [
+        "threshold.example_comparison"
+      ],
+      "category": "performance",
+      "relevance_markdown": "Judge whether the preliminary accuracy justifies further computation."
+    }
+  ],
+  "estimand": {
+    "name": "maximum absolute coefficient error",
+    "mathematical_definition": "The supremum over the quantile grid of the absolute difference between the estimated and true coefficient vectors, in Euclidean norm per coordinate.",
+    "target_population_or_distribution": "The declared Gaussian simulation distribution at sample size 200.",
+    "analysis_unit": "one simulated dataset",
+    "aggregation": "Mean coefficient error across ten paired datasets.",
+    "conditions": [
+      "Gaussian errors",
+      "sample size 200"
+    ]
+  },
+  "data_or_simulation_unit": {
+    "source_type": "simulation",
+    "unit_definition": "One dataset of n iid observations with a scalar covariate and a continuous outcome generated under the setting-specific design.",
+    "sampling_or_generation_process": "Gaussian errors with a linear quantile structure and scalar standard-normal covariate.",
+    "sample_sizes": [
+      200
+    ],
+    "independence_structure": "Datasets are independent across seeds; both methods receive the same dataset within each seed.",
+    "splits": "No sample splitting; the estimator and bootstrap use the full dataset.",
+    "preprocessing": "Covariates are centered and scaled to unit variance before estimation."
+  },
+  "baselines": [
+    {
+      "baseline_id": "baseline.example_untapered_qr",
+      "name": "untapered quantile regression",
+      "rationale": "It is the natural ablation: identical objective without the taper sequence, isolating the contribution of the taper.",
+      "implementation_identity": "reference quantile regression solver, pinned version tag qrref-2.4.1",
+      "tuning_policy": "No tuning parameters; the solver runs at default settings.",
+      "compute_budget": "Same per-replicate compute envelope as the candidate method."
+    }
+  ],
+  "implementation_strategy": {
+    "strategy": "new",
+    "verification_checks": [
+      "unit test reproduces the untapered solution when taper weights are set to one",
+      "deterministic seed check reproduces one full replicate bitwise"
+    ],
+    "changes_from_prior": [],
+    "route": "custom_implementation",
+    "route_rationale": "The frozen tapered objective requires custom model code; this is the first project implementation, not reuse of prior verified project code.",
+    "packages": []
+  },
+  "tuning_budget": {
+    "selection_data": "No data-dependent tuning in this feasibility screen.",
+    "search_space": "One prespecified taper setting from the frozen method.",
+    "optimization_rule": "Use the frozen setting without optimization.",
+    "maximum_trials": 1,
+    "compute_limit": "600 elapsed seconds including checks and comparison.",
+    "fairness_rule": "The baseline receives the same replicate count and compute envelope as the candidate."
+  },
+  "metrics": [
+    {
+      "metric_id": "metric.example_reference_error",
+      "name": "absolute reference discrepancy",
+      "definition": "Maximum absolute coefficient difference from the independently calculated solution.",
+      "direction": "minimize",
+      "aggregation": "Single deterministic value",
+      "uncertainty_method": "Not applicable to the deterministic reference calculation.",
+      "summary": {
+        "aggregation": "identity",
+        "uncertainty": "not_applicable"
+      }
+    },
+    {
+      "metric_id": "metric.example_max_error",
+      "name": "maximum absolute coefficient error",
+      "definition": "Supremum of per-coordinate absolute estimation error over the quantile grid.",
+      "direction": "minimize",
+      "aggregation": "Mean across ten datasets",
+      "uncertainty_method": "Monte Carlo standard error across independent datasets.",
+      "summary": {
+        "aggregation": "mean",
+        "uncertainty": "mcse"
+      }
+    }
+  ],
+  "repetitions_and_uncertainty": {
+    "repetitions": 10,
+    "random_seed_policy": "Record seeds 1 through 10; reuse each seed across methods.",
+    "paired_design": true,
+    "interval_or_error_method": "Report Monte Carlo standard errors for mean errors and paired error differences.",
+    "target_precision": "No precision target is claimed from ten repetitions; all estimates are exploratory."
+  },
+  "multiplicity": {
+    "family_definition": "A deterministic verification followed by one exploratory comparison.",
+    "correction_method": "No confirmatory hypothesis testing.",
+    "decision_rule": "Describe observed differences without claiming statistical significance or general superiority."
+  },
+  "stopping_rules": [
+    {
+      "rule_id": "rule.example_compute_cap",
+      "condition": "The elapsed-time budget reaches 600 seconds or the reference check fails.",
+      "action": "Stop new work and ask the researcher how to proceed, preserving all completed and unrun cases."
+    }
+  ],
+  "leakage_checks": [
+    {
+      "check_id": "check.example_pilot_isolation",
+      "risk": "Outcome-driven tuning could inflate apparent improvement.",
+      "procedure": "Check the recorded taper setting equals the frozen prespecified choice.",
+      "failure_action": "Pause for researcher instruction and retain affected results as invalidated."
+    }
+  ],
+  "decision_thresholds": [
+    {
+      "threshold_id": "threshold.example_reference",
+      "claim_id": "claim.example_uniform_consistency",
+      "metric_id": "metric.example_reference_error",
+      "criterion": "Maximum absolute reference discrepancy is at most 1e-8.",
+      "interpretation": "Passing supports this implementation check only; failure pauses comparative work."
+    },
+    {
+      "threshold_id": "threshold.example_comparison",
+      "claim_id": "claim.example_bootstrap_coverage",
+      "metric_id": "metric.example_max_error",
+      "criterion": "Report the mean error difference and its uncertainty without a confirmatory cutoff.",
+      "interpretation": "The exploratory contrast informs whether a larger study is worth authorizing."
+    }
+  ],
+  "deviations": [],
+  "protocol_status": "prespecified",
+  "finalized_at": "2026-08-16T11:00:00Z",
+  "content_sha256": "3e7c1e98a72cb371b3b3d5407bbfc55d10d286ccd6f1eef79e4cbadf39bf0818",
+  "created_at": "2026-08-16T11:00:00Z",
+  "cases": [
+    {
+      "case_id": "case.example.reference",
+      "label": "Deterministic reference calculation",
+      "test_ids": [
+        "test.example_reference"
+      ],
+      "metric_ids": [
+        "metric.example_reference_error"
+      ],
+      "comparator_id": "selected_method",
+      "regime": "screen",
+      "replicates": [
+        {
+          "replicate_id": "reference.1"
+        }
+      ],
+      "data_source_ids": [
+        "source.example.reference"
+      ],
+      "replication_unit": "deterministic_check"
+    },
+    {
+      "case_id": "case.example.screen",
+      "label": "Preliminary feasibility screen",
+      "test_ids": [
+        "test.example_comparison"
+      ],
+      "metric_ids": [
+        "metric.example_max_error"
+      ],
+      "comparator_id": "selected_method",
+      "regime": "screen",
+      "replicates": [
+        {
+          "replicate_id": "replicate.1",
+          "seed": 1
+        },
+        {
+          "replicate_id": "replicate.2",
+          "seed": 2
+        },
+        {
+          "replicate_id": "replicate.3",
+          "seed": 3
+        },
+        {
+          "replicate_id": "replicate.4",
+          "seed": 4
+        },
+        {
+          "replicate_id": "replicate.5",
+          "seed": 5
+        },
+        {
+          "replicate_id": "replicate.6",
+          "seed": 6
+        },
+        {
+          "replicate_id": "replicate.7",
+          "seed": 7
+        },
+        {
+          "replicate_id": "replicate.8",
+          "seed": 8
+        },
+        {
+          "replicate_id": "replicate.9",
+          "seed": 9
+        },
+        {
+          "replicate_id": "replicate.10",
+          "seed": 10
+        }
+      ],
+      "data_source_ids": [
+        "source.example.gaussian"
+      ],
+      "replication_unit": "independent_dataset"
+    },
+    {
+      "case_id": "case.example.baseline",
+      "label": "Untapered baseline on the same datasets",
+      "test_ids": [
+        "test.example_comparison"
+      ],
+      "metric_ids": [
+        "metric.example_max_error"
+      ],
+      "comparator_id": "baseline.example_untapered_qr",
+      "regime": "screen",
+      "replicates": [
+        {
+          "replicate_id": "replicate.1",
+          "seed": 1
+        },
+        {
+          "replicate_id": "replicate.2",
+          "seed": 2
+        },
+        {
+          "replicate_id": "replicate.3",
+          "seed": 3
+        },
+        {
+          "replicate_id": "replicate.4",
+          "seed": 4
+        },
+        {
+          "replicate_id": "replicate.5",
+          "seed": 5
+        },
+        {
+          "replicate_id": "replicate.6",
+          "seed": 6
+        },
+        {
+          "replicate_id": "replicate.7",
+          "seed": 7
+        },
+        {
+          "replicate_id": "replicate.8",
+          "seed": 8
+        },
+        {
+          "replicate_id": "replicate.9",
+          "seed": 9
+        },
+        {
+          "replicate_id": "replicate.10",
+          "seed": 10
+        }
+      ],
+      "data_source_ids": [
+        "source.example.gaussian"
+      ],
+      "replication_unit": "independent_dataset"
+    }
+  ],
+  "plan_revision_id": "plan.initial",
+  "budget_seconds": 600,
+  "decision_context": {
+    "intent_markdown": "Determine whether the proposed method merits a larger comparison.",
+    "priorities": [
+      "Faithful implementation",
+      "Accuracy relative to a practical baseline"
+    ],
+    "scope_markdown": "A small implementation check and comparative feasibility screen."
+  },
+  "amendments": [],
+  "work_items": [
+    {
+      "work_item_id": "work.0",
+      "title": "Does the implementation reproduce an independently calculated reference solution?",
+      "question_ids": [
+        "test.example_reference"
+      ],
+      "case_ids": [
+        "case.example.reference"
+      ],
+      "priority": 0,
+      "depends_on": [],
+      "essential": true,
+      "estimated_seconds": 30,
+      "stop_conditions_markdown": "Pause if implementation or scientific interpretation is ambiguous."
+    },
+    {
+      "work_item_id": "work.1",
+      "title": "How does coefficient error compare with the untapered baseline in the small Gaussian setting?",
+      "question_ids": [
+        "test.example_comparison"
+      ],
+      "case_ids": [
+        "case.example.screen",
+        "case.example.baseline"
+      ],
+      "priority": 1,
+      "depends_on": [
+        "work.0"
+      ],
+      "essential": true,
+      "estimated_seconds": 30,
+      "stop_conditions_markdown": "Pause if implementation or scientific interpretation is ambiguous."
+    }
+  ],
+  "comparison_applicability": {
+    "required": true,
+    "reason": "The declared performance question compares the proposed method with the named baselines.",
+    "comparative_claim_ids": [],
+    "expectation_context_refs": []
+  },
+  "data_sources": [
+    {
+      "data_source_id": "source.example.reference",
+      "label": "Deterministic reference inputs",
+      "origin": "computational_check",
+      "input_ids": [],
+      "support_files": [
+        {
+          "kind": "reference_plan",
+          "artifact": {
+            "artifact_id": "artifact.example.readme.md",
+            "uri": "artifact://p4-workflow/README.md",
+            "path": "examples/p4-workflow-support/README.md",
+            "sha256": "1a559904b7945e3e57ce1cf0b2fa935bf4ad363660281f5f7eb0174791980d24"
+          }
+        }
+      ],
+      "description_markdown": "Planned deterministic reference check; this structural example does not retain or claim a completed reference solver. The retained README makes that limitation explicit.",
+      "mapping_markdown": "Declared covariate/outcome arrays and coefficients use the same standardized units as the selected method."
+    },
+    {
+      "data_source_id": "source.example.gaussian",
+      "label": "Independent Gaussian simulation datasets",
+      "origin": "synthetic",
+      "input_ids": [],
+      "support_files": [
+        {
+          "kind": "generator_and_independent_truth",
+          "artifact": {
+            "artifact_id": "artifact.example.examples.quantile_sources.py",
+            "uri": "artifact://p4-workflow/examples/quantile_sources.py",
+            "path": "examples/p4-workflow-support/examples/quantile_sources.py",
+            "sha256": "9202795d608e29473801bdc44b4566f5eafe23e2f73599409cd4199d48d7c702"
+          }
+        }
+      ],
+      "description_markdown": "Illustrative S1: $X_i\\sim N(0,1)$, $Y_i=1+X_i+\\epsilon_i$, with independent $\\epsilon_i\\sim N(0,1)$, so $Q_{Y|X}(\\tau|x)=1+x+\\Phi^{-1}(\\tau)$. S2 uses independent $t_5$ errors and location $1+x$. The retained source computes population quantiles independently of any fitted estimator. Independent seeds generate independent datasets; neither bootstrap draws nor internal solver fits increase that count. Only S1 at n=200 is planned for this feasibility example.",
+      "mapping_markdown": "x is a unitless covariate and y is an outcome in declared outcome units. Preserve the centering/scaling transformation in target comparisons; no researcher-supplied actual dataset is represented."
+    }
+  ]
+}

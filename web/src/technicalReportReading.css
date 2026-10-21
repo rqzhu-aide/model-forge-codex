@@ -1,0 +1,33 @@
+/* Keep the authored report prominent, with tools and researcher actions nearby. */
+.technical-report > .report-metadata {
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px 18px;
+  margin:0 0 4px;
+  padding:0;
+  background:transparent;
+  color:var(--team-muted);
+}
+.technical-report > .report-metadata > div { display:flex; align-items:baseline; gap:5px; }
+.technical-report > .report-metadata dt { margin:0; font-size:12px; color:inherit; }
+.technical-report > .report-metadata dd:not(.identity-line) { font-size:13px; color:inherit; }
+.technical-report .report-utility-row { display:flex; align-items:flex-start; flex-wrap:wrap; gap:4px 10px; margin:0 0 8px; }
+.technical-report .report-utility-row > details { min-width:0; margin:0; padding:0; border:0; }
+.technical-report .report-utility-row > details[open] { flex-basis:100%; }
+.technical-report .report-utility-row > details > summary { width:fit-content; padding:3px 7px; font-size:13px; }
+.technical-report .report-source-details > .report-metadata { margin:6px 0; background:var(--system-surface); color:var(--system-ink); }
+.technical-report .report-source-details dt { color:var(--system-muted); }
+.technical-report .report-export-actions { margin-top:6px; }
+.technical-report :is(.report-tools,.report-materials) .source-link[data-ui-role="system"] { color:var(--system-ink); }
+.technical-report :is(.report-tools,.report-materials) .source-link[data-ui-role="system"]:not(:disabled):hover { color:var(--system-ink); }
+.technical-report .report-tools > .note { color:var(--system-muted); max-width:75ch; margin:6px 0; }
+.technical-report .report-section-heading { display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 12px; margin:22px 0 7px; }
+.technical-report .report-section-heading > :is(h1,h2,h3,h4,h5,h6) { flex:0 1 auto; min-width:0; margin:0; color:var(--team-ink); font:650 18px/1.4 var(--font-ui); }
+.technical-report .report-section-discuss { flex:0 0 auto; align-self:center; }
+.technical-report .report-section-discuss .ui-action-icon { width:16px; height:16px; flex-basis:16px; }
+.technical-report .report-section-heading:target { scroll-margin-top:18px; }
+@media (max-width:600px) {
+  .technical-report .report-section-heading { align-items:flex-start; gap:5px 8px; }
+  .technical-report .report-section-heading .report-section-discuss { --control-height:44px; min-height:44px; }
+  .technical-report > .report-metadata > div { flex-wrap:wrap; gap:1px 5px; }
+}

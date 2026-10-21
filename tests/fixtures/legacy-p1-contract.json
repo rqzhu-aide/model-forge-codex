@@ -1,0 +1,523 @@
+{
+ "phase_id": "P1",
+ "contract_version": "3.3.0",
+ "prose_contract": "architecture/phases/phase-1.md",
+ "name": "Problem",
+ "scientific_purpose": "Establish the problem, target, observation and collection process, constraints and relevant literature, with exact source-backed formulation and honest unresolved fit.",
+ "current_record_semantics": {
+  "strategy": "cumulative_append",
+  "canonical_record_types": [
+   "literature_library",
+   "literature_synthesis",
+   "literature_coverage",
+   "phase_decision"
+  ],
+  "research_meaning": "The current basis contains the requested setting, P2 preparation, exact mathematical frameworks and attributed cumulative paper entries with applicable lead corrections. UI and later phases resolve the same effective versions. Compatibility views add no scientific prose.",
+  "history_policy": "Original submissions, earlier effective versions and syntheses remain immutable history. Corrections preserve entry and source identities and original authorship, record Research Lead revision provenance, and never inflate source or assessment counts. Selected history stays explicitly user-controlled."
+ },
+ "user_choices": [
+  {
+   "choice_id": "p1.scope",
+   "label": "Search scope",
+   "description": "Choose a broad update or a focused question.",
+   "required": true,
+   "allowed_values": [
+    "broad_update",
+    "focused_update"
+   ],
+   "value_kind": "enum_string"
+  },
+  {
+   "choice_id": "p1.instructions",
+   "label": "Research instructions",
+   "description": "State the scientific question, emphasis, exclusions, and source constraints.",
+   "required": true,
+   "allowed_values": [],
+   "value_kind": "text"
+  },
+  {
+   "choice_id": "p1.selected_history",
+   "label": "Selected history",
+   "description": "Optionally add named historical records for a specific research question.",
+   "required": false,
+   "allowed_values": [],
+   "value_kind": "artifact_pointer_list"
+  }
+ ],
+ "run_modes": [
+  {
+   "mode_id": "p1.literature_update",
+   "label": "Literature update",
+   "purpose": "Independently discover and assess literature, then reconcile the research setting and landscape.",
+   "requires_method": false,
+   "entry_conditions": [
+    "A formal current project brief is readable."
+   ],
+   "required_choice_ids": [
+    "p1.scope",
+    "p1.instructions"
+   ],
+   "optional_choice_ids": [
+    "p1.selected_history"
+   ]
+  }
+ ],
+ "prerequisites": [
+  {
+   "requirement_id": "p1.current_project_brief",
+   "kind": "phase_record",
+   "description": "A formal current project brief states the scientific problem and scope.",
+   "required": true
+  }
+ ],
+ "required_inputs": [
+  {
+   "input_id": "p1.project_brief",
+   "record_type": "project_brief",
+   "publication_required": "formal",
+   "position_required": "current",
+   "method_match": "not_applicable",
+   "purpose": "Fix the project question and scope.",
+   "condition": "Always required.",
+   "presence": "always"
+  },
+  {
+   "input_id": "p1.current_library",
+   "record_type": "literature_library",
+   "publication_required": "formal",
+   "position_required": "current",
+   "method_match": "not_applicable",
+   "purpose": "Prevent duplicate source identities and preserve cumulative provenance.",
+   "condition": "Required on reruns and absent on the first run.",
+   "presence": "required_on_rerun"
+  },
+  {
+   "input_id": "p1.current_synthesis",
+   "record_type": "literature_synthesis",
+   "publication_required": "formal",
+   "position_required": "current",
+   "method_match": "not_applicable",
+   "purpose": "Identify what the new run must revise or extend.",
+   "condition": "Required on reruns and absent on the first run.",
+   "presence": "required_on_rerun"
+  },
+  {
+   "input_id": "p1.current_coverage",
+   "record_type": "literature_coverage",
+   "publication_required": "formal",
+   "position_required": "current",
+   "method_match": "not_applicable",
+   "purpose": "Identify covered questions, stated exclusions, and unresolved search gaps.",
+   "condition": "Required on reruns and absent on the first run.",
+   "presence": "required_on_rerun"
+  }
+ ],
+ "supplementary_inputs": [
+  {
+   "input_id": "p1.researcher_material",
+   "record_type": "researcher_material",
+   "purpose": "Accept researcher-supplied material (for example the researcher's own paper) as additional context for building the literature basis. It is additive only and never substitutes for published literature records; a researcher paper enters the pipeline here, at Phase 1."
+  }
+ ],
+ "prepared_contexts": [],
+ "optional_context_policy": {
+  "default": "current_only",
+  "allows_selected_history": true,
+  "history_selection_user_controlled": true,
+  "description": "Only current formal records are loaded by default. Historical records enter only through explicit user selection.",
+  "history_choice_id": "p1.selected_history"
+ },
+ "role_stages": [
+  {
+   "sequence": 1,
+   "stage_id": "p1.discovery",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "execution": "parallel",
+   "roles": [
+    "research_lead",
+    "theorist",
+    "data_analyst"
+   ],
+   "objective": "Each member authors exactly one literature collection using schema_version 1.1.0. Each paper entry contains its citation, exact relevant mathematics with defined symbols and assumptions, explanation, relevance, limitations, evidence locations and explicit reading_extent. Distinguish a paper's reported claims from claims personally checked; state missing access or mathematics honestly. Focus the literature search on developments in more recent years, retaining relevant older classical and foundational results. This is a search priority, without a fixed year cutoff. Use reliable sources, prioritizing primary research papers and authoritative publication sources, and identify preprints and publication status accurately. These fields directly serve researchers and later scientific consumers. No paper quota, separate display card, teammate paraphrase, toy example or presentation-repair writer is required. Record search scope and coverage once per collection. A supplied method is context for the literature landscape; developing or evaluating it belongs in P2. Write for a researcher deciding how to develop or use this method. Answer the section's research question first, then explain its support, conditions, uncertainty and consequence for the next decision. State unknown or untested content explicitly. Define notation, delimit mathematics in mixed prose, and use readable labels and declared units. Keep exact science in its designated record and refer to exact supporting sources. Develop detailed reasoning once; use a brief consequence-focused recap and references elsewhere, preserving qualifications beside their claims and independent opinions. No extra summary artifacts, word quotas or presentation-only member turns are required. In explanation_markdown, explain the source's actual contribution and the mechanism or argument that makes it relevant; distinguish reported findings from personally checked claims. Keep the precise formulation and evidence locations inspectable. Consider the frozen researcher account of the target, observation and collection process, available information and performance expectations. Explain how relevant existing formulations and this model fit that setting. Ask only consequential missing questions, explain why the answer matters, what changes under plausible answers and what cannot be checked from available data. Unknown and no data yet are legitimate answers. Reuse exact answered question revisions when their premise still applies; a material model or setting change needs a successor question. Keep project facts shared and P2 additional directions lead-only. A researcher description, confirmed paraphrase or passing diagnostic does not verify a scientific assumption. Retain exact context item IDs and revisions used in consequential interpretations. Dialogue or saved answers cannot silently revise a model, launch computation or establish a guarantee. Author researcher-decision attention with schema_version 1.2.0, exact project/model scope and a named responsible audience; retain authored expectation topics and exact answer applicability references.",
+   "reads": [
+    "p1.project_brief",
+    "p1.current_library",
+    "p1.current_synthesis",
+    "p1.current_coverage"
+   ],
+   "writes": [
+    "p1.lead_literature",
+    "p1.theory_literature",
+    "p1.empirical_literature"
+   ],
+   "handoff_required": true,
+   "isolation_rule": "Discovery roles do not read one another's current-run collections before submission.",
+   "artifact_contracts": {
+    "p1.lead_literature": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "instructed_open"
+    },
+    "p1.theory_literature": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "instructed_open"
+    },
+    "p1.empirical_literature": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "instructed_open"
+    }
+   },
+   "role_objectives": {
+    "research_lead": "Locate the formulations, research traditions and central primary sources most relevant to the requested question, including adjacent settings and useful connections. Author complete paper entries for your discoveries, with exact objectives, constraints and assumptions. Your discovery remains independent of the specialists until submissions close.",
+    "theorist": "Emphasize definitions, admissible mathematical objects, objectives and constraints, assumptions, guarantees and their boundaries of validity. Record exact relevant statements and what you actually checked, including distinctions between a reported theorem and a verified argument. Overlap with other discovery members is allowed.",
+    "data_analyst": "Emphasize existing algorithms and their exact updates or optimization formulations, required information and estimands, implementation assumptions, computational demands, empirical evidence and fairness of reported comparisons. Distinguish published empirical findings from your own checks. Do not run new simulations in P1; overlap with other discovery members is allowed. When accessible data are supplied, perform bounded read-only descriptive profiling relevant to formulation: observation units, repeated/timed observations, missingness, ranges and consequential structure. Retain exact data/source identity, digest, inspection scope and shared-runtime instructions in optional data_profiles in the ordinary empirical_literature account. No selected model, fitting, new simulations or full P4 computation controller is required. State inaccessible or out-of-scope data honestly. A discrepancy with the researcher account becomes a sourced question; observed structure does not establish selection or measurement mechanisms."
+   }
+  },
+  {
+   "sequence": 2,
+   "stage_id": "p1.lead_synthesis",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "execution": "serial",
+   "roles": [
+    "research_lead"
+   ],
+   "objective": "Author exactly one research basis using schema_version 1.1.0, containing the requested mathematical setting, P2 preparation, source-linked framework landscape, scientific_review and entry_corrections. Inspect the full discovery navigation index and retrieve the entries needed to assess source fidelity, central claims, apparent contradictions and uncertain evidence. Check primary sources where the claim requires it; record review scope, exact targeted findings, evidence and limits without claiming that index inspection verifies every paper. You have scientific authority to correct affected content fields in any collected or retained current paper entry directly, including your own, within this ordinary reconciliation turn. Put targeted changes, an exact original role/family/run/entry/digest reference, reason and evidence in entry_corrections. Preserve source and entry IDs, original authorship and unaffected fields; never rewrite sealed collection files. The harness applies your authored changes deterministically. No return-to-author scientific turn, separate review artifact or extra synthesis round is required. Build frameworks, variants, relationships and existing algorithm families with exact mathematics, defined notation, assumptions, explanation, support status, limits and references to the resulting final effective entries. Distinguish notation changes, assumptions, constraints, objectives and actual disagreement. A scientific relationship needs justified conditions, not shared terminology. Record unresolved comparisons honestly; do not use disputed or unchecked claims as established support. Empty comparison arrays are appropriate when evidence cannot support them. Preserve the requested setting and any attributed supplied-method seed; do not silently amend researcher instructions or develop a project method in P1. Keep legacy summary/topics as useful navigation, without duplicating paper accounts. Record retain/exclude/retract source dispositions only for inclusion policy; omission never deletes a source. These fields directly serve the UI and later phases, with no display writer or toy examples. Every new attention item uses schema_version 1.1.0 with kind researcher_decision or research_task, target_phase, and self-contained context_markdown: exact relevant mathematics, defined symbols, alternatives or assumptions, source references and what is needed. The original author provides this context in the ordinary deliverable; no second writer or UI classifier is involved. A researcher_decision is a choice for the researcher; a research_task is work for the team in the named phase. Omission never resolves an existing item: preserve its stable identity until an explicit answer or reasoned team disposition supersedes it. Read current open tasks addressed to this phase as frozen scientific context; do not launch work in another phase automatically. Put setting clarifications only in basis.attention_items as researcher_decision targeted to P1, never as a duplicate bare research_setting.clarification_questions entry. Method development, proof and simulation follow-up are research_task items targeted to P2, P3 or P4 as appropriate. Literature gaps stay in coverage_limits or the landscape. A setting answer amends shared project instructions; additional P2 instructions remain lead-only. Write for a researcher deciding how to develop or use this method. Answer the section's research question first, then explain its support, conditions, uncertainty and consequence for the next decision. State unknown or untested content explicitly. Define notation, delimit mathematics in mixed prose, and use readable labels and declared units. Keep exact science in its designated record and refer to exact supporting sources. Develop detailed reasoning once; use a brief consequence-focused recap and references elsewhere, preserving qualifications beside their claims and independent opinions. No extra summary artifacts, word quotas or presentation-only member turns are required. The research setting and landscape.summary_markdown explain what the literature establishes for the researcher's objective, important distinctions among supported approaches, the decisive coverage limit and the next useful method-development question. Review explanatory adequacy of the entries you inspect alongside source fidelity; record that scope in scientific_review. Before sealing your final account, check its explanatory adequacy and scientific fidelity against the available sources. Preserve material disagreement and unknowns; a successful run is not a favorable scientific finding. Ask for researcher input only when information or preferences are genuinely needed, with alternatives and consequences; keep ordinary scientific investigation assigned to the team. Each recommended next step states the research question, its decision value and the appropriate phase without authorizing another run. Consider the frozen researcher account of the target, observation and collection process, available information and performance expectations. Explain how relevant existing formulations and this model fit that setting. Ask only consequential missing questions, explain why the answer matters, what changes under plausible answers and what cannot be checked from available data. Unknown and no data yet are legitimate answers. Reuse exact answered question revisions when their premise still applies; a material model or setting change needs a successor question. Keep project facts shared and P2 additional directions lead-only. A researcher description, confirmed paraphrase or passing diagnostic does not verify a scientific assumption. Retain exact context item IDs and revisions used in consequential interpretations. Dialogue or saved answers cannot silently revise a model, launch computation or establish a guarantee. Author researcher-decision attention with schema_version 1.2.0, exact project/model scope and a named responsible audience; retain authored expectation topics and exact answer applicability references.",
+   "reads": [
+    "p1.project_brief",
+    "p1.current_library",
+    "p1.current_synthesis",
+    "p1.current_coverage",
+    "p1.lead_literature",
+    "p1.theory_literature",
+    "p1.empirical_literature"
+   ],
+   "writes": [
+    "p1.research_basis"
+   ],
+   "handoff_required": true,
+   "artifact_contracts": {
+    "p1.research_basis": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "inline"
+    }
+   },
+   "role_objectives": {
+    "research_lead": "Reconcile all three independent collections in one scientific review and synthesis. State the scope and limitations of your own source checks as well as checks of specialist entries. Corrections are lead-authored revisions, never represented as changes made by the original member or as independently certified proofs."
+   }
+  }
+ ],
+ "run_local_outputs": [
+  {
+   "output_id": "p1.lead_literature",
+   "output_kind": "scientific_record",
+   "producer": "research_lead",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/literature-findings.schema.json",
+   "purpose": "Independent source-linked paper entries in schema 1.1.0 with exact mathematics, evidence and explicit reading extent; original submissions remain attributable after lead correction.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p1.theory_literature",
+   "output_kind": "scientific_record",
+   "producer": "theorist",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/literature-findings.schema.json",
+   "purpose": "Independent source-linked paper entries in schema 1.1.0 with exact mathematics, evidence and explicit reading extent; original submissions remain attributable after lead correction.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p1.empirical_literature",
+   "output_kind": "scientific_record",
+   "producer": "data_analyst",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/literature-findings.schema.json",
+   "purpose": "Independent source-linked paper entries in schema 1.1.0 with exact mathematics, evidence and explicit reading extent; original submissions remain attributable after lead correction.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p1.research_basis",
+   "output_kind": "scientific_record",
+   "producer": "research_lead",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/research-basis.schema.json",
+   "purpose": "One lead-authored setting, P2 preparation, mathematical framework landscape, scoped scientific review and targeted content corrections; no additional author-response artifact.",
+   "required": true,
+   "requirement": "always"
+  }
+ ],
+ "validation_rules": [
+  {
+   "validator_id": "p1.role_sequence",
+   "category": "run_boundary",
+   "severity": "blocking",
+   "description": "All independent reports and the later lead synthesis exist in the declared order and remain run-local."
+  },
+  {
+   "validator_id": "p1.source_identity",
+   "category": "provenance",
+   "severity": "blocking",
+   "description": "Each source has a stable identity, citation metadata, search provenance, and no duplicate identity."
+  },
+  {
+   "validator_id": "p1.synthesis_traceability",
+   "category": "scientific_completeness",
+   "severity": "blocking",
+   "description": "Material synthesis statements cite promoted sources or explicitly mark missing or unresolved evidence."
+  },
+  {
+   "validator_id": "p1.entry_revision_traceability",
+   "category": "provenance",
+   "severity": "blocking",
+   "description": "Correction and review targets resolve to exact attributed original entries; correction fields preserve identities and final landscape references resolve to effective current versions. These checks verify structure and provenance, not scientific truth."
+  },
+  {
+   "validator_id": "p1.atomic_publication",
+   "category": "promotion_safety",
+   "severity": "blocking",
+   "description": "The library update and synthesis replacement commit together or not at all."
+  }
+ ],
+ "publication_bindings": [
+  {
+   "binding_id": "p1.append_attention_items",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "operation": "append",
+   "output_ids": [
+    "p1.research_basis"
+   ],
+   "target": {
+    "kind": "cumulative_collection",
+    "collection_id": "project.attention_history",
+    "object_type": "attention_item"
+   },
+   "prior_target_policy": "not_applicable",
+   "publisher_transform": "none",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p1.append_literature_sources",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "operation": "append",
+   "output_ids": [
+    "p1.lead_literature",
+    "p1.theory_literature",
+    "p1.empirical_literature",
+    "p1.research_basis"
+   ],
+   "target": {
+    "kind": "cumulative_collection",
+    "collection_id": "p1.literature_sources",
+    "object_type": "literature_source"
+   },
+   "prior_target_policy": "not_applicable",
+   "publisher_transform": "deterministic_index",
+   "may_create_scientific_content": false,
+   "source_input_ids": [
+    "p1.current_library"
+   ]
+  },
+  {
+   "binding_id": "p1.rebuild_literature_library",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "operation": "replace",
+   "output_ids": [
+    "p1.lead_literature",
+    "p1.theory_literature",
+    "p1.empirical_literature",
+    "p1.research_basis"
+   ],
+   "source_input_ids": [
+    "p1.current_library"
+   ],
+   "target": {
+    "kind": "current_slot",
+    "slot_id": "p1.literature_library.current",
+    "record_type": "literature_library"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "deterministic_index",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p1.replace_literature_synthesis",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "operation": "replace",
+   "output_ids": [
+    "p1.research_basis"
+   ],
+   "target": {
+    "kind": "current_slot",
+    "slot_id": "p1.literature_synthesis.current",
+    "record_type": "literature_synthesis"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "none",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p1.replace_literature_coverage",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "operation": "replace",
+   "output_ids": [
+    "p1.research_basis"
+   ],
+   "target": {
+    "kind": "current_slot",
+    "slot_id": "p1.literature_coverage.current",
+    "record_type": "literature_coverage"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "none",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p1.replace_phase_decision",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "operation": "replace",
+   "output_ids": [
+    "p1.research_basis"
+   ],
+   "target": {
+    "kind": "current_slot",
+    "slot_id": "p1.phase_decision.current",
+    "record_type": "phase_decision"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "none",
+   "may_create_scientific_content": false
+  }
+ ],
+ "promotion": {
+  "strategy": "append_merge",
+  "canonical_record_types": [
+   "literature_library",
+   "literature_synthesis",
+   "literature_coverage",
+   "phase_decision"
+  ],
+  "cumulative_object_types": [
+   "literature_source",
+   "attention_item"
+  ],
+  "blocking_validator_ids": [
+   "p1.role_sequence",
+   "p1.source_identity",
+   "p1.synthesis_traceability",
+   "p1.entry_revision_traceability",
+   "p1.atomic_publication"
+  ],
+  "failure_behavior": "Keep the prior library and synthesis current; retain the candidate only in its run workspace.",
+  "atomic": true
+ },
+ "downstream_effects": [
+  {
+   "trigger": "new_current_record",
+   "affected_phases": [
+    "P2",
+    "P3",
+    "P4",
+    "P5"
+   ],
+   "description": "New literature creates targeted research attention where it bears on a method, claim, evidence interpretation, or manuscript statement. It does not create exact-method misalignment.",
+   "automatic_run": false,
+   "alignment_effect": {
+    "action": "preserve"
+   },
+   "attention_effect": {
+    "action": "record_if_identified"
+   }
+  }
+ ],
+ "ui_projection": {
+  "researcher_questions": [
+   "Is this the mathematical setting I requested?",
+   "What should Phase 2 develop, and what instructions should I add?",
+   "What does the literature formulate, establish and leave unresolved?"
+  ],
+  "fields": [
+   {
+    "field_id": "p1.research_setting",
+    "source": "research_basis.research_setting",
+    "label": "Your research setting",
+    "meaning": "The lead-authored exact problem statement and unresolved interpretations, with a researcher setting-amendment input."
+   },
+   {
+    "field_id": "p1.phase2_preparation",
+    "source": "research_basis.phase2_preparation",
+    "label": "Develop methods in Phase 2",
+    "meaning": "Additional P2 instructions and an attributed supplied-method seed when present. Explicit researcher action starts P2."
+   },
+   {
+    "field_id": "p1.landscape",
+    "source": "research_basis.landscape",
+    "label": "Literature landscape",
+    "meaning": "Lead-authored mathematical frameworks, variants, relationships and existing algorithm families appear before expandable current paper entries. Exact math and scoped support are rendered directly. Paper views identify original authors and lead revisions, with immutable originals in history; UI and P2 use the same corrected effective entry."
+   },
+   {
+    "field_id": "p1.scientific_review",
+    "source": "research_basis.scientific_review",
+    "label": "Review scope and unresolved claims",
+    "meaning": "Source-linked lead assessments and limitations appear beside affected content, with detail expandable. No global mathematical-certification badge."
+   }
+  ],
+  "user_action_choice_ids": [
+   "p1.scope",
+   "p1.instructions",
+   "p1.selected_history"
+  ]
+ },
+ "acceptance_scenarios": [
+  "s01.first_project",
+  "s06.optional_history",
+  "s09.interrupted_promotion"
+ ],
+ "capabilities": [
+  "researcher_dialogue_v1"
+ ]
+}

@@ -1,0 +1,377 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/publication-receipt.schema.json",
+  "title": "Atomic Formal Transaction Receipt",
+  "description": "Append-only proof that one validated research run or control command atomically changed formal generations or objects, appended authority events, and committed reproducible derived state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "publication_id",
+    "transaction_id",
+    "project_id",
+    "source",
+    "validation_reports",
+    "prior_current_index_sha256",
+    "new_current_index_generation_id",
+    "new_current_index_sha256",
+    "committed_event_range",
+    "derived_projection_digests",
+    "record_changes",
+    "cumulative_object_changes",
+    "state_changes",
+    "alignment_impacts",
+    "attention_impacts",
+    "atomic",
+    "published_at",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "publication_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "transaction_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "project_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "source": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "command_id", "run_id", "phase", "manifest_sha256", "submission_id", "submission_sha256"],
+          "properties": {
+            "kind": { "const": "research_run" },
+            "command_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+            "run_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+            "phase": { "$ref": "common-definitions.schema.json#/$defs/phaseId" },
+            "manifest_sha256": { "$ref": "common-definitions.schema.json#/$defs/sha256" },
+            "submission_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+            "submission_sha256": {
+              "$ref": "common-definitions.schema.json#/$defs/sha256",
+              "description": "Digest of the exact immutable RunSubmission accepted at the submitted boundary."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "command_id", "command_sha256"],
+          "properties": {
+            "kind": { "const": "method_lifecycle_command" },
+            "command_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+            "command_sha256": { "$ref": "common-definitions.schema.json#/$defs/sha256" }
+          }
+        }
+      ]
+    },
+    "validation_reports": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "common-definitions.schema.json#/$defs/artifactPointer" }
+    },
+    "prior_current_index_generation_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "prior_current_index_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256"
+    },
+    "new_current_index_generation_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "new_current_index_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256"
+    },
+    "committed_event_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "first_sequence",
+        "last_sequence",
+        "event_ids",
+        "prior_event_root_sha256",
+        "new_event_root_sha256"
+      ],
+      "properties": {
+        "first_sequence": { "type": "integer", "minimum": 1 },
+        "last_sequence": { "type": "integer", "minimum": 1 },
+        "event_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+          "uniqueItems": true,
+          "description": "Exact committed transaction event IDs in increasing event_sequence order."
+        },
+        "prior_event_root_sha256": { "$ref": "common-definitions.schema.json#/$defs/sha256" },
+        "new_event_root_sha256": { "$ref": "common-definitions.schema.json#/$defs/sha256" }
+      }
+    },
+    "derived_projection_digests": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["projection_id", "projection_kind", "content_sha256"],
+        "properties": {
+          "projection_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+          "projection_kind": {
+            "type": "string",
+            "enum": ["record_state", "current_index", "replay_checkpoint"]
+          },
+          "content_sha256": { "$ref": "common-definitions.schema.json#/$defs/sha256" }
+        }
+      }
+    },
+    "record_changes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["record_id", "record_type", "change_kind", "authority_event_ids"],
+        "properties": {
+          "record_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+          "record_type": { "$ref": "common-definitions.schema.json#/$defs/recordType" },
+          "prior_generation_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+          "new_generation_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+          "subject_generation_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+          "new_position": { "$ref": "common-definitions.schema.json#/$defs/recordPosition" },
+          "change_kind": {
+            "type": "string",
+            "enum": ["create", "replace", "append", "invalidate"]
+          },
+          "authority_event_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+            "uniqueItems": true
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": { "change_kind": { "const": "invalidate" } },
+              "required": ["change_kind"]
+            },
+            "then": {
+              "required": ["subject_generation_id", "new_position"],
+              "properties": { "new_position": { "enum": ["historical", "none"] } },
+              "not": { "required": ["new_generation_id"] }
+            },
+            "else": {
+              "required": ["new_generation_id", "new_position"],
+              "properties": { "new_position": { "const": "current" } },
+              "not": { "required": ["subject_generation_id"] }
+            }
+          },
+          {
+            "if": {
+              "properties": { "change_kind": { "const": "replace" } },
+              "required": ["change_kind"]
+            },
+            "then": { "required": ["prior_generation_id"] }
+          }
+        ]
+      }
+    },
+    "cumulative_object_changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["object_id", "object_type", "content_sha256", "change_kind", "authority_event_ids"],
+        "properties": {
+          "object_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+          "object_type": { "$ref": "common-definitions.schema.json#/$defs/cumulativeObjectType" },
+          "content_sha256": { "$ref": "common-definitions.schema.json#/$defs/sha256" },
+          "change_kind": { "type": "string", "enum": ["publish", "invalidate"] },
+          "authority_event_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "state_changes": {
+      "type": "array",
+      "description": "Derived-state-only authority events committed by this transaction. Content publication, replacement, and invalidation remain under record_changes or cumulative_object_changes.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["subject", "change_kind", "authority_event_ids"],
+        "properties": {
+          "subject": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "subject_id"],
+            "properties": {
+              "kind": { "type": "string", "enum": ["record_generation", "evidence_item"] },
+              "subject_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+              "generation_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+              "method_identity": { "$ref": "common-definitions.schema.json#/$defs/methodIdentity" }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": { "kind": { "const": "record_generation" } },
+                  "required": ["kind"]
+                },
+                "then": { "required": ["generation_id"] }
+              }
+            ]
+          },
+          "change_kind": {
+            "type": "string",
+            "enum": ["alignment_recomputed", "attention_changed", "evidence_eligibility_changed"]
+          },
+          "authority_event_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+            "uniqueItems": true
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": { "change_kind": { "const": "evidence_eligibility_changed" } },
+              "required": ["change_kind"]
+            },
+            "then": {
+              "properties": {
+                "subject": {
+                  "properties": { "kind": { "const": "evidence_item" } },
+                  "required": ["kind"]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "uniqueItems": true
+    },
+    "alignment_impacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["affected_record_id", "before", "after", "cause", "automatic_run"],
+        "properties": {
+          "affected_record_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+          "before": { "$ref": "common-definitions.schema.json#/$defs/alignmentState" },
+          "after": { "$ref": "common-definitions.schema.json#/$defs/alignmentState" },
+          "cause": { "$ref": "common-definitions.schema.json#/$defs/alignmentCause" },
+          "automatic_run": { "const": false }
+        }
+      }
+    },
+    "attention_impacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["affected_record_id", "before", "after", "automatic_run"],
+        "properties": {
+          "affected_record_id": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+          "before": { "$ref": "common-definitions.schema.json#/$defs/attentionLevel" },
+          "after": { "$ref": "common-definitions.schema.json#/$defs/attentionLevel" },
+          "open_item_ids": {
+            "type": "array",
+            "items": { "$ref": "common-definitions.schema.json#/$defs/stableId" },
+            "uniqueItems": true
+          },
+          "automatic_run": { "const": false }
+        }
+      }
+    },
+    "atomic": { "const": true },
+    "published_at": { "type": "string", "format": "date-time" },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "SHA-256 of the RFC 8785 canonical complete receipt object with only content_sha256 omitted."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "source": {
+            "properties": { "kind": { "const": "research_run" } },
+            "required": ["kind"]
+          }
+        },
+        "required": ["source"]
+      },
+      "then": {
+        "properties": {
+          "record_changes": { "type": "array" },
+          "cumulative_object_changes": { "type": "array" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "source": {
+            "properties": { "kind": { "const": "method_lifecycle_command" } },
+            "required": ["kind"]
+          }
+        },
+        "required": ["source"]
+      },
+      "then": {
+        "properties": {
+          "record_changes": {
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "properties": {
+                "record_type": { "enum": ["method_record", "method_catalog"] },
+                "change_kind": { "const": "replace" }
+              },
+              "required": ["record_type", "change_kind"]
+            }
+          },
+          "cumulative_object_changes": { "maxItems": 0 },
+          "state_changes": { "maxItems": 0 },
+          "alignment_impacts": { "maxItems": 0 },
+          "attention_impacts": { "maxItems": 0 }
+        },
+        "allOf": [
+          {
+            "properties": {
+              "record_changes": {
+                "contains": {
+                  "properties": { "record_type": { "const": "method_record" } },
+                  "required": ["record_type"]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            }
+          },
+          {
+            "properties": {
+              "record_changes": {
+                "contains": {
+                  "properties": { "record_type": { "const": "method_catalog" } },
+                  "required": ["record_type"]
+                },
+                "minContains": 1,
+                "maxContains": 1
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

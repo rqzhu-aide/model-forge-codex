@@ -1,0 +1,49 @@
+# Shared runtimes are used; accidental local environments and caches stay local.
+.venv/
+node_modules/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+/build/
+/dist/
+
+# Local configuration, credentials, and research state. Keep example files.
+providers.toml
+shim.env
+.env
+.env.*
+!.env.example
+/.model-forge-codex/
+/.model-forge-codex-app/
+
+# Disposable previews, experiment runs, and generated local reports.
+/.p4-acceptance/
+/.assumption-conversations-preview/
+/.phase-two-reader-preview/
+/.artifact-backend-recheck/
+/.local-output/
+/archived/
+/.test-tmp/
+/.tmp/
+/tmp/
+/exports/
+/.impeccable/
+/architecture/evidence/
+/architecture/plans/
+/architecture/mocks/
+/architecture/visuals/
+/architecture/research-harness-audit-2026-09-30.md
+
+# Generated release artifacts are built from source, not committed.
+/npm-release-manifest.json
+/*.tgz
+
+# Operating-system metadata.
+.DS_Store
+Thumbs.db
+Desktop.ini

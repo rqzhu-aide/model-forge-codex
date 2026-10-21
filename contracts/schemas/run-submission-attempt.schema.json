@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/run-submission-attempt.schema.json",
+  "title": "Run Submission Attempt",
+  "description": "Immutable submission-attempt record for correction re-entry. The base run_submissions row is unique per run and never rewritten; a correction that passes validation creates a new attempt row here. Publication binds the latest passing attempt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "attempt_id",
+    "run_id",
+    "base_submission_id",
+    "attempt_ordinal",
+    "submission_payload_digest",
+    "correction_command_id",
+    "submitted_at",
+    "attempt_status",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "attempt_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "base_submission_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId",
+      "description": "The original immutable run_submissions row this attempt extends."
+    },
+    "attempt_ordinal": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "1 for the first correction attempt, 2 for the second, etc."
+    },
+    "submission_payload_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "SHA-256 digest of the submission payload JSON (the closure chain and candidate artifacts)."
+    },
+    "correction_command_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId",
+      "description": "The OutputCorrectionCommand that authorized this attempt."
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "attempt_status": {
+      "type": "string",
+      "enum": ["submitted", "validated", "promoted", "rejected", "conflicted"],
+      "description": "The outcome of this attempt's validation/promotion cycle."
+    },
+    "validation_attempt_id": {
+      "oneOf": [
+        {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The ValidationAttempt that evaluated this submission attempt, if validation ran."
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

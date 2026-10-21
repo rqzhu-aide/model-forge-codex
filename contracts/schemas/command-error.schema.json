@@ -1,0 +1,717 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/command-error.schema.json",
+  "title": "Command Error",
+  "description": "Stable researcher-facing failure envelope shared by Web and remote command clients.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "error_id",
+    "code",
+    "category",
+    "http_status",
+    "retryable",
+    "rule_id",
+    "object_refs",
+    "researcher_message",
+    "smallest_correction",
+    "occurred_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "error_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "code": {
+      "type": "string",
+      "enum": [
+        "AUTHENTICATION_REQUIRED",
+        "DELEGATION_NOT_ACTIVE",
+        "COMMAND_SCHEMA_INVALID",
+        "COMMAND_DIGEST_MISMATCH",
+        "IDEMPOTENCY_KEY_REUSED",
+        "INVALID_TRANSITION",
+        "RUN_ALREADY_SUBMITTED",
+        "CANCELLATION_REQUESTED",
+        "CONTROL_HEAD_STALE",
+        "STALE_BASIS",
+        "TARGET_STATE_MISMATCH",
+        "TARGET_NOT_FOUND",
+        "DEPENDENCY_CLOSURE_INCOMPLETE",
+        "NO_STATE_CHANGE",
+        "PUBLICATION_CONFLICT",
+        "CUSTOMIZATION_CONFLICT",
+        "ROLE_PROVISIONING_FAILED",
+        "SUPERVISED_RUN_INVALID",
+        "SUPERVISED_RUN_LOCKED",
+        "SUPERVISED_RUN_PREFLIGHT_FAILED",
+        "CORRECTION_NOT_APPLICABLE",
+        "CORRECTION_SCOPE_INVALID",
+        "CORRECTION_EXHAUSTED"
+      ]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "authentication",
+        "authorization",
+        "schema",
+        "digest",
+        "idempotency",
+        "transition",
+        "concurrency",
+        "dependency"
+      ]
+    },
+    "http_status": {
+      "type": "integer",
+      "enum": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        422,
+        500
+      ]
+    },
+    "retryable": {
+      "type": "boolean"
+    },
+    "rule_id": {
+      "type": "string",
+      "pattern": "^MF-[0-9]{2}$"
+    },
+    "object_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "field_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "researcher_message": {
+      "type": "string",
+      "minLength": 1
+    },
+    "smallest_correction": {
+      "type": "string",
+      "minLength": 1
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "detail": {
+      "type": "object",
+      "description": "Optional structured payload carried by selected error codes (for example the supervised-run preflight report). Never contains secret material."
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "code": {
+          "const": "AUTHENTICATION_REQUIRED"
+        },
+        "category": {
+          "const": "authentication"
+        },
+        "http_status": {
+          "const": 401
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-59"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "DELEGATION_NOT_ACTIVE"
+        },
+        "category": {
+          "const": "authorization"
+        },
+        "http_status": {
+          "const": 403
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-55"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "COMMAND_SCHEMA_INVALID"
+        },
+        "category": {
+          "const": "schema"
+        },
+        "http_status": {
+          "const": 422
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-59"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "COMMAND_DIGEST_MISMATCH"
+        },
+        "category": {
+          "const": "digest"
+        },
+        "http_status": {
+          "const": 422
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-57"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "IDEMPOTENCY_KEY_REUSED"
+        },
+        "category": {
+          "const": "idempotency"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-49"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "INVALID_TRANSITION"
+        },
+        "category": {
+          "const": "transition"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": false
+        },
+        "rule_id": {
+          "const": "MF-59"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "RUN_ALREADY_SUBMITTED"
+        },
+        "category": {
+          "const": "transition"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": false
+        },
+        "rule_id": {
+          "const": "MF-59"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "CANCELLATION_REQUESTED"
+        },
+        "category": {
+          "const": "concurrency"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": false
+        },
+        "rule_id": {
+          "const": "MF-59"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "CONTROL_HEAD_STALE"
+        },
+        "category": {
+          "const": "concurrency"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-49"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "STALE_BASIS"
+        },
+        "category": {
+          "const": "concurrency"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-49"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "TARGET_STATE_MISMATCH"
+        },
+        "category": {
+          "const": "concurrency"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-49"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "TARGET_NOT_FOUND"
+        },
+        "category": {
+          "const": "dependency"
+        },
+        "http_status": {
+          "const": 404
+        },
+        "retryable": {
+          "const": false
+        },
+        "rule_id": {
+          "const": "MF-59"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "DEPENDENCY_CLOSURE_INCOMPLETE"
+        },
+        "category": {
+          "const": "dependency"
+        },
+        "http_status": {
+          "const": 422
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-59"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "NO_STATE_CHANGE"
+        },
+        "category": {
+          "const": "transition"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": false
+        },
+        "rule_id": {
+          "const": "MF-47"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "PUBLICATION_CONFLICT"
+        },
+        "category": {
+          "const": "concurrency"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-56"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "CUSTOMIZATION_CONFLICT"
+        },
+        "category": {
+          "const": "transition"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": false
+        },
+        "rule_id": {
+          "const": "MF-49"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "ROLE_PROVISIONING_FAILED"
+        },
+        "category": {
+          "const": "transition"
+        },
+        "http_status": {
+          "const": 500
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-59"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "SUPERVISED_RUN_INVALID"
+        },
+        "category": {
+          "const": "schema"
+        },
+        "http_status": {
+          "const": 400
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-60"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "SUPERVISED_RUN_LOCKED"
+        },
+        "category": {
+          "const": "concurrency"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": false
+        },
+        "rule_id": {
+          "const": "MF-61"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "SUPERVISED_RUN_PREFLIGHT_FAILED"
+        },
+        "category": {
+          "const": "dependency"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-62"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "CORRECTION_NOT_APPLICABLE"
+        },
+        "category": {
+          "const": "transition"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": false
+        },
+        "rule_id": {
+          "const": "MF-73"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "CORRECTION_SCOPE_INVALID"
+        },
+        "category": {
+          "const": "schema"
+        },
+        "http_status": {
+          "const": 400
+        },
+        "retryable": {
+          "const": true
+        },
+        "rule_id": {
+          "const": "MF-74"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    },
+    {
+      "properties": {
+        "code": {
+          "const": "CORRECTION_EXHAUSTED"
+        },
+        "category": {
+          "const": "transition"
+        },
+        "http_status": {
+          "const": 409
+        },
+        "retryable": {
+          "const": false
+        },
+        "rule_id": {
+          "const": "MF-75"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "http_status",
+        "retryable",
+        "rule_id"
+      ]
+    }
+  ]
+}

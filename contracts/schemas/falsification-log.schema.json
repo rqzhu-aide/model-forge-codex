@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/falsification-log.schema.json",
+  "title": "Falsification Log",
+  "description": "The 'false-as-stated register', structured (design/15 §4): every counterexample / edge-case / relaxation probe the theorist tried, with its outcome. 'I tried to break it, here is how' is a deliverable.",
+  "type": "object",
+  "required": ["probes"],
+  "additionalProperties": false,
+  "properties": {
+    "probes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["probe_id", "target_statement", "method", "outcome", "detail"],
+        "properties": {
+          "probe_id": { "type": "string", "pattern": "^probe\\.[a-z0-9_.-]+$" },
+          "target_statement": { "type": "string" },
+          "method": { "type": "string", "maxLength": 300, "description": "What was tried: edge case, numeric counterexample search, assumption relaxation, ..." },
+          "outcome": { "type": "string", "enum": ["holds", "fails_as_stated", "untested"] },
+          "detail": { "type": "string", "maxLength": 1200 }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

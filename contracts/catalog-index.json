@@ -1,0 +1,307 @@
+{
+  "schema_version": "1.0.0",
+  "catalog_version": "1.26.0",
+  "source": {
+    "repository": "model-forge",
+    "commit": "33d21a27f4fc4351e43c45298a7766d1699ebd10",
+    "extracted_from": "architecture/tools/validate_package.py"
+  },
+  "valid_examples": {
+    "action-activate-method.example.json": "action-descriptor.schema.json",
+    "action-cancel-run.example.json": "action-descriptor.schema.json",
+    "action-reactivate-method.example.json": "action-descriptor.schema.json",
+    "action-retire-method.example.json": "action-descriptor.schema.json",
+    "action-start-run.example.json": "action-descriptor.schema.json",
+    "attention-item-collection.example.json": "attention-item-collection.schema.json",
+    "attention-item.example.json": "attention-item.schema.json",
+    "authority-event-attention-published.example.json": "authority-event.schema.json",
+    "authority-event-decision-published.example.json": "authority-event.schema.json",
+    "authority-event-implementation-published.example.json": "authority-event.schema.json",
+    "authority-event-record-published.example.json": "authority-event.schema.json",
+    "authority-event-replay-alignment.example.json": "authority-event.schema.json",
+    "authority-event-replay-published.example.json": "authority-event.schema.json",
+    "authority-event-synthesis-published.example.json": "authority-event.schema.json",
+    "authority-event.example.json": "authority-event.schema.json",
+    "command-attempt-audit-cancellation-accepted.example.json": "command-attempt-audit-event.schema.json",
+    "command-attempt-audit-method-accepted.example.json": "command-attempt-audit-event.schema.json",
+    "command-attempt-audit-start-accepted.example.json": "command-attempt-audit-event.schema.json",
+    "command-attempt-audit-unauthenticated-rejected.example.json": "command-attempt-audit-event.schema.json",
+    "command-error-delegation-not-active.example.json": "command-error.schema.json",
+    "command-error.example.json": "command-error.schema.json",
+    "compact-view.example.json": "compact-view.schema.json",
+    "current-index-replay.example.json": "current-index.schema.json",
+    "current-index.example.json": "current-index.schema.json",
+    "decision-record.example.json": "decision-record.schema.json",
+    "delegation-grant.example.json": "delegation-grant.schema.json",
+    "delegation-revocation.example.json": "delegation-revocation.schema.json",
+    "digest-vectors.example.json": "digest-vectors.schema.json",
+    "empirical-protocol.example.json": "empirical-protocol.schema.json",
+    "evidence.example.json": "evidence.schema.json",
+    "handoff.example.json": "handoff.schema.json",
+    "literature-source.example.json": "literature-source.schema.json",
+    "manuscript-package.example.json": "manuscript-package.schema.json",
+    "method-exposition-revision.example.json": "method-exposition-revision.schema.json",
+    "method-lifecycle-command.example.json": "method-lifecycle-command.schema.json",
+    "method.example.json": "method.schema.json",
+    "prepared-role-context.example.json": "prepared-role-context.schema.json",
+    "publication-receipt-replay.example.json": "publication-receipt.schema.json",
+    "publication-receipt.example.json": "publication-receipt.schema.json",
+    "record-state-decision.example.json": "record-state.schema.json",
+    "record-state-empirical-synthesis.example.json": "record-state.schema.json",
+    "record-state-empirical.example.json": "record-state.schema.json",
+    "record-state-implementation.example.json": "record-state.schema.json",
+    "record-state-replay.example.json": "record-state.schema.json",
+    "record-state.example.json": "record-state.schema.json",
+    "review-finding.example.json": "review-finding.schema.json",
+    "review-issue.example.json": "review-issue.schema.json",
+    "review-report.example.json": "review-report.schema.json",
+    "role-context-snapshot.example.json": "role-context-snapshot.schema.json",
+    "role-invocation-closure.example.json": "role-invocation-closure.schema.json",
+    "role-invocation-downstream-start.example.json": "role-invocation-start.schema.json",
+    "role-invocation-start.example.json": "role-invocation-start.schema.json",
+    "role-profile.example.json": "role-profile.schema.json",
+    "run-cancellation-command.example.json": "run-cancellation-command.schema.json",
+    "run-command-with-sealed-basis.example.json": "run-command.schema.json",
+    "run-command.example.json": "run-command.schema.json",
+    "run-manifest.example.json": "run-manifest.schema.json",
+    "run-state-cancellation-requested.example.json": "run-state.schema.json",
+    "run-state.example.json": "run-state.schema.json",
+    "run-submission.example.json": "run-submission.schema.json",
+    "scientific-record.example.json": "scientific-record.schema.json",
+    "statement.example.json": "statement.schema.json",
+    "theory-record.example.json": "theory-record.schema.json",
+    "t1-card.example.json": "t1-card.schema.json",
+    "t1-card-collection.example.json": "t1-card-collection.schema.json",
+    "t2s-summary.example.json": "t2s-summary.schema.json",
+    "exhibit.example.json": "exhibit.schema.json",
+    "metrics-long-row.example.json": "metrics-long-row.schema.json",
+    "p4-diagnostics.example.json": "p4-diagnostics.schema.json",
+    "claim-map.example.json": "claim-map.schema.json",
+    "falsification-log.example.json": "falsification-log.schema.json",
+    "assessment.example.json": "assessment.schema.json",
+    "literature-findings.example.json": "literature-findings.schema.json",
+    "research-basis.example.json": "research-basis.schema.json",
+    "method-proposal.example.json": "method-proposal.schema.json",
+    "proposal-audit.example.json": "proposal-audit.schema.json",
+    "catalog-assessment.example.json": "catalog-assessment.schema.json",
+    "lead-no-proposal.example.json": "lead-proposal-legacy.schema.json",
+    "lead-method-proposal.example.json": "lead-proposal.schema.json",
+    "attention-setting-decision.example.json": "attention-item.schema.json",
+    "contextual-attention-item.example.json": "contextual-attention-item.schema.json",
+    "literature-findings-legacy.example.json": "literature-findings.schema.json",
+    "research-basis-legacy.example.json": "research-basis.schema.json",
+    "p4-progressive-protocol.example.json": "p4-progressive-protocol.schema.json",
+    "p4-analyst-synthesis.example.json": "p4-analyst-synthesis.schema.json",
+    "p4-lead-synthesis.example.json": "p4-lead-synthesis.schema.json",
+    "technical-report.example.json": "technical-report.schema.json",
+    "implementation-record-portable.example.json": "implementation-record.schema.json",
+    "p4-result-exhibits.example.json": "exhibit-collection.schema.json",
+    "implementation-record.example.json": "implementation-record.schema.json",
+    "exhibit-collection.example.json": "exhibit-collection.schema.json",
+    "p4-lead-synthesis-portable.example.json": "p4-lead-synthesis.schema.json"
+  },
+  "invalid_examples": {
+    "authority-replay-existing-evidence-reset.invalid.json": "semantic:authority_prior_state",
+    "authority-event-alignment-missing-prior-state.invalid.json": "authority-event.schema.json",
+    "authority-event-cross-family.invalid.json": "authority-event.schema.json",
+    "authority-event-evidence-reclassification-missing-prior-state.invalid.json": "authority-event.schema.json",
+    "decision-auto-action.invalid.json": "decision-record.schema.json",
+    "method-lifecycle-no-op.invalid.json": "method-lifecycle-command.schema.json",
+    "record-state-old-method-included.invalid.json": "record-state.schema.json",
+    "run-manifest-current-only-history.invalid.json": "run-manifest.schema.json",
+    "scientific-record-mutable-position.invalid.json": "scientific-record.schema.json",
+    "action-descriptor-cross-family.invalid.json": "action-descriptor.schema.json",
+    "method-lifecycle-malformed-digest.invalid.json": "method-lifecycle-command.schema.json",
+    "run-cancellation-submitted.invalid.json": "run-cancellation-command.schema.json",
+    "run-state-cancellation-after-submission.invalid.json": "run-state.schema.json",
+    "lead-no-proposal-with-method.invalid.json": "lead-proposal-legacy.schema.json",
+    "lead-no-proposal-empty-reason.invalid.json": "lead-proposal-legacy.schema.json",
+    "contextual-attention-missing-context.invalid.json": "contextual-attention-item.schema.json",
+    "contextual-attention-blank-context.invalid.json": "contextual-attention-item.schema.json",
+    "contextual-attention-missing-kind.invalid.json": "contextual-attention-item.schema.json",
+    "contextual-attention-invalid-phase.invalid.json": "contextual-attention-item.schema.json",
+    "contextual-attention-legacy-output.invalid.json": "contextual-attention-item.schema.json",
+    "research-basis-bare-clarification.invalid.json": "research-basis.schema.json",
+    "research-basis-legacy-attention.invalid.json": "research-basis.schema.json",
+    "literature-findings-missing-reading-extent.invalid.json": "literature-findings.schema.json",
+    "research-basis-missing-review.invalid.json": "research-basis.schema.json",
+    "research-basis-correction-missing-digest.invalid.json": "research-basis.schema.json",
+    "research-basis-correction-mutable-identity.invalid.json": "research-basis.schema.json",
+    "research-basis-correction-empty.invalid.json": "research-basis.schema.json",
+    "research-basis-framework-missing-math.invalid.json": "research-basis.schema.json",
+    "research-basis-unsupported-certification.invalid.json": "research-basis.schema.json",
+    "research-basis-supported-without-entries.invalid.json": "research-basis.schema.json",
+    "lead-no-proposal-current.invalid.json": "lead-proposal.schema.json",
+    "proposal-audit-missing-headline.invalid.json": "proposal-audit.schema.json",
+    "proposal-audit-missing-finding-title.invalid.json": "proposal-audit.schema.json",
+    "proposal-audit-invalid-statement-pointer.invalid.json": "proposal-audit.schema.json",
+    "catalog-assessment-missing-overview.invalid.json": "catalog-assessment.schema.json",
+    "method-proposal-missing-profile.invalid.json": "method-proposal.schema.json",
+    "catalog-assessment-unknown-modification-target.invalid.json": "semantic:catalog_modification_target",
+    "research-basis-missing-goal.invalid.json": "research-basis.schema.json",
+    "research-basis-missing-components.invalid.json": "research-basis.schema.json"
+  },
+  "notes": "invalid_examples values are schema filenames, except the prefix 'semantic:' which marks fixtures requiring the originating product's semantic replay harness (validated there, not by schema checks).",
+  "contract_documents": {
+    "contracts/phases.json": "phase-contract.schema.json",
+    "contracts/digest-contracts.json": "digest-contract-registry.schema.json",
+    "contracts/traceability.json": "traceability-registry.schema.json"
+  },
+  "phase_fragments": {
+    "contracts/phases/P1.json": "phase-contract.schema.json#/$defs/phaseContract",
+    "contracts/phases/P2.json": "phase-contract.schema.json#/$defs/phaseContract",
+    "contracts/phases/P3.json": "phase-contract.schema.json#/$defs/phaseContract",
+    "contracts/phases/P4.json": "phase-contract.schema.json#/$defs/phaseContract",
+    "contracts/phases/P5.json": "phase-contract.schema.json#/$defs/phaseContract"
+  },
+  "expected_phase_roles": {
+    "P1": [
+      [
+        "parallel",
+        [
+          "research_lead",
+          "theorist",
+          "data_analyst"
+        ]
+      ],
+      [
+        "serial",
+        [
+          "research_lead"
+        ]
+      ]
+    ],
+    "P2": [
+      [
+        "parallel",
+        [
+          "research_lead",
+          "theorist",
+          "data_analyst"
+        ]
+      ],
+      [
+        "parallel",
+        [
+          "theorist",
+          "data_analyst"
+        ]
+      ],
+      [
+        "serial",
+        [
+          "research_lead"
+        ]
+      ]
+    ],
+    "P3": [
+      [
+        "serial",
+        [
+          "theorist"
+        ]
+      ],
+      [
+        "serial",
+        [
+          "data_analyst"
+        ]
+      ],
+      [
+        "serial",
+        [
+          "research_lead"
+        ]
+      ]
+    ],
+    "P4": [
+      [
+        "serial",
+        [
+          "data_analyst"
+        ]
+      ],
+      [
+        "serial",
+        [
+          "theorist"
+        ]
+      ],
+      [
+        "serial",
+        [
+          "research_lead"
+        ]
+      ]
+    ]
+  },
+  "expected_phase_roles_by_mode": {
+    "p2.full_catalog": [
+      [
+        "parallel",
+        [
+          "theorist",
+          "data_analyst"
+        ]
+      ],
+      [
+        "parallel",
+        [
+          "theorist",
+          "data_analyst"
+        ]
+      ],
+      [
+        "serial",
+        [
+          "research_lead"
+        ]
+      ]
+    ],
+    "p2.focused_method": [
+      [
+        "parallel",
+        [
+          "theorist",
+          "data_analyst"
+        ]
+      ],
+      [
+        "parallel",
+        [
+          "theorist",
+          "data_analyst"
+        ]
+      ],
+      [
+        "serial",
+        [
+          "research_lead"
+        ]
+      ]
+    ],
+    "p2.researcher_proposal": [
+      [
+        "parallel",
+        [
+          "theorist",
+          "data_analyst",
+          "research_lead"
+        ]
+      ],
+      [
+        "parallel",
+        [
+          "theorist",
+          "data_analyst"
+        ]
+      ],
+      [
+        "serial",
+        [
+          "research_lead"
+        ]
+      ]
+    ]
+  }
+}

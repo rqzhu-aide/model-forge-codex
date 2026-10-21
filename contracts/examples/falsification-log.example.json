@@ -1,0 +1,11 @@
+{
+ "probes": [
+  {
+   "probe_id": "probe.boc-v2.quantile-scope",
+   "target_statement": "statement.boc-v2.screened-lp-optimality",
+   "method": "Numeric counterexample: two-point burden distribution at z=1.9 under the expected-burden budget.",
+   "outcome": "fails_as_stated",
+   "detail": "Expected-burden feasibility does not imply the 95% per-step quantile guarantee; scope narrowed to expected-burden claims only."
+  }
+ ]
+}

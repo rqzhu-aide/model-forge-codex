@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/role-invocation-closure.schema.json",
+  "title": "Immutable Role Invocation Closure",
+  "description": "The terminal record for one immutable role invocation start. It seals actual context use, verified outputs, accepted handoffs, and failure or cancellation information without changing the start record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "invocation_closure_id",
+    "run_id",
+    "project_id",
+    "phase",
+    "mode",
+    "sequence",
+    "stage_id",
+    "execution_group_id",
+    "role",
+    "invocation_start_binding",
+    "terminal_status",
+    "context_snapshot_binding",
+    "verified_outputs",
+    "accepted_handoffs",
+    "closed_at",
+    "closure_sha256"
+  ],
+  "properties": {
+    "schema_version": {"$ref": "common-definitions.schema.json#/$defs/schemaVersion"},
+    "invocation_closure_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "run_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "project_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "phase": {"$ref": "common-definitions.schema.json#/$defs/phaseId"},
+    "mode": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "stage_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "execution_group_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "role": {"$ref": "common-definitions.schema.json#/$defs/roleId"},
+    "invocation_start_binding": {"$ref": "#/$defs/startBinding"},
+    "terminal_status": {"type": "string", "enum": ["succeeded", "failed", "cancelled"]},
+    "context_snapshot_binding": {"$ref": "#/$defs/contextSnapshotBinding"},
+    "verified_outputs": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/verifiedOutput"}
+    },
+    "accepted_handoffs": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/acceptedHandoff"}
+    },
+    "termination": {"$ref": "#/$defs/termination"},
+    "closed_at": {"type": "string", "format": "date-time"},
+    "closure_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "RFC 8785 SHA-256 over the complete immutable closure record with this property omitted."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"terminal_status": {"const": "succeeded"}},
+        "required": ["terminal_status"]
+      },
+      "then": {
+        "properties": {"verified_outputs": {"minItems": 1}},
+        "not": {"required": ["termination"]}
+      },
+      "else": {
+        "required": ["termination"],
+        "properties": {"accepted_handoffs": {"maxItems": 0}}
+      }
+    },
+    {
+      "if": {
+        "properties": {"terminal_status": {"const": "failed"}},
+        "required": ["terminal_status"]
+      },
+      "then": {
+        "properties": {
+          "termination": {
+            "properties": {"kind": {"const": "execution_failure"}},
+            "required": ["kind"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"terminal_status": {"const": "cancelled"}},
+        "required": ["terminal_status"]
+      },
+      "then": {
+        "properties": {
+          "termination": {
+            "properties": {"kind": {"const": "cancellation"}},
+            "required": ["kind"]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "startBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invocation_start_id", "artifact", "start_sha256"],
+      "properties": {
+        "invocation_start_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "artifact": {"$ref": "common-definitions.schema.json#/$defs/artifactPointer"},
+        "start_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"}
+      }
+    },
+    "contextSnapshotBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "artifact",
+        "prepared_context_source",
+        "snapshot_sha256",
+        "access_ledger_id",
+        "access_ledger_head_sha256",
+        "access_event_count",
+        "sealed_at"
+      ],
+      "properties": {
+        "snapshot_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "artifact": {"$ref": "common-definitions.schema.json#/$defs/artifactPointer"},
+        "prepared_context_source": {"$ref": "role-context-snapshot.schema.json#/$defs/preparedContextSource"},
+        "snapshot_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+        "access_ledger_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "access_ledger_head_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+        "access_event_count": {"type": "integer", "minimum": 0},
+        "sealed_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "verifiedOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "output_id",
+        "contract_output_id",
+        "output_kind",
+        "schema_uri",
+        "source_artifact",
+        "accepted_artifact",
+        "byte_length",
+        "verified_at"
+      ],
+      "properties": {
+        "output_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "contract_output_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "output_kind": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "schema_uri": {"type": "string", "format": "uri-reference"},
+        "source_artifact": {"$ref": "common-definitions.schema.json#/$defs/artifactPointer"},
+        "accepted_artifact": {"$ref": "common-definitions.schema.json#/$defs/artifactPointer"},
+        "byte_length": {"type": "integer", "minimum": 1},
+        "verified_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "acceptedHandoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "output_id",
+        "handoff_id",
+        "accepted_artifact",
+        "consumer_stage_ids",
+        "accepted_at"
+      ],
+      "properties": {
+        "output_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "handoff_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "accepted_artifact": {"$ref": "common-definitions.schema.json#/$defs/artifactPointer"},
+        "consumer_stage_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "common-definitions.schema.json#/$defs/stableId"}
+        },
+        "accepted_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "termination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "code", "summary", "diagnostic_artifacts"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["execution_failure", "cancellation"]},
+        "code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,63}$"},
+        "summary": {"$ref": "common-definitions.schema.json#/$defs/nonEmptyText"},
+        "cancellation_command_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "cancellation_command_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+        "diagnostic_artifacts": {
+          "type": "array",
+          "items": {"$ref": "common-definitions.schema.json#/$defs/artifactPointer"}
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"kind": {"const": "cancellation"}},
+            "required": ["kind"]
+          },
+          "then": {"required": ["cancellation_command_id", "cancellation_command_sha256"]},
+          "else": {
+            "not": {
+              "anyOf": [
+                {"required": ["cancellation_command_id"]},
+                {"required": ["cancellation_command_sha256"]}
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

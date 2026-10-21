@@ -1,0 +1,192 @@
+{
+  "schema_version": "1.3.0",
+  "title": "Orthogonal estimation research basis",
+  "research_setting": {
+    "statement_markdown": "The study concerns inference for a scientific parameter $\\theta_0$ from observations $W_i$ when auxiliary functions $\\eta_0$, such as conditional means, must also be learned from data. The substantive variables, collection process and sample dependence are not yet specified in this structural example.",
+    "component_interpretations": [
+      {
+        "symbol_latex": "W",
+        "mathematical_role_markdown": "Observed random vector.",
+        "problem_meaning_markdown": "Observed or envisioned study information; dataset columns unspecified."
+      },
+      {
+        "symbol_latex": "\\theta_0",
+        "mathematical_role_markdown": "Scientific target parameter.",
+        "problem_meaning_markdown": "Requested scientific quantity; substantive interpretation unresolved."
+      }
+    ],
+    "research_goal_markdown": "The interpreted goal is to estimate $\\theta_0$ and quantify uncertainty while allowing flexible learning of $\\eta_0$. A useful result would explain when that learning still permits reliable inference for the scientific target. The substantive meaning of $\\theta_0$ remains to be clarified; a particular score, learner and estimator will be developed in P2."
+  },
+  "phase2_preparation": {
+    "instructions_markdown": "No additional P2-specific preparation is identified."
+  },
+  "landscape": {
+    "summary_markdown": "Orthogonal-score methods and cross-fitting address different parts of estimation with learned nuisance functions. The former makes a target-defining moment $m(\\theta,\\eta)=\\mathbb E[\\psi(W;\\theta,\\eta)]$ locally insensitive to nuisance perturbations, while the latter evaluates scores on observations excluded from the corresponding nuisance fit [Chernozhukov et al., 2018](#cite:citation.orthogonal_scores.2018). Together they offer a way to study inference when nuisance functions are learned flexibly, but neither identifies the target by itself or supplies an unconditional guarantee. This fixture leaves the sampling structure, regularity and required nuisance accuracy unverified.",
+    "topics": [],
+    "frameworks": [
+      {
+        "framework_id": "framework.orthogonal_moments",
+        "title": "Orthogonal population moments",
+        "formulation_markdown": "Let $\\theta_0$ satisfy $\\mathbb E[\\psi(W;\\theta_0,\\eta_0)]=0$. Neyman orthogonality requires $\\left.\\partial_t\\mathbb E[\\psi(W;\\theta_0,\\eta_0+t h)]\\right|_{t=0}=0$ for admissible nuisance directions $h$.",
+        "assumptions_markdown": "The target $\\theta_0$ is identified by the population moment. The derivative exists for the declared admissible nuisance directions $h$; integrability and regularity must be stated for any inference claim.",
+        "explanation_markdown": "An orthogonal-score approach represents the target through a population moment and chooses the score so small nuisance errors have no first-order effect on that moment at the truth. Writing $m(\\theta,\\eta)=\\mathbb E[\\psi(W;\\theta,\\eta)]$ with $m(\\theta_0,\\eta_0)=0$, this requires $$\\left.\\frac{d}{dt}m(\\theta_0,\\eta_0+t h)\\right|_{t=0}=0$$ for admissible nuisance directions $h$. The construction is useful when $\\eta_0$ must be learned before estimating $\\theta_0$, because it reduces local sensitivity to that learning error. Identification, differentiability and control of the remaining error are still needed; the condition does not imply global invariance or an inference guarantee on its own.",
+        "relevance_markdown": "Separates the target-defining condition from the construction and estimation of nuisance functions.",
+        "entry_refs": [
+          {
+            "role": "theorist",
+            "family": "theory_literature",
+            "run_id": "run.p1.literature.20260701t100000z",
+            "entry_id": "entry.orthogonal_scores.theory"
+          }
+        ],
+        "support_status": "unverified",
+        "limitations": [
+          "Structural illustration using the existing source fixture, not a new scientific finding."
+        ],
+        "project_relevance": "conditional",
+        "relevance_reason_markdown": "Conditional fit: the project target must be identified by this moment; that link remains unresolved."
+      }
+    ],
+    "variants": [],
+    "relationships": [],
+    "algorithm_families": [
+      {
+        "algorithm_family_id": "algorithm.cross_fitted_moments",
+        "framework_ids": [
+          "framework.orthogonal_moments"
+        ],
+        "title": "Cross-fitted estimating equations",
+        "formulation_markdown": "Let $I_1,\\ldots,I_K$ partition $\\{1,\\ldots,n\\}$ and let $\\widehat\\eta_{-k}$ be fit without fold $I_k$. A pooled estimating equation is $$\\frac1n\\sum_{k=1}^K\\sum_{i\\in I_k}\\psi(W_i;\\widehat\\theta,\\widehat\\eta_{-k})=0.$$ The score and a rule for choosing a solution must be specified.",
+        "assumptions_markdown": "The sample structure must permit the declared split, the nuisance fits and moments must be well defined, and sufficient nuisance rates and identification are needed for any asymptotic claim.",
+        "explanation_markdown": "Cross-fitting separates nuisance learning from score evaluation by partitioning observations into folds $I_k$ and fitting $\\widehat\\eta_{-k}$ without fold $k$. The target estimate can then solve $$\\frac1n\\sum_{k=1}^{K}\\sum_{i\\in I_k}\\psi(W_i;\\widehat\\theta,\\widehat\\eta_{-k})=0.$$ Each observation is evaluated using a nuisance fit that did not train on it, reducing the reuse of fitting errors in the estimating equation. This is an estimation construction for the declared target, not a new target definition; the sampling structure must support the split, and identification, a solution rule and sufficient nuisance accuracy remain necessary for inference.",
+        "computational_requirements_markdown": "Fit nuisance functions on $K$ training complements and solve the pooled moment system. Cost depends on the nuisance learner, score evaluation and root solver.",
+        "entry_refs": [
+          {
+            "role": "theorist",
+            "family": "theory_literature",
+            "run_id": "run.p1.literature.20260701t100000z",
+            "entry_id": "entry.orthogonal_scores.theory"
+          }
+        ],
+        "support_status": "unverified",
+        "limitations": [
+          "Structural illustration using the existing source fixture, not a new scientific finding."
+        ]
+      }
+    ],
+    "overview_item_ids": [
+      "framework.orthogonal_moments"
+    ],
+    "citation_refs": [
+      {
+        "source_id": "citation.orthogonal_scores.2018",
+        "entry_ref": {
+          "role": "theorist",
+          "family": "theory_literature",
+          "run_id": "run.p1.literature.20260701t100000z",
+          "entry_id": "entry.orthogonal_scores.theory",
+          "entry_sha256": "742bf93bce5d13b3efff5e26cd946a53a010f6c69743fa50fbc84825841063b4"
+        }
+      }
+    ],
+    "common_assumptions": []
+  },
+  "coverage_limits": [
+    "Structural fixture, not a new scientific run."
+  ],
+  "attention_items": [
+    {
+      "schema_version": "1.2.0",
+      "attention_id": "attention.target_population.001",
+      "source_run_id": "run.p1.setting.001",
+      "raised_by": "research_lead",
+      "question": "Who should the estimate describe: the enrolled cohort or a wider deployment population?",
+      "severity": "monitor",
+      "likely_consequence": "A deployment-population claim requires the team to justify transport beyond the enrolled cohort; cohort-only results do not establish that broader claim.",
+      "affected_record_ids": [],
+      "affected_statement_ids": [],
+      "disposition": "open",
+      "content_sha256": "d2541bf22a8473960500d4f652d44506a2bc21f1be7a1e56ff5b5292fc4be5fb",
+      "created_at": "2026-08-01T15:05:00Z",
+      "updated_at": "2026-08-01T15:05:00Z",
+      "attention_version_id": "attention_version.target_population.001.v1",
+      "authority_at_creation": "run_local_candidate",
+      "kind": "researcher_decision",
+      "target_phase": "P1",
+      "context_markdown": "For this structural example, the proposed target solves $\\mathbb E_{P_0}[\\psi(W;\\theta_0,\\eta_0)]=0$, where $W$ is the observed record, $P_0$ is the enrolled-cohort distribution, $\\psi$ defines the target $\\theta_0$ and $\\eta_0$ is its nuisance function. Intended deployment to a different population with distribution $P_*$ changes which population expectation the conclusion must address. The project instructions do not yet specify substantive observations or that intended use; neither population is established as the actual deployment setting. Choosing the wider population does not establish that it is identified from the available data.",
+      "decision_priority": "interpretation",
+      "response_kind": "choice",
+      "scope": {
+        "kind": "project"
+      },
+      "audience": [
+        "research_lead",
+        "theorist",
+        "data_analyst"
+      ],
+      "options": [
+        {
+          "id": "enrolled_cohort",
+          "label": "Describe the enrolled cohort",
+          "consequence": "Supports a conclusion about this cohort; generalization beyond it remains unestablished."
+        },
+        {
+          "id": "deployment_population",
+          "label": "Address the wider deployment population",
+          "consequence": "Matches broader use, but the team must first establish transport assumptions and what additional data are needed."
+        }
+      ],
+      "recommendation": "A recommendation needs the intended application, which the available material does not specify. Use the wider population if broader deployment is the goal; use the enrolled cohort only if that narrower claim answers the intended question. The team must separately assess whether the chosen target is identified.",
+      "source_refs": [
+        {
+          "role": "theorist",
+          "family": "theory_literature",
+          "run_id": "run.p1.literature.20260701t100000z",
+          "entry_id": "entry.orthogonal_scores.theory"
+        }
+      ]
+    }
+  ],
+  "entry_corrections": [
+    {
+      "correction_id": "correction.orthogonality.scope",
+      "target": {
+        "role": "theorist",
+        "family": "theory_literature",
+        "run_id": "run.p1.literature.20260701t100000z",
+        "entry_id": "entry.orthogonal_scores.theory",
+        "entry_sha256": "8378e550219efbba96693445c672042b5509429be08fbb4db75f692de0b2225e"
+      },
+      "changes": {
+        "limitations_markdown": "Identification, moment regularity and appropriate nuisance convergence remain necessary; the equation alone is not a finite-sample guarantee. A local derivative condition is not a claim of global nuisance invariance."
+      },
+      "reason_markdown": "Make the local scope explicit without changing the authored derivative condition. This fixture demonstrates revision provenance; it is not a newly performed source audit.",
+      "evidence_locations": [
+        "Existing fixture: derivative evaluated at t=0"
+      ]
+    }
+  ],
+  "scientific_review": {
+    "scope_markdown": "Structural fixture demonstrating one scoped entry correction. No new primary-source reading or proof verification is claimed.",
+    "findings": [
+      {
+        "finding_id": "finding.orthogonality.scope",
+        "target": {
+          "role": "theorist",
+          "family": "theory_literature",
+          "run_id": "run.p1.literature.20260701t100000z",
+          "entry_id": "entry.orthogonal_scores.theory",
+          "entry_sha256": "8378e550219efbba96693445c672042b5509429be08fbb4db75f692de0b2225e"
+        },
+        "status": "corrected",
+        "assessment_markdown": "The displayed condition is local: $$\\left.\\frac{d}{dt}\\mathbb E[\\psi(W;\\theta_0,\\eta_0+t h)]\\right|_{t=0}=0.$$ It does not assert that the moment is unchanged for every finite $t$. The limitation now states this explicitly.",
+        "evidence_locations": [
+          "Existing fixture: orthogonality condition"
+        ]
+      }
+    ],
+    "limitations": [
+      "Schema example only; source support for the comparisons has not been independently checked."
+    ]
+  }
+}

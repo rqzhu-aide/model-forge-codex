@@ -1,0 +1,1405 @@
+{
+ "schema_version": "1.0.0",
+ "invariant_coverage": [
+  {
+   "invariant_id": "INV-001",
+   "requirement_ids": [
+    "MF-01",
+    "MF-08",
+    "MF-21",
+    "MF-26",
+    "MF-33",
+    "MF-52",
+    "MF-55",
+    "MF-58",
+    "MF-59",
+    "MF-68"
+   ],
+   "test_ids": [
+    "IT-001"
+   ],
+   "scenario_ids": [
+    "s01.first_project",
+    "s02.phase2_scopes",
+    "s03.phase4_before_phase3",
+    "s05.failed_run",
+    "s11.control_commands",
+    "s12.disjoint_concurrent_publication",
+    "s19.cancellation_timeout_process_tree",
+    "s20.restart_reconciliation_no_relaunch",
+    "s26.output_correction"
+   ]
+  },
+  {
+   "invariant_id": "INV-002",
+   "requirement_ids": [
+    "MF-20",
+    "MF-31",
+    "MF-50",
+    "MF-58"
+   ],
+   "test_ids": [
+    "IT-002"
+   ],
+   "scenario_ids": [
+    "s01.first_project",
+    "s02.phase2_scopes",
+    "s06.optional_history"
+   ]
+  },
+  {
+   "invariant_id": "INV-003",
+   "requirement_ids": [
+    "MF-03",
+    "MF-27",
+    "MF-29",
+    "MF-34",
+    "MF-35",
+    "MF-42",
+    "MF-43",
+    "MF-50",
+    "MF-53",
+    "MF-57",
+    "MF-60",
+    "MF-61",
+    "MF-62",
+    "MF-63",
+    "MF-66",
+    "MF-72"
+   ],
+   "test_ids": [
+    "IT-003"
+   ],
+   "scenario_ids": [
+    "s03.phase4_before_phase3",
+    "s06.optional_history",
+    "s08.phase5_workflow",
+    "s13.role_setup_configuration",
+    "s14.first_run_clean_state",
+    "s15.continuation_latest_promoted_state",
+    "s18.hermes_version_change_preflight",
+    "s24.safe_session_snapshot",
+    "s31.researcher_seed_input"
+   ]
+  },
+  {
+   "invariant_id": "INV-004",
+   "requirement_ids": [
+    "MF-02",
+    "MF-06",
+    "MF-29",
+    "MF-46",
+    "MF-54",
+    "MF-64"
+   ],
+   "test_ids": [
+    "IT-004"
+   ],
+   "scenario_ids": [
+    "s08.phase5_workflow",
+    "s16.fresh_reviewer_state"
+   ]
+  },
+  {
+   "invariant_id": "INV-005",
+   "requirement_ids": [
+    "MF-18",
+    "MF-23",
+    "MF-25",
+    "MF-29",
+    "MF-36",
+    "MF-42",
+    "MF-46",
+    "MF-53",
+    "MF-60"
+   ],
+   "test_ids": [
+    "IT-005"
+   ],
+   "scenario_ids": [
+    "s03.phase4_before_phase3",
+    "s08.phase5_workflow",
+    "s30.broadcast_handoff_multi_role"
+   ]
+  },
+  {
+   "invariant_id": "INV-006",
+   "requirement_ids": [
+    "MF-04",
+    "MF-10",
+    "MF-12",
+    "MF-37",
+    "MF-45",
+    "MF-60",
+    "MF-65"
+   ],
+   "test_ids": [
+    "IT-006"
+   ],
+   "scenario_ids": [
+    "s01.first_project",
+    "s05.failed_run",
+    "s09.interrupted_promotion",
+    "s17.invalid_output_no_state_change",
+    "s22.failed_promotion_preserves_last_known_good",
+    "s25.deterministic_normalization",
+    "s26.output_correction",
+    "s27.revalidation",
+    "s28.integrity_rejection"
+   ]
+  },
+  {
+   "invariant_id": "INV-007",
+   "requirement_ids": [
+    "MF-05",
+    "MF-40",
+    "MF-45",
+    "MF-49",
+    "MF-56",
+    "MF-69",
+    "MF-70"
+   ],
+   "test_ids": [
+    "IT-007"
+   ],
+   "scenario_ids": [
+    "s09.interrupted_promotion",
+    "s12.disjoint_concurrent_publication",
+    "s21.stale_lock_ownership",
+    "s22.failed_promotion_preserves_last_known_good",
+    "s28.integrity_rejection"
+   ]
+  },
+  {
+   "invariant_id": "INV-008",
+   "requirement_ids": [
+    "MF-51"
+   ],
+   "test_ids": [
+    "IT-008"
+   ],
+   "scenario_ids": [
+    "s09.interrupted_promotion"
+   ]
+  },
+  {
+   "invariant_id": "INV-009",
+   "requirement_ids": [
+    "MF-07",
+    "MF-41",
+    "MF-42"
+   ],
+   "test_ids": [
+    "IT-009"
+   ],
+   "scenario_ids": [
+    "s01.first_project",
+    "s06.optional_history",
+    "s08.phase5_workflow"
+   ]
+  },
+  {
+   "invariant_id": "INV-010",
+   "requirement_ids": [
+    "MF-13",
+    "MF-14",
+    "MF-15",
+    "MF-47",
+    "MF-57"
+   ],
+   "test_ids": [
+    "IT-010"
+   ],
+   "scenario_ids": [
+    "s02.phase2_scopes",
+    "s04.method_definition_change"
+   ]
+  },
+  {
+   "invariant_id": "INV-011",
+   "requirement_ids": [
+    "MF-16",
+    "MF-17",
+    "MF-24",
+    "MF-27"
+   ],
+   "test_ids": [
+    "IT-011"
+   ],
+   "scenario_ids": [
+    "s03.phase4_before_phase3",
+    "s04.method_definition_change",
+    "s07.evidence_revalidation",
+    "s08.phase5_workflow",
+    "s27.revalidation"
+   ]
+  },
+  {
+   "invariant_id": "INV-012",
+   "requirement_ids": [
+    "MF-06",
+    "MF-30",
+    "MF-38",
+    "MF-39"
+   ],
+   "test_ids": [
+    "IT-012"
+   ],
+   "scenario_ids": [
+    "s09.interrupted_promotion",
+    "s13.role_setup_configuration",
+    "s27.revalidation"
+   ]
+  },
+  {
+   "invariant_id": "INV-013",
+   "requirement_ids": [
+    "MF-10",
+    "MF-11",
+    "MF-12"
+   ],
+   "test_ids": [
+    "IT-013"
+   ],
+   "scenario_ids": [
+    "s10.negative_result",
+    "s29.warning_only_publication"
+   ]
+  },
+  {
+   "invariant_id": "INV-014",
+   "requirement_ids": [
+    "MF-09",
+    "MF-32",
+    "MF-58"
+   ],
+   "test_ids": [
+    "IT-014"
+   ],
+   "scenario_ids": [
+    "s03.phase4_before_phase3",
+    "s04.method_definition_change",
+    "s07.evidence_revalidation",
+    "s10.negative_result",
+    "s29.warning_only_publication"
+   ]
+  },
+  {
+   "invariant_id": "INV-015",
+   "requirement_ids": [
+    "MF-18",
+    "MF-31",
+    "MF-36"
+   ],
+   "test_ids": [
+    "IT-015"
+   ],
+   "scenario_ids": [
+    "s01.first_project",
+    "s08.phase5_workflow",
+    "s10.negative_result",
+    "s29.warning_only_publication"
+   ]
+  },
+  {
+   "invariant_id": "INV-016",
+   "requirement_ids": [
+    "MF-21",
+    "MF-30",
+    "MF-31",
+    "MF-32",
+    "MF-33",
+    "MF-58",
+    "MF-59"
+   ],
+   "test_ids": [
+    "IT-016"
+   ],
+   "scenario_ids": [
+    "s01.first_project",
+    "s02.phase2_scopes",
+    "s03.phase4_before_phase3",
+    "s05.failed_run",
+    "s08.phase5_workflow",
+    "s09.interrupted_promotion",
+    "s10.negative_result",
+    "s11.control_commands",
+    "s25.deterministic_normalization",
+    "s26.output_correction",
+    "s28.integrity_rejection"
+   ]
+  },
+  {
+   "invariant_id": "INV-017",
+   "requirement_ids": [
+    "MF-05",
+    "MF-12",
+    "MF-52",
+    "MF-56",
+    "MF-59",
+    "MF-67",
+    "MF-71"
+   ],
+   "test_ids": [
+    "IT-017"
+   ],
+   "scenario_ids": [
+    "s05.failed_run",
+    "s09.interrupted_promotion",
+    "s12.disjoint_concurrent_publication",
+    "s17.invalid_output_no_state_change",
+    "s19.cancellation_timeout_process_tree",
+    "s23.bounded_logs_flood_overlong"
+   ]
+  },
+  {
+   "invariant_id": "INV-018",
+   "requirement_ids": [
+    "MF-05",
+    "MF-19",
+    "MF-22",
+    "MF-24",
+    "MF-28",
+    "MF-38",
+    "MF-40",
+    "MF-45",
+    "MF-47",
+    "MF-48",
+    "MF-49",
+    "MF-55",
+    "MF-56"
+   ],
+   "test_ids": [
+    "IT-018"
+   ],
+   "scenario_ids": [
+    "s01.first_project",
+    "s02.phase2_scopes",
+    "s03.phase4_before_phase3",
+    "s04.method_definition_change",
+    "s07.evidence_revalidation",
+    "s08.phase5_workflow",
+    "s09.interrupted_promotion",
+    "s11.control_commands",
+    "s12.disjoint_concurrent_publication"
+   ]
+  },
+  {
+   "invariant_id": "INV-019",
+   "requirement_ids": [
+    "MF-28",
+    "MF-39",
+    "MF-40",
+    "MF-44",
+    "MF-51",
+    "MF-57"
+   ],
+   "test_ids": [
+    "IT-019"
+   ],
+   "scenario_ids": [
+    "s04.method_definition_change",
+    "s07.evidence_revalidation",
+    "s09.interrupted_promotion",
+    "s11.control_commands"
+   ]
+  },
+  {
+   "invariant_id": "INV-020",
+   "requirement_ids": [
+    "MF-45"
+   ],
+   "test_ids": [
+    "IT-020"
+   ],
+   "scenario_ids": [
+    "s09.interrupted_promotion",
+    "s12.disjoint_concurrent_publication"
+   ]
+  },
+  {
+   "invariant_id": "INV-021",
+   "requirement_ids": [
+    "MF-40",
+    "MF-44",
+    "MF-57"
+   ],
+   "test_ids": [
+    "IT-021"
+   ],
+   "scenario_ids": [
+    "s09.interrupted_promotion",
+    "s12.disjoint_concurrent_publication"
+   ]
+  },
+  {
+   "invariant_id": "INV-022",
+   "requirement_ids": [
+    "MF-47",
+    "MF-48",
+    "MF-49",
+    "MF-55",
+    "MF-58",
+    "MF-59"
+   ],
+   "test_ids": [
+    "IT-022"
+   ],
+   "scenario_ids": [
+    "s11.control_commands"
+   ]
+  },
+  {
+   "invariant_id": "INV-023",
+   "requirement_ids": [
+    "MF-13",
+    "MF-14",
+    "MF-15",
+    "MF-47",
+    "MF-57"
+   ],
+   "test_ids": [
+    "IT-023"
+   ],
+   "scenario_ids": [
+    "s01.first_project",
+    "s02.phase2_scopes"
+   ]
+  },
+  {
+   "invariant_id": "INV-024",
+   "requirement_ids": [
+    "MF-13",
+    "MF-14",
+    "MF-15",
+    "MF-47",
+    "MF-57"
+   ],
+   "test_ids": [
+    "IT-024"
+   ],
+   "scenario_ids": [
+    "s01.first_project",
+    "s02.phase2_scopes"
+   ]
+  }
+ ],
+ "scenarios": [
+  {
+   "scenario_id": "s01.first_project",
+   "scenario_code": "S01",
+   "document": "architecture/design/scenarios/S01-first-project.md",
+   "phase_contracts": [
+    "P1",
+    "P2"
+   ],
+   "milestones": [
+    "M4",
+    "M5"
+   ],
+   "invariant_ids": [
+    "INV-001",
+    "INV-002",
+    "INV-006",
+    "INV-009",
+    "INV-015",
+    "INV-016",
+    "INV-018",
+    "INV-023",
+    "INV-024"
+   ],
+   "requirement_ids": [
+    "MF-01",
+    "MF-04",
+    "MF-07",
+    "MF-18",
+    "MF-19",
+    "MF-20",
+    "MF-21",
+    "MF-30",
+    "MF-31",
+    "MF-37",
+    "MF-45",
+    "MF-50"
+   ],
+   "test_ids": [
+    "IT-001",
+    "IT-002",
+    "IT-006",
+    "IT-009",
+    "IT-015",
+    "IT-016",
+    "IT-018",
+    "IT-023",
+    "IT-024"
+   ]
+  },
+  {
+   "scenario_id": "s02.phase2_scopes",
+   "scenario_code": "S02",
+   "document": "architecture/design/scenarios/S02-phase2-scopes.md",
+   "phase_contracts": [
+    "P2"
+   ],
+   "milestones": [
+    "M5"
+   ],
+   "invariant_ids": [
+    "INV-001",
+    "INV-002",
+    "INV-010",
+    "INV-016",
+    "INV-018",
+    "INV-023",
+    "INV-024"
+   ],
+   "requirement_ids": [
+    "MF-01",
+    "MF-13",
+    "MF-14",
+    "MF-20",
+    "MF-30",
+    "MF-31",
+    "MF-50"
+   ],
+   "test_ids": [
+    "IT-001",
+    "IT-002",
+    "IT-010",
+    "IT-016",
+    "IT-018",
+    "IT-023",
+    "IT-024"
+   ]
+  },
+  {
+   "scenario_id": "s03.phase4_before_phase3",
+   "scenario_code": "S03",
+   "document": "architecture/design/scenarios/S03-phase4-before-phase3.md",
+   "phase_contracts": [
+    "P3",
+    "P4"
+   ],
+   "milestones": [
+    "M6"
+   ],
+   "invariant_ids": [
+    "INV-001",
+    "INV-003",
+    "INV-005",
+    "INV-011",
+    "INV-014",
+    "INV-016",
+    "INV-018"
+   ],
+   "requirement_ids": [
+    "MF-01",
+    "MF-03",
+    "MF-08",
+    "MF-16",
+    "MF-17",
+    "MF-23",
+    "MF-24",
+    "MF-25",
+    "MF-26",
+    "MF-31",
+    "MF-32",
+    "MF-36",
+    "MF-43",
+    "MF-45",
+    "MF-50",
+    "MF-60"
+   ],
+   "test_ids": [
+    "IT-001",
+    "IT-003",
+    "IT-005",
+    "IT-011",
+    "IT-014",
+    "IT-016",
+    "IT-018"
+   ]
+  },
+  {
+   "scenario_id": "s04.method_definition_change",
+   "scenario_code": "S04",
+   "document": "architecture/design/scenarios/S04-method-definition-change.md",
+   "phase_contracts": [
+    "P2",
+    "P3",
+    "P4"
+   ],
+   "milestones": [
+    "M5",
+    "M6"
+   ],
+   "invariant_ids": [
+    "INV-010",
+    "INV-011",
+    "INV-014",
+    "INV-018",
+    "INV-019"
+   ],
+   "requirement_ids": [
+    "MF-13",
+    "MF-14",
+    "MF-15",
+    "MF-16",
+    "MF-39",
+    "MF-44",
+    "MF-45",
+    "MF-57"
+   ],
+   "test_ids": [
+    "IT-010",
+    "IT-011",
+    "IT-014",
+    "IT-018",
+    "IT-019"
+   ]
+  },
+  {
+   "scenario_id": "s05.failed_run",
+   "scenario_code": "S05",
+   "document": "architecture/design/scenarios/S05-failed-run.md",
+   "phase_contracts": [
+    "P3"
+   ],
+   "milestones": [
+    "M3",
+    "M6"
+   ],
+   "invariant_ids": [
+    "INV-001",
+    "INV-006",
+    "INV-016",
+    "INV-017"
+   ],
+   "requirement_ids": [
+    "MF-01",
+    "MF-04",
+    "MF-05",
+    "MF-12",
+    "MF-30",
+    "MF-31",
+    "MF-52",
+    "MF-55",
+    "MF-58",
+    "MF-59"
+   ],
+   "test_ids": [
+    "IT-001",
+    "IT-006",
+    "IT-016",
+    "IT-017"
+   ]
+  },
+  {
+   "scenario_id": "s06.optional_history",
+   "scenario_code": "S06",
+   "document": "architecture/design/scenarios/S06-optional-history.md",
+   "phase_contracts": [
+    "P1",
+    "P3"
+   ],
+   "milestones": [
+    "M3",
+    "M4",
+    "M6"
+   ],
+   "invariant_ids": [
+    "INV-002",
+    "INV-003",
+    "INV-009"
+   ],
+   "requirement_ids": [
+    "MF-03",
+    "MF-07",
+    "MF-42",
+    "MF-50"
+   ],
+   "test_ids": [
+    "IT-002",
+    "IT-003",
+    "IT-009"
+   ]
+  },
+  {
+   "scenario_id": "s07.evidence_revalidation",
+   "scenario_code": "S07",
+   "document": "architecture/design/scenarios/S07-evidence-revalidation.md",
+   "phase_contracts": [
+    "P4"
+   ],
+   "milestones": [
+    "M6"
+   ],
+   "invariant_ids": [
+    "INV-011",
+    "INV-014",
+    "INV-018",
+    "INV-019"
+   ],
+   "requirement_ids": [
+    "MF-16",
+    "MF-24",
+    "MF-32",
+    "MF-39",
+    "MF-40",
+    "MF-45"
+   ],
+   "test_ids": [
+    "IT-011",
+    "IT-014",
+    "IT-018",
+    "IT-019"
+   ]
+  },
+  {
+   "scenario_id": "s08.phase5_workflow",
+   "scenario_code": "S08",
+   "document": "architecture/design/scenarios/S08-phase5-workflow.md",
+   "phase_contracts": [
+    "P5"
+   ],
+   "milestones": [
+    "M7"
+   ],
+   "invariant_ids": [
+    "INV-003",
+    "INV-004",
+    "INV-005",
+    "INV-011",
+    "INV-015",
+    "INV-016",
+    "INV-018",
+    "INV-009"
+   ],
+   "requirement_ids": [
+    "MF-03",
+    "MF-18",
+    "MF-27",
+    "MF-28",
+    "MF-29",
+    "MF-31",
+    "MF-34",
+    "MF-35",
+    "MF-36",
+    "MF-41",
+    "MF-42",
+    "MF-45",
+    "MF-46",
+    "MF-53",
+    "MF-54",
+    "MF-58",
+    "MF-60"
+   ],
+   "test_ids": [
+    "IT-003",
+    "IT-004",
+    "IT-005",
+    "IT-011",
+    "IT-015",
+    "IT-016",
+    "IT-018",
+    "IT-009"
+   ]
+  },
+  {
+   "scenario_id": "s09.interrupted_promotion",
+   "scenario_code": "S09",
+   "document": "architecture/design/scenarios/S09-interrupted-promotion.md",
+   "phase_contracts": [
+    "P1",
+    "P2",
+    "P5"
+   ],
+   "milestones": [
+    "M2",
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-006",
+    "INV-007",
+    "INV-008",
+    "INV-012",
+    "INV-016",
+    "INV-017",
+    "INV-018",
+    "INV-019",
+    "INV-020",
+    "INV-021"
+   ],
+   "requirement_ids": [
+    "MF-04",
+    "MF-05",
+    "MF-12",
+    "MF-39",
+    "MF-40",
+    "MF-44",
+    "MF-45",
+    "MF-51",
+    "MF-56",
+    "MF-57"
+   ],
+   "test_ids": [
+    "IT-006",
+    "IT-007",
+    "IT-008",
+    "IT-012",
+    "IT-016",
+    "IT-017",
+    "IT-018",
+    "IT-019",
+    "IT-020",
+    "IT-021"
+   ]
+  },
+  {
+   "scenario_id": "s10.negative_result",
+   "scenario_code": "S10",
+   "document": "architecture/design/scenarios/S10-negative-result.md",
+   "phase_contracts": [
+    "P3",
+    "P4",
+    "P5"
+   ],
+   "milestones": [
+    "M6",
+    "M7"
+   ],
+   "invariant_ids": [
+    "INV-013",
+    "INV-014",
+    "INV-015",
+    "INV-016"
+   ],
+   "requirement_ids": [
+    "MF-10",
+    "MF-11",
+    "MF-18",
+    "MF-31",
+    "MF-32"
+   ],
+   "test_ids": [
+    "IT-013",
+    "IT-014",
+    "IT-015",
+    "IT-016"
+   ]
+  },
+  {
+   "scenario_id": "s11.control_commands",
+   "scenario_code": "S11",
+   "document": "architecture/design/scenarios/S11-control-commands.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M2",
+    "M5"
+   ],
+   "invariant_ids": [
+    "INV-001",
+    "INV-016",
+    "INV-018",
+    "INV-019",
+    "INV-022"
+   ],
+   "requirement_ids": [
+    "MF-33",
+    "MF-39",
+    "MF-47",
+    "MF-48",
+    "MF-49",
+    "MF-55",
+    "MF-58",
+    "MF-59"
+   ],
+   "test_ids": [
+    "IT-001",
+    "IT-016",
+    "IT-018",
+    "IT-019",
+    "IT-022"
+   ]
+  },
+  {
+   "scenario_id": "s12.disjoint_concurrent_publication",
+   "scenario_code": "S12",
+   "document": "architecture/design/scenarios/S12-disjoint-concurrent-publication.md",
+   "phase_contracts": [
+    "P3"
+   ],
+   "milestones": [
+    "M2",
+    "M3",
+    "M6"
+   ],
+   "invariant_ids": [
+    "INV-001",
+    "INV-007",
+    "INV-017",
+    "INV-018",
+    "INV-020",
+    "INV-021"
+   ],
+   "requirement_ids": [
+    "MF-01",
+    "MF-05",
+    "MF-12",
+    "MF-40",
+    "MF-44",
+    "MF-45",
+    "MF-56",
+    "MF-57",
+    "MF-59"
+   ],
+   "test_ids": [
+    "IT-001",
+    "IT-007",
+    "IT-017",
+    "IT-018",
+    "IT-020",
+    "IT-021"
+   ]
+  },
+  {
+   "scenario_id": "s13.role_setup_configuration",
+   "scenario_code": "S13",
+   "document": "architecture/design/scenarios/S13-role-setup-configuration.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-003",
+    "INV-012"
+   ],
+   "requirement_ids": [
+    "MF-34",
+    "MF-35",
+    "MF-38",
+    "MF-61"
+   ],
+   "test_ids": [
+    "IT-003",
+    "IT-012"
+   ]
+  },
+  {
+   "scenario_id": "s14.first_run_clean_state",
+   "scenario_code": "S14",
+   "document": "architecture/design/scenarios/S14-first-run-clean-state.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-003"
+   ],
+   "requirement_ids": [
+    "MF-34",
+    "MF-53",
+    "MF-62"
+   ],
+   "test_ids": [
+    "IT-003"
+   ]
+  },
+  {
+   "scenario_id": "s15.continuation_latest_promoted_state",
+   "scenario_code": "S15",
+   "document": "architecture/design/scenarios/S15-continuation-latest-promoted-state.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-003"
+   ],
+   "requirement_ids": [
+    "MF-03",
+    "MF-53",
+    "MF-63"
+   ],
+   "test_ids": [
+    "IT-003"
+   ]
+  },
+  {
+   "scenario_id": "s16.fresh_reviewer_state",
+   "scenario_code": "S16",
+   "document": "architecture/design/scenarios/S16-fresh-reviewer-state.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-004"
+   ],
+   "requirement_ids": [
+    "MF-29",
+    "MF-64"
+   ],
+   "test_ids": [
+    "IT-004"
+   ]
+  },
+  {
+   "scenario_id": "s17.invalid_output_no_state_change",
+   "scenario_code": "S17",
+   "document": "architecture/design/scenarios/S17-invalid-output-no-state-change.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-006",
+    "INV-017"
+   ],
+   "requirement_ids": [
+    "MF-04",
+    "MF-12",
+    "MF-65"
+   ],
+   "test_ids": [
+    "IT-006",
+    "IT-017"
+   ]
+  },
+  {
+   "scenario_id": "s18.hermes_version_change_preflight",
+   "scenario_code": "S18",
+   "document": "architecture/design/scenarios/S18-hermes-version-change-preflight.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-003"
+   ],
+   "requirement_ids": [
+    "MF-03",
+    "MF-34",
+    "MF-66"
+   ],
+   "test_ids": [
+    "IT-003"
+   ]
+  },
+  {
+   "scenario_id": "s19.cancellation_timeout_process_tree",
+   "scenario_code": "S19",
+   "document": "architecture/design/scenarios/S19-cancellation-timeout-process-tree.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-001",
+    "INV-017"
+   ],
+   "requirement_ids": [
+    "MF-52",
+    "MF-67"
+   ],
+   "test_ids": [
+    "IT-001",
+    "IT-017"
+   ]
+  },
+  {
+   "scenario_id": "s20.restart_reconciliation_no_relaunch",
+   "scenario_code": "S20",
+   "document": "architecture/design/scenarios/S20-restart-reconciliation-no-relaunch.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M9"
+   ],
+   "invariant_ids": [
+    "INV-001"
+   ],
+   "requirement_ids": [
+    "MF-01",
+    "MF-08",
+    "MF-68"
+   ],
+   "test_ids": [
+    "IT-001"
+   ]
+  },
+  {
+   "scenario_id": "s21.stale_lock_ownership",
+   "scenario_code": "S21",
+   "document": "architecture/design/scenarios/S21-stale-lock-ownership.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M9"
+   ],
+   "invariant_ids": [
+    "INV-007"
+   ],
+   "requirement_ids": [
+    "MF-49",
+    "MF-69"
+   ],
+   "test_ids": [
+    "IT-007"
+   ]
+  },
+  {
+   "scenario_id": "s22.failed_promotion_preserves_last_known_good",
+   "scenario_code": "S22",
+   "document": "architecture/design/scenarios/S22-failed-promotion-preserves-last-known-good.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-006",
+    "INV-007"
+   ],
+   "requirement_ids": [
+    "MF-05",
+    "MF-12",
+    "MF-70"
+   ],
+   "test_ids": [
+    "IT-006",
+    "IT-007"
+   ]
+  },
+  {
+   "scenario_id": "s23.bounded_logs_flood_overlong",
+   "scenario_code": "S23",
+   "document": "architecture/design/scenarios/S23-bounded-logs-flood-overlong.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3",
+    "M9"
+   ],
+   "invariant_ids": [
+    "INV-017"
+   ],
+   "requirement_ids": [
+    "MF-59",
+    "MF-71"
+   ],
+   "test_ids": [
+    "IT-017"
+   ]
+  },
+  {
+   "scenario_id": "s24.safe_session_snapshot",
+   "scenario_code": "S24",
+   "document": "architecture/design/scenarios/S24-safe-session-snapshot.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M9"
+   ],
+   "invariant_ids": [
+    "INV-003"
+   ],
+   "requirement_ids": [
+    "MF-53",
+    "MF-72"
+   ],
+   "test_ids": [
+    "IT-003"
+   ]
+  },
+  {
+   "scenario_id": "s25.deterministic_normalization",
+   "scenario_code": "S25",
+   "document": "architecture/design/scenarios/S25-deterministic-normalization.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-006",
+    "INV-016"
+   ],
+   "requirement_ids": [
+    "MF-04",
+    "MF-10",
+    "MF-21",
+    "MF-30",
+    "MF-33",
+    "MF-58",
+    "MF-59"
+   ],
+   "test_ids": [
+    "IT-006",
+    "IT-016"
+   ]
+  },
+  {
+   "scenario_id": "s26.output_correction",
+   "scenario_code": "S26",
+   "document": "architecture/design/scenarios/S26-output-correction.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-001",
+    "INV-006",
+    "INV-016"
+   ],
+   "requirement_ids": [
+    "MF-01",
+    "MF-04",
+    "MF-08",
+    "MF-10",
+    "MF-21",
+    "MF-26",
+    "MF-33",
+    "MF-52",
+    "MF-58",
+    "MF-59"
+   ],
+   "test_ids": [
+    "IT-001",
+    "IT-006",
+    "IT-016"
+   ]
+  },
+  {
+   "scenario_id": "s27.revalidation",
+   "scenario_code": "S27",
+   "document": "architecture/design/scenarios/S27-revalidation.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-006",
+    "INV-011",
+    "INV-012"
+   ],
+   "requirement_ids": [
+    "MF-04",
+    "MF-06",
+    "MF-10",
+    "MF-16",
+    "MF-17",
+    "MF-24",
+    "MF-27",
+    "MF-30",
+    "MF-38",
+    "MF-39"
+   ],
+   "test_ids": [
+    "IT-006",
+    "IT-011",
+    "IT-012"
+   ]
+  },
+  {
+   "scenario_id": "s28.integrity_rejection",
+   "scenario_code": "S28",
+   "document": "architecture/design/scenarios/S28-integrity-rejection.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-006",
+    "INV-007",
+    "INV-016"
+   ],
+   "requirement_ids": [
+    "MF-04",
+    "MF-05",
+    "MF-10",
+    "MF-12",
+    "MF-21",
+    "MF-30",
+    "MF-33",
+    "MF-40",
+    "MF-45",
+    "MF-56",
+    "MF-58",
+    "MF-59",
+    "MF-65",
+    "MF-69",
+    "MF-70"
+   ],
+   "test_ids": [
+    "IT-006",
+    "IT-007",
+    "IT-016"
+   ]
+  },
+  {
+   "scenario_id": "s29.warning_only_publication",
+   "scenario_code": "S29",
+   "document": "architecture/design/scenarios/S29-warning-only-publication.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M6",
+    "M7"
+   ],
+   "invariant_ids": [
+    "INV-013",
+    "INV-014",
+    "INV-015"
+   ],
+   "requirement_ids": [
+    "MF-09",
+    "MF-10",
+    "MF-11",
+    "MF-12",
+    "MF-18",
+    "MF-31",
+    "MF-32",
+    "MF-36",
+    "MF-58"
+   ],
+   "test_ids": [
+    "IT-013",
+    "IT-014",
+    "IT-015"
+   ]
+  },
+  {
+   "scenario_id": "s30.broadcast_handoff_multi_role",
+   "scenario_code": "S30",
+   "document": "architecture/design/scenarios/S30-broadcast-handoff-multi-role.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M3"
+   ],
+   "invariant_ids": [
+    "INV-005"
+   ],
+   "requirement_ids": [
+    "MF-18",
+    "MF-36",
+    "MF-46"
+   ],
+   "test_ids": [
+    "IT-005"
+   ]
+  },
+  {
+   "scenario_id": "s31.researcher_seed_input",
+   "scenario_code": "S31",
+   "document": "architecture/design/scenarios/S31-researcher-seed-input.md",
+   "phase_contracts": [],
+   "milestones": [
+    "M7"
+   ],
+   "invariant_ids": [
+    "INV-003"
+   ],
+   "requirement_ids": [
+    "MF-34",
+    "MF-35"
+   ],
+   "test_ids": [
+    "IT-003"
+   ]
+  }
+ ]
+}

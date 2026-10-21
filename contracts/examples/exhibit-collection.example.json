@@ -1,0 +1,13 @@
+[
+ {
+  "exhibit_id": "exhibit.p4.feasibility-boundary",
+  "kind": "figure",
+  "title": "Feasibility boundary over (gamma, B)",
+  "caption": "Every declared budget B in {0.004, 0.18, 0.45} is infeasible at all four gamma values; the boundary lies below the declared grid.",
+  "detail_md": "Computed by exhaustive occupancy-LP feasibility probes on the frozen four-state arrays. Red cells = infeasible.",
+  "artifact_path": "figures/feasibility-boundary.svg",
+  "artifact_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "media_type": "image/svg+xml",
+  "figure_kind": "feasibility"
+ }
+]

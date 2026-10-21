@@ -1,0 +1,630 @@
+{
+ "phase_id": "P1",
+ "contract_version": "2.4.0",
+ "prose_contract": "architecture/phases/phase-1.md",
+ "name": "Literature basis",
+ "scientific_purpose": "Maintain a cumulative, deduplicated literature corpus and a replaceable synthesis of what is known, disputed, and missing for the project question.",
+ "current_record_semantics": {
+  "strategy": "cumulative_append",
+  "canonical_record_types": [
+   "literature_library",
+   "literature_synthesis",
+   "literature_coverage",
+   "phase_decision"
+  ],
+  "research_meaning": "The current basis combines every valid unique source with the latest integrated account of coverage, evidence, disagreement, and gaps.",
+  "history_policy": "Earlier syntheses remain historical. Current sources and synthesis are the default basis; prior records enter only when the user selects them."
+ },
+ "user_choices": [
+  {
+   "choice_id": "p1.scope",
+   "label": "Search scope",
+   "description": "Choose a broad update or a focused question.",
+   "required": true,
+   "allowed_values": [
+    "broad_update",
+    "focused_update"
+   ],
+   "value_kind": "enum_string"
+  },
+  {
+   "choice_id": "p1.instructions",
+   "label": "Research instructions",
+   "description": "State the scientific question, emphasis, exclusions, and source constraints.",
+   "required": true,
+   "allowed_values": [],
+   "value_kind": "text"
+  },
+  {
+   "choice_id": "p1.selected_history",
+   "label": "Selected history",
+   "description": "Optionally add named historical records for a specific research question.",
+   "required": false,
+   "allowed_values": [],
+   "value_kind": "artifact_pointer_list"
+  }
+ ],
+ "run_modes": [
+  {
+   "mode_id": "p1.literature_update",
+   "label": "Literature update",
+   "purpose": "Discover sources, update provenance, assess coverage, and replace the current synthesis.",
+   "requires_method": false,
+   "entry_conditions": [
+    "A formal current project brief is readable."
+   ],
+   "required_choice_ids": [
+    "p1.scope",
+    "p1.instructions"
+   ],
+   "optional_choice_ids": [
+    "p1.selected_history"
+   ]
+  }
+ ],
+ "prerequisites": [
+  {
+   "requirement_id": "p1.current_project_brief",
+   "kind": "phase_record",
+   "description": "A formal current project brief states the scientific problem and scope.",
+   "required": true
+  }
+ ],
+ "required_inputs": [
+  {
+   "input_id": "p1.project_brief",
+   "record_type": "project_brief",
+   "publication_required": "formal",
+   "position_required": "current",
+   "method_match": "not_applicable",
+   "purpose": "Fix the project question and scope.",
+   "condition": "Always required.",
+   "presence": "always"
+  },
+  {
+   "input_id": "p1.current_library",
+   "record_type": "literature_library",
+   "publication_required": "formal",
+   "position_required": "current",
+   "method_match": "not_applicable",
+   "purpose": "Prevent duplicate source identities and preserve cumulative provenance.",
+   "condition": "Required on reruns and absent on the first run.",
+   "presence": "required_on_rerun"
+  },
+  {
+   "input_id": "p1.current_synthesis",
+   "record_type": "literature_synthesis",
+   "publication_required": "formal",
+   "position_required": "current",
+   "method_match": "not_applicable",
+   "purpose": "Identify what the new run must revise or extend.",
+   "condition": "Required on reruns and absent on the first run.",
+   "presence": "required_on_rerun"
+  },
+  {
+   "input_id": "p1.current_coverage",
+   "record_type": "literature_coverage",
+   "publication_required": "formal",
+   "position_required": "current",
+   "method_match": "not_applicable",
+   "purpose": "Identify covered questions, stated exclusions, and unresolved search gaps.",
+   "condition": "Required on reruns and absent on the first run.",
+   "presence": "required_on_rerun"
+  }
+ ],
+ "supplementary_inputs": [
+  {
+   "input_id": "p1.researcher_material",
+   "record_type": "researcher_material",
+   "purpose": "Accept researcher-supplied material (for example the researcher's own paper) as additional context for building the literature basis. It is additive only and never substitutes for published literature records; a researcher paper enters the pipeline here, at Phase 1."
+  }
+ ],
+ "prepared_contexts": [],
+ "optional_context_policy": {
+  "default": "current_only",
+  "allows_selected_history": true,
+  "history_selection_user_controlled": true,
+  "description": "Only current formal records are loaded by default. Historical records enter only through explicit user selection.",
+  "history_choice_id": "p1.selected_history"
+ },
+ "role_stages": [
+  {
+   "sequence": 1,
+   "stage_id": "p1.discovery",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "execution": "parallel",
+   "roles": [
+    "research_lead",
+    "theorist",
+    "data_analyst"
+   ],
+   "objective": "Search and assess the same frozen question from scientific, mathematical, and empirical perspectives.",
+   "reads": [
+    "p1.project_brief",
+    "p1.current_library",
+    "p1.current_synthesis",
+    "p1.current_coverage"
+   ],
+   "writes": [
+    "p1.lead_discovery",
+    "p1.theory_discovery",
+    "p1.empirical_discovery",
+    "p1.lead_paper_cards",
+    "p1.theory_paper_cards",
+    "p1.empirical_paper_cards"
+   ],
+   "handoff_required": true,
+   "isolation_rule": "Discovery roles do not read one another's current-run reports before submission.",
+   "artifact_contracts": {
+    "p1.lead_discovery": {
+     "artifact_type": "t2p_packet",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst"
+     ],
+     "delivery": "inline"
+    },
+    "p1.theory_discovery": {
+     "artifact_type": "t2p_packet",
+     "audience": [
+      "research_lead",
+      "data_analyst"
+     ],
+     "delivery": "inline"
+    },
+    "p1.empirical_discovery": {
+     "artifact_type": "t2p_packet",
+     "audience": [
+      "research_lead",
+      "theorist"
+     ],
+     "delivery": "inline"
+    },
+    "p1.lead_paper_cards": {
+     "artifact_type": "t1_card",
+     "audience": [
+      "user"
+     ],
+     "delivery": "ui_only"
+    },
+    "p1.theory_paper_cards": {
+     "artifact_type": "t1_card",
+     "audience": [
+      "user"
+     ],
+     "delivery": "ui_only"
+    },
+    "p1.empirical_paper_cards": {
+     "artifact_type": "t1_card",
+     "audience": [
+      "user"
+     ],
+     "delivery": "ui_only"
+    }
+   }
+  },
+  {
+   "sequence": 2,
+   "stage_id": "p1.lead_synthesis",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "execution": "serial",
+   "roles": [
+    "research_lead"
+   ],
+   "objective": "Deduplicate sources, reconcile or expose disagreements, assess coverage, and produce the candidate current basis.",
+   "reads": [
+    "p1.project_brief",
+    "p1.current_library",
+    "p1.current_synthesis",
+    "p1.current_coverage",
+    "p1.lead_discovery",
+    "p1.theory_discovery",
+    "p1.empirical_discovery"
+   ],
+   "writes": [
+    "p1.source_changes",
+    "p1.synthesis_compact",
+    "p1.synthesis_candidate",
+    "p1.coverage_candidate",
+    "p1.phase2_handoff",
+    "p1.attention_items",
+    "p1.decision",
+    "p1.phase_summary"
+   ],
+   "handoff_required": true,
+   "artifact_contracts": {
+    "p1.source_changes": {
+     "artifact_type": "t3m_manuscript",
+     "audience": [
+      "research_lead"
+     ],
+     "delivery": "mention"
+    },
+    "p1.synthesis_candidate": {
+     "artifact_type": "t3m_manuscript",
+     "audience": [
+      "p5"
+     ],
+     "delivery": "mention"
+    },
+    "p1.synthesis_compact": {
+     "artifact_type": "t2p_packet",
+     "audience": [
+      "theorist",
+      "data_analyst",
+      "p5"
+     ],
+     "delivery": "inline"
+    },
+    "p1.coverage_candidate": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead"
+     ],
+     "delivery": "mention"
+    },
+    "p1.phase2_handoff": {
+     "artifact_type": "t2p_packet",
+     "audience": [
+      "theorist",
+      "data_analyst"
+     ],
+     "delivery": "inline"
+    },
+    "p1.phase_summary": {
+     "artifact_type": "t2s_summary",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "user"
+     ],
+     "delivery": "inline"
+    },
+    "p1.attention_items": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "p5"
+     ],
+     "delivery": "mention"
+    },
+    "p1.decision": {
+     "artifact_type": "record",
+     "audience": [
+      "research_lead",
+      "theorist",
+      "data_analyst",
+      "p5",
+      "user"
+     ],
+     "delivery": "inline"
+    }
+   }
+  }
+ ],
+ "run_local_outputs": [
+  {
+   "output_id": "p1.lead_discovery",
+   "output_kind": "handoff",
+   "producer": "research_lead",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/handoff.schema.json",
+   "purpose": "Preserve the lead's independent search and substantive assessment.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p1.theory_discovery",
+   "output_kind": "handoff",
+   "producer": "theorist",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/handoff.schema.json",
+   "purpose": "Preserve mathematical foundations, related methods, assumptions, and limits.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p1.empirical_discovery",
+   "output_kind": "handoff",
+   "producer": "data_analyst",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/handoff.schema.json",
+   "purpose": "Preserve study-design, data, computation, evaluation, and reproducibility findings.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p1.source_changes",
+   "output_kind": "scientific_record",
+   "producer": "research_lead",
+   "schema_application": "each_item",
+   "schema_uri": "architecture/schemas/literature-source.schema.json",
+   "purpose": "Record unique sources, corrections, and additional discovery provenance.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p1.synthesis_compact",
+   "output_kind": "synthesis",
+   "producer": "research_lead",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/compact-view.schema.json",
+   "purpose": "Provide the layer-3 compact decision view of the synthesis: 1-2 decision-oriented paragraphs for downstream stages and the researcher.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p1.synthesis_candidate",
+   "output_kind": "synthesis",
+   "producer": "research_lead",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/scientific-record.schema.json",
+   "purpose": "Provide the complete candidate synthesis of evidence, disagreement, and gaps.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p1.attention_items",
+   "output_kind": "attention_item_set",
+   "producer": "research_lead",
+   "schema_application": "each_item",
+   "schema_uri": "architecture/schemas/attention-item.schema.json",
+   "purpose": "Record each newly identified research-attention item with its exact basis, affected claim or record, and smallest resolving question.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p1.decision",
+   "output_kind": "decision_record",
+   "producer": "research_lead",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/decision-record.schema.json",
+   "purpose": "Explain material additions, coverage limits, uncertainty, and possible user actions.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p1.coverage_candidate",
+   "output_kind": "scientific_record",
+   "producer": "research_lead",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/scientific-record.schema.json",
+   "purpose": "Record current search coverage, exclusions, and unresolved gaps.",
+   "required": true,
+   "requirement": "always"
+  },
+  {
+   "output_id": "p1.phase2_handoff",
+   "output_kind": "handoff",
+   "producer": "research_lead",
+   "schema_application": "object",
+   "schema_uri": "architecture/schemas/handoff.schema.json",
+   "purpose": "State the literature basis, conflicts, and open methodological questions for Phase 2.",
+   "required": true,
+   "requirement": "always"
+  }
+ ],
+ "validation_rules": [
+  {
+   "validator_id": "p1.role_sequence",
+   "category": "run_boundary",
+   "severity": "blocking",
+   "description": "All independent reports and the later lead synthesis exist in the declared order and remain run-local."
+  },
+  {
+   "validator_id": "p1.source_identity",
+   "category": "provenance",
+   "severity": "blocking",
+   "description": "Each source has a stable identity, citation metadata, search provenance, and no duplicate identity."
+  },
+  {
+   "validator_id": "p1.synthesis_traceability",
+   "category": "scientific_completeness",
+   "severity": "blocking",
+   "description": "Material synthesis statements cite promoted sources or explicitly mark missing or unresolved evidence."
+  },
+  {
+   "validator_id": "p1.atomic_publication",
+   "category": "promotion_safety",
+   "severity": "blocking",
+   "description": "The library update and synthesis replacement commit together or not at all."
+  }
+ ],
+ "publication_bindings": [
+  {
+   "binding_id": "p1.append_attention_items",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "operation": "append",
+   "output_ids": [
+    "p1.attention_items"
+   ],
+   "target": {
+    "kind": "cumulative_collection",
+    "collection_id": "project.attention_history",
+    "object_type": "attention_item"
+   },
+   "prior_target_policy": "not_applicable",
+   "publisher_transform": "none",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p1.append_literature_sources",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "operation": "append",
+   "output_ids": [
+    "p1.source_changes"
+   ],
+   "target": {
+    "kind": "cumulative_collection",
+    "collection_id": "p1.literature_sources",
+    "object_type": "literature_source"
+   },
+   "prior_target_policy": "not_applicable",
+   "publisher_transform": "none",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p1.rebuild_literature_library",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "operation": "replace",
+   "output_ids": [
+    "p1.source_changes"
+   ],
+   "source_input_ids": [
+    "p1.current_library"
+   ],
+   "target": {
+    "kind": "current_slot",
+    "slot_id": "p1.literature_library.current",
+    "record_type": "literature_library"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "deterministic_index",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p1.replace_literature_synthesis",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "operation": "replace",
+   "output_ids": [
+    "p1.synthesis_candidate"
+   ],
+   "target": {
+    "kind": "current_slot",
+    "slot_id": "p1.literature_synthesis.current",
+    "record_type": "literature_synthesis"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "none",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p1.replace_literature_coverage",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "operation": "replace",
+   "output_ids": [
+    "p1.coverage_candidate"
+   ],
+   "target": {
+    "kind": "current_slot",
+    "slot_id": "p1.literature_coverage.current",
+    "record_type": "literature_coverage"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "none",
+   "may_create_scientific_content": false
+  },
+  {
+   "binding_id": "p1.replace_phase_decision",
+   "applicable_modes": [
+    "p1.literature_update"
+   ],
+   "operation": "replace",
+   "output_ids": [
+    "p1.decision"
+   ],
+   "target": {
+    "kind": "current_slot",
+    "slot_id": "p1.phase_decision.current",
+    "record_type": "phase_decision"
+   },
+   "prior_target_policy": "absent_or_match_current",
+   "publisher_transform": "none",
+   "may_create_scientific_content": false
+  }
+ ],
+ "promotion": {
+  "strategy": "append_merge",
+  "canonical_record_types": [
+   "literature_library",
+   "literature_synthesis",
+   "literature_coverage",
+   "phase_decision"
+  ],
+  "cumulative_object_types": [
+   "literature_source",
+   "attention_item"
+  ],
+  "blocking_validator_ids": [
+   "p1.role_sequence",
+   "p1.source_identity",
+   "p1.synthesis_traceability",
+   "p1.atomic_publication"
+  ],
+  "failure_behavior": "Keep the prior library and synthesis current; retain the candidate only in its run workspace.",
+  "atomic": true
+ },
+ "downstream_effects": [
+  {
+   "trigger": "new_current_record",
+   "affected_phases": [
+    "P2",
+    "P3",
+    "P4",
+    "P5"
+   ],
+   "description": "New literature creates targeted research attention where it bears on a method, claim, evidence interpretation, or manuscript statement. It does not create exact-method misalignment.",
+   "automatic_run": false,
+   "alignment_effect": {
+    "action": "preserve"
+   },
+   "attention_effect": {
+    "action": "record_if_identified"
+   }
+  }
+ ],
+ "ui_projection": {
+  "researcher_questions": [
+   "What new evidence was found?",
+   "What changed in the synthesis?",
+   "What remains weakly covered or disputed?",
+   "What can I run next?"
+  ],
+  "fields": [
+   {
+    "field_id": "p1.new_sources",
+    "source": "literature_library.current_generation",
+    "label": "New sources",
+    "meaning": "Unique references added by the latest successful run."
+   },
+   {
+    "field_id": "p1.coverage",
+    "source": "literature_coverage.current",
+    "label": "Coverage",
+    "meaning": "Coverage by research question, evidence type, and unresolved gap."
+   },
+   {
+    "field_id": "p1.material_changes",
+    "source": "phase_decision.material_changes",
+    "label": "What changed",
+    "meaning": "Scientific changes that may affect later user decisions."
+   }
+  ],
+  "user_action_choice_ids": [
+   "p1.scope",
+   "p1.instructions",
+   "p1.selected_history"
+  ]
+ },
+ "acceptance_scenarios": [
+  "s01.first_project",
+  "s06.optional_history",
+  "s09.interrupted_promotion"
+ ]
+}

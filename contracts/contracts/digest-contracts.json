@@ -1,0 +1,690 @@
+{
+    "schema_version":  "1.0.0",
+    "registry_version":  "1.0.0",
+    "canonicalization":  "RFC8785",
+    "hash_algorithm":  "SHA-256",
+    "numeric_profile":  {
+        "normative_domain":  "I-JSON numbers exactly representable as IEEE 754 binary64",
+        "bundled_reference_domain":  "integers from -9007199254740991 through 9007199254740991",
+        "failure_policy":  "reject unsupported or non-finite numbers before hashing"
+    },
+    "contracts":  [
+        {
+            "contract_id":  "attention_item.content",
+            "object_kind":  "attention_item",
+            "schema_file":  "attention-item.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "authority_event.content",
+            "object_kind":  "authority_event",
+            "schema_file":  "authority-event.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256",
+                "/event_root_sha256"
+            ]
+        },
+        {
+            "contract_id":  "authority_event.root",
+            "object_kind":  "authority_event",
+            "schema_file":  "authority-event.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/event_root_sha256"
+            },
+            "construction":  "sha256_hex_concat",
+            "binary_inputs":  [
+                {
+                    "json_pointer":  "/prior_event_root_sha256",
+                    "decoding":  "lowercase_hex_32_bytes"
+                },
+                {
+                    "json_pointer":  "/content_sha256",
+                    "decoding":  "lowercase_hex_32_bytes"
+                }
+            ]
+        },
+        {
+            "contract_id":  "current_index.content",
+            "object_kind":  "current_index",
+            "schema_file":  "current-index.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "decision_record.content",
+            "object_kind":  "decision_record",
+            "schema_file":  "decision-record.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "evidence_item.content",
+            "object_kind":  "evidence_item",
+            "schema_file":  "evidence.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "literature_source.content",
+            "object_kind":  "literature_source",
+            "schema_file":  "literature-source.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "method_lifecycle_command.content",
+            "object_kind":  "method_lifecycle_command",
+            "schema_file":  "method-lifecycle-command.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "method_record.definition",
+            "object_kind":  "method_record",
+            "schema_file":  "method.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/identity/definition_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "/mathematical_definition/canonical_definition",
+            "excluded_json_pointers":  []
+        },
+        {
+            "contract_id":  "method_record.content",
+            "object_kind":  "method_record",
+            "schema_file":  "method.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "phase_contract.content",
+            "object_kind":  "phase_contract",
+            "schema_file":  "phase-contract.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "referenced",
+                "json_pointer":  "/phase_contract_sha256",
+                "reference_schema_files":  [
+                    "run-command.schema.json",
+                    "run-manifest.schema.json"
+                ]
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  []
+        },
+        {
+            "contract_id":  "record_state.content",
+            "object_kind":  "record_state",
+            "schema_file":  "record-state.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "review_issue.content",
+            "object_kind":  "review_issue",
+            "schema_file":  "review-issue.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "role_profile.content",
+            "object_kind":  "role_profile",
+            "schema_file":  "role-profile.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "run_command.content",
+            "object_kind":  "run_command",
+            "schema_file":  "run-command.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "run_manifest.content",
+            "object_kind":  "run_manifest",
+            "schema_file":  "run-manifest.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/manifest_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/manifest_sha256"
+            ]
+        },
+        {
+            "contract_id":  "run_state.event",
+            "object_kind":  "run_state_event",
+            "schema_file":  "run-state.schema.json",
+            "instance_pointer":  "/events/*",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/event_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/event_sha256"
+            ]
+        },
+        {
+            "contract_id":  "run_state.journal_root",
+            "object_kind":  "run_state",
+            "schema_file":  "run-state.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/journal_root_sha256"
+            },
+            "construction":  "copy_final_event_digest",
+            "source_json_pointer":  "/events/*/event_sha256"
+        },
+        {
+            "contract_id":  "scientific_record.content",
+            "object_kind":  "scientific_record",
+            "schema_file":  "scientific-record.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "empirical_protocol.content",
+            "object_kind":  "empirical_protocol",
+            "schema_file":  "empirical-protocol.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "manuscript_package.content",
+            "object_kind":  "manuscript_package",
+            "schema_file":  "manuscript-package.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "review_finding.content",
+            "object_kind":  "review_finding",
+            "schema_file":  "review-finding.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "review_report.content",
+            "object_kind":  "review_report",
+            "schema_file":  "review-report.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "theory_record.content",
+            "object_kind":  "theory_record",
+            "schema_file":  "theory-record.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "run_cancellation_command.content",
+            "object_kind":  "run_cancellation_command",
+            "schema_file":  "run-cancellation-command.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "delegation_grant.content",
+            "object_kind":  "delegation_grant",
+            "schema_file":  "delegation-grant.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256",
+                "/signature"
+            ]
+        },
+        {
+            "contract_id":  "delegation_revocation.content",
+            "object_kind":  "delegation_revocation",
+            "schema_file":  "delegation-revocation.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256",
+                "/signature"
+            ]
+        },
+        {
+            "contract_id":  "role_context.prepared",
+            "object_kind":  "role_context_snapshot",
+            "schema_file":  "role-context-snapshot.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/prepared_context_sha256"
+            },
+            "construction":  "rfc8785_projection_sha256",
+            "included_json_pointers":  [
+                "/phase_contract",
+                "/role_profile",
+                "/model_capacity",
+                "/packing_policy",
+                "/preference_memory_binding",
+                "/prepared_context"
+            ]
+        },
+        {
+            "contract_id":  "role_context.access_event",
+            "object_kind":  "role_context_access_event",
+            "schema_file":  "role-context-snapshot.schema.json",
+            "instance_pointer":  "/access_ledger/events/*",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/event_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/event_sha256"
+            ]
+        },
+        {
+            "contract_id":  "role_context.access_ledger_head",
+            "object_kind":  "role_context_access_ledger",
+            "schema_file":  "role-context-snapshot.schema.json",
+            "instance_pointer":  "/access_ledger",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/head_sha256"
+            },
+            "construction":  "copy_final_event_digest",
+            "source_json_pointer":  "/events/*/event_sha256",
+            "empty_source_value":  "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+            "contract_id":  "role_context.snapshot",
+            "object_kind":  "role_context_snapshot",
+            "schema_file":  "role-context-snapshot.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/snapshot_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/snapshot_sha256"
+            ]
+        },
+        {
+            "contract_id":  "run_manifest.role_plan_entry",
+            "object_kind":  "run_manifest_role_plan_entry",
+            "schema_file":  "run-manifest.schema.json",
+            "instance_pointer":  "/role_plan/*",
+            "digest_location":  {
+                "kind":  "referenced",
+                "json_pointer":  "/role_plan_step/role_plan_entry_sha256",
+                "reference_schema_files":  [
+                    "role-invocation-start.schema.json"
+                ]
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  []
+        },
+        {
+            "contract_id":  "prepared_role_context.prepared",
+            "object_kind":  "prepared_role_context",
+            "schema_file":  "prepared-role-context.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/prepared_context_sha256"
+            },
+            "construction":  "rfc8785_projection_sha256",
+            "included_json_pointers":  [
+                "/phase_contract",
+                "/role_profile",
+                "/model_capacity",
+                "/packing_policy",
+                "/preference_memory_binding",
+                "/prepared_context"
+            ]
+        },
+        {
+            "contract_id":  "prepared_role_context.content",
+            "object_kind":  "prepared_role_context",
+            "schema_file":  "prepared-role-context.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "role_invocation_start.content",
+            "object_kind":  "role_invocation_start",
+            "schema_file":  "role-invocation-start.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/start_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/start_sha256"
+            ]
+        },
+        {
+            "contract_id":  "role_invocation_closure.content",
+            "object_kind":  "role_invocation_closure",
+            "schema_file":  "role-invocation-closure.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/closure_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/closure_sha256"
+            ]
+        },
+        {
+            "contract_id":  "run_submission.content",
+            "object_kind":  "run_submission",
+            "schema_file":  "run-submission.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/submission_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/submission_sha256"
+            ]
+        },
+        {
+            "contract_id":  "command_attempt_audit.raw_request",
+            "object_kind":  "command_attempt_audit_raw_request",
+            "schema_file":  "command-attempt-audit-event.schema.json",
+            "instance_pointer":  "/raw_request",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/sha256"
+            },
+            "construction":  "sha256_referenced_bytes",
+            "source_json_pointer":  "/uri"
+        },
+        {
+            "contract_id":  "command_attempt_audit.content",
+            "object_kind":  "command_attempt_audit_event",
+            "schema_file":  "command-attempt-audit-event.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256",
+                "/audit_root_sha256"
+            ]
+        },
+        {
+            "contract_id":  "command_attempt_audit.root",
+            "object_kind":  "command_attempt_audit_event",
+            "schema_file":  "command-attempt-audit-event.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/audit_root_sha256"
+            },
+            "construction":  "sha256_hex_concat",
+            "binary_inputs":  [
+                {
+                    "json_pointer":  "/prior_audit_root_sha256",
+                    "decoding":  "lowercase_hex_32_bytes"
+                },
+                {
+                    "json_pointer":  "/content_sha256",
+                    "decoding":  "lowercase_hex_32_bytes"
+                }
+            ]
+        },
+        {
+            "contract_id":  "publication_receipt.content",
+            "object_kind":  "publication_receipt",
+            "schema_file":  "publication-receipt.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "validation_attempt.content",
+            "object_kind":  "validation_attempt",
+            "schema_file":  "validation-attempt.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "output_transformation_record.content",
+            "object_kind":  "output_transformation_record",
+            "schema_file":  "output-transformation-record.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        },
+        {
+            "contract_id":  "run_submission_attempt.content",
+            "object_kind":  "run_submission_attempt",
+            "schema_file":  "run-submission-attempt.schema.json",
+            "instance_pointer":  "",
+            "digest_location":  {
+                "kind":  "embedded",
+                "json_pointer":  "/content_sha256"
+            },
+            "construction":  "rfc8785_sha256",
+            "payload_pointer":  "",
+            "excluded_json_pointers":  [
+                "/content_sha256"
+            ]
+        }
+    ]
+}

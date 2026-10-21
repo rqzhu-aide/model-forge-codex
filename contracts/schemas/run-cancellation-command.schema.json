@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/run-cancellation-command.schema.json",
+  "title": "Run Cancellation Command",
+  "description": "An authenticated, idempotent command that closes one run's submission gate before immutable submission. It is separate from formal ControlCommand transactions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command_type",
+    "command_id",
+    "idempotency_key",
+    "project_id",
+    "run_id",
+    "expected_run_head",
+    "reason",
+    "requested_by",
+    "content_sha256",
+    "requested_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "command_type": {
+      "const": "run_cancellation"
+    },
+    "command_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 200
+    },
+    "project_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "expected_run_head": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["current_state", "last_event_sequence", "journal_root_sha256"],
+      "properties": {
+        "current_state": {
+          "type": "string",
+          "enum": ["created", "preparing", "prepared", "running"]
+        },
+        "last_event_sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "journal_root_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        }
+      }
+    },
+    "reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "explanation"],
+      "properties": {
+        "code": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "explanation": {
+          "$ref": "common-definitions.schema.json#/$defs/nonEmptyText"
+        }
+      }
+    },
+    "requested_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["user_id", "operating_actor_type"],
+      "properties": {
+        "user_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "operating_actor_type": {
+          "type": "string",
+          "enum": ["user", "authorized_remote_operator"]
+        },
+        "operator_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "delegation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"operating_actor_type": {"const": "authorized_remote_operator"}},
+            "required": ["operating_actor_type"]
+          },
+          "then": {
+            "required": ["operator_id", "delegation_id"]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {"required": ["operator_id"]},
+                {"required": ["delegation_id"]}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "SHA-256 of RFC 8785 canonical command JSON with content_sha256 omitted."
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/control-command.schema.json",
+  "title": "Control Command",
+  "description": "Transport wrapper for the user-authorized method-lifecycle control command. It never creates a research run or role execution.",
+  "oneOf": [
+    {
+      "$ref": "method-lifecycle-command.schema.json"
+    }
+  ]
+}

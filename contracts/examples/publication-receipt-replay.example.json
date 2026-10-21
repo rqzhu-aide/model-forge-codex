@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0.0",
+  "publication_id": "publication.replay.001",
+  "transaction_id": "transaction.replay.001",
+  "project_id": "project.replay",
+  "source": {
+    "kind": "research_run",
+    "command_id": "command.p3.replay.001",
+    "run_id": "run.p3.replay.20260801t160000z",
+    "phase": "P3",
+    "manifest_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+    "submission_id": "submission.p4.001",
+    "submission_sha256": "dc718d79e1006554fd39dd523a548a0d1a7f8d49131f69e5d56c602b821dcd20"
+  },
+  "validation_reports": [
+    {
+      "artifact_id": "artifact.validation_report.replay.001",
+      "uri": "run://run.p3.replay.20260801t160000z/artifact/artifact.validation_report.replay.001",
+      "sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+      "media_type": "application/json"
+    }
+  ],
+  "prior_current_index_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "new_current_index_generation_id": "generation.current_index.replay.001",
+  "new_current_index_sha256": "05bd03906a6244196cbec02f37e60307d003d2cce1818cef572349c5903f7460",
+  "committed_event_range": {
+    "first_sequence": 1,
+    "last_sequence": 2,
+    "event_ids": [
+      "event.replay.theory.published.001",
+      "event.replay.theory.aligned.001"
+    ],
+    "prior_event_root_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "new_event_root_sha256": "968a975c9323d85a8a481d9526487894dc15204a53887dc9dc72b5e16c47e8b3"
+  },
+  "derived_projection_digests": [
+    {
+      "projection_id": "state.record.theory.replay.001",
+      "projection_kind": "record_state",
+      "content_sha256": "8c64f2dfbb93125cb475440a85ab3e6c632d27a4bee1e506c6208b22f3e2cc42"
+    },
+    {
+      "projection_id": "generation.current_index.replay.001",
+      "projection_kind": "current_index",
+      "content_sha256": "05bd03906a6244196cbec02f37e60307d003d2cce1818cef572349c5903f7460"
+    }
+  ],
+  "record_changes": [
+    {
+      "record_id": "record.theory.replay",
+      "record_type": "theory_record",
+      "new_generation_id": "generation.theory.replay.001",
+      "new_position": "current",
+      "change_kind": "create",
+      "authority_event_ids": [
+        "event.replay.theory.published.001"
+      ]
+    }
+  ],
+  "cumulative_object_changes": [],
+  "state_changes": [
+    {
+      "subject": {
+        "kind": "record_generation",
+        "subject_id": "record.theory.replay",
+        "generation_id": "generation.theory.replay.001",
+        "method_identity": {
+          "stable_id": "method.replay",
+          "version": 1,
+          "definition_sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+        }
+      },
+      "change_kind": "alignment_recomputed",
+      "authority_event_ids": [
+        "event.replay.theory.aligned.001"
+      ]
+    }
+  ],
+  "alignment_impacts": [
+    {
+      "affected_record_id": "record.theory.replay",
+      "before": "unassessed",
+      "after": "exact",
+      "cause": "exact_match",
+      "automatic_run": false
+    }
+  ],
+  "attention_impacts": [],
+  "atomic": true,
+  "published_at": "2026-08-01T16:00:01Z",
+  "content_sha256": "15e5addae24c852135e46816eb44d407363a40dd61e82959152b74be63fcce72"
+}

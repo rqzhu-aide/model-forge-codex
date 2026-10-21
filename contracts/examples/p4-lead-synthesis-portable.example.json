@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "record.empirical_synthesis.portable_normal_mean",
+  "record_type": "empirical_synthesis",
+  "phase": "P4",
+  "source_run_id": "run.example_p4_preliminary_20260816t110000z",
+  "method_identity": {
+    "stable_id": "method.example_normal_mean",
+    "version": 1,
+    "definition_sha256": "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+  },
+  "representations": [],
+  "basis": [],
+  "scientific_outcome": {
+    "state": "not_assessed",
+    "conclusion": "Portable illustrative source bytes are retained; no statistical performance result is asserted.",
+    "scope": "Illustrative normal population mean only.",
+    "assumptions": [],
+    "strongest_evidence_ids": [],
+    "strongest_counterevidence_ids": [],
+    "material_disagreement": []
+  },
+  "content_sha256": "8e2c0762ad700b0e4d1fb120f464bbbca38fbfab1063f155b0f98ae6460f5a68",
+  "created_at": "2026-08-01T15:05:00Z",
+  "authority_at_creation": "run_local_candidate",
+  "alignment_at_creation": {
+    "state": "exact",
+    "causes": [
+      "exact_match"
+    ],
+    "assessed_at": "2026-08-01T15:02:00Z",
+    "assessed_by": "data_analyst",
+    "reasons": [
+      "This is a portable code authoring fixture; no numerical or scientific verification is asserted."
+    ],
+    "assessed_method": {
+      "stable_id": "method.example_normal_mean",
+      "version": 1,
+      "definition_sha256": "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+    }
+  },
+  "research_attention_at_creation": {
+    "level": "monitor",
+    "open_item_ids": [],
+    "reasons": [
+      "Source bundle is illustrative and not a published empirical study."
+    ]
+  },
+  "decision_summary": {
+    "method_formulation_markdown": "For independent scalar outcomes $Y_1,\\ldots,Y_n$ with finite variance, the target is the population mean $\\mu=E(Y)$. The retained illustrative interface fits the constant-mean relationship $Y_i=\\mu+\\varepsilon_i$, with $E(\\varepsilon_i)=0$, by squared error: $$\\widehat\\mu=\\arg\\min_m\\sum_{i=1}^n(Y_i-m)^2=\\frac1n\\sum_{i=1}^nY_i.$$ Here $m$ is a candidate mean and the returned estimate is in outcome units. The interface requires at least two finite values and reports the sample standard error. This recaps [retained illustrative model code](artifact://artifact.example.implementation.model.py), not an executed or published research evaluation.",
+    "implementation_markdown": "An illustrative standalone mean model, separate generator/truth and ordinary example runner are retained. No research experiment or actual-data application is claimed; source availability alone does not establish execution.",
+    "method_fidelity_markdown": "The retained code computes the stated mean and sample standard error. This authoring example makes no independent fidelity-audit claim; inspect the portable implementation account for source pointers and limitations.",
+    "theory_relation": {
+      "status": "unavailable",
+      "explanation_markdown": "No Phase 3 research package is asserted by this illustrative authoring fixture.",
+      "statement_ids": []
+    },
+    "intent_markdown": "Illustrate concise method exposition and explicit topical coverage without claiming unperformed research.",
+    "conclusion_markdown": "Illustrative source and analytic reference exhibits are retained; observed statistical performance remains unassessed.",
+    "tradeoff_markdown": "No empirical cost or comparative advantage is claimed.",
+    "limitations_markdown": "The normal-mean reference is theoretical. It is not observed bias, empirical SD, MCSE, interval coverage or actual-data validation.",
+    "recommendation_markdown": "Use this example to inspect the authoring contract; it does not authorize computation.",
+    "coverage": [
+      {
+        "dimension": "synthetic_example",
+        "status": "not_assessed",
+        "summary": "The retained example generator draws independent $Y_i\\sim N(\\mu,\\sigma^2)$ from declared configuration and seed. No generated sample is claimed as an observed research result.",
+        "limitation_markdown": "Illustrative generator choices are not researcher facts.",
+        "implication_markdown": "Execution and target suitability must be assessed in an authorized evaluation.",
+        "question_ids": [],
+        "exhibit_ids": []
+      },
+      {
+        "dimension": "performance",
+        "status": "not_assessed",
+        "summary": "The linked table and figure show analytic reference standard deviations only, not empirical performance.",
+        "limitation_markdown": "No repeated-dataset bias, empirical SD, RMSE or MCSE has been measured.",
+        "implication_markdown": "The references explain the expected scale without establishing observed accuracy.",
+        "question_ids": [],
+        "exhibit_ids": [
+          "exhibit.example.normal_mean_table",
+          "exhibit.example.normal_mean_figure"
+        ]
+      },
+      {
+        "dimension": "computation",
+        "status": "not_assessed",
+        "summary": "No research runtime or convergence measurement is claimed.",
+        "limitation_markdown": "Retained source is not measured timing evidence.",
+        "implication_markdown": "Computation remains unassessed.",
+        "question_ids": [],
+        "exhibit_ids": []
+      },
+      {
+        "dimension": "tuning",
+        "status": "not_applicable",
+        "summary": "The sample-mean rule has no tuning parameter.",
+        "limitation_markdown": "The example seed and data-generating configuration are not estimator tuning.",
+        "implication_markdown": "No tuning-sensitivity experiment is needed for this rule.",
+        "question_ids": [],
+        "exhibit_ids": []
+      },
+      {
+        "dimension": "robustness",
+        "status": "not_assessed",
+        "summary": "No changed-DGP study is recorded.",
+        "limitation_markdown": "The analytic normal reference does not establish robustness beyond its conditions.",
+        "implication_markdown": "Broader behavior remains unknown.",
+        "question_ids": [],
+        "exhibit_ids": []
+      }
+    ],
+    "headline_exhibit_ids": [
+      "exhibit.example.normal_mean_table",
+      "exhibit.example.normal_mean_figure"
+    ]
+  },
+  "question_reviews": [
+    {
+      "question_id": "test.example_normal_mean",
+      "review_markdown": "This is an illustrative authoring example with no observed performance answer.",
+      "theorist_findings_markdown": "No independent research audit is claimed.",
+      "next_steps_markdown": "No additional research is launched by this example."
+    }
+  ]
+}

@@ -1,0 +1,692 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/empirical-protocol.schema.json",
+  "title": "Phase 4 Empirical Protocol",
+  "description": "A prespecified Phase 4 protocol for one exact method identity. Preliminary and comprehensive are scientific scopes, not chronological states. Prespecified fields remain fixed after execution; departures are appended only as deviations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "protocol_id",
+    "phase",
+    "source_run_id",
+    "mode",
+    "method_identity",
+    "basis",
+    "research_question",
+    "scope",
+    "scope_justification",
+    "claim_tests",
+    "estimand",
+    "data_or_simulation_unit",
+    "baselines",
+    "implementation_strategy",
+    "tuning_budget",
+    "metrics",
+    "repetitions_and_uncertainty",
+    "multiplicity",
+    "stopping_rules",
+    "leakage_checks",
+    "decision_thresholds",
+    "deviations",
+    "protocol_status",
+    "finalized_at",
+    "content_sha256",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "protocol_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "phase": {
+      "const": "P4"
+    },
+    "source_run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "p4.preliminary",
+        "p4.comprehensive"
+      ]
+    },
+    "method_identity": {
+      "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+    },
+    "basis": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/recordBasis"
+      },
+      "uniqueItems": true
+    },
+    "research_question": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope_justification": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Explain why the selected checks are decisive for preliminary scope or sufficiently broad and claim-linked for comprehensive scope."
+    },
+    "claim_tests": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/claimTest"
+      }
+    },
+    "estimand": {
+      "$ref": "#/$defs/estimand"
+    },
+    "data_or_simulation_unit": {
+      "$ref": "#/$defs/dataOrSimulationUnit"
+    },
+    "baselines": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/baseline"
+      }
+    },
+    "implementation_strategy": {
+      "$ref": "#/$defs/implementationStrategy"
+    },
+    "tuning_budget": {
+      "$ref": "#/$defs/tuningBudget"
+    },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/metric"
+      }
+    },
+    "repetitions_and_uncertainty": {
+      "$ref": "#/$defs/repetitionsAndUncertainty"
+    },
+    "multiplicity": {
+      "$ref": "#/$defs/multiplicity"
+    },
+    "stopping_rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/stoppingRule"
+      }
+    },
+    "leakage_checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/leakageCheck"
+      }
+    },
+    "decision_thresholds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/decisionThreshold"
+      }
+    },
+    "deviations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/deviation"
+      },
+      "description": "Append departures from the prespecified protocol after execution. Use an empty array when execution followed the protocol exactly."
+    },
+    "protocol_status": {
+      "const": "prespecified"
+    },
+    "finalized_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp at which the protocol was fixed before outcome inspection."
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "Digest of the prespecified protocol fields before deviations are appended."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "claimTest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "test_id",
+        "claim_id",
+        "target_statement_ids",
+        "hypothesis",
+        "design",
+        "falsification_rule",
+        "decision_threshold_ids"
+      ],
+      "properties": {
+        "test_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "claim_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "target_statement_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "uniqueItems": true
+        },
+        "hypothesis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "design": {
+          "type": "string",
+          "minLength": 1
+        },
+        "falsification_rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_threshold_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "estimand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "mathematical_definition",
+        "target_population_or_distribution",
+        "analysis_unit",
+        "aggregation",
+        "conditions"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mathematical_definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_population_or_distribution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "analysis_unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aggregation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "dataOrSimulationUnit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_type",
+        "unit_definition",
+        "sampling_or_generation_process",
+        "sample_sizes",
+        "independence_structure",
+        "splits",
+        "preprocessing"
+      ],
+      "properties": {
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "observed_data",
+            "simulation",
+            "benchmark",
+            "hybrid"
+          ]
+        },
+        "unit_definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sampling_or_generation_process": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sample_sizes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "uniqueItems": true
+        },
+        "independence_structure": {
+          "type": "string",
+          "minLength": 1
+        },
+        "splits": {
+          "type": "string",
+          "minLength": 1
+        },
+        "preprocessing": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseline_id",
+        "name",
+        "rationale",
+        "implementation_identity",
+        "tuning_policy",
+        "compute_budget"
+      ],
+      "properties": {
+        "baseline_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "implementation_identity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tuning_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "compute_budget": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "implementationStrategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy",
+        "verification_checks",
+        "changes_from_prior"
+      ],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "new",
+            "reuse_verified",
+            "adapt_verified"
+          ]
+        },
+        "prior_implementation_artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        },
+        "verification_checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "changes_from_prior": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "strategy": {
+                "enum": [
+                  "reuse_verified",
+                  "adapt_verified"
+                ]
+              }
+            },
+            "required": [
+              "strategy"
+            ]
+          },
+          "then": {
+            "required": [
+              "prior_implementation_artifact"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "strategy": {
+                "const": "adapt_verified"
+              }
+            },
+            "required": [
+              "strategy"
+            ]
+          },
+          "then": {
+            "properties": {
+              "changes_from_prior": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "tuningBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selection_data",
+        "search_space",
+        "optimization_rule",
+        "maximum_trials",
+        "compute_limit",
+        "fairness_rule"
+      ],
+      "properties": {
+        "selection_data": {
+          "type": "string",
+          "minLength": 1
+        },
+        "search_space": {
+          "type": "string",
+          "minLength": 1
+        },
+        "optimization_rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "maximum_trials": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "compute_limit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fairness_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_id",
+        "name",
+        "definition",
+        "direction",
+        "aggregation",
+        "uncertainty_method"
+      ],
+      "properties": {
+        "metric_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "minimize",
+            "maximize",
+            "target",
+            "two_sided"
+          ]
+        },
+        "aggregation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uncertainty_method": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "repetitionsAndUncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repetitions",
+        "random_seed_policy",
+        "paired_design",
+        "interval_or_error_method",
+        "target_precision"
+      ],
+      "properties": {
+        "repetitions": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "random_seed_policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "paired_design": {
+          "type": "boolean"
+        },
+        "interval_or_error_method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_precision": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "multiplicity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "family_definition",
+        "correction_method",
+        "decision_rule"
+      ],
+      "properties": {
+        "family_definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "correction_method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "stoppingRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_id",
+        "condition",
+        "action"
+      ],
+      "properties": {
+        "rule_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "condition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "leakageCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "check_id",
+        "risk",
+        "procedure",
+        "failure_action"
+      ],
+      "properties": {
+        "check_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "risk": {
+          "type": "string",
+          "minLength": 1
+        },
+        "procedure": {
+          "type": "string",
+          "minLength": 1
+        },
+        "failure_action": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "decisionThreshold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "threshold_id",
+        "claim_id",
+        "metric_id",
+        "criterion",
+        "interpretation"
+      ],
+      "properties": {
+        "threshold_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "claim_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "metric_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "criterion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "interpretation": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "deviation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deviation_id",
+        "detected_at",
+        "affected_test_ids",
+        "description",
+        "reason",
+        "impact_assessment",
+        "disposition"
+      ],
+      "properties": {
+        "deviation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "detected_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "affected_test_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "uniqueItems": true
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "impact_assessment": {
+          "type": "string",
+          "minLength": 1
+        },
+        "disposition": {
+          "type": "string",
+          "enum": [
+            "retain_with_caveat",
+            "exclude_affected_result",
+            "reanalyze_as_exploratory",
+            "rerun_required"
+          ]
+        }
+      }
+    }
+  }
+}

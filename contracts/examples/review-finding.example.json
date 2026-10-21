@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "issue_id": "issue.example_review_001",
+  "source_run_id": "run.example_p5_review_20260816t130000z",
+  "raised_by": "outside_reviewer",
+  "review_basis_generation_id": "generation.example_manuscript_001",
+  "location": "Theory section, statement of Theorem 2",
+  "affected_statement_id": "statement.example_normality",
+  "finding_type": "clarity",
+  "issue": "The statement of Theorem 2 does not say whether the quantile index is held fixed or allowed to drift with sample size, which changes how the taper condition should be read.",
+  "severity": "minor",
+  "confidence": "high",
+  "scientific_consequence": "Readers may apply the normality result to drifting quantile sequences where the proof does not establish it.",
+  "evidence_basis": [
+    "The proof in Section 4 fixes the quantile index before applying the Lindeberg argument.",
+    "The theorem statement omits any quantifier over the quantile index."
+  ],
+  "requested_resolution": "Add an explicit fixed-index quantifier to the theorem statement or justify the drifting-index reading.",
+  "resolution_class": "rewrite",
+  "status": "open",
+  "content_sha256": "fb5f1d6626a8a3fc189f6fcde217409b2a49c1e92605eacef9f559d3d123e4a8",
+  "created_at": "2026-08-16T13:05:00Z",
+  "authority_at_creation": "run_local_candidate"
+}

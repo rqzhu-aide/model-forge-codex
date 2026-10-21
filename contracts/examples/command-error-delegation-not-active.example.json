@@ -1,0 +1,18 @@
+{
+    "schema_version":  "1.0.0",
+    "error_id":  "error.delegation.retire.001",
+    "code":  "DELEGATION_NOT_ACTIVE",
+    "category":  "authorization",
+    "http_status":  403,
+    "retryable":  true,
+    "rule_id":  "MF-55",
+    "object_refs":  [
+                        "project.demo",
+                        "command.method.retire.001",
+                        "delegation.research.operator.001"
+                    ],
+    "field_path":  "requested_by.delegation_id",
+    "researcher_message":  "The remote operator\u0027s delegation was revoked before this retirement could commit, so no scientific state changed.",
+    "smallest_correction":  "Ask the researcher to issue a new lifecycle-specific delegation or perform the action directly.",
+    "occurred_at":  "2026-08-01T17:00:01Z"
+}

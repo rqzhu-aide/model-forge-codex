@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "descriptor_id": "action.activate.method.001",
+  "action_type": "activate_method",
+  "execution_kind": "control_transaction",
+  "project_id": "project.demo",
+  "enabled": true,
+  "researcher_message": "Activate this proposed method for Phase 3 and Phase 4 launches.",
+  "authorization": {
+    "status": "direct_user",
+    "user_id": "researcher.demo"
+  },
+  "consequence_summary": "The method and catalog receive lifecycle-only replacement generations; scientific content does not change.",
+  "issued_at": "2026-08-02T16:00:00Z",
+  "method_id": "method.overlap_stabilized_score",
+  "expected_method": {
+    "record_id": "record.method.overlap_stabilized_score",
+    "generation_id": "generation.method.overlap_stabilized_score.005",
+    "content_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+    "method_identity": {
+      "stable_id": "method.overlap_stabilized_score",
+      "version": 2,
+      "definition_sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    "lifecycle_state": "proposed"
+  },
+  "expected_catalog": {
+    "record_id": "record.method_catalog.current",
+    "generation_id": "generation.method_catalog.010",
+    "content_sha256": "7777777777777777777777777777777777777777777777777777777777777777"
+  },
+  "expected_control_head": {
+    "current_index_generation_id": "generation.current_index.041",
+    "current_index_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+    "last_event_sequence": 44,
+    "event_root_sha256": "9999999999999999999999999999999999999999999999999999999999999999"
+  },
+  "target_lifecycle_state": "active",
+  "reason_required": true
+}

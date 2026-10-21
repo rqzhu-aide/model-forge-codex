@@ -1,0 +1,707 @@
+{
+  "phase_id": "P3",
+  "contract_version": "2.11.0",
+  "prose_contract": "architecture/phases/phase-3.md",
+  "name": "Theory",
+  "scientific_purpose": "Develop useful mathematical justification, explain what assumptions enable and what is lost under plausible violations, and retain unresolved obligations and exact model applicability.",
+  "current_record_semantics": {
+    "strategy": "atomic_replace",
+    "canonical_record_types": [
+      "theory_record",
+      "phase_decision"
+    ],
+    "research_meaning": "One complete theory package states the latest validated theoretical assessment, even when proofs are incomplete or claims are contradicted.",
+    "history_policy": "A rerun replaces the complete current theory package. Older packages remain historical and are excluded unless the user selects them."
+  },
+  "user_choices": [
+    {
+      "choice_id": "p3.selected_method",
+      "label": "Method",
+      "description": "Select one active method and its current exact identity.",
+      "required": true,
+      "allowed_values": [],
+      "value_kind": "method_identity"
+    },
+    {
+      "choice_id": "p3.instructions",
+      "label": "Theory instructions",
+      "description": "State the theoretical question, proof targets, emphasis, and scientific constraints.",
+      "required": true,
+      "allowed_values": [],
+      "value_kind": "text"
+    },
+    {
+      "choice_id": "p3.selected_history",
+      "label": "Selected history",
+      "description": "Optionally include named historical records for an explicit question.",
+      "required": false,
+      "allowed_values": [],
+      "value_kind": "artifact_pointer_list"
+    }
+  ],
+  "run_modes": [
+    {
+      "mode_id": "p3.theory_establishment",
+      "label": "Establish theory",
+      "purpose": "Establish a complete theory account for the authorized scope: identify the method class and formal target, select only scientifically applicable properties, state assumptions, and prove, refute, or leave explicit obligations for the central claims.",
+      "requires_method": true,
+      "entry_conditions": [
+        "The project brief, Phase 1 basis, and Phase 2 catalog are current.",
+        "The selected method is active and current."
+      ],
+      "required_choice_ids": [
+        "p3.selected_method",
+        "p3.instructions"
+      ],
+      "optional_choice_ids": [
+        "p3.selected_history"
+      ],
+      "method_choice_id": "p3.selected_method"
+    },
+    {
+      "mode_id": "p3.theory_revision",
+      "label": "Revise theory",
+      "purpose": "Revise the current theory statement by statement: repair gaps where possible and weaken, narrow, condition, or retract claims when that is the more defensible result.",
+      "requires_method": true,
+      "entry_conditions": [
+        "The project brief, Phase 1 basis, and Phase 2 catalog are current.",
+        "The selected method is active and current.",
+        "A complete formal current theory record exists for the exact selected method identity."
+      ],
+      "required_choice_ids": [
+        "p3.selected_method",
+        "p3.instructions"
+      ],
+      "optional_choice_ids": [
+        "p3.selected_history"
+      ],
+      "method_choice_id": "p3.selected_method"
+    }
+  ],
+  "prerequisites": [
+    {
+      "requirement_id": "p3.current_project_brief",
+      "kind": "phase_record",
+      "description": "A formal current project brief is readable.",
+      "required": true
+    },
+    {
+      "requirement_id": "p3.current_literature",
+      "kind": "phase_record",
+      "description": "A formal current Phase 1 literature basis is readable.",
+      "required": true,
+      "phase": "P1"
+    },
+    {
+      "requirement_id": "p3.method_selected",
+      "kind": "method_selected",
+      "description": "The user selects one active current method from Phase 2.",
+      "required": true,
+      "phase": "P2"
+    }
+  ],
+  "required_inputs": [
+    {
+      "input_id": "p3.project_brief",
+      "record_type": "project_brief",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "not_applicable",
+      "purpose": "Preserve the scientific problem and scope.",
+      "condition": "Always required.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p3.literature_synthesis",
+      "record_type": "literature_synthesis",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "not_applicable",
+      "purpose": "Ground theoretical context, related work, assumptions, and novelty.",
+      "condition": "Always required.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p3.method_catalog",
+      "record_type": "method_catalog",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "not_applicable",
+      "purpose": "Confirm that the selected stable method is active and current.",
+      "condition": "Always required.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p3.method",
+      "record_type": "method_record",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "exact",
+      "purpose": "Freeze the calculation-defining identity that every theory output addresses.",
+      "condition": "Always required.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p3.current_theory",
+      "record_type": "theory_record",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "exact",
+      "purpose": "Provide the latest complete account that a rerun must repair or replace.",
+      "condition": "Required on reruns for the same exact identity and absent on the first run.",
+      "presence": "required_on_rerun"
+    },
+    {
+      "input_id": "p3.prior_theory",
+      "record_type": "theory_record",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "exact",
+      "purpose": "Provide the exact current theory generation that revision mode compares, repairs, weakens, or replaces statement by statement.",
+      "condition": "Required for theory revision mode.",
+      "presence": "required_in_modes",
+      "required_in_modes": [
+        "p3.theory_revision"
+      ]
+    },
+    {
+      "input_id": "p3.current_empirical_index",
+      "record_type": "empirical_evidence_index",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "exact",
+      "purpose": "Resolve the exact current evidence items and explicit exclusions considered during theory assessment.",
+      "condition": "Included when an exactly aligned Phase 4 record exists; Phase 4 is not a prerequisite.",
+      "presence": "if_exists"
+    },
+    {
+      "input_id": "p3.current_empirical",
+      "record_type": "empirical_synthesis",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "exact",
+      "purpose": "Expose current empirical implications, contradictions, and boundary behavior.",
+      "condition": "Included when an exactly aligned Phase 4 record exists; Phase 4 is not a prerequisite.",
+      "presence": "if_exists"
+    },
+    {
+      "input_id": "p3.current_implementation",
+      "record_type": "implementation_record",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "exact",
+      "purpose": "Expose the exact implementation identity and computational assumptions behind the current empirical record.",
+      "condition": "Included when an exactly aligned Phase 4 record exists; Phase 4 is not a prerequisite.",
+      "presence": "if_exists"
+    }
+  ],
+  "supplementary_inputs": [
+    {
+      "input_id": "p3.researcher_material",
+      "record_type": "researcher_material",
+      "purpose": "Accept researcher-supplied material (for example the researcher's own derivations or notes) as additional context for theory development. It is additive only and never substitutes for published records."
+    }
+  ],
+  "prepared_contexts": [],
+  "optional_context_policy": {
+    "default": "current_only",
+    "allows_selected_history": true,
+    "history_selection_user_controlled": true,
+    "description": "The exact current method and available current sibling record are the default. Old methods and runs appear only as selected history.",
+    "history_choice_id": "p3.selected_history"
+  },
+  "role_stages": [
+    {
+      "sequence": 1,
+      "stage_id": "p3.theorist",
+      "applicable_modes": [
+        "p3.theory_establishment",
+        "p3.theory_revision"
+      ],
+      "execution": "serial",
+      "roles": [
+        "theorist"
+      ],
+      "objective": "Follow the selected establishment or revision mode, construct a complete scoped theory record, and register assumptions, exact statements, proof support or counterexamples or open obligations, dependencies, limitations, and empirical implications. Also produce p3.claim_map (every statement with proof_status full/sketch/cited/missing, dependency edges to statements and assumptions, and novelty links to P1 literature) and p3.falsification_log (every counterexample / edge-case / relaxation probe you tried, with outcome holds / fails_as_stated / untested). 'I tried to break it, here is how' is a deliverable. Preserve stable statement and assumption IDs on revision. The claim map is a display projection of this exact theory record: dependencies and proof references must resolve. A lead may narrow the assessment but must not introduce unaudited mathematical wording. Write for a researcher deciding how to develop or use this method. Answer the section's research question first, then explain its support, conditions, uncertainty and consequence for the next decision. State unknown or untested content explicitly. Define notation, delimit mathematics in mixed prose, and use readable labels and declared units. Keep exact science in its designated record and refer to exact supporting sources. Develop detailed reasoning once; use a brief consequence-focused recap and references elsewhere, preserving qualifications beside their claims and independent opinions. No extra summary artifacts, word quotas or presentation-only member turns are required. Explain each central statement's meaning for the exact method in justification.summary while preserving complete arguments and exact assumptions. In each assumption.sensitivity, answer what absence of that condition changes: undefined procedure, loss of identification, loss of a guarantee, demonstrated failure, or an unknown consequence. Link the relevant statement or probe and never infer failure merely from missing proof. Use readable claim labels without changing the statement or proof status. Use applicable frozen context and exact answered revisions with their sources, without reconstructing all cumulative history. Preserve unknown and no-data answers; synthetic conditions never become study facts. Keep project facts shared and P2 additional directions Lead-only. Researcher reports, confirmed paraphrases and passing diagnostics do not verify assumptions. A material premise change needs an exact successor question; saved preferences stay settled within their scope. Retain exact context and answer references. Dialogue or saved answers cannot revise a model, launch computation or establish a guarantee. Put nonblocking qualifying researcher questions in your existing handoff unresolved_issues, with the exact affected point, practical consequence, source references, applicable model and intended audience; the Lead consolidates the owned attention output. Do not fabricate choices for unavailable study facts. Do not create an unassigned attention artifact or use a native host question. Only a genuinely blocking missing researcher fact or choice uses the existing researcher-question.json pause protocol; unknown facts can otherwise remain explicit conditions. Put the bounded empirical implications in the readable primary manuscript as well as their structured record, so the researcher can inspect the proposed checks. Ask only when both conditions hold: plausible answers materially change the target or interpretation, validity of the intended claim, data applicability or a meaningful resource compromise; and the missing input is an unresolved researcher preference or study fact the team cannot establish from available material. Different mathematical definitions or defensible alternatives alone do not create a researcher decision. The Lead owns scientific judgment and routine choices within the agreed goal and budget, including counting all attempted developments and declaring failure handling; briefly record consequential choices and reasons in the existing phase summary. Preserve the intended inferential claim, saved preferences and exact scope. A researcher cannot certify assumptions by preference. Empty attention output is valid. ",
+      "reads": [
+        "p3.project_brief",
+        "p3.literature_synthesis",
+        "p3.method_catalog",
+        "p3.method",
+        "p3.current_theory",
+        "p3.prior_theory",
+        "p3.current_empirical"
+      ],
+      "writes": [
+        "p3.theory_candidate",
+        "p3.theory_handoff",
+        "p3.claim_map",
+        "p3.falsification_log"
+      ],
+      "handoff_required": true,
+      "artifact_contracts": {
+        "p3.theory_candidate": {
+          "artifact_type": "t3m_manuscript",
+          "audience": [
+            "data_analyst",
+            "p5"
+          ],
+          "delivery": "instructed_open"
+        },
+        "p3.theory_handoff": {
+          "artifact_type": "t2p_packet",
+          "audience": [
+            "research_lead",
+            "data_analyst"
+          ],
+          "delivery": "inline"
+        },
+        "p3.claim_map": {
+          "artifact_type": "t2p_packet",
+          "audience": [
+            "research_lead",
+            "user"
+          ],
+          "delivery": "inline"
+        },
+        "p3.falsification_log": {
+          "artifact_type": "t2p_packet",
+          "audience": [
+            "research_lead",
+            "user"
+          ],
+          "delivery": "inline"
+        }
+      }
+    },
+    {
+      "sequence": 2,
+      "stage_id": "p3.analyst",
+      "applicable_modes": [
+        "p3.theory_establishment",
+        "p3.theory_revision"
+      ],
+      "execution": "serial",
+      "roles": [
+        "data_analyst"
+      ],
+      "objective": "Challenge identifiability, operational meaning, computation, empirical testability, boundary cases, evidence consistency, and any unjustified status inflation or untracked weakening or retraction in revision mode. Write for a researcher deciding how to develop or use this method. Answer the section's research question first, then explain its support, conditions, uncertainty and consequence for the next decision. State unknown or untested content explicitly. Define notation, delimit mathematics in mixed prose, and use readable labels and declared units. Keep exact science in its designated record and refer to exact supporting sources. Develop detailed reasoning once; use a brief consequence-focused recap and references elsewhere, preserving qualifications beside their claims and independent opinions. No extra summary artifacts, word quotas or presentation-only member turns are required. Within your permitted frozen read set, also assess whether the authored account directly answers its research question, faithfully describes its support and qualifications, and helps the researcher decide what to do next. Record misleading or missing explanation in the existing scientific findings with the affected source, consequence and resolving work. Do not claim review of later outputs or materials you cannot inspect. Make operational consequences and testable implications explicit. A numerical counterexample or diagnostic is distinct from a proof, and an unperformed probe remains untested. Use applicable frozen context and exact answered revisions with their sources, without reconstructing all cumulative history. Preserve unknown and no-data answers; synthetic conditions never become study facts. Keep project facts shared and P2 additional directions Lead-only. Researcher reports, confirmed paraphrases and passing diagnostics do not verify assumptions. A material premise change needs an exact successor question; saved preferences stay settled within their scope. Retain exact context and answer references. Dialogue or saved answers cannot revise a model, launch computation or establish a guarantee. Put nonblocking qualifying researcher questions in your existing handoff unresolved_issues, with the exact affected point, practical consequence, source references, applicable model and intended audience; the Lead consolidates the owned attention output. Do not fabricate choices for unavailable study facts. Do not create an unassigned attention artifact or use a native host question. Only a genuinely blocking missing researcher fact or choice uses the existing researcher-question.json pause protocol; unknown facts can otherwise remain explicit conditions. Give every criticism a stable issue_id in the existing audit issues and/or handoff unresolved_issues. Use component_ids for exact affected statements or assumptions. If your finding establishes a counterexample or empirical contradiction, provide its exact justification object and retained artifact bytes/digests on that issue. The Lead may cite that object without rewriting it. A missing argument is an unresolved gap, not evidence of contradiction. Keep shared issues consistent between audit and handoff. An issue can be recorded in either your audit or handoff without duplicating it. If you reuse its issue_id in both, copy the same structured issue object exactly. Keep longer discussion in the readable audit rather than changing the meaning of a shared identity. Ask only when both conditions hold: plausible answers materially change the target or interpretation, validity of the intended claim, data applicability or a meaningful resource compromise; and the missing input is an unresolved researcher preference or study fact the team cannot establish from available material. Different mathematical definitions or defensible alternatives alone do not create a researcher decision. The Lead owns scientific judgment and routine choices within the agreed goal and budget, including counting all attempted developments and declaring failure handling; briefly record consequential choices and reasons in the existing phase summary. Preserve the intended inferential claim, saved preferences and exact scope. A researcher cannot certify assumptions by preference. Empty attention output is valid. ",
+      "reads": [
+        "p3.method",
+        "p3.theory_candidate",
+        "p3.theory_handoff",
+        "p3.current_empirical_index",
+        "p3.current_empirical",
+        "p3.current_implementation",
+        "p3.claim_map",
+        "p3.falsification_log"
+      ],
+      "writes": [
+        "p3.analyst_audit",
+        "p3.analyst_handoff"
+      ],
+      "handoff_required": true,
+      "artifact_contracts": {
+        "p3.analyst_audit": {
+          "artifact_type": "t3m_manuscript",
+          "audience": [
+            "research_lead",
+            "p5"
+          ],
+          "delivery": "instructed_open"
+        },
+        "p3.analyst_handoff": {
+          "artifact_type": "t2p_packet",
+          "audience": [
+            "research_lead",
+            "theorist"
+          ],
+          "delivery": "inline"
+        }
+      }
+    },
+    {
+      "sequence": 3,
+      "stage_id": "p3.lead",
+      "applicable_modes": [
+        "p3.theory_establishment",
+        "p3.theory_revision"
+      ],
+      "execution": "serial",
+      "roles": [
+        "research_lead"
+      ],
+      "objective": "Integrate the theory and audit without introducing unaudited formal content, resolve or expose disagreement, preserve exact mathematical statements and attribute any conservative assessment changes, and state the current outcome and user-relevant changes. Every new attention item uses schema_version 1.2.0, kind researcher_decision or research_task, target_phase, exact scope, audience and source references. Author the compact brief directly in the ordinary deliverable, with no second writer or UI classifier. A research_task is scientific work for the team in the named phase. Omission never resolves an existing item: preserve its stable identity until an explicit answer or reasoned team disposition supersedes it. Read current open tasks addressed to this phase as frozen scientific context; do not launch work in another phase automatically. Write for a researcher deciding how to develop or use this method. Answer the section's research question first, then explain its support, conditions, uncertainty and consequence for the next decision. State unknown or untested content explicitly. Define notation, delimit mathematics in mixed prose, and use readable labels and declared units. Keep exact science in its designated record and refer to exact supporting sources. Develop detailed reasoning once; use a brief consequence-focused recap and references elsewhere, preserving qualifications beside their claims and independent opinions. No extra summary artifacts, word quotas or presentation-only member turns are required. In the decision record, explain what is established, conditional, refuted or still open, why this matters for the researcher's objective, the strongest supporting argument and the decisive remaining obligation. Keep the exact theorist statements and attributed analyst criticism intact. Before sealing your final account, check its explanatory adequacy and scientific fidelity against the available sources. Preserve material disagreement and unknowns; a successful run is not a favorable scientific finding. Each recommended next step states the research question, its decision value and the appropriate phase without authorizing another run. Use applicable frozen context and exact answered revisions with their sources, without reconstructing all cumulative history. Preserve unknown and no-data answers; synthetic conditions never become study facts. Keep project facts shared and P2 additional directions Lead-only. Researcher reports, confirmed paraphrases and passing diagnostics do not verify assumptions. A material premise change needs an exact successor question; saved preferences stay settled within their scope. Retain exact context and answer references. Dialogue or saved answers cannot revise a model, launch computation or establish a guarantee. Author researcher-decision attention with schema_version 1.2.0, exact project/model scope and a named responsible audience; retain authored expectation topics and exact answer applicability references. In decision.issue_dispositions, address every distinct Analyst issue from audit issues and handoff unresolved_issues with its exact issue_id, status resolved/contested/unresolved, and a substantive reason. Preserve disagreement without forcing consensus. Keep all candidate statement IDs, types, text, quantifiers, regimes, assumption IDs, dependencies and assumption wording/scope unchanged. Keep original justifications exactly unless copying exact retained negative support from an Analyst issue targeting that component. You may leave an assessment unchanged; retract it with a reason; change established to conditional within its unchanged scope; or change established, conditional or untested to incomplete. A newly contradicted assessment requires exact Analyst counterexample or empirical_evidence justification with retained support artifacts. Never promote a non-established claim to established or conditional, rehabilitate contradicted/retracted claims, invent proof support, or rewrite the mathematics. A new argument requires a later authorized theory revision. Assumption assessment may change with attribution, while text, scope and use dependencies stay fixed; active means assumed, not verified. For each actual changed status or support, author decision.assessment_changes with component_id, origin lead_concern or analyst_issue, reason and issue_id only for Analyst origin. A Lead-own concern must explicitly say it has not received independent Analyst review. Do not manufacture change entries for unchanged components. Keep the original theorist account and Analyst criticism in their source records. Lead with the current conclusion and decisive qualification using human-readable claim labels, with exact IDs in structured references. Consolidate consequential questions from both handoffs into the owned attention output, distinguishing researcher choices from team work. Only a genuinely blocking question uses researcher-question.json; do not invoke native host questions. The readable primary manuscript must reflect the final canonical assessments and explicitly attribute retained original arguments; do not leave an unqualified positive headline after narrowing a claim. Surface the decisive empirical checks in existing next-work or task fields, referring to the detailed implications rather than duplicating their reasoning. Ask only when both conditions hold: plausible answers materially change the target or interpretation, validity of the intended claim, data applicability or a meaningful resource compromise; and the missing input is an unresolved researcher preference or study fact the team cannot establish from available material. Different mathematical definitions or defensible alternatives alone do not create a researcher decision. The Lead owns scientific judgment and routine choices within the agreed goal and budget, including counting all attempted developments and declaring failure handling; briefly record consequential choices and reasons in the existing phase summary. Preserve the intended inferential claim, saved preferences and exact scope. A researcher cannot certify assumptions by preference. Empty attention output is valid. For each new researcher_decision author decision_priority as interpretation, inference, data or resources, using the highest material consequence in that order, and response_kind as choice or study_fact. Keep question to one current choice or exact factual request. context_markdown identifies the affected point with the minimum useful mathematics and locally defined symbols; likely_consequence gives its practical effect without repetition. For a choice, author options when a useful finite set exists, usually two or three realistic alternatives as {id,label,consequence} with unique IDs and actual benefits/costs. recommendation is Markdown Lead advice and reason, or the evidence needed before advice is justified; never preselect or save a recommendation as the researcher answer. A study_fact names the missing information, applicability limit and what can proceed while unknown, without options or recommendation. Inspect supplied material first. Do not repeatedly request unavailable facts during synthetic work. Consolidate duplicates while retaining independently answerable premises and exact scope/source/answer references. Carry forward only materially new consequences in the brief; retain derivations and earlier context through sources. No rigid word cap or separate rationale-writing checklist applies. ",
+      "reads": [
+        "p3.project_brief",
+        "p3.literature_synthesis",
+        "p3.method_catalog",
+        "p3.method",
+        "p3.current_theory",
+        "p3.current_empirical_index",
+        "p3.current_empirical",
+        "p3.current_implementation",
+        "p3.theory_candidate",
+        "p3.theory_handoff",
+        "p3.analyst_audit",
+        "p3.analyst_handoff",
+        "p3.claim_map",
+        "p3.falsification_log"
+      ],
+      "writes": [
+        "p3.theory_compact",
+        "p3.complete_theory",
+        "p3.attention_items",
+        "p3.decision",
+        "p3.phase_summary"
+      ],
+      "handoff_required": true,
+      "artifact_contracts": {
+        "p3.theory_compact": {
+          "artifact_type": "t2p_packet",
+          "audience": [
+            "data_analyst",
+            "p5"
+          ],
+          "delivery": "inline"
+        },
+        "p3.complete_theory": {
+          "artifact_type": "t3m_manuscript",
+          "audience": [
+            "p5"
+          ],
+          "delivery": "mention"
+        },
+        "p3.phase_summary": {
+          "artifact_type": "t2s_summary",
+          "audience": [
+            "research_lead",
+            "data_analyst",
+            "user"
+          ],
+          "delivery": "inline"
+        },
+        "p3.attention_items": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "p5"
+          ],
+          "delivery": "mention"
+        },
+        "p3.decision": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "theorist",
+            "data_analyst",
+            "p5",
+            "user"
+          ],
+          "delivery": "inline"
+        }
+      }
+    }
+  ],
+  "run_local_outputs": [
+    {
+      "output_id": "p3.theory_candidate",
+      "output_kind": "primary_artifact",
+      "producer": "theorist",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/theory-record.schema.json",
+      "purpose": "Provide a complete readable primary theory artifact and structured statement-level theory record rather than a patch.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p3.theory_handoff",
+      "output_kind": "handoff",
+      "producer": "theorist",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/handoff.schema.json",
+      "purpose": "State changes, assumptions, claims, unresolved obligations, and analyst checks.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p3.analyst_audit",
+      "output_kind": "audit",
+      "producer": "data_analyst",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/scientific-record.schema.json",
+      "purpose": "Record stable operational, identifiability, computational, and empirical issues.",
+      "required": true,
+      "requirement": "always",
+      "record_type": "review_issue_ledger"
+    },
+    {
+      "output_id": "p3.theory_compact",
+      "output_kind": "scientific_record",
+      "producer": "research_lead",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/compact-view.schema.json",
+      "purpose": "Provide the layer-3 compact decision view of the theory record: a 1-2 page technical summary (result statements, core proof idea, load-bearing assumptions) for downstream stages.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p3.complete_theory",
+      "output_kind": "scientific_record",
+      "producer": "research_lead",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/theory-record.schema.json",
+      "purpose": "Provide the complete candidate theory record with a primary artifact, exact statements, quantifiers and regimes, assumptions, proof or counterexample or obligation support, dependencies, empirical implications, limitations, revision accounting, and issue dispositions.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p3.attention_items",
+      "output_kind": "attention_item_set",
+      "producer": "research_lead",
+      "schema_application": "each_item",
+      "schema_uri": "architecture/schemas/contextual-attention-item.schema.json",
+      "purpose": "Record each newly identified research-attention item with its exact basis, affected claim or record, and smallest resolving question. Distinguish researcher decisions from team tasks, with target phase and exact scientific context authored in the same output.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p3.decision",
+      "output_kind": "decision_record",
+      "producer": "research_lead",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/decision-record.schema.json",
+      "purpose": "Summarize the fundamental result, material changes, uncertainty, and meaningful user actions.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p3.analyst_handoff",
+      "output_kind": "handoff",
+      "producer": "data_analyst",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/handoff.schema.json",
+      "purpose": "State analyst findings, unresolved issues, and the exact checks for lead synthesis.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p3.claim_map",
+      "output_kind": "scientific_record",
+      "producer": "theorist",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/claim-map.schema.json",
+      "purpose": "Produce the source-linked claim map declared in this stage's artifact contract.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p3.falsification_log",
+      "output_kind": "scientific_record",
+      "producer": "theorist",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/falsification-log.schema.json",
+      "purpose": "Produce the source-linked falsification log declared in this stage's artifact contract.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p3.phase_summary",
+      "output_kind": "scientific_record",
+      "producer": "research_lead",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/t2s-summary.schema.json",
+      "purpose": "Produce the source-linked phase summary declared in this stage's artifact contract.",
+      "required": true,
+      "requirement": "always"
+    }
+  ],
+  "validation_rules": [
+    {
+      "validator_id": "p3.role_sequence",
+      "category": "run_boundary",
+      "severity": "blocking",
+      "description": "Theorist, data analyst, and research lead outputs exist in that exact order with complete handoffs."
+    },
+    {
+      "validator_id": "p3.exact_method",
+      "category": "alignment",
+      "severity": "blocking",
+      "description": "Every method-bound output names the same stable ID, positive integer version, and definition digest."
+    },
+    {
+      "validator_id": "p3.complete_account",
+      "category": "scientific_completeness",
+      "severity": "blocking",
+      "description": "The candidate is complete and states assumptions, claims, proof locations or obligations, limitations, and empirical implications."
+    },
+    {
+      "validator_id": "p3.issue_traceability",
+      "category": "provenance",
+      "severity": "blocking",
+      "description": "Each analyst issue has a stable ID and a lead disposition or acknowledged unresolved state."
+    },
+    {
+      "validator_id": "p3.atomic_publication",
+      "category": "promotion_safety",
+      "severity": "blocking",
+      "description": "The complete theory package replaces the prior package atomically."
+    }
+  ],
+  "publication_bindings": [
+    {
+      "binding_id": "p3.append_attention_items",
+      "applicable_modes": [
+        "p3.theory_establishment",
+        "p3.theory_revision"
+      ],
+      "operation": "append",
+      "output_ids": [
+        "p3.attention_items"
+      ],
+      "target": {
+        "kind": "cumulative_collection",
+        "collection_id": "project.attention_history",
+        "object_type": "attention_item"
+      },
+      "prior_target_policy": "not_applicable",
+      "publisher_transform": "none",
+      "may_create_scientific_content": false
+    },
+    {
+      "binding_id": "p3.replace_theory_record",
+      "applicable_modes": [
+        "p3.theory_establishment",
+        "p3.theory_revision"
+      ],
+      "operation": "replace",
+      "output_ids": [
+        "p3.complete_theory"
+      ],
+      "target": {
+        "kind": "current_slot",
+        "slot_id": "p3.theory_record.current",
+        "record_type": "theory_record"
+      },
+      "prior_target_policy": "absent_or_match_current",
+      "publisher_transform": "none",
+      "may_create_scientific_content": false
+    },
+    {
+      "binding_id": "p3.replace_phase_decision",
+      "applicable_modes": [
+        "p3.theory_establishment",
+        "p3.theory_revision"
+      ],
+      "operation": "replace",
+      "output_ids": [
+        "p3.decision"
+      ],
+      "target": {
+        "kind": "current_slot",
+        "slot_id": "p3.phase_decision.current",
+        "record_type": "phase_decision"
+      },
+      "prior_target_policy": "absent_or_match_current",
+      "publisher_transform": "none",
+      "may_create_scientific_content": false
+    }
+  ],
+  "promotion": {
+    "strategy": "atomic_replace",
+    "canonical_record_types": [
+      "theory_record",
+      "phase_decision"
+    ],
+    "cumulative_object_types": [
+      "attention_item"
+    ],
+    "blocking_validator_ids": [
+      "p3.role_sequence",
+      "p3.exact_method",
+      "p3.complete_account",
+      "p3.issue_traceability",
+      "p3.atomic_publication"
+    ],
+    "failure_behavior": "Keep the previous complete theory package current; retain the candidate only in its run workspace.",
+    "atomic": true
+  },
+  "downstream_effects": [
+    {
+      "trigger": "theory_basis_change",
+      "affected_phases": [
+        "P4"
+      ],
+      "description": "Changed assumptions or empirical implications create targeted Phase 4 attention without method-identity mismatch.",
+      "automatic_run": false,
+      "alignment_effect": {
+        "action": "preserve"
+      },
+      "attention_effect": {
+        "action": "record_if_identified"
+      }
+    },
+    {
+      "trigger": "new_current_record",
+      "affected_phases": [
+        "P5"
+      ],
+      "description": "A current report no longer has the latest theory basis and requires user-started reconciliation.",
+      "automatic_run": false,
+      "alignment_effect": {
+        "action": "set",
+        "state": "outdated"
+      },
+      "attention_effect": {
+        "action": "create_required"
+      }
+    }
+  ],
+  "ui_projection": {
+    "researcher_questions": [
+      "What is established?",
+      "Which assumptions and proof obligations remain?",
+      "What changed?",
+      "How does current evidence bear on the theory?"
+    ],
+    "fields": [
+      {
+        "field_id": "p3.method_summary",
+        "source": "method_record.current",
+        "label": "Selected method",
+        "meaning": "Stable identity, mathematical definition, target, assumptions, and scope."
+      },
+      {
+        "field_id": "p3.theory_outcome",
+        "source": "theory_record.current.scientific_outcome",
+        "label": "Theoretical outcome",
+        "meaning": "What the current complete account supports, conditions, contradicts, or leaves unresolved."
+      },
+      {
+        "field_id": "p3.attention",
+        "source": "theory_record.current.research_attention",
+        "label": "Open questions",
+        "meaning": "Specific proof, assumption, interpretation, or evidence questions for a possible rerun."
+      }
+    ],
+    "user_action_choice_ids": [
+      "p3.selected_method",
+      "p3.instructions",
+      "p3.selected_history"
+    ]
+  },
+  "acceptance_scenarios": [
+    "s03.phase4_before_phase3",
+    "s04.method_definition_change",
+    "s05.failed_run",
+    "s06.optional_history",
+    "s10.negative_result",
+    "s12.disjoint_concurrent_publication"
+  ],
+  "capabilities": [
+    "researcher_dialogue_v1",
+    "p3.conservative_assessment_v1",
+    "native_tool_preflight_v1",
+    "consequential_researcher_decisions_v1"
+  ]
+}

@@ -1,0 +1,1227 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/research-basis.schema.json",
+  "title": "Research Basis",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "title",
+    "research_setting",
+    "phase2_preparation",
+    "landscape",
+    "coverage_limits"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        "1.0.0",
+        "1.1.0",
+        "1.2.0",
+        "1.3.0"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "research_setting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statement_markdown"
+      ],
+      "properties": {
+        "statement_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Brief, connected description of the study problem, essential observations or conceptual objects, and the notation needed to understand them. Explain symbols in the researcher's context and preserve unknown collection facts. A full model specification or methodological development is not required here; detailed proposed project methods belong in P2. Do not choose an unspecified model family or estimator, recap literature or list questions. Keep the account sufficient to orient the reader without a fixed word or paragraph quota."
+        },
+        "clarification_questions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "maxItems": 0,
+          "description": "Retired for new outputs. Put each setting clarification once in attention_items with kind researcher_decision and target_phase P1, including exact mathematical context."
+        },
+        "component_interpretations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "symbol_latex",
+              "mathematical_role_markdown",
+              "problem_meaning_markdown"
+            ],
+            "properties": {
+              "symbol_latex": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S",
+                "description": "A consequential symbol or component from the problem formulation, without math delimiters."
+              },
+              "mathematical_role_markdown": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S",
+                "description": "Short mathematical-role phrase, including units or domain when relevant."
+              },
+              "problem_meaning_markdown": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S",
+                "description": "Short phrase connecting the symbol to this problem or available data. Do not repeat the study or invent columns or collection facts."
+              }
+            }
+          },
+          "description": "Optional-lookup notation glossary, using only symbols needed for this setting. Short mathematical-role and problem-meaning phrases; the required array may be empty."
+        },
+        "research_goal_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Brief interpretation of what the researcher wants to learn, predict, compare, estimate or establish and what a useful result would answer. Use a simple target expression when it clarifies the goal, without requiring a full method specification. Distinguish the target from an estimator or report deliverable, and prediction or association from intervention effects. Put consequential ambiguities in attention_items without inventing a time origin, horizon, loss, policy or identification assumption. Detailed proposed project methods belong in P2."
+        }
+      }
+    },
+    "phase2_preparation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "instructions_markdown"
+      ],
+      "properties": {
+        "instructions_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required nonblank additional P2-specific preparation only, without another study, goal or findings recap. When no addition is identified, use: No additional P2-specific preparation is identified. Preserve existing Lead-only routing."
+        },
+        "supplied_method": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "title",
+            "specification_markdown",
+            "source_reference"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "specification_markdown": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The researcher's supplied method text or exact mathematics; preserve authorship and distinguish interpretation from the original."
+            },
+            "source_reference": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "landscape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary_markdown",
+        "topics"
+      ],
+      "properties": {
+        "summary_markdown": {
+          "description": "Concise cross-paper methodological synthesis with exact inline citations: explain how the approaches address the problem, which model relationships or inferential targets distinguish them, and what their assumptions permit or leave unresolved. Integrate mathematical expressions when they clarify the comparison; do not substitute model names, isolated formulas or repeated paper summaries. State unavailable support honestly.",
+          "type": "string",
+          "minLength": 1
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "topic_id",
+              "title",
+              "description_markdown",
+              "source_ids"
+            ],
+            "properties": {
+              "topic_id": {
+                "$ref": "common-definitions.schema.json#/$defs/stableId"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description_markdown": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "common-definitions.schema.json#/$defs/stableId"
+                },
+                "uniqueItems": true
+              }
+            }
+          },
+          "description": "Minimal useful navigation only; the required array may be empty. Do not repeat paper accounts or fill a taxonomy for its own sake."
+        },
+        "frameworks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/framework"
+          },
+          "description": "Only scientifically justified records needed to explain this problem and its supported literature landscape. The required array may be empty; no exhaustive inventory is required."
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/variant"
+          },
+          "description": "Only scientifically justified records needed to explain this problem and its supported literature landscape. The required array may be empty; no exhaustive inventory is required."
+        },
+        "relationships": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/relationship"
+          },
+          "description": "Only scientifically justified records needed to explain this problem and its supported literature landscape. The required array may be empty; no exhaustive inventory is required."
+        },
+        "algorithm_families": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/algorithmFamily"
+          },
+          "description": "Only scientifically justified records needed to explain this problem and its supported literature landscape. The required array may be empty; no exhaustive inventory is required."
+        },
+        "overview_item_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "uniqueItems": true,
+          "description": "Ordered author-selected approaches needed to understand the problem, referencing existing records. Each selected explanation is concise, connected methodology-style prose explaining the approach and its fit with informative mathematics, not merely notation definitions. Extended formulations remain in detail fields. Empty is legitimate when no supported formulation is available."
+        },
+        "citation_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_id",
+              "entry_ref"
+            ],
+            "properties": {
+              "source_id": {
+                "$ref": "common-definitions.schema.json#/$defs/stableId"
+              },
+              "entry_ref": {
+                "$ref": "#/$defs/originalEntryReference",
+                "description": "Exact effective entry after this basis applies any corrections. Its digest can differ from the pre-correction target in scientific_review or entry_corrections."
+              }
+            }
+          },
+          "description": "Bind every inline [Author, year](#cite:source.id) to one exact effective paper entry and digest, retaining that entry bibliography. May be empty only when there are no inline citation links."
+        },
+        "common_assumptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "assumption_id",
+              "title",
+              "statement_markdown",
+              "landscape_item_ids",
+              "citation_ids",
+              "project_fit_markdown"
+            ],
+            "properties": {
+              "assumption_id": {
+                "$ref": "common-definitions.schema.json#/$defs/stableId"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "statement_markdown": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S",
+                "description": "State the shared mathematical condition and explain its practical meaning."
+              },
+              "landscape_item_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "common-definitions.schema.json#/$defs/stableId"
+                },
+                "uniqueItems": true
+              },
+              "citation_ids": {
+                "type": "array",
+                "items": {
+                  "$ref": "common-definitions.schema.json#/$defs/stableId"
+                },
+                "uniqueItems": true
+              },
+              "project_fit_markdown": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S",
+                "description": "Explain whether application to this problem is known, conditional, contradicted or unresolved. A researcher account or passing diagnostic is not proof of an assumption."
+              }
+            }
+          },
+          "description": "Shared conditions only when they clarify this problem beyond object-local assumptions. Default the required array to empty when local conditions suffice; do not create a second inventory."
+        }
+      }
+    },
+    "coverage_limits": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Actual material limits of this account, recorded without padding or another findings recap. The required array may be empty when honest."
+    },
+    "source_dispositions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "status",
+          "reason"
+        ],
+        "properties": {
+          "source_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "status": {
+            "enum": [
+              "retain",
+              "exclude",
+              "retract"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "attention_items": {
+      "type": "array",
+      "items": {
+        "$ref": "contextual-attention-item.schema.json"
+      },
+      "description": "One home for consequential researcher questions and goal ambiguities, with short question and likely_consequence plus linked scientific context. Team tasks retain their authored kind and phase; do not ask the researcher to perform team investigation."
+    },
+    "entry_corrections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entryCorrection"
+      },
+      "description": "Exact targeted Lead revisions with original source/entry identity and immutable authorship retained. The required array may be empty; no correction quota."
+    },
+    "scientific_review": {
+      "$ref": "#/$defs/scientificReview"
+    }
+  },
+  "$defs": {
+    "entryReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "family",
+        "run_id",
+        "entry_id"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "research_lead",
+            "theorist",
+            "data_analyst"
+          ]
+        },
+        "family": {
+          "enum": [
+            "lead_literature",
+            "theory_literature",
+            "empirical_literature"
+          ]
+        },
+        "run_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "entry_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "entry_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "description": "An attributed entry in the final effective literature snapshot. If supplied, entry_sha256 must match that final version. Omitting it requests deterministic resolution; role and family must identify the same producing member."
+    },
+    "originalEntryReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "family",
+        "run_id",
+        "entry_id",
+        "entry_sha256"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "research_lead",
+            "theorist",
+            "data_analyst"
+          ]
+        },
+        "family": {
+          "enum": [
+            "lead_literature",
+            "theory_literature",
+            "empirical_literature"
+          ]
+        },
+        "run_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "entry_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "entry_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "description": "The exact current entry before this basis applies corrections, from a collected discovery or frozen prior library. The digest binds the complete paper object, not only its source. Sealed historical bytes are never rewritten."
+    },
+    "framework": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "framework_id",
+        "title",
+        "formulation_markdown",
+        "assumptions_markdown",
+        "explanation_markdown",
+        "entry_refs",
+        "support_status",
+        "limitations",
+        "relevance_markdown"
+      ],
+      "properties": {
+        "framework_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "formulation_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Exact relevant mathematics with defined notation. For a relationship, state the mathematical comparison and reasoning; for an algorithm, state its existing update or optimization rule. Do not invent unavailable mathematics."
+        },
+        "assumptions_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Declared assumptions and conditions of the formulation or comparison; distinguish retained, changed, and unverified conditions."
+        },
+        "explanation_markdown": {
+          "description": "Concise, connected methodology-style prose explaining the target, modeled relationships and central mechanism or estimation strategy of this existing approach, with the decisive condition beside the claim. Integrate source-supported equations when they clarify how it works and interpret terms in context; notation definitions alone are insufficient. Keep the visible account understandable without opening details, reserving extended derivations for formulation_markdown. Do not invent a model or architecture to fill a source gap, or force an equation in every field.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "entry_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entryReference"
+          },
+          "uniqueItems": true
+        },
+        "support_status": {
+          "enum": [
+            "source_supported",
+            "partially_supported",
+            "disputed",
+            "unverified"
+          ],
+          "description": "A scoped model-authored assessment of support for this item, never a proof-certification badge. Disputed or unchecked content must not be presented as established."
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "relevance_markdown": {
+          "description": "Short reason this approach informs the research problem or next method-development choice, without another formulation or findings recap.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "project_relevance": {
+          "enum": [
+            "direct",
+            "conditional",
+            "background"
+          ],
+          "description": "Closeness to the requested target, information and collection structure, not proof or superiority."
+        },
+        "relevance_reason_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Short reason for the approach fit, with decisive applicability conditions or limits. Closeness is not verified superiority."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "support_status": {
+                "enum": [
+                  "source_supported",
+                  "partially_supported"
+                ]
+              }
+            },
+            "required": [
+              "support_status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "entry_refs": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "variant_id",
+        "framework_id",
+        "title",
+        "formulation_markdown",
+        "assumptions_markdown",
+        "explanation_markdown",
+        "entry_refs",
+        "support_status",
+        "limitations",
+        "changes_markdown",
+        "consequences_markdown"
+      ],
+      "properties": {
+        "variant_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "framework_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "formulation_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Exact relevant mathematics with defined notation. For a relationship, state the mathematical comparison and reasoning; for an algorithm, state its existing update or optimization rule. Do not invent unavailable mathematics."
+        },
+        "assumptions_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Declared assumptions and conditions of the formulation or comparison; distinguish retained, changed, and unverified conditions."
+        },
+        "explanation_markdown": {
+          "description": "Concise, connected methodology-style prose explaining the target, modeled relationships and central mechanism or estimation strategy of this existing approach, with the decisive condition beside the claim. Integrate source-supported equations when they clarify how it works and interpret terms in context; notation definitions alone are insufficient. Keep the visible account understandable without opening details, reserving extended derivations for formulation_markdown. Do not invent a model or architecture to fill a source gap, or force an equation in every field.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "entry_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entryReference"
+          },
+          "uniqueItems": true
+        },
+        "support_status": {
+          "enum": [
+            "source_supported",
+            "partially_supported",
+            "disputed",
+            "unverified"
+          ],
+          "description": "A scoped model-authored assessment of support for this item, never a proof-certification badge. Disputed or unchecked content must not be presented as established."
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "changes_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "consequences_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "project_relevance": {
+          "enum": [
+            "direct",
+            "conditional",
+            "background"
+          ],
+          "description": "Closeness to the requested target, information and collection structure, not proof or superiority."
+        },
+        "relevance_reason_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Short reason for the approach fit, with decisive applicability conditions or limits. Closeness is not verified superiority."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "support_status": {
+                "enum": [
+                  "source_supported",
+                  "partially_supported"
+                ]
+              }
+            },
+            "required": [
+              "support_status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "entry_refs": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relationship_id",
+        "from_id",
+        "to_id",
+        "relationship_type",
+        "title",
+        "formulation_markdown",
+        "assumptions_markdown",
+        "explanation_markdown",
+        "entry_refs",
+        "support_status",
+        "limitations"
+      ],
+      "properties": {
+        "relationship_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "from_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "to_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "relationship_type": {
+          "enum": [
+            "equivalent",
+            "special_case",
+            "generalization",
+            "relaxation",
+            "incompatible",
+            "alternative",
+            "unresolved"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "formulation_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Exact relevant mathematics with defined notation. For a relationship, state the mathematical comparison and reasoning; for an algorithm, state its existing update or optimization rule. Do not invent unavailable mathematics."
+        },
+        "assumptions_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Declared assumptions and conditions of the formulation or comparison; distinguish retained, changed, and unverified conditions."
+        },
+        "explanation_markdown": {
+          "description": "Concise, connected methodology-style prose explaining the target, modeled relationships and central mechanism or estimation strategy of this existing approach, with the decisive condition beside the claim. Integrate source-supported equations when they clarify how it works and interpret terms in context; notation definitions alone are insufficient. Keep the visible account understandable without opening details, reserving extended derivations for formulation_markdown. Do not invent a model or architecture to fill a source gap, or force an equation in every field.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "entry_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entryReference"
+          },
+          "uniqueItems": true
+        },
+        "support_status": {
+          "enum": [
+            "source_supported",
+            "partially_supported",
+            "disputed",
+            "unverified"
+          ],
+          "description": "A scoped model-authored assessment of support for this item, never a proof-certification badge. Disputed or unchecked content must not be presented as established."
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "project_relevance": {
+          "enum": [
+            "direct",
+            "conditional",
+            "background"
+          ],
+          "description": "Closeness to the requested target, information and collection structure, not proof or superiority."
+        },
+        "relevance_reason_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Short reason for the approach fit, with decisive applicability conditions or limits. Closeness is not verified superiority."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "support_status": {
+                "enum": [
+                  "source_supported",
+                  "partially_supported"
+                ]
+              }
+            },
+            "required": [
+              "support_status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "entry_refs": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "algorithmFamily": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm_family_id",
+        "framework_ids",
+        "title",
+        "formulation_markdown",
+        "assumptions_markdown",
+        "explanation_markdown",
+        "entry_refs",
+        "support_status",
+        "limitations",
+        "computational_requirements_markdown"
+      ],
+      "properties": {
+        "algorithm_family_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "framework_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "formulation_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Exact relevant mathematics with defined notation. For a relationship, state the mathematical comparison and reasoning; for an algorithm, state its existing update or optimization rule. Do not invent unavailable mathematics."
+        },
+        "assumptions_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Declared assumptions and conditions of the formulation or comparison; distinguish retained, changed, and unverified conditions."
+        },
+        "explanation_markdown": {
+          "description": "Concise, connected methodology-style prose explaining the target, modeled relationships and central mechanism or estimation strategy of this existing approach, with the decisive condition beside the claim. Integrate source-supported equations when they clarify how it works and interpret terms in context; notation definitions alone are insufficient. Keep the visible account understandable without opening details, reserving extended derivations for formulation_markdown. Do not invent a model or architecture to fill a source gap, or force an equation in every field.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "entry_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entryReference"
+          },
+          "uniqueItems": true
+        },
+        "support_status": {
+          "enum": [
+            "source_supported",
+            "partially_supported",
+            "disputed",
+            "unverified"
+          ],
+          "description": "A scoped model-authored assessment of support for this item, never a proof-certification badge. Disputed or unchecked content must not be presented as established."
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "computational_requirements_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "project_relevance": {
+          "enum": [
+            "direct",
+            "conditional",
+            "background"
+          ],
+          "description": "Closeness to the requested target, information and collection structure, not proof or superiority."
+        },
+        "relevance_reason_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Short reason for the approach fit, with decisive applicability conditions or limits. Closeness is not verified superiority."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "support_status": {
+                "enum": [
+                  "source_supported",
+                  "partially_supported"
+                ]
+              }
+            },
+            "required": [
+              "support_status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "entry_refs": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "entryCorrection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correction_id",
+        "target",
+        "reason_markdown",
+        "evidence_locations"
+      ],
+      "properties": {
+        "correction_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "target": {
+          "$ref": "#/$defs/originalEntryReference"
+        },
+        "changes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {
+            "formulation_markdown": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Exact relevant mathematical formulation in Markdown with LaTeX: definitions, assumptions, criterion, algorithm or result. State unavailable information honestly; never invent mathematics."
+            },
+            "explanation_markdown": {
+              "description": "Explain the source contribution and relevant mechanism or argument for a researcher. Distinguish what the source reports from what you checked; refer to its exact formulation and evidence locations.",
+              "type": "string",
+              "minLength": 1
+            },
+            "relevance_markdown": {
+              "description": "Explain why this source changes the understanding of the requested research question or the next method-development choice.",
+              "type": "string",
+              "minLength": 1
+            },
+            "limitations_markdown": {
+              "description": "State the conditions, unresolved evidence and access limits that qualify this source account; keep the consequence beside the claim it limits.",
+              "type": "string",
+              "minLength": 1
+            },
+            "evidence_locations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "topics": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "reading_extent": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Material actually read, identified sections or abstract only, and which reported claims the author personally checked. Required in 1.1.0; do not imply full-text or proof verification from metadata access.",
+              "pattern": "\\S"
+            }
+          },
+          "minProperties": 1
+        },
+        "reason_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "evidence_locations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "minItems": 1
+        },
+        "source_metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "description": "Lead-authored bibliographic correction only. Original identity, locators, status, provenance and scientific assessment remain intact.",
+          "properties": {
+            "authors": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "venue": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "year": {
+              "type": "integer",
+              "minimum": 1000,
+              "maximum": 3000
+            }
+          }
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "changes"
+          ]
+        },
+        {
+          "required": [
+            "source_metadata"
+          ]
+        }
+      ]
+    },
+    "scientificReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope_markdown",
+        "findings",
+        "limitations"
+      ],
+      "properties": {
+        "scope_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Concise honest scope of source and entry checks, including explanatory adequacy. Index inspection alone does not verify every paper."
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "finding_id",
+              "target",
+              "status",
+              "assessment_markdown",
+              "evidence_locations"
+            ],
+            "properties": {
+              "finding_id": {
+                "$ref": "common-definitions.schema.json#/$defs/stableId"
+              },
+              "target": {
+                "$ref": "#/$defs/originalEntryReference"
+              },
+              "status": {
+                "enum": [
+                  "source_checked",
+                  "corrected",
+                  "disputed",
+                  "not_checked"
+                ]
+              },
+              "assessment_markdown": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "evidence_locations": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                }
+              }
+            }
+          },
+          "description": "Only actual targeted findings, with exact original entry references and evidence. Empty is legitimate; brevity must not remove a consequential finding."
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "description": "Actual limits of the performed review; the required array may be empty when honest."
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "enum": [
+              "1.1.0",
+              "1.2.0",
+              "1.3.0"
+            ]
+          }
+        },
+        "required": [
+          "schema_version"
+        ]
+      },
+      "then": {
+        "required": [
+          "scientific_review",
+          "entry_corrections"
+        ],
+        "properties": {
+          "landscape": {
+            "required": [
+              "frameworks",
+              "variants",
+              "relationships",
+              "algorithm_families"
+            ]
+          }
+        }
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "scientific_review"
+              ]
+            },
+            {
+              "required": [
+                "entry_corrections"
+              ]
+            }
+          ]
+        },
+        "properties": {
+          "landscape": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "frameworks"
+                  ]
+                },
+                {
+                  "required": [
+                    "variants"
+                  ]
+                },
+                {
+                  "required": [
+                    "relationships"
+                  ]
+                },
+                {
+                  "required": [
+                    "algorithm_families"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "enum": [
+              "1.2.0",
+              "1.3.0"
+            ]
+          }
+        },
+        "required": [
+          "schema_version"
+        ]
+      },
+      "then": {
+        "properties": {
+          "research_setting": {
+            "required": [
+              "component_interpretations",
+              "research_goal_markdown"
+            ]
+          },
+          "landscape": {
+            "required": [
+              "overview_item_ids",
+              "citation_refs",
+              "common_assumptions"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "enum": [
+              "1.0.0",
+              "1.1.0",
+              "1.2.0"
+            ]
+          }
+        },
+        "required": [
+          "schema_version"
+        ]
+      },
+      "then": {
+        "properties": {
+          "entry_corrections": {
+            "items": {
+              "required": [
+                "changes"
+              ],
+              "not": {
+                "required": [
+                  "source_metadata"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

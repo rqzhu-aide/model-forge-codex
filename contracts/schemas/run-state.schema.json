@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/run-state.schema.json",
+  "title": "Controlled Run State Journal",
+  "description": "The mutable lifecycle projection and cryptographically chained append-only event journal for a run. It is separate from the immutable run manifest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "project_id",
+    "run_id",
+    "manifest_sha256",
+    "current_state",
+    "events",
+    "journal_root_sha256",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "project_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "manifest_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "Digest of the sealed RunManifest whose lifecycle this journal records."
+    },
+    "current_state": {
+      "$ref": "common-definitions.schema.json#/$defs/runLifecycleState"
+    },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sequence",
+          "event_id",
+          "prior_event_sha256",
+          "event_sha256",
+          "to",
+          "at",
+          "actor",
+          "reason"
+        ],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "event_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "prior_event_sha256": {
+            "$ref": "common-definitions.schema.json#/$defs/sha256",
+            "description": "Previous event_sha256, or 64 zero hexadecimal characters for the first event."
+          },
+          "event_sha256": {
+            "$ref": "common-definitions.schema.json#/$defs/sha256",
+            "description": "SHA-256 of RFC 8785 canonical event JSON with event_sha256 omitted."
+          },
+          "from": {
+            "$ref": "common-definitions.schema.json#/$defs/runLifecycleState"
+          },
+          "to": {
+            "$ref": "common-definitions.schema.json#/$defs/runLifecycleState"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actor": {
+            "$ref": "common-definitions.schema.json#/$defs/roleId"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence_artifact": {
+            "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+          },
+          "command_source": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "command_type",
+              "command_id",
+              "command_sha256",
+              "requested_by"
+            ],
+            "properties": {
+              "command_type": {"const": "run_cancellation"},
+              "command_id": {
+                "$ref": "common-definitions.schema.json#/$defs/stableId"
+              },
+              "command_sha256": {
+                "$ref": "common-definitions.schema.json#/$defs/sha256"
+              },
+              "requested_by": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["user_id", "operating_actor_type"],
+                "properties": {
+                  "user_id": {
+                    "$ref": "common-definitions.schema.json#/$defs/stableId"
+                  },
+                  "operating_actor_type": {
+                    "type": "string",
+                    "enum": ["user", "authorized_remote_operator"]
+                  },
+                  "operator_id": {
+                    "$ref": "common-definitions.schema.json#/$defs/stableId"
+                  },
+                  "delegation_id": {
+                    "$ref": "common-definitions.schema.json#/$defs/stableId"
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "operating_actor_type": {
+                          "const": "authorized_remote_operator"
+                        }
+                      },
+                      "required": ["operating_actor_type"]
+                    },
+                    "then": {
+                      "required": ["operator_id", "delegation_id"]
+                    },
+                    "else": {
+                      "not": {
+                        "anyOf": [
+                          {"required": ["operator_id"]},
+                          {"required": ["delegation_id"]}
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {"to": {"const": "cancellation_requested"}},
+              "required": ["to"]
+            },
+            "then": {
+              "required": ["from", "command_source"],
+              "properties": {
+                "from": {
+                  "enum": ["created", "preparing", "prepared", "running"]
+                }
+              }
+            },
+            "else": {
+              "not": {"required": ["command_source"]}
+            }
+          },
+          {
+            "if": {
+              "properties": {"to": {"const": "submitted"}},
+              "required": ["to"]
+            },
+            "then": {
+              "required": ["evidence_artifact"]
+            }
+          },
+          {
+            "if": {
+              "properties": {"from": {"const": "cancellation_requested"}},
+              "required": ["from"]
+            },
+            "then": {
+              "properties": {"to": {"const": "cancelled"}}
+            }
+          }
+        ]
+      }
+    },
+    "journal_root_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "The event_sha256 of the final event. It seals the current journal projection without hashing this field into itself."
+    },
+    "terminal_reason_code": {
+      "type": "string",
+      "minLength": 1
+    },
+    "submission_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "submission_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256"
+    },
+    "publication_receipt_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "events": {
+            "contains": {
+              "properties": {"to": {"const": "submitted"}},
+              "required": ["to"]
+            },
+            "minContains": 1
+          }
+        },
+        "required": ["events"]
+      },
+      "then": {
+        "required": ["submission_id", "submission_sha256"]
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            {"required": ["submission_id"]},
+            {"required": ["submission_sha256"]}
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "current_state": { "const": "published" }
+        },
+        "required": ["current_state"]
+      },
+      "then": {
+        "required": ["publication_receipt_id"]
+      },
+      "else": {
+        "not": { "required": ["publication_receipt_id"] }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "current_state": {
+            "enum": [
+              "cancelled",
+              "failed",
+              "rejected",
+              "conflicted"
+            ]
+          }
+        },
+        "required": ["current_state"]
+      },
+      "then": {
+        "required": ["terminal_reason_code"]
+      },
+      "else": {
+        "not": { "required": ["terminal_reason_code"] }
+      }
+    }
+  ]
+}

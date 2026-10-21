@@ -1,0 +1,4 @@
+# npm must include the built dist/runtime directories even though Git ignores them.
+# The root package.json files allowlist selects the published web files.
+node_modules/
+tests/

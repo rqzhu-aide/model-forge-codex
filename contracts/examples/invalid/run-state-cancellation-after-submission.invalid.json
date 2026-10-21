@@ -1,0 +1,93 @@
+{
+    "schema_version":  "1.0.0",
+    "project_id":  "project.demo",
+    "run_id":  "run.p3.late_cancel.20260802t140000z",
+    "manifest_sha256":  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "current_state":  "cancellation_requested",
+    "events":  [
+                   {
+                       "sequence":  1,
+                       "event_id":  "event.late.created.001",
+                       "prior_event_sha256":  "0000000000000000000000000000000000000000000000000000000000000000",
+                       "to":  "created",
+                       "at":  "2026-08-02T14:00:00Z",
+                       "actor":  "user",
+                       "reason":  "The researcher submitted the Phase 3 command.",
+                       "event_sha256":  "2364a50688415a68485dc70238a44fd320eee54ff6a76b2c377d0fc7a6f8209c"
+                   },
+                   {
+                       "sequence":  2,
+                       "event_id":  "event.late.preparing.001",
+                       "prior_event_sha256":  "2364a50688415a68485dc70238a44fd320eee54ff6a76b2c377d0fc7a6f8209c",
+                       "to":  "preparing",
+                       "at":  "2026-08-02T14:00:01Z",
+                       "actor":  "system",
+                       "reason":  "The harness began preparation.",
+                       "from":  "created",
+                       "event_sha256":  "d20f865d576f09755552139cf6d8bed59476bba4d845ee831859e387447a808b"
+                   },
+                   {
+                       "sequence":  3,
+                       "event_id":  "event.late.prepared.001",
+                       "prior_event_sha256":  "d20f865d576f09755552139cf6d8bed59476bba4d845ee831859e387447a808b",
+                       "to":  "prepared",
+                       "at":  "2026-08-02T14:00:02Z",
+                       "actor":  "system",
+                       "reason":  "The harness sealed the run manifest.",
+                       "from":  "preparing",
+                       "event_sha256":  "eaf9e3dba674a9e88e7cac853fefffb835cad069d9c15946040720c9f161959a"
+                   },
+                   {
+                       "sequence":  4,
+                       "event_id":  "event.late.running.001",
+                       "prior_event_sha256":  "eaf9e3dba674a9e88e7cac853fefffb835cad069d9c15946040720c9f161959a",
+                       "to":  "running",
+                       "at":  "2026-08-02T14:00:03Z",
+                       "actor":  "system",
+                       "reason":  "The harness started role execution.",
+                       "from":  "prepared",
+                       "event_sha256":  "7d78fe40f889c7aa9de912eb75ca77c1042cbe244325628c100f0ac98fd56a7e"
+                   },
+                   {
+                       "sequence":  5,
+                       "event_id":  "event.late.submitted.001",
+                       "prior_event_sha256":  "7d78fe40f889c7aa9de912eb75ca77c1042cbe244325628c100f0ac98fd56a7e",
+                       "to":  "submitted",
+                       "at":  "2026-08-02T14:19:59Z",
+                       "actor":  "research_lead",
+                       "reason":  "The lead closed the immutable submission.",
+                       "from":  "running",
+                       "event_sha256":  "f7f85b2b94edf7a109f35f26fad8f3cd26d9a70a590305c8fc316ac23de11a51",
+                       "evidence_artifact":  {
+                                                 "artifact_id":  "artifact.run_submission.p3.late.001",
+                                                 "uri":  "run://run.p3.late_cancel.20260802t140000z/artifact/artifact.run_submission.p3.late.001",
+                                                 "sha256":  "6464646464646464646464646464646464646464646464646464646464646464",
+                                                 "media_type":  "application/json"
+                                             }
+                   },
+                   {
+                       "sequence":  6,
+                       "event_id":  "event.late.cancel.001",
+                       "prior_event_sha256":  "f7f85b2b94edf7a109f35f26fad8f3cd26d9a70a590305c8fc316ac23de11a51",
+                       "to":  "cancellation_requested",
+                       "at":  "2026-08-02T14:20:00Z",
+                       "actor":  "system",
+                       "reason":  "An invalid late cancellation attempted to reopen execution control.",
+                       "from":  "submitted",
+                       "event_sha256":  "190456af7c14f03083051abdd0beef121a20c5b15759f9f1986e88476e606c40",
+                       "command_source":  {
+                                              "command_type":  "run_cancellation",
+                                              "command_id":  "command.run.cancel.late.001",
+                                              "command_sha256":  "6565656565656565656565656565656565656565656565656565656565656565",
+                                              "requested_by":  {
+                                                                   "user_id":  "researcher.demo",
+                                                                   "operating_actor_type":  "user"
+                                                               }
+                                          }
+                   }
+               ],
+    "journal_root_sha256":  "190456af7c14f03083051abdd0beef121a20c5b15759f9f1986e88476e606c40",
+    "updated_at":  "2026-08-02T14:20:00Z",
+    "submission_id":  "submission.p3.late.001",
+    "submission_sha256":  "6464646464646464646464646464646464646464646464646464646464646464"
+}

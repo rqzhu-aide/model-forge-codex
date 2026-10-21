@@ -1,0 +1,176 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "record.empirical_evidence.overlap_stabilized_score",
+  "generation_id": "generation.empirical.001",
+  "generation_number": 1,
+  "record_type": "empirical_synthesis",
+  "phase": "P4",
+  "source_run_id": "run.example_p4_preliminary_20260816t110000z",
+  "method_identity": {
+    "stable_id": "method.example_tapered_quantile",
+    "version": 1,
+    "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+  },
+  "representations": [
+    {
+      "information_layer": "primary_artifact",
+      "artifact": {
+        "artifact_id": "artifact.preliminary_report",
+        "uri": "artifact://artifact.preliminary_report",
+        "sha256": "72e4e4e387c3357d25117b76cce55838e635302f1edf8a48192b40a91afd4d93",
+        "media_type": "text/markdown"
+      }
+    },
+    {
+      "information_layer": "structured_record",
+      "artifact": {
+        "artifact_id": "artifact.empirical_evidence_index",
+        "uri": "generation://empirical_evidence_index/record.empirical_evidence.overlap_stabilized_score/generation.empirical.001",
+        "sha256": "c32b619b6f74aaf3f09698b41a6ea708ffb3bb8ac3b08710f2fa5e58e90ff266",
+        "media_type": "application/json"
+      }
+    }
+  ],
+  "basis": [
+    {
+      "record_id": "record.example_theory_tapered_quantile",
+      "record_type": "theory_record",
+      "generation_id": "generation.example_theory_001",
+      "generation_number": 1,
+      "content_sha256": "ee55555555555555555555555555555555555555555555555555555555555555",
+      "publication_state_at_use": "formal",
+      "record_position_at_use": "current",
+      "dependency_class": "hard",
+      "method_identity": {
+        "stable_id": "method.example_tapered_quantile",
+        "version": 1,
+        "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+      }
+    }
+  ],
+  "scientific_outcome": {
+    "state": "inconclusive",
+    "conclusion": "This structural example contains no observed computation.",
+    "scope": "One deterministic reference calculation followed by ten paired Gaussian simulation datasets of size 200.",
+    "assumptions": [],
+    "strongest_evidence_ids": [],
+    "strongest_counterevidence_ids": [],
+    "material_disagreement": []
+  },
+  "content_sha256": "8e2c0762ad700b0e4d1fb120f464bbbca38fbfab1063f155b0f98ae6460f5a68",
+  "publication_receipt_id": "publication.p4.001",
+  "published_at": "2026-08-01T15:10:04Z",
+  "created_at": "2026-08-01T15:05:00Z",
+  "authority_at_creation": "formal_generation",
+  "alignment_at_creation": {
+    "state": "exact",
+    "causes": [
+      "exact_match"
+    ],
+    "assessed_at": "2026-08-01T15:02:00Z",
+    "assessed_by": "theorist",
+    "reasons": [
+      "The planned cases name the frozen method identity; no executed implementation or mathematical fidelity is certified by this unassessed example."
+    ],
+    "assessed_method": {
+      "stable_id": "method.example_tapered_quantile",
+      "version": 1,
+      "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+    }
+  },
+  "research_attention_at_creation": {
+    "level": "monitor",
+    "open_item_ids": [
+      "attention.preliminary_scope.001"
+    ],
+    "reasons": [
+      "Evidence remains preliminary and covers a narrow simulation design."
+    ],
+    "next_question": "Should the researcher launch a comprehensive Phase 4 run before using the performance claim in a manuscript?"
+  },
+  "decision_summary": {
+    "implementation_markdown": "This structural example records a proposed implementation. No completed execution is claimed.",
+    "method_fidelity_markdown": "Correspondence to the Phase 2 equations has not yet been checked by the proposed reference test.",
+    "theory_relation": {
+      "status": "not_tested",
+      "explanation_markdown": "The referenced theory has not been tested by a completed experiment in this example.",
+      "statement_ids": []
+    },
+    "intent_markdown": "Determine whether the exact method is implemented faithfully and whether a small paired comparison justifies broader evaluation.",
+    "conclusion_markdown": "The planned feasibility questions remain unassessed; no improvement is established.",
+    "tradeoff_markdown": "Neither per-method runtime nor accuracy has been measured. The planned evaluation budget is a work limit, not an estimate of method cost.",
+    "limitations_markdown": "Implementation correspondence, comparative accuracy and cost are unassessed. The narrow Gaussian design would not settle heavy-tail behavior or tuning sensitivity.",
+    "recommendation_markdown": "If the researcher authorizes computation, complete the implementation check before the prespecified baseline comparison. Use those results to decide whether a broader Phase 4 evaluation is worthwhile.",
+    "coverage": [
+      {
+        "dimension": "synthetic_example",
+        "status": "not_assessed",
+        "summary": "The protocol plans independent Gaussian datasets of size 200 with a scalar standard-normal covariate and a linear quantile structure; no generated example was executed.",
+        "limitation_markdown": "The proposed setting is illustrative and supplies no actual-data evidence.",
+        "implication_markdown": "The retained generator and exact method still need the planned verification.",
+        "question_ids": [
+          "test.example_reference",
+          "test.example_comparison"
+        ],
+        "exhibit_ids": []
+      },
+      {
+        "dimension": "performance",
+        "status": "not_assessed",
+        "summary": "The paired coefficient-error comparison remains unrun; no bias, empirical SD, RMSE or MCSE is available.",
+        "limitation_markdown": "No observed error or interval performance is recorded.",
+        "implication_markdown": "No advantage over the baseline is established.",
+        "question_ids": [
+          "test.example_comparison"
+        ],
+        "exhibit_ids": []
+      },
+      {
+        "dimension": "computation",
+        "status": "not_assessed",
+        "summary": "No method timing or solver-convergence measurements are available.",
+        "limitation_markdown": "The authorized budget is a work limit, not measured method cost.",
+        "implication_markdown": "Practical computation remains unknown.",
+        "question_ids": [
+          "test.example_reference",
+          "test.example_comparison"
+        ],
+        "exhibit_ids": []
+      },
+      {
+        "dimension": "tuning",
+        "status": "not_assessed",
+        "summary": "No tuning selections or sensitivity experiment were executed.",
+        "limitation_markdown": "A planned selection rule does not establish stability to parameter choices.",
+        "implication_markdown": "Sensitivity remains unassessed without requiring an extra run to complete this account.",
+        "question_ids": [],
+        "exhibit_ids": []
+      },
+      {
+        "dimension": "robustness",
+        "status": "not_assessed",
+        "summary": "No changed-DGP experiment was executed.",
+        "limitation_markdown": "The planned Gaussian setting does not establish heavy-tail behavior.",
+        "implication_markdown": "Use beyond the studied setting would remain unsupported.",
+        "question_ids": [],
+        "exhibit_ids": []
+      }
+    ],
+    "headline_exhibit_ids": [],
+    "method_formulation_markdown": "This structural tapered-quantile fixture names a coefficient estimator but does not retain its complete frozen model and fitting definition. A faithful mathematical recap is unavailable here; no missing equation or implementation is inferred from the planned comparisons."
+  },
+  "question_reviews": [
+    {
+      "question_id": "test.example_reference",
+      "review_markdown": "This question remains unassessed.",
+      "theorist_findings_markdown": "No completed computation was available to audit.",
+      "next_steps_markdown": "Carry out the declared check if authorized."
+    },
+    {
+      "question_id": "test.example_comparison",
+      "review_markdown": "This question remains unassessed.",
+      "theorist_findings_markdown": "No completed computation was available to audit.",
+      "next_steps_markdown": "Carry out the declared check if authorized."
+    }
+  ]
+}

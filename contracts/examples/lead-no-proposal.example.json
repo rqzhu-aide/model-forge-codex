@@ -1,0 +1,5 @@
+{
+  "schema_version": "1.0.0",
+  "no_method_proposed": true,
+  "reason_markdown": "The researcher requests a comparison emphasizing computational cost and implementation requirements, without proposing a particular method. I will apply those priorities when comparing the independently authored proposals and audits."
+}

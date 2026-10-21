@@ -1,0 +1,475 @@
+{
+    "$schema":  "https://json-schema.org/draft/2020-12/schema",
+    "$id":  "https://model-forge.local/architecture/schemas/common-definitions.schema.json",
+    "title":  "Model Forge Common Definitions",
+    "description":  "Shared identities, states, references, and assessments for the greenfield research architecture.",
+    "$defs":  {
+                  "schemaVersion":  {
+                                        "type":  "string",
+                                        "const":  "1.0.0"
+                                    },
+                  "stableId":  {
+                                   "type":  "string",
+                                   "pattern":  "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$",
+                                   "minLength":  2,
+                                   "maxLength":  160
+                               },
+                  "sha256":  {
+                                 "type":  "string",
+                                 "pattern":  "^[a-f0-9]{64}$"
+                             },
+                  "methodVersion":  {
+                                        "type":  "integer",
+                                        "minimum":  1,
+                                        "description":  "Monotone revision number. Each calculation-defining change increments it by one; prose-only changes leave it unchanged."
+                                    },
+                  "nonEmptyText":  {
+                                       "type":  "string",
+                                       "minLength":  1
+                                   },
+                  "phaseId":  {
+                                  "type":  "string",
+                                  "enum":  [
+                                               "P1",
+                                               "P2",
+                                               "P3",
+                                               "P4",
+                                               "P5"
+                                           ]
+                              },
+                  "roleId":  {
+                                 "type":  "string",
+                                 "enum":  [
+                                              "user",
+                                              "system",
+                                              "research_lead",
+                                              "theorist",
+                                              "data_analyst",
+                                              "outside_reviewer"
+                                          ]
+                             },
+                  "runLifecycleState":  {
+                                            "type":  "string",
+                                            "enum":  [
+                                                         "created",
+                                                         "preparing",
+                                                         "prepared",
+                                                         "running",
+                                                         "cancellation_requested",
+                                                         "submitted",
+                                                         "validating",
+                                                         "promoting",
+                                                         "published",
+                                                         "cancelled",
+                                                         "failed",
+                                                         "rejected",
+                                                         "conflicted"
+                                                     ]
+                                        },
+                  "publicationState":  {
+                                           "type":  "string",
+                                           "enum":  [
+                                                        "run_local",
+                                                        "submitted",
+                                                        "validated",
+                                                        "formal",
+                                                        "invalid"
+                                                    ]
+                                       },
+                  "recordPosition":  {
+                                         "type":  "string",
+                                         "enum":  [
+                                                      "none",
+                                                      "current",
+                                                      "historical"
+                                                  ]
+                                     },
+                  "alignmentState":  {
+                                         "type":  "string",
+                                         "enum":  [
+                                                      "exact",
+                                                      "compatible",
+                                                      "unassessed",
+                                                      "outdated",
+                                                      "not_applicable"
+                                                  ]
+                                     },
+                  "alignmentCause":  {
+                                         "type":  "string",
+                                         "enum":  [
+                                                      "exact_match",
+                                                      "older_method_version",
+                                                      "upstream_basis_changed",
+                                                      "sibling_basis_changed",
+                                                      "missing_dependency",
+                                                      "not_applicable",
+                                                      "other"
+                                                  ]
+                                     },
+                  "attentionLevel":  {
+                                         "type":  "string",
+                                         "enum":  [
+                                                      "none",
+                                                      "monitor",
+                                                      "minor",
+                                                      "major",
+                                                      "reassessment_required",
+                                                      "blocking"
+                                                  ]
+                                     },
+                  "scientificOutcomeState":  {
+                                                 "type":  "string",
+                                                 "enum":  [
+                                                              "supported",
+                                                              "partially_supported",
+                                                              "contradicted",
+                                                              "inconclusive",
+                                                              "not_assessed",
+                                                              "not_applicable"
+                                                          ]
+                                             },
+                  "recordType":  {
+                                     "type":  "string",
+                                     "enum":  [
+                                                  "project_brief",
+                                                  "literature_library",
+                                                  "literature_source",
+                                                  "literature_synthesis",
+                                                  "literature_coverage",
+                                                  "method_catalog",
+                                                  "method_record",
+                                                  "theory_record",
+                                                  "empirical_evidence_index",
+                                                  "empirical_synthesis",
+                                                  "implementation_record",
+                                                  "manuscript",
+                                                  "technical_report",
+                                                  "problem_context",
+                                                  "researcher_material",
+                                                  "phase_decision",
+                                                  "review_issue_ledger",
+                                                  "publication_receipt"
+                                              ]
+                                 },
+                  "cumulativeObjectType":  {
+                                               "type":  "string",
+                                               "enum":  [
+                                                            "literature_source",
+                                                            "evidence_item",
+                                                            "attention_item",
+                                                            "review_issue"
+                                                        ]
+                                           },
+                  "methodIdentity":  {
+                                         "type":  "object",
+                                         "additionalProperties":  false,
+                                         "required":  [
+                                                          "stable_id",
+                                                          "version",
+                                                          "definition_sha256"
+                                                      ],
+                                         "properties":  {
+                                                            "stable_id":  {
+                                                                              "$ref":  "#/$defs/stableId"
+                                                                          },
+                                                            "version":  {
+                                                                            "$ref":  "#/$defs/methodVersion"
+                                                                        },
+                                                            "definition_sha256":  {
+                                                                                      "$ref":  "#/$defs/sha256"
+                                                                                  }
+                                                        }
+                                     },
+                  "artifactPointer":  {
+                                          "type":  "object",
+                                          "additionalProperties":  false,
+                                          "required":  [
+                                                           "artifact_id",
+                                                           "uri",
+                                                           "sha256"
+                                                       ],
+                                          "properties":  {
+                                                             "artifact_id":  {
+                                                                                 "$ref":  "#/$defs/stableId"
+                                                                             },
+                                                             "uri":  {
+                                                                         "type":  "string",
+                                                                         "pattern":  "^(artifact|generation|run)://[^\\s]+$",
+                                                                         "description":  "Immutable logical reference resolved through the storage service."
+                                                                     },
+                                                             "path":  {
+                                                                          "type":  "string",
+                                                                          "minLength":  1,
+                                                                          "pattern":  "^(?![A-Za-z]:)(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+$",
+                                                                          "description":  "Optional backend-relative physical locator. It is not the scientific identity."
+                                                                      },
+                                                             "sha256":  {
+                                                                            "$ref":  "#/$defs/sha256",
+                                                                            "description":  "SHA-256 of the exact referenced artifact bytes."
+                                                                        },
+                                                             "media_type":  {
+                                                                                "type":  "string",
+                                                                                "pattern":  "^[A-Za-z0-9!#$\u0026^_.+-]+/[A-Za-z0-9!#$\u0026^_.+-]+$"
+                                                                            },
+                                                             "locator":  {
+                                                                             "type":  "string",
+                                                                             "description":  "Optional theorem, section, figure, table, object, or line locator within the artifact."
+                                                                         }
+                                                         }
+                                      },
+                  "recordBasis":  {
+                                      "type":  "object",
+                                      "additionalProperties":  false,
+                                      "required":  [
+                                                       "record_id",
+                                                       "record_type",
+                                                       "generation_id",
+                                                       "content_sha256",
+                                                       "publication_state_at_use",
+                                                       "record_position_at_use",
+                                                       "dependency_class"
+                                                   ],
+                                      "properties":  {
+                                                         "record_id":  {
+                                                                           "$ref":  "#/$defs/stableId"
+                                                                       },
+                                                         "record_type":  {
+                                                                             "$ref":  "#/$defs/recordType"
+                                                                         },
+                                                         "generation_id":  {
+                                                                               "$ref":  "#/$defs/stableId"
+                                                                           },
+                                                         "generation_number":  {
+                                                                                   "type":  "integer",
+                                                                                   "minimum":  1
+                                                                               },
+                                                         "content_sha256":  {
+                                                                                "$ref":  "#/$defs/sha256"
+                                                                            },
+                                                         "publication_state_at_use":  {
+                                                                                          "const":  "formal"
+                                                                                      },
+                                                         "record_position_at_use":  {
+                                                                                        "type":  "string",
+                                                                                        "enum":  [
+                                                                                                     "current",
+                                                                                                     "historical"
+                                                                                                 ]
+                                                                                    },
+                                                         "dependency_class":  {
+                                                                                  "type":  "string",
+                                                                                  "enum":  [
+                                                                                               "hard",
+                                                                                               "contextual"
+                                                                                           ]
+                                                                              },
+                                                         "method_identity":  {
+                                                                                 "$ref":  "#/$defs/methodIdentity"
+                                                                             }
+                                                     }
+                                  },
+                  "alignmentAssessment":  {
+                                              "type":  "object",
+                                              "additionalProperties":  false,
+                                              "required":  [
+                                                               "state",
+                                                               "causes",
+                                                               "assessed_at",
+                                                               "assessed_by",
+                                                               "reasons"
+                                                           ],
+                                              "properties":  {
+                                                                 "state":  {
+                                                                               "$ref":  "#/$defs/alignmentState"
+                                                                           },
+                                                                 "causes":  {
+                                                                                "type":  "array",
+                                                                                "minItems":  1,
+                                                                                "items":  {
+                                                                                              "$ref":  "#/$defs/alignmentCause"
+                                                                                          },
+                                                                                "uniqueItems":  true
+                                                                            },
+                                                                 "assessed_at":  {
+                                                                                     "type":  "string",
+                                                                                     "format":  "date-time"
+                                                                                 },
+                                                                 "assessed_by":  {
+                                                                                     "$ref":  "#/$defs/roleId"
+                                                                                 },
+                                                                 "reasons":  {
+                                                                                 "type":  "array",
+                                                                                 "items":  {
+                                                                                               "$ref":  "#/$defs/nonEmptyText"
+                                                                                           },
+                                                                                 "uniqueItems":  true
+                                                                             },
+                                                                 "assessed_method":  {
+                                                                                         "$ref":  "#/$defs/methodIdentity"
+                                                                                     },
+                                                                 "affected_basis_ids":  {
+                                                                                            "type":  "array",
+                                                                                            "items":  {
+                                                                                                          "$ref":  "#/$defs/stableId"
+                                                                                                      },
+                                                                                            "uniqueItems":  true
+                                                                                        }
+                                                             },
+                                              "allOf":  [
+                                                            {
+                                                                "if":  {
+                                                                           "properties":  {
+                                                                                              "state":  {
+                                                                                                            "const":  "compatible"
+                                                                                                        }
+                                                                                          },
+                                                                           "required":  [
+                                                                                            "state"
+                                                                                        ]
+                                                                       },
+                                                                "then":  {
+                                                                             "properties":  {
+                                                                                                "assessed_by":  {
+                                                                                                                    "not":  {
+                                                                                                                                "const":  "system"
+                                                                                                                            }
+                                                                                                                },
+                                                                                                "reasons":  {
+                                                                                                                "minItems":  1
+                                                                                                            }
+                                                                                            }
+                                                                         }
+                                                            },
+                                                            {
+                                                                "if":  {
+                                                                           "properties":  {
+                                                                                              "state":  {
+                                                                                                            "const":  "outdated"
+                                                                                                        }
+                                                                                          },
+                                                                           "required":  [
+                                                                                            "state"
+                                                                                        ]
+                                                                       },
+                                                                "then":  {
+                                                                             "properties":  {
+                                                                                                "reasons":  {
+                                                                                                                "minItems":  1
+                                                                                                            }
+                                                                                            }
+                                                                         }
+                                                            }
+                                                        ]
+                                          },
+                  "researchAttention":  {
+                                            "type":  "object",
+                                            "additionalProperties":  false,
+                                            "required":  [
+                                                             "level",
+                                                             "open_item_ids",
+                                                             "reasons"
+                                                         ],
+                                            "properties":  {
+                                                               "level":  {
+                                                                             "$ref":  "#/$defs/attentionLevel"
+                                                                         },
+                                                               "open_item_ids":  {
+                                                                                     "type":  "array",
+                                                                                     "items":  {
+                                                                                                   "$ref":  "#/$defs/stableId"
+                                                                                               },
+                                                                                     "uniqueItems":  true
+                                                                                 },
+                                                               "reasons":  {
+                                                                               "type":  "array",
+                                                                               "items":  {
+                                                                                             "$ref":  "#/$defs/nonEmptyText"
+                                                                                         },
+                                                                               "uniqueItems":  true
+                                                                           },
+                                                               "next_question":  {
+                                                                                     "type":  "string",
+                                                                                     "minLength":  1,
+                                                                                     "description":  "The smallest research question that would resolve the principal uncertainty."
+                                                                                 }
+                                                           },
+                                            "allOf":  [
+                                                          {
+                                                              "if":  {
+                                                                         "properties":  {
+                                                                                            "level":  {
+                                                                                                          "const":  "none"
+                                                                                                      }
+                                                                                        },
+                                                                         "required":  [
+                                                                                          "level"
+                                                                                      ]
+                                                                     },
+                                                              "then":  {
+                                                                           "properties":  {
+                                                                                              "open_item_ids":  {
+                                                                                                                    "maxItems":  0
+                                                                                                                }
+                                                                                          }
+                                                                       }
+                                                          }
+                                                      ]
+                                        },
+                  "scientificOutcome":  {
+                                            "type":  "object",
+                                            "additionalProperties":  false,
+                                            "required":  [
+                                                             "state",
+                                                             "conclusion",
+                                                             "scope",
+                                                             "assumptions"
+                                                         ],
+                                            "properties":  {
+                                                               "state":  {
+                                                                             "$ref":  "#/$defs/scientificOutcomeState"
+                                                                         },
+                                                               "conclusion":  {
+                                                                                  "$ref":  "#/$defs/nonEmptyText"
+                                                                              },
+                                                               "scope":  {
+                                                                             "$ref":  "#/$defs/nonEmptyText"
+                                                                         },
+                                                               "assumptions":  {
+                                                                                   "type":  "array",
+                                                                                   "items":  {
+                                                                                                 "$ref":  "#/$defs/nonEmptyText"
+                                                                                             },
+                                                                                   "uniqueItems":  true
+                                                                               },
+                                                               "strongest_evidence_ids":  {
+                                                                                              "type":  "array",
+                                                                                              "items":  {
+                                                                                                            "$ref":  "#/$defs/stableId"
+                                                                                                        },
+                                                                                              "uniqueItems":  true
+                                                                                          },
+                                                               "strongest_counterevidence_ids":  {
+                                                                                                     "type":  "array",
+                                                                                                     "items":  {
+                                                                                                                   "$ref":  "#/$defs/stableId"
+                                                                                                               },
+                                                                                                     "uniqueItems":  true
+                                                                                                 },
+                                                               "material_disagreement":  {
+                                                                                             "type":  "array",
+                                                                                             "items":  {
+                                                                                                           "$ref":  "#/$defs/nonEmptyText"
+                                                                                                       },
+                                                                                             "uniqueItems":  true
+                                                                                         }
+                                                           }
+                                        },
+                  "creationAuthority":  {
+                                            "type":  "string",
+                                            "enum":  [
+                                                         "run_local_candidate",
+                                                         "formal_generation"
+                                                     ]
+                                        }
+              }
+}

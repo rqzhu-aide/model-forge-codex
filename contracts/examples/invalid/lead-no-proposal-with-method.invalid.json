@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0.0",
+  "no_method_proposed": true,
+  "reason_markdown": "No separate method was requested.",
+  "proposal_id": "proposal.must_not_exist"
+}

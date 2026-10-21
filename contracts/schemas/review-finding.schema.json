@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/review-finding.schema.json",
+  "title": "Open Manuscript Review Finding",
+  "description": "One evidence-grounded finding raised during a frozen parallel manuscript review. Findings are open observations, not lead dispositions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "issue_id",
+    "source_run_id",
+    "raised_by",
+    "review_basis_generation_id",
+    "location",
+    "finding_type",
+    "issue",
+    "severity",
+    "confidence",
+    "scientific_consequence",
+    "evidence_basis",
+    "requested_resolution",
+    "resolution_class",
+    "status",
+    "content_sha256",
+    "created_at",
+    "authority_at_creation"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "issue_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "source_run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "raised_by": {
+      "type": "string",
+      "enum": ["theorist", "data_analyst", "outside_reviewer"]
+    },
+    "review_basis_generation_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "location": {
+      "type": "string",
+      "minLength": 1
+    },
+    "affected_statement_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "finding_type": {
+      "type": "string",
+      "enum": [
+        "error",
+        "unsupported_claim",
+        "open_question",
+        "preference",
+        "clarity",
+        "reproducibility",
+        "novelty",
+        "significance",
+        "other"
+      ]
+    },
+    "issue": {
+      "type": "string",
+      "minLength": 1
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["blocking", "major", "minor"]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low"]
+    },
+    "scientific_consequence": {
+      "description": "Explain why this issue changes the meaning, credibility, applicability or clarity of the named manuscript claim for a reader.",
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_basis": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "requested_resolution": {
+      "type": "string",
+      "minLength": 1
+    },
+    "resolution_class": {
+      "type": "string",
+      "enum": [
+        "rewrite",
+        "reanalysis",
+        "new_evidence",
+        "new_theory",
+        "verification",
+        "author_decision",
+        "none"
+      ]
+    },
+    "status": {
+      "const": "open"
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authority_at_creation": {
+      "const": "run_local_candidate"
+    }
+  }
+}

@@ -1,0 +1,629 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/action-descriptor.schema.json",
+  "title": "Researcher Action Descriptor",
+  "description": "Actor-specific backend eligibility and command-construction data for one user action. The descriptor is not authorization or a command.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/startRun"
+    },
+    {
+      "$ref": "#/$defs/cancelRun"
+    },
+    {
+      "$ref": "#/$defs/retireMethod"
+    },
+    {
+      "$ref": "#/$defs/reactivateMethod"
+    },
+    {
+      "$ref": "#/$defs/activateMethod"
+    }
+  ],
+  "$defs": {
+    "shared": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "descriptor_id",
+        "action_type",
+        "execution_kind",
+        "project_id",
+        "enabled",
+        "researcher_message",
+        "authorization",
+        "consequence_summary",
+        "issued_at"
+      ],
+      "properties": {
+        "schema_version": {
+          "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+        },
+        "descriptor_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "action_type": {
+          "enum": [
+            "start_run",
+            "cancel_run",
+            "retire_method",
+            "reactivate_method",
+            "activate_method"
+          ]
+        },
+        "execution_kind": {
+          "enum": [
+            "research_run",
+            "control_transaction"
+          ]
+        },
+        "project_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "reason_code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "researcher_message": {
+          "$ref": "common-definitions.schema.json#/$defs/nonEmptyText"
+        },
+        "authorization": {
+          "$ref": "#/$defs/authorization"
+        },
+        "consequence_summary": {
+          "$ref": "common-definitions.schema.json#/$defs/nonEmptyText"
+        },
+        "issued_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {
+            "required": [
+              "reason_code"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "reason_code"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {
+            "properties": {
+              "authorization": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/directUserAuthorization"
+                  },
+                  {
+                    "$ref": "#/$defs/activeDelegationAuthorization"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "authorization": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/directUserAuthorization"
+        },
+        {
+          "$ref": "#/$defs/activeDelegationAuthorization"
+        },
+        {
+          "$ref": "#/$defs/inactiveDelegationAuthorization"
+        }
+      ]
+    },
+    "directUserAuthorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "user_id"
+      ],
+      "properties": {
+        "status": {
+          "const": "direct_user"
+        },
+        "user_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        }
+      }
+    },
+    "activeDelegationAuthorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "user_id",
+        "operator_id",
+        "delegation_id",
+        "grant_sha256",
+        "checked_at",
+        "expires_at"
+      ],
+      "properties": {
+        "status": {
+          "const": "active_delegation"
+        },
+        "user_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "operator_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "delegation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "grant_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "inactiveDelegationAuthorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "user_id",
+        "operator_id",
+        "reason"
+      ],
+      "properties": {
+        "status": {
+          "const": "delegation_not_active"
+        },
+        "user_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "operator_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "delegation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "reason": {
+          "enum": [
+            "missing",
+            "not_yet_active",
+            "expired",
+            "revoked",
+            "wrong_project",
+            "wrong_action",
+            "wrong_target"
+          ]
+        }
+      }
+    },
+    "expectedControlHead": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_index_generation_id",
+        "current_index_sha256",
+        "last_event_sequence",
+        "event_root_sha256"
+      ],
+      "properties": {
+        "current_index_generation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "current_index_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        },
+        "last_event_sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "event_root_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        }
+      }
+    },
+    "generationBasis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "generation_id",
+        "content_sha256"
+      ],
+      "properties": {
+        "record_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "generation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "content_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        }
+      }
+    },
+    "methodBasis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "generation_id",
+        "content_sha256",
+        "method_identity",
+        "lifecycle_state"
+      ],
+      "properties": {
+        "record_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "generation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "content_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        },
+        "method_identity": {
+          "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+        },
+        "lifecycle_state": {
+          "enum": [
+            "proposed",
+            "active",
+            "retired"
+          ]
+        }
+      }
+    },
+    "startRun": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/shared"
+        },
+        {
+          "type": "object",
+          "required": [
+            "command_contract"
+          ],
+          "properties": {
+            "action_type": {
+              "const": "start_run"
+            },
+            "execution_kind": {
+              "const": "research_run"
+            },
+            "command_contract": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "phase",
+                "phase_contract_version",
+                "phase_contract_sha256",
+                "mode"
+              ],
+              "properties": {
+                "phase": {
+                  "$ref": "common-definitions.schema.json#/$defs/phaseId"
+                },
+                "phase_contract_version": {
+                  "type": "string",
+                  "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+                },
+                "phase_contract_sha256": {
+                  "$ref": "common-definitions.schema.json#/$defs/sha256"
+                },
+                "mode": {
+                  "$ref": "common-definitions.schema.json#/$defs/stableId"
+                },
+                "selected_method": {
+                  "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+                }
+              }
+            },
+            "current_inputs": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/generationBasis"
+              }
+            },
+            "expected_publication_targets": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "operation",
+                  "record_type",
+                  "logical_slot"
+                ],
+                "properties": {
+                  "operation": {
+                    "enum": [
+                      "append",
+                      "replace"
+                    ]
+                  },
+                  "record_type": {
+                    "$ref": "common-definitions.schema.json#/$defs/recordType"
+                  },
+                  "logical_slot": {
+                    "$ref": "common-definitions.schema.json#/$defs/stableId"
+                  }
+                }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "enabled": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "enabled"
+                ]
+              },
+              "then": {
+                "required": [
+                  "current_inputs",
+                  "expected_publication_targets"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "cancelRun": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/shared"
+        },
+        {
+          "type": "object",
+          "required": [
+            "run_id",
+            "expected_run_head",
+            "reason_required"
+          ],
+          "properties": {
+            "action_type": {
+              "const": "cancel_run"
+            },
+            "execution_kind": {
+              "const": "control_transaction"
+            },
+            "run_id": {
+              "$ref": "common-definitions.schema.json#/$defs/stableId"
+            },
+            "expected_run_head": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "current_state",
+                "last_event_sequence",
+                "journal_root_sha256"
+              ],
+              "properties": {
+                "current_state": {
+                  "enum": [
+                    "created",
+                    "preparing",
+                    "prepared",
+                    "running"
+                  ]
+                },
+                "last_event_sequence": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "journal_root_sha256": {
+                  "$ref": "common-definitions.schema.json#/$defs/sha256"
+                }
+              }
+            },
+            "reason_required": {
+              "const": true
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "retireMethod": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/shared"
+        },
+        {
+          "$ref": "#/$defs/methodActionFields"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action_type": {
+              "const": "retire_method"
+            },
+            "execution_kind": {
+              "const": "control_transaction"
+            },
+            "target_lifecycle_state": {
+              "const": "retired"
+            },
+            "expected_method": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/methodBasis"
+                },
+                {
+                  "properties": {
+                    "lifecycle_state": {
+                      "const": "active"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "reactivateMethod": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/shared"
+        },
+        {
+          "$ref": "#/$defs/methodActionFields"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action_type": {
+              "const": "reactivate_method"
+            },
+            "execution_kind": {
+              "const": "control_transaction"
+            },
+            "target_lifecycle_state": {
+              "const": "active"
+            },
+            "expected_method": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/methodBasis"
+                },
+                {
+                  "properties": {
+                    "lifecycle_state": {
+                      "const": "retired"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "methodActionFields": {
+      "type": "object",
+      "required": [
+        "method_id",
+        "expected_method",
+        "expected_catalog",
+        "expected_control_head",
+        "target_lifecycle_state",
+        "reason_required"
+      ],
+      "properties": {
+        "method_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "expected_method": {
+          "$ref": "#/$defs/methodBasis"
+        },
+        "expected_catalog": {
+          "$ref": "#/$defs/generationBasis"
+        },
+        "expected_control_head": {
+          "$ref": "#/$defs/expectedControlHead"
+        },
+        "target_lifecycle_state": {
+          "enum": [
+            "active",
+            "retired"
+          ]
+        },
+        "reason_required": {
+          "const": true
+        }
+      }
+    },
+    "activateMethod": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/shared"
+        },
+        {
+          "$ref": "#/$defs/methodActionFields"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action_type": {
+              "const": "activate_method"
+            },
+            "execution_kind": {
+              "const": "control_transaction"
+            },
+            "target_lifecycle_state": {
+              "const": "active"
+            },
+            "expected_method": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/methodBasis"
+                },
+                {
+                  "properties": {
+                    "lifecycle_state": {
+                      "const": "proposed"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    }
+  }
+}

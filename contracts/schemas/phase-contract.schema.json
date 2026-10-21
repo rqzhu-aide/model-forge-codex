@@ -1,0 +1,1520 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://model-forge.local/architecture/schemas/phase-contract.schema.json",
+ "title": "Research Phase Contract Registry",
+ "description": "Machine-readable contracts that define what each phase means, what the user controls, what roles do, and how validated work becomes current.",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "schema_version",
+  "contracts"
+ ],
+ "properties": {
+  "schema_version": {
+   "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+  },
+  "contracts": {
+   "type": "array",
+   "minItems": 5,
+   "maxItems": 5,
+   "uniqueItems": true,
+   "items": {
+    "$ref": "#/$defs/phaseContract"
+   },
+   "allOf": [
+    {
+     "contains": {
+      "properties": {
+       "phase_id": {
+        "const": "P1"
+       }
+      },
+      "required": [
+       "phase_id"
+      ]
+     }
+    },
+    {
+     "contains": {
+      "properties": {
+       "phase_id": {
+        "const": "P2"
+       }
+      },
+      "required": [
+       "phase_id"
+      ]
+     }
+    },
+    {
+     "contains": {
+      "properties": {
+       "phase_id": {
+        "const": "P3"
+       }
+      },
+      "required": [
+       "phase_id"
+      ]
+     }
+    },
+    {
+     "contains": {
+      "properties": {
+       "phase_id": {
+        "const": "P4"
+       }
+      },
+      "required": [
+       "phase_id"
+      ]
+     }
+    },
+    {
+     "contains": {
+      "properties": {
+       "phase_id": {
+        "const": "P5"
+       }
+      },
+      "required": [
+       "phase_id"
+      ]
+     }
+    }
+   ]
+  }
+ },
+ "$defs": {
+  "phaseContract": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "phase_id",
+    "contract_version",
+    "prose_contract",
+    "name",
+    "scientific_purpose",
+    "current_record_semantics",
+    "user_choices",
+    "run_modes",
+    "prerequisites",
+    "required_inputs",
+    "prepared_contexts",
+    "optional_context_policy",
+    "role_stages",
+    "run_local_outputs",
+    "validation_rules",
+    "publication_bindings",
+    "promotion",
+    "downstream_effects",
+    "ui_projection",
+    "acceptance_scenarios"
+   ],
+   "properties": {
+    "phase_id": {
+     "$ref": "common-definitions.schema.json#/$defs/phaseId"
+    },
+    "contract_version": {
+     "type": "string",
+     "pattern": "^[1-9][0-9]*\\.[0-9]+\\.[0-9]+$",
+     "description": "Version of this phase contract content. The schema validates the representation independently of a particular contract release."
+    },
+    "prose_contract": {
+     "type": "string",
+     "format": "uri-reference"
+    },
+    "name": {
+     "type": "string",
+     "minLength": 1
+    },
+    "scientific_purpose": {
+     "type": "string",
+     "minLength": 1
+    },
+    "current_record_semantics": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "strategy",
+      "canonical_record_types",
+      "research_meaning",
+      "history_policy"
+     ],
+     "properties": {
+      "strategy": {
+       "type": "string",
+       "enum": [
+        "cumulative_append",
+        "replaceable_catalog",
+        "atomic_replace",
+        "indexed_cumulative"
+       ]
+      },
+      "canonical_record_types": {
+       "type": "array",
+       "minItems": 1,
+       "items": {
+        "$ref": "common-definitions.schema.json#/$defs/recordType"
+       },
+       "uniqueItems": true
+      },
+      "research_meaning": {
+       "type": "string",
+       "minLength": 1
+      },
+      "history_policy": {
+       "type": "string",
+       "minLength": 1
+      }
+     }
+    },
+    "user_choices": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "#/$defs/userChoice"
+     }
+    },
+    "run_modes": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "#/$defs/runMode"
+     }
+    },
+    "prerequisites": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/prerequisite"
+     }
+    },
+    "required_inputs": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/requiredInput"
+     }
+    },
+    "supplementary_inputs": {
+     "type": "array",
+     "description": "Optional researcher-seeded material slots (ADR-019). Supplementary inputs are additive only: they resolve exclusively from the run command's seed channel, never from published records, and never satisfy a required input.",
+     "items": {
+      "$ref": "#/$defs/supplementaryInput"
+     }
+    },
+    "prepared_contexts": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/preparedContext"
+     }
+    },
+    "optional_context_policy": {
+     "$ref": "#/$defs/optionalContextPolicy"
+    },
+    "role_stages": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "#/$defs/roleStage"
+     }
+    },
+    "run_local_outputs": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "#/$defs/runLocalOutput"
+     }
+    },
+    "validation_rules": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "#/$defs/validationRule"
+     }
+    },
+    "publication_bindings": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "#/$defs/publicationBinding"
+     }
+    },
+    "promotion": {
+     "$ref": "#/$defs/promotion"
+    },
+    "downstream_effects": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/downstreamEffect"
+     }
+    },
+    "ui_projection": {
+     "$ref": "#/$defs/uiProjection"
+    },
+    "acceptance_scenarios": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    },
+    "capabilities": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+     },
+     "uniqueItems": true
+    }
+   }
+  },
+  "userChoice": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "choice_id",
+    "label",
+    "description",
+    "required",
+    "value_kind",
+    "allowed_values"
+   ],
+   "properties": {
+    "choice_id": {
+     "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "label": {
+     "type": "string",
+     "minLength": 1
+    },
+    "description": {
+     "type": "string",
+     "minLength": 1
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "allowed_values": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "minLength": 1
+     },
+     "uniqueItems": true
+    },
+    "value_kind": {
+     "type": "string",
+     "enum": [
+      "enum_string",
+      "text",
+      "method_identity",
+      "artifact_pointer_list"
+     ]
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "value_kind": {
+        "const": "enum_string"
+       }
+      },
+      "required": [
+       "value_kind"
+      ]
+     },
+     "then": {
+      "properties": {
+       "allowed_values": {
+        "minItems": 1
+       }
+      }
+     },
+     "else": {
+      "properties": {
+       "allowed_values": {
+        "maxItems": 0
+       }
+      }
+     }
+    }
+   ]
+  },
+  "runMode": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "mode_id",
+    "label",
+    "purpose",
+    "requires_method",
+    "required_choice_ids",
+    "optional_choice_ids"
+   ],
+   "properties": {
+    "mode_id": {
+     "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "label": {
+     "type": "string",
+     "minLength": 1
+    },
+    "purpose": {
+     "type": "string",
+     "minLength": 1
+    },
+    "requires_method": {
+     "type": "boolean"
+    },
+    "required_choice_ids": {
+     "type": "array",
+     "minItems": 0,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    },
+    "optional_choice_ids": {
+     "type": "array",
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    },
+    "entry_conditions": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "minLength": 1
+     }
+    },
+    "method_choice_id": {
+     "$ref": "common-definitions.schema.json#/$defs/stableId"
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "requires_method": {
+        "const": true
+       }
+      },
+      "required": [
+       "requires_method"
+      ]
+     },
+     "then": {
+      "required": [
+       "method_choice_id"
+      ]
+     },
+     "else": {
+      "not": {
+       "required": [
+        "method_choice_id"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "prerequisite": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "requirement_id",
+    "kind",
+    "description",
+    "required"
+   ],
+   "properties": {
+    "requirement_id": {
+     "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "kind": {
+     "type": "string",
+     "enum": [
+      "phase_record",
+      "method_selected",
+      "exact_alignment",
+      "user_authorization"
+     ]
+    },
+    "description": {
+     "type": "string",
+     "minLength": 1
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "phase": {
+     "$ref": "common-definitions.schema.json#/$defs/phaseId"
+    }
+   }
+  },
+  "requiredInput": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "input_id",
+    "record_type",
+    "publication_required",
+    "position_required",
+    "method_match",
+    "presence",
+    "purpose",
+    "condition"
+   ],
+   "properties": {
+    "input_id": {
+     "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "record_type": {
+     "$ref": "common-definitions.schema.json#/$defs/recordType"
+    },
+    "publication_required": {
+     "const": "formal"
+    },
+    "position_required": {
+     "const": "current"
+    },
+    "method_match": {
+     "type": "string",
+     "enum": [
+      "exact",
+      "same_stable_method",
+      "not_applicable"
+     ]
+    },
+    "presence": {
+     "type": "string",
+     "enum": [
+      "always",
+      "required_on_rerun",
+      "if_exists",
+      "required_in_modes"
+     ]
+    },
+    "required_in_modes": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    },
+    "purpose": {
+     "type": "string",
+     "minLength": 1
+    },
+    "condition": {
+     "type": "string",
+     "minLength": 1
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "presence": {
+        "const": "required_in_modes"
+       }
+      },
+      "required": [
+       "presence"
+      ]
+     },
+     "then": {
+      "required": [
+       "required_in_modes"
+      ]
+     },
+     "else": {
+      "not": {
+       "required": [
+        "required_in_modes"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "supplementaryInput": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "input_id",
+    "record_type",
+    "purpose"
+   ],
+   "properties": {
+    "input_id": {
+     "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "record_type": {
+     "const": "researcher_material"
+    },
+    "purpose": {
+     "type": "string",
+     "minLength": 1
+    }
+   }
+  },
+  "preparedContext": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "context_id",
+    "applicable_modes",
+    "constructed_by",
+    "source_input_ids",
+    "source_choice_ids",
+    "content_requirements",
+    "purpose",
+    "immutable"
+   ],
+   "properties": {
+    "context_id": {
+     "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "applicable_modes": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    },
+    "constructed_by": {
+     "const": "harness_during_preparation"
+    },
+    "source_input_ids": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    },
+    "source_choice_ids": {
+     "type": "array",
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    },
+    "content_requirements": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "string",
+      "minLength": 1
+     },
+     "uniqueItems": true
+    },
+    "purpose": {
+     "type": "string",
+     "minLength": 1
+    },
+    "immutable": {
+     "const": true
+    }
+   }
+  },
+  "optionalContextPolicy": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "default",
+    "allows_selected_history",
+    "history_selection_user_controlled",
+    "history_choice_id",
+    "description"
+   ],
+   "properties": {
+    "default": {
+     "const": "current_only"
+    },
+    "allows_selected_history": {
+     "type": "boolean"
+    },
+    "history_selection_user_controlled": {
+     "const": true
+    },
+    "description": {
+     "type": "string",
+     "minLength": 1
+    },
+    "history_choice_id": {
+     "$ref": "common-definitions.schema.json#/$defs/stableId"
+    }
+   }
+  },
+  "roleStage": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "sequence",
+    "stage_id",
+    "applicable_modes",
+    "execution",
+    "roles",
+    "objective",
+    "reads",
+    "writes",
+    "handoff_required"
+   ],
+   "properties": {
+    "sequence": {
+     "type": "integer",
+     "minimum": 1,
+     "description": "Stage order within each applicable run mode. For one mode, values are unique and contiguous from one."
+    },
+    "stage_id": {
+     "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "applicable_modes": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    },
+    "execution": {
+     "type": "string",
+     "enum": [
+      "serial",
+      "parallel"
+     ]
+    },
+    "roles": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/roleId"
+     },
+     "uniqueItems": true
+    },
+    "objective": {
+     "type": "string",
+     "minLength": 1
+    },
+    "reads": {
+     "type": "array",
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true,
+     "description": "Inputs shared by every role in this stage."
+    },
+    "role_reads": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "role",
+       "input_ids"
+      ],
+      "properties": {
+       "role": {
+        "$ref": "common-definitions.schema.json#/$defs/roleId"
+       },
+       "input_ids": {
+        "type": "array",
+        "items": {
+         "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "uniqueItems": true
+       }
+      }
+     }
+    },
+    "writes": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    },
+    "handoff_required": {
+     "type": "boolean",
+     "description": "When true, every role invocation in the stage must close successfully and its declared outputs must be accepted before the next stage or submission. It does not by itself require an output whose kind is handoff."
+    },
+    "isolation_rule": {
+     "type": "string",
+     "minLength": 1
+    },
+    "artifact_contracts": {
+     "type": "object",
+     "description": "Per-output delivery metadata (D12): artifact type, audience, and delivery class per system_artifact_types.md / member-phase-matrix.md.",
+     "additionalProperties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "artifact_type",
+       "audience",
+       "delivery"
+      ],
+      "properties": {
+       "artifact_type": {
+        "type": "string",
+        "enum": [
+         "t1_card",
+         "t2p_packet",
+         "t2s_summary",
+         "t3m_manuscript",
+         "record",
+         "t3m_report"
+        ]
+       },
+       "audience": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "delivery": {
+        "type": "string",
+        "enum": [
+         "inline",
+         "mention",
+         "instructed_open",
+         "ui_only",
+         "self"
+        ]
+       }
+      }
+     }
+    },
+    "role_objectives": {
+     "type": "object",
+     "propertyNames": {
+      "$ref": "common-definitions.schema.json#/$defs/roleId"
+     },
+     "additionalProperties": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+     },
+     "description": "Additional scientific instructions keyed by a participating stage role. Render only that role's objective, after the common objective; this does not grant additional inputs or outputs."
+    }
+   }
+  },
+  "runLocalOutput": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "output_id",
+    "output_kind",
+    "producer",
+    "schema_uri",
+    "schema_application",
+    "purpose",
+    "requirement",
+    "required"
+   ],
+   "properties": {
+    "output_id": {
+     "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "output_kind": {
+     "type": "string",
+     "enum": [
+      "primary_artifact",
+      "scientific_record",
+      "statement_set",
+      "evidence_set",
+      "decision_record",
+      "handoff",
+      "method_set",
+      "protocol",
+      "audit",
+      "synthesis",
+      "review_issue_set",
+      "publication_package",
+      "attention_item_set"
+     ]
+    },
+    "producer": {
+     "$ref": "common-definitions.schema.json#/$defs/roleId"
+    },
+    "schema_application": {
+     "type": "string",
+     "enum": [
+      "object",
+      "each_item",
+      "jsonl"
+     ]
+    },
+    "schema_uri": {
+     "type": "string",
+     "format": "uri-reference"
+    },
+    "purpose": {
+     "type": "string",
+     "minLength": 1
+    },
+    "requirement": {
+     "type": "string",
+     "enum": [
+      "always",
+      "required_in_modes"
+     ]
+    },
+    "required_in_modes": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    },
+    "required": {
+     "type": "boolean"
+    },
+    "record_type": {
+     "type": "string",
+     "description": "Formal record type this candidate output carries (harness-owned at closure). Required for record outputs whose schema has no record_type const and which no publication binding names."
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "requirement": {
+        "const": "always"
+       }
+      },
+      "required": [
+       "requirement"
+      ]
+     },
+     "then": {
+      "properties": {
+       "required": {
+        "const": true
+       }
+      },
+      "not": {
+       "required": [
+        "required_in_modes"
+       ]
+      }
+     },
+     "else": {
+      "properties": {
+       "required": {
+        "const": false
+       }
+      },
+      "required": [
+       "required_in_modes"
+      ]
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "output_kind": {
+        "enum": [
+         "statement_set",
+         "evidence_set",
+         "method_set",
+         "review_issue_set",
+         "attention_item_set"
+        ]
+       }
+      },
+      "required": [
+       "output_kind"
+      ]
+     },
+     "then": {
+      "properties": {
+       "schema_application": {
+        "const": "each_item"
+       }
+      }
+     }
+    }
+   ]
+  },
+  "validationRule": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "validator_id",
+    "category",
+    "severity",
+    "description"
+   ],
+   "properties": {
+    "validator_id": {
+     "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "category": {
+     "type": "string",
+     "enum": [
+      "schema",
+      "run_boundary",
+      "scientific_completeness",
+      "provenance",
+      "reproducibility",
+      "alignment",
+      "promotion_safety"
+     ]
+    },
+    "severity": {
+     "type": "string",
+     "enum": [
+      "blocking",
+      "advisory"
+     ]
+    },
+    "description": {
+     "type": "string",
+     "minLength": 1
+    }
+   }
+  },
+  "publicationBinding": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "binding_id",
+    "applicable_modes",
+    "operation",
+    "output_ids",
+    "target",
+    "prior_target_policy",
+    "publisher_transform",
+    "may_create_scientific_content"
+   ],
+   "properties": {
+    "binding_id": {
+     "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "applicable_modes": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    },
+    "operation": {
+     "type": "string",
+     "enum": [
+      "append",
+      "upsert_each",
+      "replace",
+      "bundle"
+     ]
+    },
+    "output_ids": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    },
+    "components": {
+     "type": "array",
+     "minItems": 2,
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "component_name",
+       "output_id"
+      ],
+      "properties": {
+       "component_name": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+       },
+       "output_id": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+       }
+      }
+     }
+    },
+    "target": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "kind"
+     ],
+     "properties": {
+      "kind": {
+       "type": "string",
+       "enum": [
+        "current_slot",
+        "cumulative_collection",
+        "keyed_current_slots"
+       ]
+      },
+      "slot_id": {
+       "$ref": "common-definitions.schema.json#/$defs/stableId"
+      },
+      "record_type": {
+       "$ref": "common-definitions.schema.json#/$defs/recordType"
+      },
+      "collection_id": {
+       "$ref": "common-definitions.schema.json#/$defs/stableId"
+      },
+      "object_type": {
+       "$ref": "common-definitions.schema.json#/$defs/cumulativeObjectType"
+      },
+      "item_key_pointer": {
+       "type": "string",
+       "pattern": "^/[^\\s]+$"
+      },
+      "slot_template": {
+       "type": "string",
+       "minLength": 1
+      }
+     },
+     "allOf": [
+      {
+       "if": {
+        "properties": {
+         "kind": {
+          "const": "current_slot"
+         }
+        },
+        "required": [
+         "kind"
+        ]
+       },
+       "then": {
+        "required": [
+         "slot_id",
+         "record_type"
+        ]
+       }
+      },
+      {
+       "if": {
+        "properties": {
+         "kind": {
+          "const": "cumulative_collection"
+         }
+        },
+        "required": [
+         "kind"
+        ]
+       },
+       "then": {
+        "required": [
+         "collection_id",
+         "object_type"
+        ]
+       }
+      },
+      {
+       "if": {
+        "properties": {
+         "kind": {
+          "const": "keyed_current_slots"
+         }
+        },
+        "required": [
+         "kind"
+        ]
+       },
+       "then": {
+        "required": [
+         "collection_id",
+         "record_type",
+         "item_key_pointer",
+         "slot_template"
+        ]
+       }
+      }
+     ]
+    },
+    "prior_target_policy": {
+     "type": "string",
+     "enum": [
+      "not_applicable",
+      "absent_or_match_current",
+      "must_match_current"
+     ]
+    },
+    "publisher_transform": {
+     "type": "string",
+     "enum": [
+      "none",
+      "deterministic_index",
+      "deterministic_bundle"
+     ]
+    },
+    "may_create_scientific_content": {
+     "const": false
+    },
+    "source_input_ids": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "operation": {
+        "const": "append"
+       }
+      },
+      "required": [
+       "operation"
+      ]
+     },
+     "then": {
+      "properties": {
+       "target": {
+        "properties": {
+         "kind": {
+          "const": "cumulative_collection"
+         }
+        },
+        "required": [
+         "kind"
+        ]
+       },
+       "prior_target_policy": {
+        "const": "not_applicable"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "operation": {
+        "const": "upsert_each"
+       }
+      },
+      "required": [
+       "operation"
+      ]
+     },
+     "then": {
+      "properties": {
+       "target": {
+        "properties": {
+         "kind": {
+          "const": "keyed_current_slots"
+         }
+        },
+        "required": [
+         "kind"
+        ]
+       },
+       "prior_target_policy": {
+        "const": "absent_or_match_current"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "operation": {
+        "enum": [
+         "replace",
+         "bundle"
+        ]
+       }
+      },
+      "required": [
+       "operation"
+      ]
+     },
+     "then": {
+      "properties": {
+       "target": {
+        "properties": {
+         "kind": {
+          "const": "current_slot"
+         }
+        },
+        "required": [
+         "kind"
+        ]
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "operation": {
+        "const": "bundle"
+       }
+      },
+      "required": [
+       "operation"
+      ]
+     },
+     "then": {
+      "required": [
+       "components"
+      ],
+      "properties": {
+       "publisher_transform": {
+        "const": "deterministic_bundle"
+       }
+      }
+     },
+     "else": {
+      "not": {
+       "required": [
+        "components"
+       ]
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "publisher_transform": {
+        "const": "deterministic_index"
+       }
+      },
+      "required": [
+       "publisher_transform"
+      ]
+     },
+     "then": {
+      "required": [
+       "source_input_ids"
+      ]
+     }
+    }
+   ]
+  },
+  "promotion": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "strategy",
+    "canonical_record_types",
+    "cumulative_object_types",
+    "blocking_validator_ids",
+    "failure_behavior",
+    "atomic"
+   ],
+   "properties": {
+    "strategy": {
+     "type": "string",
+     "enum": [
+      "append_merge",
+      "catalog_transaction",
+      "atomic_replace",
+      "evidence_index_transaction"
+     ]
+    },
+    "canonical_record_types": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/recordType"
+     },
+     "uniqueItems": true
+    },
+    "cumulative_object_types": {
+     "type": "array",
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/cumulativeObjectType"
+     },
+     "uniqueItems": true
+    },
+    "blocking_validator_ids": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    },
+    "failure_behavior": {
+     "type": "string",
+     "minLength": 1
+    },
+    "atomic": {
+     "const": true
+    }
+   }
+  },
+  "downstreamEffect": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "trigger",
+    "affected_phases",
+    "alignment_effect",
+    "attention_effect",
+    "description",
+    "automatic_run"
+   ],
+   "properties": {
+    "trigger": {
+     "type": "string",
+     "enum": [
+      "new_current_record",
+      "mathematical_method_change",
+      "theory_basis_change",
+      "empirical_basis_change",
+      "manuscript_change",
+      "technical_report_change"
+     ]
+    },
+    "affected_phases": {
+     "type": "array",
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/phaseId"
+     },
+     "uniqueItems": true
+    },
+    "alignment_effect": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "action"
+     ],
+     "properties": {
+      "action": {
+       "type": "string",
+       "enum": [
+        "preserve",
+        "set"
+       ]
+      },
+      "state": {
+       "$ref": "common-definitions.schema.json#/$defs/alignmentState"
+      }
+     },
+     "allOf": [
+      {
+       "if": {
+        "properties": {
+         "action": {
+          "const": "set"
+         }
+        },
+        "required": [
+         "action"
+        ]
+       },
+       "then": {
+        "required": [
+         "state"
+        ]
+       },
+       "else": {
+        "not": {
+         "required": [
+          "state"
+         ]
+        }
+       }
+      }
+     ]
+    },
+    "attention_effect": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "action"
+     ],
+     "properties": {
+      "action": {
+       "type": "string",
+       "enum": [
+        "none",
+        "record_if_identified",
+        "create_required"
+       ]
+      }
+     }
+    },
+    "description": {
+     "type": "string",
+     "minLength": 1
+    },
+    "automatic_run": {
+     "const": false
+    }
+   }
+  },
+  "uiProjection": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "researcher_questions",
+    "fields",
+    "user_action_choice_ids"
+   ],
+   "properties": {
+    "researcher_questions": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "string",
+      "minLength": 1
+     }
+    },
+    "fields": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "field_id",
+       "source",
+       "label",
+       "meaning"
+      ],
+      "properties": {
+       "field_id": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+       },
+       "source": {
+        "type": "string",
+        "minLength": 1
+       },
+       "label": {
+        "type": "string",
+        "minLength": 1
+       },
+       "meaning": {
+        "type": "string",
+        "minLength": 1
+       }
+      }
+     }
+    },
+    "user_action_choice_ids": {
+     "type": "array",
+     "items": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "uniqueItems": true
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,77 @@
+{
+    "schema_version":  "1.0.0",
+    "statement_id":  "claim.rmse.reduction",
+    "record_id":  "record.empirical_evidence.overlap_stabilized_score",
+    "record_generation_id":  "generation.empirical.001",
+    "method_identity":  {
+                            "stable_id":  "method.overlap_stabilized_score",
+                            "version":  1,
+                            "definition_sha256":  "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+                        },
+    "statement_type":  "empirical_finding",
+    "text":  "The overlap-stabilized score estimator has lower root mean squared error than the inverse-propensity benchmark in the evaluated weak-overlap settings.",
+    "scope":  "The two preliminary simulation regimes and sample sizes 500 and 1000 defined in the Phase 4 configuration.",
+    "assumptions":  [
+                        "assumption.conditional_exchangeability",
+                        "assumption.weak_overlap"
+                    ],
+    "supporting_evidence_ids":  [
+                                    "evidence.simulation.preliminary.001"
+                                ],
+    "counterevidence_ids":  [
+
+                            ],
+    "scientific_outcome":  {
+                               "state":  "partially_supported",
+                               "conclusion":  "The claim is supported within the evaluated preliminary settings.",
+                               "scope":  "Two weak-overlap data-generating processes with correctly specified outcome regression.",
+                               "assumptions":  [
+                                                   "The implementation and stored results reproduce the reported comparisons."
+                                               ],
+                               "strongest_evidence_ids":  [
+                                                              "evidence.simulation.preliminary.001"
+                                                          ],
+                               "strongest_counterevidence_ids":  [
+
+                                                                 ],
+                               "material_disagreement":  [
+
+                                                         ]
+                           },
+    "source_locations":  [
+                             {
+                                 "artifact_id":  "artifact.preliminary_results",
+                                 "uri":  "artifact://artifact.preliminary_results",
+                                 "sha256":  "4444444444444444444444444444444444444444444444444444444444444444",
+                                 "media_type":  "application/json",
+                                 "locator":  "comparisons.rmse"
+                             }
+                         ],
+    "alignment_at_creation":  {
+                                  "state":  "exact",
+                                  "causes":  [
+                                                 "exact_match"
+                                             ],
+                                  "assessed_at":  "2026-08-01T15:02:00Z",
+                                  "assessed_by":  "theorist",
+                                  "reasons":  [
+                                                  "The claim is restricted to computations using the exact current method definition."
+                                              ],
+                                  "assessed_method":  {
+                                                          "stable_id":  "method.overlap_stabilized_score",
+                                                          "version":  1,
+                                                          "definition_sha256":  "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+                                                      }
+                              },
+    "research_attention_at_creation":  {
+                                           "level":  "monitor",
+                                           "open_item_ids":  [
+                                                                 "attention.preliminary_scope.001"
+                                                             ],
+                                           "reasons":  [
+                                                           "The preliminary design is not broad enough to support a general performance claim."
+                                                       ],
+                                           "next_question":  "Does a comprehensive design preserve the direction and magnitude of the root mean squared error comparison?"
+                                       },
+    "assessed_at_creation":  "2026-08-01T15:02:00Z"
+}

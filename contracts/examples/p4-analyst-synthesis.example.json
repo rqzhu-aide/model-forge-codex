@@ -1,0 +1,179 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "record.empirical_evidence.overlap_stabilized_score",
+  "generation_id": "generation.empirical.001",
+  "generation_number": 1,
+  "record_type": "empirical_synthesis",
+  "phase": "P4",
+  "source_run_id": "run.example_p4_preliminary_20260816t110000z",
+  "method_identity": {
+    "stable_id": "method.example_tapered_quantile",
+    "version": 1,
+    "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+  },
+  "representations": [
+    {
+      "information_layer": "primary_artifact",
+      "artifact": {
+        "artifact_id": "artifact.preliminary_report",
+        "uri": "artifact://artifact.preliminary_report",
+        "sha256": "72e4e4e387c3357d25117b76cce55838e635302f1edf8a48192b40a91afd4d93",
+        "media_type": "text/markdown"
+      }
+    },
+    {
+      "information_layer": "structured_record",
+      "artifact": {
+        "artifact_id": "artifact.empirical_evidence_index",
+        "uri": "generation://empirical_evidence_index/record.empirical_evidence.overlap_stabilized_score/generation.empirical.001",
+        "sha256": "c32b619b6f74aaf3f09698b41a6ea708ffb3bb8ac3b08710f2fa5e58e90ff266",
+        "media_type": "application/json"
+      }
+    }
+  ],
+  "basis": [
+    {
+      "record_id": "record.example_theory_tapered_quantile",
+      "record_type": "theory_record",
+      "generation_id": "generation.example_theory_001",
+      "generation_number": 1,
+      "content_sha256": "ee55555555555555555555555555555555555555555555555555555555555555",
+      "publication_state_at_use": "formal",
+      "record_position_at_use": "current",
+      "dependency_class": "hard",
+      "method_identity": {
+        "stable_id": "method.example_tapered_quantile",
+        "version": 1,
+        "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+      }
+    }
+  ],
+  "scientific_outcome": {
+    "state": "inconclusive",
+    "conclusion": "This structural example contains no observed computation.",
+    "scope": "One deterministic reference calculation followed by ten paired Gaussian simulation datasets of size 200.",
+    "assumptions": [],
+    "strongest_evidence_ids": [],
+    "strongest_counterevidence_ids": [],
+    "material_disagreement": []
+  },
+  "content_sha256": "de7978255e267721090b30d22a6a1f0ab98b56143418e5c9dd1366861f65afe8",
+  "publication_receipt_id": "publication.p4.001",
+  "published_at": "2026-08-01T15:10:04Z",
+  "created_at": "2026-08-01T15:05:00Z",
+  "authority_at_creation": "formal_generation",
+  "alignment_at_creation": {
+    "state": "exact",
+    "causes": [
+      "exact_match"
+    ],
+    "assessed_at": "2026-08-01T15:02:00Z",
+    "assessed_by": "theorist",
+    "reasons": [
+      "The planned cases name the frozen method identity; no executed implementation or mathematical fidelity is certified by this unassessed example."
+    ],
+    "assessed_method": {
+      "stable_id": "method.example_tapered_quantile",
+      "version": 1,
+      "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+    }
+  },
+  "research_attention_at_creation": {
+    "level": "monitor",
+    "open_item_ids": [
+      "attention.preliminary_scope.001"
+    ],
+    "reasons": [
+      "Evidence remains preliminary and covers a narrow simulation design."
+    ],
+    "next_question": "Should the researcher launch a comprehensive Phase 4 run before using the performance claim in a manuscript?"
+  },
+  "question_results": [
+    {
+      "question_id": "test.example_reference",
+      "test_ids": [
+        "test.example_reference"
+      ],
+      "case_ids": [
+        "case.example.reference"
+      ],
+      "metric_ids": [
+        "metric.example_reference_error"
+      ],
+      "comparator_ids": [
+        "selected_method"
+      ],
+      "evidence_ids": [],
+      "plan_revision_ids": [
+        "plan.initial"
+      ],
+      "exhibit_ids": [],
+      "category": "implementation",
+      "title": "Does the implementation reproduce an independently calculated reference solution?",
+      "outcome": "not_evaluated",
+      "observed_counts": {
+        "planned": 1,
+        "completed": 0,
+        "failed": 0,
+        "not_run": 1
+      },
+      "relevance_markdown": "Check the implemented calculation against a reference before interpreting comparisons.",
+      "answer_markdown": "This example has no observed results yet; the declared comparison remains unassessed.",
+      "comparison_markdown": "The proposed coefficient calculation has not yet been compared with the independent reference; there is no observed discrepancy to report.",
+      "conditions_markdown": "The planned check uses one deterministic input and the exact method definition. Agreement there would not establish accuracy in other regimes.",
+      "design_markdown": "Evaluate one deterministic input with a known reference solution, comparing coefficients in absolute units.",
+      "reliability_markdown": "The single planned check was not run in this structural example. There are no usable measurements.",
+      "uncertainty_markdown": "Monte Carlo uncertainty does not apply to a deterministic reference check; the numerical discrepancy itself is not recorded.",
+      "limitations_markdown": "Implementation fidelity remains unassessed until the recorded code and reference calculation are compared.",
+      "decision_implication_markdown": "Do not interpret an eventual performance comparison until this implementation check is completed.",
+      "next_steps_markdown": "If authorized, run the declared reference calculation in Phase 4 and investigate discrepancies before proceeding."
+    },
+    {
+      "question_id": "test.example_comparison",
+      "test_ids": [
+        "test.example_comparison"
+      ],
+      "case_ids": [
+        "case.example.screen",
+        "case.example.baseline"
+      ],
+      "metric_ids": [
+        "metric.example_max_error"
+      ],
+      "comparator_ids": [
+        "selected_method",
+        "baseline.example_untapered_qr"
+      ],
+      "evidence_ids": [],
+      "plan_revision_ids": [
+        "plan.initial"
+      ],
+      "exhibit_ids": [],
+      "category": "performance",
+      "title": "How does coefficient error compare with the untapered baseline in the small Gaussian setting?",
+      "outcome": "not_evaluated",
+      "observed_counts": {
+        "planned": 20,
+        "completed": 0,
+        "failed": 0,
+        "not_run": 20
+      },
+      "relevance_markdown": "Judge whether the preliminary accuracy justifies further computation.",
+      "answer_markdown": "This example has no observed results yet; the declared comparison remains unassessed.",
+      "comparison_markdown": "The tapered and untapered estimators have no recorded error or runtime estimates in this example. No ordering or advantage is established.",
+      "conditions_markdown": "The planned comparison covers ten paired Gaussian datasets of size 200. Heavy-tailed errors and tuning sensitivity are outside this preliminary scope.",
+      "design_markdown": "Run both methods on the same ten generated datasets and report errors, paired differences and elapsed time.",
+      "reliability_markdown": "All twenty planned method-by-dataset computations are unrun here. No failed computation is being counted as a successful replicate.",
+      "uncertainty_markdown": "There is no estimated paired difference or Monte Carlo standard error. Missing uncertainty is not zero uncertainty.",
+      "limitations_markdown": "The proposed narrow design would still leave robustness and broader computational scaling untested after completion.",
+      "decision_implication_markdown": "The researcher has no observed evidence yet for choosing this method over the untapered baseline.",
+      "next_steps_markdown": "After the implementation check, an explicitly authorized Phase 4 run can answer the prespecified small-sample comparison; its result would guide whether broader testing is worthwhile."
+    }
+  ],
+  "actual_data_application": {
+    "status": "not_supplied",
+    "data_source_ids": [],
+    "question_ids": [],
+    "summary_markdown": "No actual dataset was supplied in this structural example. No actual-data fit or validation is claimed."
+  }
+}

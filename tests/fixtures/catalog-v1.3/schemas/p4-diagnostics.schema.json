@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/p4-diagnostics.schema.json",
+  "title": "P4 Diagnostics",
+  "description": "Derived aggregate diagnostic tables (design/15 §4). MUST be regenerated from p4.metrics_long by the script named in regenerated_by — hand-edited aggregates are a validation finding.",
+  "type": "object",
+  "required": ["diagnostics_id", "headline_numbers", "stability", "solver_health", "runtime", "regenerated_by", "environment"],
+  "additionalProperties": false,
+  "properties": {
+    "diagnostics_id": { "type": "string" },
+    "headline_numbers": {
+      "type": "array",
+      "description": "One row per case: the estimands with Monte Carlo uncertainty.",
+      "items": {
+        "type": "object",
+        "required": ["case_id", "metric", "estimate", "mcse"],
+        "properties": {
+          "case_id": { "type": "string" },
+          "metric": { "type": "string" },
+          "estimate": { "type": "number" },
+          "mcse": { "type": "number", "minimum": 0 },
+          "ci_lo": { "type": "number" },
+          "ci_hi": { "type": "number" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "stability": {
+      "type": "array",
+      "description": "Cross-seed dispersion per (case, metric), plus the seed-flip flag: does any single seed flip the case's verdict?",
+      "items": {
+        "type": "object",
+        "required": ["case_id", "metric", "mean", "sd", "n_seeds", "seed_flip"],
+        "properties": {
+          "case_id": { "type": "string" },
+          "metric": { "type": "string" },
+          "mean": { "type": "number" },
+          "sd": { "type": "number", "minimum": 0 },
+          "n_seeds": { "type": "integer", "minimum": 1 },
+          "seed_flip": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "solver_health": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["regime", "n_runs", "n_failures", "failure_rate"],
+        "properties": {
+          "regime": { "type": "string" },
+          "n_runs": { "type": "integer", "minimum": 0 },
+          "n_failures": { "type": "integer", "minimum": 0 },
+          "failure_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "required": ["total_ms", "per_case"],
+      "properties": {
+        "total_ms": { "type": "number", "minimum": 0 },
+        "per_case": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["case_id", "mean_ms", "max_ms"],
+            "properties": {
+              "case_id": { "type": "string" },
+              "mean_ms": { "type": "number", "minimum": 0 },
+              "max_ms": { "type": "number", "minimum": 0 }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "regenerated_by": { "type": "string", "description": "Workspace-relative path to the script that regenerates this file from metrics_long." },
+    "environment": {
+      "type": "object",
+      "required": ["python", "platform"],
+      "properties": {
+        "python": { "type": "string" },
+        "platform": { "type": "string" },
+        "packages": { "type": "object", "description": "name → version for the packages that matter (numpy, scipy, ...)." }
+      },
+      "additionalProperties": false
+    }
+  }
+}

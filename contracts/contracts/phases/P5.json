@@ -1,0 +1,1047 @@
+{
+  "phase_id": "P5",
+  "contract_version": "3.2.0",
+  "capabilities": [
+    "p5.frozen_review_instructions.v1",
+    "researcher_dialogue_v1",
+    "p5.technical_report.v1",
+    "native_tool_preflight_v1",
+    "consequential_researcher_decisions_v1"
+  ],
+  "prose_contract": "architecture/phases/phase-5.md",
+  "name": "Report",
+  "scientific_purpose": "Assemble, independently review and revise a readable technical report for one exact model and frozen problem context, with relevant numerical support, claim-dependent justification, expectations, limitations and reproducible sources.",
+  "current_record_semantics": {
+    "strategy": "atomic_replace",
+    "canonical_record_types": [
+      "technical_report",
+      "review_issue_ledger",
+      "phase_decision"
+    ],
+    "research_meaning": "The current technical_report is the latest validated report generation. Completion is derived from actual relevant numerical support and claim dispositions; an interim report retains missing work. Completion and independent review of exact bytes are separate.",
+    "history_policy": "Report generations replace only the technical_report current slot; historical manuscripts retain their own family and scope. Review freezes exact report bytes; revision preserves the original review target without implying the new bytes were reviewed."
+  },
+  "user_choices": [
+    {
+      "choice_id": "p5.selected_method",
+      "label": "Model",
+      "description": "Select the exact active published model to explain and evaluate.",
+      "required": true,
+      "allowed_values": [],
+      "value_kind": "method_identity"
+    },
+    {
+      "choice_id": "p5.instructions",
+      "label": "Assembly instructions or review and revision focus",
+      "description": "Assembly instructions go to the Research Lead. In review-revision, the exact Review and revision focus goes to all three reviewers and the revision Research Lead; each follows its scientific role.",
+      "required": true,
+      "allowed_values": [],
+      "value_kind": "text"
+    },
+    {
+      "choice_id": "p5.selected_history",
+      "label": "Selected history",
+      "description": "Optionally include named historical records; review-revision always freezes its current technical_report target.",
+      "required": false,
+      "allowed_values": [],
+      "value_kind": "artifact_pointer_list"
+    }
+  ],
+  "run_modes": [
+    {
+      "mode_id": "p5.assembly",
+      "label": "Assembly",
+      "purpose": "Assemble or revise the technical report from exact applicable sources, deriving interim or complete status from retained support.",
+      "requires_method": true,
+      "entry_conditions": [
+        "The exact published selected model, frozen problem context and applicable problem/model sources are readable."
+      ],
+      "required_choice_ids": [
+        "p5.selected_method",
+        "p5.instructions"
+      ],
+      "optional_choice_ids": [
+        "p5.selected_history"
+      ],
+      "method_choice_id": "p5.selected_method"
+    },
+    {
+      "mode_id": "p5.review_revision",
+      "label": "Review and revision",
+      "purpose": "Freeze the exact current report and supporting exhibits, obtain independent reviews, then revise while retaining unresolved scientific concerns.",
+      "requires_method": true,
+      "entry_conditions": [
+        "The exact published selected model, frozen problem context and applicable problem/model sources are readable.",
+        "A formal current technical_report exists as the exact review target."
+      ],
+      "required_choice_ids": [
+        "p5.selected_method",
+        "p5.instructions"
+      ],
+      "optional_choice_ids": [
+        "p5.selected_history"
+      ],
+      "method_choice_id": "p5.selected_method"
+    }
+  ],
+  "prerequisites": [
+    {
+      "requirement_id": "p5.current_project_brief",
+      "kind": "phase_record",
+      "description": "A formal current project brief is readable.",
+      "required": true
+    },
+    {
+      "requirement_id": "p5.current_p1",
+      "kind": "phase_record",
+      "description": "A formal current Phase 1 literature basis is readable.",
+      "required": true,
+      "phase": "P1"
+    },
+    {
+      "requirement_id": "p5.method_selected",
+      "kind": "method_selected",
+      "description": "The user selects one active formal current method.",
+      "required": true,
+      "phase": "P2"
+    },
+    {
+      "requirement_id": "p5.exact_p3",
+      "kind": "exact_alignment",
+      "description": "Freeze applicable exact-model sources when available and record their explicit absence. Missing work permits interim assembly; completed-report support is checked against its actual claims.",
+      "required": false,
+      "phase": "P3"
+    },
+    {
+      "requirement_id": "p5.exact_p4",
+      "kind": "exact_alignment",
+      "description": "Freeze applicable exact-model sources when available and record their explicit absence. Missing work permits interim assembly; completed-report support is checked against its actual claims.",
+      "required": false,
+      "phase": "P4"
+    }
+  ],
+  "required_inputs": [
+    {
+      "input_id": "p5.project_brief",
+      "record_type": "project_brief",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "not_applicable",
+      "purpose": "Preserve the motivating scientific question and intended scope.",
+      "condition": "Always required.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p5.literature_library",
+      "record_type": "literature_library",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "not_applicable",
+      "purpose": "Resolve formal sources supporting technical_report claims.",
+      "condition": "Always required.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p5.literature_synthesis",
+      "record_type": "literature_synthesis",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "not_applicable",
+      "purpose": "Ground contribution, context, comparison, and limitations.",
+      "condition": "Always required.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p5.literature_coverage",
+      "record_type": "literature_coverage",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "not_applicable",
+      "purpose": "Expose the exact search boundaries and evidence gaps that constrain contribution and limitation claims.",
+      "condition": "Always required.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p5.method_catalog",
+      "record_type": "method_catalog",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "not_applicable",
+      "purpose": "Confirm that the selected method is active and current.",
+      "condition": "Always required; unrelated catalog methods remain contextual rather than hard technical_report dependencies.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p5.method",
+      "record_type": "method_record",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "exact",
+      "purpose": "Fix the one calculation-defining method represented by the technical_report.",
+      "condition": "Always required.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p5.theory",
+      "record_type": "theory_record",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "exact",
+      "purpose": "Supply the complete current theoretical account for the exact method.",
+      "condition": "Freeze exact applicable sources if available; explicit absence permits an interim report. Completed status requires relevant actual numerical analysis and support or qualification for each claim.",
+      "presence": "if_exists"
+    },
+    {
+      "input_id": "p5.empirical_index",
+      "record_type": "empirical_evidence_index",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "exact",
+      "purpose": "Resolve the current exact-method evidence supporting empirical claims.",
+      "condition": "Freeze exact applicable sources if available; explicit absence permits an interim report. Completed status requires relevant actual numerical analysis and support or qualification for each claim.",
+      "presence": "if_exists"
+    },
+    {
+      "input_id": "p5.empirical",
+      "record_type": "empirical_synthesis",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "exact",
+      "purpose": "Supply the current empirical conclusions for the exact method.",
+      "condition": "Freeze exact applicable sources if available; explicit absence permits an interim report. Completed status requires relevant actual numerical analysis and support or qualification for each claim.",
+      "presence": "if_exists"
+    },
+    {
+      "input_id": "p5.implementation_record",
+      "record_type": "implementation_record",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "exact",
+      "purpose": "Supply the current implementation identity and reproducibility basis for the exact method.",
+      "condition": "Freeze exact applicable sources if available; explicit absence permits an interim report. Completed status requires relevant actual numerical analysis and support or qualification for each claim.",
+      "presence": "if_exists"
+    },
+    {
+      "input_id": "p5.current_report",
+      "record_type": "technical_report",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "same_stable_method",
+      "purpose": "Continue or review this exact report family, never reinterpret a legacy manuscript as the current report.",
+      "condition": "Absent on the first technical report run for the selected stable method identity and required on reruns. It may use an older version of the selected stable method, but never a different method lineage.",
+      "presence": "required_on_rerun"
+    },
+    {
+      "input_id": "p5.review_target_report",
+      "record_type": "technical_report",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "same_stable_method",
+      "purpose": "Continue or review this exact report family, never reinterpret a legacy manuscript as the current report.",
+      "condition": "Required in review-revision mode only; the reviewed technical_report must be a formal current record for the selected stable method lineage.",
+      "presence": "required_in_modes",
+      "required_in_modes": [
+        "p5.review_revision"
+      ]
+    },
+    {
+      "input_id": "p5.review_issue_ledger",
+      "record_type": "review_issue_ledger",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "same_stable_method",
+      "purpose": "Preserve stable review issue and issue-version lineage during review-revision.",
+      "condition": "Included in review-revision when a current ledger exists for the selected stable method lineage.",
+      "presence": "if_exists"
+    }
+  ],
+  "supplementary_inputs": [
+    {
+      "input_id": "p5.researcher_material",
+      "record_type": "researcher_material",
+      "purpose": "Accept researcher-supplied material (for example figures or supplementary text) as additional context for technical_report assembly. It is additive only and never substitutes for published records; the technical_report itself always comes from the published pipeline state."
+    }
+  ],
+  "prepared_contexts": [
+    {
+      "context_id": "p5.review_packet",
+      "applicable_modes": [
+        "p5.review_revision"
+      ],
+      "constructed_by": "harness_during_preparation",
+      "source_input_ids": [
+        "p5.review_target_report"
+      ],
+      "source_choice_ids": [
+        "p5.instructions"
+      ],
+      "content_requirements": [
+        "The exact immutable Markdown+LaTeX report artifact, completion/model metadata and every cited exhibit with its retained data dependencies, plus declared supplements and source resolution map.",
+        "One instructions.md entry with the exact saved p5.instructions and report-declared audience, with its own digest and instruction provenance. No venue or page quota fields.",
+        "Prepare the packet once before parallel dispatch. Every reviewer and the revision lead receives its exact target and verified digests.",
+        "The Independent Reviewer reads only the frozen report and declared supporting materials. No private conversations, hidden memory, internal audits or later outputs."
+      ],
+      "purpose": "Freeze the complete and exclusive external submission available to the independent outside reviewer and deliver identical focus, scope and draft identity to every reviewer and the revision lead.",
+      "immutable": true
+    }
+  ],
+  "optional_context_policy": {
+    "default": "current_only",
+    "allows_selected_history": true,
+    "history_selection_user_controlled": true,
+    "description": "The exact current P1 through P4 basis is the default. Selected history is optional, except for the current technical_report frozen by review-revision.",
+    "history_choice_id": "p5.selected_history"
+  },
+  "role_stages": [
+    {
+      "sequence": 1,
+      "stage_id": "p5.assembly_lead",
+      "applicable_modes": [
+        "p5.assembly"
+      ],
+      "execution": "serial",
+      "roles": [
+        "research_lead"
+      ],
+      "objective": "Assemble a technical report from the exact published selected model and frozen problem context, freezing available P3/P4 sources and their explicit absence. Use concise, connected statistical prose and Markdown with KaTeX-supported LaTeX as report_artifact, with readable headings, defined notation, captions, units and exact exhibit references. The seven anchored sections cover problem and intended use, exact model formulation/procedure, relevant existing approaches, mathematical justification, numerical analysis, limitations and reproducibility. These are coverage requirements for a technical report, without a word, paragraph or equation quota or a full-paper structure. Develop each definition, formulation and result once; use brief cross-references elsewhere and preserve essential qualifications beside their claims. Keep exact source metadata in structured records. Detailed derivations, secondary full tables and lengthy reproduction recipes may be linked as declared supplementary detail; retain the defining model equations, decisive conditions and main findings in the report, without copying all earlier mathematics into its body. Conciseness preserves all model-defining assumptions, constraints, tuning conventions, claim scope and mathematical meaning; syntax success alone does not establish faithful mathematics. Author claims with source_refs and support_route, numerical_analysis with question/relevance/scope/data_origin/data_or_simulation_identity and exact evidence/exhibit/implementation refs, prose_values with exact text/anchor/source refs and explained rounding/transformation, and expectation_outcomes for material frozen context item revisions. Actual relevant numerical support for this exact model is required for complete status. Missing analysis permits a retained interim report with missing work, never invented numbers. New formal results require complete P3 support; P5 does not originate guarantees. Established results require a retained theorist check identifying the cited source/locator, statement used, conditions and exact-model applicability. Unchecked conditions and nontrivial new arguments remain unresolved or route to P3. Claims can be qualified/open without a compulsory claim from every phase. Baselines are conditional on material comparative claims or expectations. Separate model description, researcher-reported setting, assumptions and actual numerical findings. In-house source integrity and completion checks do not certify scientific adequacy. Preserve material disagreement, limitations and next resolving work. Completion and review of exact bytes are separate. An edited report cannot create evidence or clear concerns by omission. Use the frozen researcher account of the target, observation and collection process, available information and expectations without reopening problem, method or study-design elicitation owned by P1-P4. Retain exact context item IDs and revisions for consequential interpretations. Missing scientific inputs remain qualified in the report and its source or review records, with resolving work routed to the responsible upstream phase. A researcher description, confirmed paraphrase or passing diagnostic does not verify a scientific assumption. Dialogue or saved answers cannot silently revise a model, launch computation or establish a guarantee. Author section_anchors mapping the seven content IDs to explicit <a id=\"...\"></a> anchors in the Markdown source. Every prose_values item gives reported_value, exact scalar numerical source pointer, and identity/round/scale/scale_round presentation transformation; describe rounding and units in presentation. Keep report-specific scientific open items in the owned source records or review ledger without changing original findings or attributing agreement. p5.attention_items may be empty; use it only for an editorial choice that prevents faithful writing of this exact report, not general problem, collection, model or numerical-design questions. Every new attention item uses schema_version 1.2.0 with kind researcher_decision, exact project/model scope, a named responsible audience and exact answer applicability references. Continue meaningful conditional or interim work when missing scientific input does not block its justified reporting scope. Use the existing researcher-question.json only if an indispensable researcher editorial choice makes the next authorized reporting action unjustified: explain question and reason, set blocking=true with scope and source_refs, optionally options and conditional_scope, and stop after retaining partial work. Changed models, scientific targets and numerical scopes belong to new authorized upstream work. Do not use a native host question. Every relative file link and image in the report body must resolve to exactly one declared, digest-verified submitted material. Existing matching path/artifact_path aliases need no extra mapping. When a retained artifact's report-relative target differs from its supported aliases, use artifact_authored_paths keyed by that exact artifact_id, with one nonempty report-relative path string per artifact. Do not use arrays; additional copied scientific files need their own exact supplementary_artifacts declarations. Declare copied or generated scientific JSON, Markdown, code, figures and reproduction files in supplementary_artifacts with exact relative path, media_type and sha256; workspace existence alone does not make a file available to the reader or portable export. Check the unique source action and portable export for each body target. Published prior scientific assessments may be declared as scientific support; private researcher dialogue and current P5 parallel review findings are not outside submission materials. For a prose number stored inside a retained JSON artifact, source_refs names the exact-model P4 record generation/digest, pointer selects its artifact pointer, and scalar_pointer selects one finite JSON number inside that digest-verified artifact. Without scalar_pointer, pointer selects a numeric scalar directly in the frozen record. Do not replace an exact numerical source with a numeric-looking string, a paraphrase or a newly copied unchecked file. For each new researcher_decision author decision_priority as interpretation, inference, data or resources, using the highest material consequence in that order, and response_kind as choice or study_fact. Keep question to one current choice or exact factual request. context_markdown identifies the affected point with the minimum useful mathematics and locally defined symbols; likely_consequence gives its practical effect without repetition. For a choice, author options when a useful finite set exists, usually two or three realistic alternatives as {id,label,consequence} with unique IDs and actual benefits/costs. recommendation is Markdown Lead advice and reason, or the evidence needed before advice is justified; never preselect or save a recommendation as the researcher answer. A study_fact names the missing information, applicability limit and what can proceed while unknown, without options or recommendation. Inspect supplied material first. Do not repeatedly request unavailable facts during synthetic work. Consolidate duplicates while retaining independently answerable premises and exact scope/source/answer references. Carry forward only materially new consequences in the brief; retain derivations and earlier context through sources. No rigid word cap or separate rationale-writing checklist applies. ",
+      "reads": [
+        "p5.project_brief",
+        "p5.literature_library",
+        "p5.literature_synthesis",
+        "p5.literature_coverage",
+        "p5.method_catalog",
+        "p5.method",
+        "p5.theory",
+        "p5.empirical_index",
+        "p5.empirical",
+        "p5.implementation_record",
+        "p5.current_report"
+      ],
+      "writes": [
+        "p5.technical_report_candidate",
+        "p5.claim_traceability",
+        "p5.upstream_basis_manifest",
+        "p5.citation_integrity_report",
+        "p5.limitations_record",
+        "p5.assembly_report",
+        "p5.attention_items",
+        "p5.decision"
+      ],
+      "handoff_required": true,
+      "artifact_contracts": {
+        "p5.technical_report_candidate": {
+          "artifact_type": "t3m_report",
+          "audience": [
+            "theorist",
+            "data_analyst",
+            "outside_reviewer"
+          ],
+          "delivery": "instructed_open"
+        },
+        "p5.claim_traceability": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead"
+          ],
+          "delivery": "mention"
+        },
+        "p5.upstream_basis_manifest": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead"
+          ],
+          "delivery": "mention"
+        },
+        "p5.citation_integrity_report": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead"
+          ],
+          "delivery": "mention"
+        },
+        "p5.limitations_record": {
+          "artifact_type": "t2p_packet",
+          "audience": [
+            "theorist",
+            "data_analyst",
+            "outside_reviewer"
+          ],
+          "delivery": "inline"
+        },
+        "p5.assembly_report": {
+          "artifact_type": "t2p_packet",
+          "audience": [
+            "theorist",
+            "data_analyst",
+            "outside_reviewer"
+          ],
+          "delivery": "inline"
+        },
+        "p5.attention_items": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead"
+          ],
+          "delivery": "mention"
+        },
+        "p5.decision": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "user"
+          ],
+          "delivery": "inline"
+        }
+      }
+    },
+    {
+      "sequence": 1,
+      "stage_id": "p5.parallel_reviews",
+      "applicable_modes": [
+        "p5.review_revision"
+      ],
+      "execution": "parallel",
+      "roles": [
+        "theorist",
+        "data_analyst",
+        "outside_reviewer"
+      ],
+      "objective": "Open the once-prepared immutable report review packet and exact researcher directions. Review the submitted technical report and all supporting exhibits/data dependencies within your responsibility. Assess concise statistical exposition and mathematical fidelity: check the actual formulation, conditions, scope and rendered equations where available, not only LaTeX syntax. Request detail needed for scientific understanding rather than full-paper expansion or repeated summaries. Missing theory, numerical support or context is a finding, not permission to invent a result or pause for private researcher dialogue. The Theorist checks guarantees, retained cited-result applicability and exact model conditions even when no P3 exists. The Data Analyst checks exact implementation, numeric values, design, data/synthetic scope, question relevance and expectations. The Independent Reviewer remains a first reader with only the report and declared supplements, no private conversations or later team outputs. Retain exact review_basis_generation_id and unresolved disagreement. Do not treat completion as proof, usefulness or review of later revision bytes. Record consequential unknowns as open_question findings in your owned review output, using issue, scientific_consequence, evidence_basis and requested_resolution to explain what is missing, why it matters, plausible conditional consequences and what cannot be verified from the declared materials. The outside reviewer uses prioritized_issues in outside_review.json; the specialists use their owned review-finding arrays. Do not create attention_items.json or researcher-question.json or use a native host question. Continue the review from the frozen packet; the serial Research Lead consolidates applicable questions.",
+      "reads": [],
+      "writes": [
+        "p5.theory_audit",
+        "p5.empirical_audit",
+        "p5.outside_review"
+      ],
+      "handoff_required": true,
+      "isolation_rule": "The outside reviewer receives only its frozen review packet as project-specific context and never specialist audits, internal deliberation, or later role output. Controlled public scholarly search remains allowed and must be reported. Use a fresh outside-review context with no notebook, rotation handoff, or earlier review memory. Internal specialist read sets remain explicit; all reviews use the same immutable technical_report snapshot for one selected method lineage.",
+      "role_reads": [
+        {
+          "role": "theorist",
+          "input_ids": [
+            "p5.review_packet",
+            "p5.review_target_report",
+            "p5.method",
+            "p5.theory",
+            "p5.implementation_record",
+            "p5.literature_synthesis"
+          ]
+        },
+        {
+          "role": "data_analyst",
+          "input_ids": [
+            "p5.review_packet",
+            "p5.review_target_report",
+            "p5.method",
+            "p5.theory",
+            "p5.empirical_index",
+            "p5.empirical",
+            "p5.implementation_record",
+            "p5.literature_synthesis"
+          ]
+        },
+        {
+          "role": "outside_reviewer",
+          "input_ids": [
+            "p5.review_packet"
+          ]
+        }
+      ],
+      "artifact_contracts": {
+        "p5.theory_audit": {
+          "artifact_type": "t2p_packet",
+          "audience": [
+            "research_lead"
+          ],
+          "delivery": "inline"
+        },
+        "p5.empirical_audit": {
+          "artifact_type": "t2p_packet",
+          "audience": [
+            "research_lead"
+          ],
+          "delivery": "inline"
+        },
+        "p5.outside_review": {
+          "artifact_type": "t2p_packet",
+          "audience": [
+            "research_lead"
+          ],
+          "delivery": "inline"
+        }
+      }
+    },
+    {
+      "sequence": 2,
+      "stage_id": "p5.revision_lead",
+      "applicable_modes": [
+        "p5.review_revision"
+      ],
+      "execution": "serial",
+      "roles": [
+        "research_lead"
+      ],
+      "objective": "Read the original frozen report packet, researcher directions and fixed parallel reviews. Address every finding with an exact issue disposition. Revise exposition against the frozen applicable basis and preserve material scientific concerns. A changed model, missing proof or unsupported numerical conclusion routes to explicit upstream work; report editing cannot create support or silently drop concerns. State that the original generation was reviewed and the revised bytes have only the lead check until a later independent review occurs. Assemble a technical report from the exact published selected model and frozen problem context, freezing available P3/P4 sources and their explicit absence. Use concise, connected statistical prose and Markdown with KaTeX-supported LaTeX as report_artifact, with readable headings, defined notation, captions, units and exact exhibit references. The seven anchored sections cover problem and intended use, exact model formulation/procedure, relevant existing approaches, mathematical justification, numerical analysis, limitations and reproducibility. These are coverage requirements for a technical report, without a word, paragraph or equation quota or a full-paper structure. Develop each definition, formulation and result once; use brief cross-references elsewhere and preserve essential qualifications beside their claims. Keep exact source metadata in structured records. Detailed derivations, secondary full tables and lengthy reproduction recipes may be linked as declared supplementary detail; retain the defining model equations, decisive conditions and main findings in the report, without copying all earlier mathematics into its body. Conciseness preserves all model-defining assumptions, constraints, tuning conventions, claim scope and mathematical meaning; syntax success alone does not establish faithful mathematics. Author claims with source_refs and support_route, numerical_analysis with question/relevance/scope/data_origin/data_or_simulation_identity and exact evidence/exhibit/implementation refs, prose_values with exact text/anchor/source refs and explained rounding/transformation, and expectation_outcomes for material frozen context item revisions. Actual relevant numerical support for this exact model is required for complete status. Missing analysis permits a retained interim report with missing work, never invented numbers. New formal results require complete P3 support; P5 does not originate guarantees. Established results require a retained theorist check identifying the cited source/locator, statement used, conditions and exact-model applicability. Unchecked conditions and nontrivial new arguments remain unresolved or route to P3. Claims can be qualified/open without a compulsory claim from every phase. Baselines are conditional on material comparative claims or expectations. Separate model description, researcher-reported setting, assumptions and actual numerical findings. In-house source integrity and completion checks do not certify scientific adequacy. Preserve material disagreement, limitations and next resolving work. Completion and review of exact bytes are separate. An edited report cannot create evidence or clear concerns by omission. Use the frozen researcher account of the target, observation and collection process, available information and expectations without reopening problem, method or study-design elicitation owned by P1-P4. Retain exact context item IDs and revisions for consequential interpretations. Missing scientific inputs remain qualified in the report and its source or review records, with resolving work routed to the responsible upstream phase. A researcher description, confirmed paraphrase or passing diagnostic does not verify a scientific assumption. Dialogue or saved answers cannot silently revise a model, launch computation or establish a guarantee. Author section_anchors mapping the seven content IDs to explicit <a id=\"...\"></a> anchors in the Markdown source. Every prose_values item gives reported_value, exact scalar numerical source pointer, and identity/round/scale/scale_round presentation transformation; describe rounding and units in presentation. Keep report-specific scientific open items in the owned source records or review ledger without changing original findings or attributing agreement. p5.attention_items may be empty; use it only for an editorial choice that prevents faithful writing of this exact report, not general problem, collection, model or numerical-design questions. Every new attention item uses schema_version 1.2.0 with kind researcher_decision, exact project/model scope, a named responsible audience and exact answer applicability references. Continue meaningful conditional or interim work when missing scientific input does not block its justified reporting scope. Use the existing researcher-question.json only if an indispensable researcher editorial choice makes the next authorized reporting action unjustified: explain question and reason, set blocking=true with scope and source_refs, optionally options and conditional_scope, and stop after retaining partial work. Changed models, scientific targets and numerical scopes belong to new authorized upstream work. Do not use a native host question. Every relative file link and image in the report body must resolve to exactly one declared, digest-verified submitted material. Existing matching path/artifact_path aliases need no extra mapping. When a retained artifact's report-relative target differs from its supported aliases, use artifact_authored_paths keyed by that exact artifact_id, with one nonempty report-relative path string per artifact. Do not use arrays; additional copied scientific files need their own exact supplementary_artifacts declarations. Declare copied or generated scientific JSON, Markdown, code, figures and reproduction files in supplementary_artifacts with exact relative path, media_type and sha256; workspace existence alone does not make a file available to the reader or portable export. Check the unique source action and portable export for each body target. Published prior scientific assessments may be declared as scientific support; private researcher dialogue and current P5 parallel review findings are not outside submission materials. For a prose number stored inside a retained JSON artifact, source_refs names the exact-model P4 record generation/digest, pointer selects its artifact pointer, and scalar_pointer selects one finite JSON number inside that digest-verified artifact. Without scalar_pointer, pointer selects a numeric scalar directly in the frozen record. Do not replace an exact numerical source with a numeric-looking string, a paraphrase or a newly copied unchecked file. For each new researcher_decision author decision_priority as interpretation, inference, data or resources, using the highest material consequence in that order, and response_kind as choice or study_fact. Keep question to one current choice or exact factual request. context_markdown identifies the affected point with the minimum useful mathematics and locally defined symbols; likely_consequence gives its practical effect without repetition. For a choice, author options when a useful finite set exists, usually two or three realistic alternatives as {id,label,consequence} with unique IDs and actual benefits/costs. recommendation is Markdown Lead advice and reason, or the evidence needed before advice is justified; never preselect or save a recommendation as the researcher answer. A study_fact names the missing information, applicability limit and what can proceed while unknown, without options or recommendation. Inspect supplied material first. Do not repeatedly request unavailable facts during synthetic work. Consolidate duplicates while retaining independently answerable premises and exact scope/source/answer references. Carry forward only materially new consequences in the brief; retain derivations and earlier context through sources. No rigid word cap or separate rationale-writing checklist applies. ",
+      "reads": [
+        "p5.project_brief",
+        "p5.literature_library",
+        "p5.review_packet",
+        "p5.review_target_report",
+        "p5.review_issue_ledger",
+        "p5.method_catalog",
+        "p5.method",
+        "p5.theory",
+        "p5.empirical_index",
+        "p5.empirical",
+        "p5.implementation_record",
+        "p5.literature_synthesis",
+        "p5.literature_coverage",
+        "p5.theory_audit",
+        "p5.empirical_audit",
+        "p5.outside_review"
+      ],
+      "writes": [
+        "p5.review_issues",
+        "p5.technical_report_candidate",
+        "p5.claim_traceability",
+        "p5.upstream_basis_manifest",
+        "p5.citation_integrity_report",
+        "p5.limitations_record",
+        "p5.revision_account",
+        "p5.attention_items",
+        "p5.decision"
+      ],
+      "handoff_required": true,
+      "artifact_contracts": {
+        "p5.review_issues": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead"
+          ],
+          "delivery": "mention"
+        },
+        "p5.technical_report_candidate": {
+          "artifact_type": "t3m_report",
+          "audience": [
+            "theorist",
+            "data_analyst",
+            "outside_reviewer"
+          ],
+          "delivery": "instructed_open"
+        },
+        "p5.claim_traceability": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead"
+          ],
+          "delivery": "mention"
+        },
+        "p5.upstream_basis_manifest": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead"
+          ],
+          "delivery": "mention"
+        },
+        "p5.citation_integrity_report": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead"
+          ],
+          "delivery": "mention"
+        },
+        "p5.limitations_record": {
+          "artifact_type": "t2p_packet",
+          "audience": [
+            "theorist",
+            "data_analyst",
+            "outside_reviewer"
+          ],
+          "delivery": "inline"
+        },
+        "p5.revision_account": {
+          "artifact_type": "t2s_summary",
+          "audience": [
+            "research_lead",
+            "user"
+          ],
+          "delivery": "inline"
+        },
+        "p5.attention_items": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead"
+          ],
+          "delivery": "mention"
+        },
+        "p5.decision": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "user"
+          ],
+          "delivery": "inline"
+        }
+      }
+    }
+  ],
+  "run_local_outputs": [
+    {
+      "output_id": "p5.technical_report_candidate",
+      "output_kind": "publication_package",
+      "producer": "research_lead",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/technical-report.schema.json",
+      "purpose": "The readable Markdown+LaTeX primary report, exact model/context/source links, question-driven numerical support, claim dispositions, expectation outcomes and harness-derived interim/complete status; no venue fields or fixed phase claim counts.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p5.claim_traceability",
+      "output_kind": "statement_set",
+      "producer": "research_lead",
+      "schema_application": "each_item",
+      "schema_uri": "architecture/schemas/statement.schema.json",
+      "purpose": "Map central claims to exact supporting or contradicting literature, theory, and empirical records.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p5.upstream_basis_manifest",
+      "output_kind": "scientific_record",
+      "producer": "research_lead",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/scientific-record.schema.json",
+      "purpose": "Record the exact frozen P1 through P4 identities, digests, authority states, and selected method identity used by the candidate technical_report.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p5.citation_integrity_report",
+      "output_kind": "audit",
+      "producer": "research_lead",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/scientific-record.schema.json",
+      "purpose": "Record citation resolution, unsupported citation attempts, and agreement between technical_report claims and the frozen literature library.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p5.limitations_record",
+      "output_kind": "scientific_record",
+      "producer": "research_lead",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/scientific-record.schema.json",
+      "purpose": "State the technical_report's scientific scope, active assumptions, unresolved issues, and limitations as a structured record.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p5.review_issues",
+      "output_kind": "review_issue_set",
+      "producer": "research_lead",
+      "schema_application": "each_item",
+      "schema_uri": "architecture/schemas/review-issue.schema.json",
+      "purpose": "Preserve stable specialist and outside-review issues with final dispositions; required in review-revision mode.",
+      "required": false,
+      "requirement": "required_in_modes",
+      "required_in_modes": [
+        "p5.review_revision"
+      ]
+    },
+    {
+      "output_id": "p5.attention_items",
+      "output_kind": "attention_item_set",
+      "producer": "research_lead",
+      "schema_application": "each_item",
+      "schema_uri": "architecture/schemas/contextual-attention-item.schema.json",
+      "purpose": "Record only indispensable researcher editorial choices needed to write this exact report; an empty array is valid. Retain the exact report/model scope, basis and answer applicability. Scientific questions, conflicting definitions and resolving team tasks remain in source records or the review ledger and route upstream; do not reopen P1-P4 elicitation.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p5.decision",
+      "output_kind": "decision_record",
+      "producer": "research_lead",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/decision-record.schema.json",
+      "purpose": "State contribution, material changes, unresolved limitations, and possible user actions without claiming submission approval.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p5.assembly_report",
+      "output_kind": "audit",
+      "producer": "research_lead",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/handoff.schema.json",
+      "purpose": "Explain major scientific and editorial choices in assembly mode.",
+      "required": false,
+      "requirement": "required_in_modes",
+      "required_in_modes": [
+        "p5.assembly"
+      ]
+    },
+    {
+      "output_id": "p5.theory_audit",
+      "output_kind": "audit",
+      "producer": "theorist",
+      "schema_application": "each_item",
+      "schema_uri": "architecture/schemas/review-finding.schema.json",
+      "purpose": "Provide open mathematical and theory-to-implementation findings from the frozen technical_report, without lead dispositions.",
+      "required": false,
+      "requirement": "required_in_modes",
+      "required_in_modes": [
+        "p5.review_revision"
+      ]
+    },
+    {
+      "output_id": "p5.empirical_audit",
+      "output_kind": "audit",
+      "producer": "data_analyst",
+      "schema_application": "each_item",
+      "schema_uri": "architecture/schemas/review-finding.schema.json",
+      "purpose": "Provide open implementation, evidence, reproducibility, statistical-interpretation, and implementation-to-theory findings from the frozen technical_report.",
+      "required": false,
+      "requirement": "required_in_modes",
+      "required_in_modes": [
+        "p5.review_revision"
+      ]
+    },
+    {
+      "output_id": "p5.outside_review",
+      "output_kind": "audit",
+      "producer": "outside_reviewer",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/review-report.schema.json",
+      "purpose": "Provide an independent first-time-reader report with scope, missing materials, assessment, strengths, prioritized open findings, novelty-search boundary, and evidence that could change the assessment.",
+      "required": false,
+      "requirement": "required_in_modes",
+      "required_in_modes": [
+        "p5.review_revision"
+      ]
+    },
+    {
+      "output_id": "p5.revision_account",
+      "output_kind": "audit",
+      "producer": "research_lead",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/t2s-summary.schema.json",
+      "purpose": "Link every issue disposition to the resulting technical_report change or scientific justification.",
+      "required": false,
+      "requirement": "required_in_modes",
+      "required_in_modes": [
+        "p5.review_revision"
+      ]
+    }
+  ],
+  "validation_rules": [
+    {
+      "validator_id": "p5.exact_basis",
+      "category": "alignment",
+      "severity": "blocking",
+      "description": "Exact published selected model and frozen problem context are required. Every used source resolves in the frozen basis; missing P3/P4 permits interim assembly."
+    },
+    {
+      "validator_id": "p5.report_integrity",
+      "category": "scientific_completeness",
+      "severity": "blocking",
+      "description": "The report primary Markdown artifact is retained and readable; exact sources and completion dispositions are verified. Complete status requires actual relevant numerical support for the exact model and appropriate justification or qualification for actual claims."
+    },
+    {
+      "validator_id": "p5.claim_traceability",
+      "category": "provenance",
+      "severity": "blocking",
+      "description": "Each central claim resolves to current upstream support or is removed, narrowed, contradicted, or explicitly unresolved."
+    },
+    {
+      "validator_id": "p5.review_isolation",
+      "category": "run_boundary",
+      "severity": "blocking",
+      "description": "In review-revision, all reviews use one verified prepared packet and exact technical_report generation. Its separate instruction entry delivers the saved focus and frozen scope; corrections cannot rebuild it. Outside validation opens only this submission allowlist, never internal records or audits."
+    },
+    {
+      "validator_id": "p5.issue_disposition",
+      "category": "scientific_completeness",
+      "severity": "blocking",
+      "description": "In review-revision, every unique specialist and reviewer issue receives a final disposition linked to the revision."
+    },
+    {
+      "validator_id": "p5.atomic_publication",
+      "category": "promotion_safety",
+      "severity": "blocking",
+      "description": "The complete technical_report package replaces the prior package atomically."
+    }
+  ],
+  "publication_bindings": [
+    {
+      "binding_id": "p5.append_attention_items",
+      "applicable_modes": [
+        "p5.assembly",
+        "p5.review_revision"
+      ],
+      "operation": "append",
+      "output_ids": [
+        "p5.attention_items"
+      ],
+      "target": {
+        "kind": "cumulative_collection",
+        "collection_id": "project.attention_history",
+        "object_type": "attention_item"
+      },
+      "prior_target_policy": "not_applicable",
+      "publisher_transform": "none",
+      "may_create_scientific_content": false
+    },
+    {
+      "binding_id": "p5.publish_assembly_report",
+      "applicable_modes": [
+        "p5.assembly"
+      ],
+      "operation": "bundle",
+      "output_ids": [
+        "p5.technical_report_candidate",
+        "p5.claim_traceability",
+        "p5.upstream_basis_manifest",
+        "p5.citation_integrity_report",
+        "p5.limitations_record",
+        "p5.assembly_report"
+      ],
+      "components": [
+        {
+          "component_name": "technical_report",
+          "output_id": "p5.technical_report_candidate"
+        },
+        {
+          "component_name": "claim_traceability",
+          "output_id": "p5.claim_traceability"
+        },
+        {
+          "component_name": "upstream_basis",
+          "output_id": "p5.upstream_basis_manifest"
+        },
+        {
+          "component_name": "citation_integrity",
+          "output_id": "p5.citation_integrity_report"
+        },
+        {
+          "component_name": "limitations_scope",
+          "output_id": "p5.limitations_record"
+        },
+        {
+          "component_name": "assembly_account",
+          "output_id": "p5.assembly_report"
+        }
+      ],
+      "target": {
+        "kind": "current_slot",
+        "slot_id": "p5.technical_report.current",
+        "record_type": "technical_report"
+      },
+      "prior_target_policy": "absent_or_match_current",
+      "publisher_transform": "deterministic_bundle",
+      "may_create_scientific_content": false
+    },
+    {
+      "binding_id": "p5.publish_reviewed_report",
+      "applicable_modes": [
+        "p5.review_revision"
+      ],
+      "operation": "bundle",
+      "output_ids": [
+        "p5.technical_report_candidate",
+        "p5.claim_traceability",
+        "p5.upstream_basis_manifest",
+        "p5.citation_integrity_report",
+        "p5.limitations_record",
+        "p5.theory_audit",
+        "p5.empirical_audit",
+        "p5.outside_review",
+        "p5.review_issues",
+        "p5.revision_account"
+      ],
+      "components": [
+        {
+          "component_name": "technical_report",
+          "output_id": "p5.technical_report_candidate"
+        },
+        {
+          "component_name": "claim_traceability",
+          "output_id": "p5.claim_traceability"
+        },
+        {
+          "component_name": "upstream_basis",
+          "output_id": "p5.upstream_basis_manifest"
+        },
+        {
+          "component_name": "citation_integrity",
+          "output_id": "p5.citation_integrity_report"
+        },
+        {
+          "component_name": "limitations_scope",
+          "output_id": "p5.limitations_record"
+        },
+        {
+          "component_name": "theory_audit",
+          "output_id": "p5.theory_audit"
+        },
+        {
+          "component_name": "empirical_audit",
+          "output_id": "p5.empirical_audit"
+        },
+        {
+          "component_name": "outside_review",
+          "output_id": "p5.outside_review"
+        },
+        {
+          "component_name": "review_issues",
+          "output_id": "p5.review_issues"
+        },
+        {
+          "component_name": "revision_account",
+          "output_id": "p5.revision_account"
+        }
+      ],
+      "target": {
+        "kind": "current_slot",
+        "slot_id": "p5.technical_report.current",
+        "record_type": "technical_report"
+      },
+      "prior_target_policy": "must_match_current",
+      "publisher_transform": "deterministic_bundle",
+      "may_create_scientific_content": false
+    },
+    {
+      "binding_id": "p5.append_review_issues",
+      "applicable_modes": [
+        "p5.review_revision"
+      ],
+      "operation": "append",
+      "output_ids": [
+        "p5.review_issues"
+      ],
+      "target": {
+        "kind": "cumulative_collection",
+        "collection_id": "p5.review_issue_history",
+        "object_type": "review_issue"
+      },
+      "prior_target_policy": "not_applicable",
+      "publisher_transform": "none",
+      "may_create_scientific_content": false
+    },
+    {
+      "binding_id": "p5.replace_review_issue_ledger",
+      "applicable_modes": [
+        "p5.review_revision"
+      ],
+      "operation": "replace",
+      "output_ids": [
+        "p5.review_issues"
+      ],
+      "source_input_ids": [
+        "p5.review_issue_ledger"
+      ],
+      "target": {
+        "kind": "current_slot",
+        "slot_id": "p5.review_issue_ledger.current",
+        "record_type": "review_issue_ledger"
+      },
+      "prior_target_policy": "absent_or_match_current",
+      "publisher_transform": "deterministic_index",
+      "may_create_scientific_content": false
+    },
+    {
+      "binding_id": "p5.replace_phase_decision",
+      "applicable_modes": [
+        "p5.assembly",
+        "p5.review_revision"
+      ],
+      "operation": "replace",
+      "output_ids": [
+        "p5.decision"
+      ],
+      "target": {
+        "kind": "current_slot",
+        "slot_id": "p5.phase_decision.current",
+        "record_type": "phase_decision"
+      },
+      "prior_target_policy": "absent_or_match_current",
+      "publisher_transform": "none",
+      "may_create_scientific_content": false
+    }
+  ],
+  "promotion": {
+    "strategy": "atomic_replace",
+    "canonical_record_types": [
+      "technical_report",
+      "review_issue_ledger",
+      "phase_decision"
+    ],
+    "cumulative_object_types": [
+      "attention_item",
+      "review_issue"
+    ],
+    "blocking_validator_ids": [
+      "p5.exact_basis",
+      "p5.report_integrity",
+      "p5.claim_traceability",
+      "p5.review_isolation",
+      "p5.issue_disposition",
+      "p5.atomic_publication"
+    ],
+    "failure_behavior": "Keep the previous report current on validation failure. A valid interim report may publish with derived missing work; manuscript history remains separate.",
+    "atomic": true
+  },
+  "downstream_effects": [
+    {
+      "trigger": "technical_report_change",
+      "affected_phases": [],
+      "description": "A technical_report result may request upstream attention but never changes an upstream record or starts a run.",
+      "automatic_run": false,
+      "alignment_effect": {
+        "action": "preserve"
+      },
+      "attention_effect": {
+        "action": "record_if_identified"
+      }
+    }
+  ],
+  "ui_projection": {
+    "researcher_questions": [
+      "Is the exact current basis ready?",
+      "What contribution and limitations does the report state?",
+      "What changed?",
+      "Which review issues remain important?"
+    ],
+    "fields": [
+      {
+        "field_id": "p5.readiness",
+        "source": "phase5_readiness_projection",
+        "label": "Research basis",
+        "meaning": "Per-prerequisite authority, exact method match, artifact readability, and blocking integrity findings."
+      },
+      {
+        "field_id": "p5.report_summary",
+        "source": "technical_report.current.phase_decision",
+        "label": "Current report",
+        "meaning": "Contribution, main results, material changes, limitations, and outcome."
+      },
+      {
+        "field_id": "p5.review_issues",
+        "source": "review_issue_ledger.current",
+        "label": "Review issues",
+        "meaning": "Stable issue counts, severities, dispositions, and unresolved questions."
+      }
+    ],
+    "user_action_choice_ids": [
+      "p5.selected_method",
+      "p5.instructions",
+      "p5.selected_history"
+    ]
+  },
+  "acceptance_scenarios": [
+    "s08.phase5_workflow",
+    "s09.interrupted_promotion",
+    "s10.negative_result"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "descriptor_id": "action.retire.method.001",
+  "action_type": "retire_method",
+  "execution_kind": "control_transaction",
+  "project_id": "project.demo",
+  "enabled": true,
+  "researcher_message": "Retire this method from ordinary Phase 3 and Phase 4 launches.",
+  "authorization": {
+    "status": "direct_user",
+    "user_id": "researcher.demo"
+  },
+  "consequence_summary": "The method and catalog receive lifecycle-only replacement generations; existing scientific records remain formal.",
+  "issued_at": "2026-08-02T15:00:00Z",
+  "method_id": "method.overlap_stabilized_score",
+  "expected_method": {
+    "record_id": "record.method.overlap_stabilized_score",
+    "generation_id": "generation.method.overlap_stabilized_score.004",
+    "content_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "method_identity": {
+      "stable_id": "method.overlap_stabilized_score",
+      "version": 2,
+      "definition_sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    "lifecycle_state": "active"
+  },
+  "expected_catalog": {
+    "record_id": "record.method_catalog.current",
+    "generation_id": "generation.method_catalog.009",
+    "content_sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "expected_control_head": {
+    "current_index_generation_id": "generation.current_index.040",
+    "current_index_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+    "last_event_sequence": 40,
+    "event_root_sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+  },
+  "target_lifecycle_state": "retired",
+  "reason_required": true
+}

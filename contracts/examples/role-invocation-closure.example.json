@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0.0",
+  "invocation_closure_id": "invocation_closure.p4.analyst.001",
+  "run_id": "run.p4.preliminary.20260801t140000z",
+  "project_id": "project.demo",
+  "phase": "P4",
+  "mode": "p4.preliminary",
+  "sequence": 1,
+  "stage_id": "p4.analyst",
+  "execution_group_id": "group.p4.1",
+  "role": "data_analyst",
+  "invocation_start_binding": {
+    "invocation_start_id": "invocation_start.p4.analyst.001",
+    "artifact": {
+      "artifact_id": "artifact.invocation_start.p4.analyst.001",
+      "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.invocation_start.p4.analyst.001",
+      "sha256": "754adfedcb93337a98a5051644514dae0ddcd846d96726e1cd310cba083e86f1",
+      "media_type": "application/json"
+    },
+    "start_sha256": "af9f63b60674d4360c51e5b94ecfac9a8baad5c83805cd04cf2e0e99976505cb"
+  },
+  "terminal_status": "succeeded",
+  "context_snapshot_binding": {
+    "snapshot_id": "context.p4.analyst.001",
+    "artifact": {
+      "artifact_id": "artifact.context_snapshot.p4.analyst.001",
+      "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.context_snapshot.p4.analyst.001",
+      "sha256": "908b58915059f3b799cd9171d26a478d0a24595311ab765ae4ed88e7bfd6983f",
+      "media_type": "application/json"
+    },
+    "prepared_context_source": {
+      "prepared_context_id": "prepared_context.p4.analyst.001",
+      "artifact": {
+        "artifact_id": "artifact.prepared_context.p4.analyst.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.prepared_context.p4.analyst.001",
+        "sha256": "7b196051f23e66813d6de774376f9e6934975449aa28646f0afa7f1bbb1111a6",
+        "media_type": "application/json"
+      },
+      "content_sha256": "7b196051f23e66813d6de774376f9e6934975449aa28646f0afa7f1bbb1111a6",
+      "prepared_context_sha256": "a2d182e2ed51e4ec19ed655d759ec0faeb13395dd30d8d5af085102def938fda"
+    },
+    "snapshot_sha256": "908b58915059f3b799cd9171d26a478d0a24595311ab765ae4ed88e7bfd6983f",
+    "access_ledger_id": "ledger.context.p4.analyst.001",
+    "access_ledger_head_sha256": "c107412c5d5ce83cf24b79fde421bddba6c61b9ed9a0072a3c8eba5c73e6bcf2",
+    "access_event_count": 1,
+    "sealed_at": "2026-08-01T14:55:00Z"
+  },
+  "verified_outputs": [
+    {
+      "output_id": "output.protocol",
+      "contract_output_id": "p4.protocol",
+      "output_kind": "protocol",
+      "schema_uri": "../schemas/empirical-protocol.schema.json",
+      "source_artifact": {
+        "artifact_id": "artifact.p4.protocol.source.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.protocol.source.001",
+        "path": "runs/P4/run.p4.preliminary.20260801t140000z/roles/01-data_analyst/protocol.json",
+        "sha256": "4141414141414141414141414141414141414141414141414141414141414141",
+        "media_type": "application/json"
+      },
+      "accepted_artifact": {
+        "artifact_id": "artifact.p4.protocol.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.protocol.accepted.001",
+        "path": "runs/P4/run.p4.preliminary.20260801t140000z/artifacts/structured/protocol.json",
+        "sha256": "4141414141414141414141414141414141414141414141414141414141414141",
+        "media_type": "application/json"
+      },
+      "byte_length": 4820,
+      "verified_at": "2026-08-01T14:55:05Z"
+    },
+    {
+      "output_id": "output.preliminary_evidence",
+      "contract_output_id": "p4.evidence",
+      "output_kind": "evidence_set",
+      "schema_uri": "../schemas/evidence.schema.json",
+      "source_artifact": {
+        "artifact_id": "artifact.p4.evidence.source.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.evidence.source.001",
+        "path": "runs/P4/run.p4.preliminary.20260801t140000z/roles/01-data_analyst/evidence.json",
+        "sha256": "4242424242424242424242424242424242424242424242424242424242424242",
+        "media_type": "application/json"
+      },
+      "accepted_artifact": {
+        "artifact_id": "artifact.p4.evidence.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.evidence.accepted.001",
+        "path": "runs/P4/run.p4.preliminary.20260801t140000z/artifacts/primary/evidence.json",
+        "sha256": "4242424242424242424242424242424242424242424242424242424242424242",
+        "media_type": "application/json"
+      },
+      "byte_length": 19850,
+      "verified_at": "2026-08-01T14:55:06Z"
+    },
+    {
+      "output_id": "output.analyst_synthesis",
+      "contract_output_id": "p4.analyst_synthesis",
+      "output_kind": "synthesis",
+      "schema_uri": "../schemas/scientific-record.schema.json",
+      "source_artifact": {
+        "artifact_id": "artifact.p4.analyst_synthesis.source.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.analyst_synthesis.source.001",
+        "path": "runs/P4/run.p4.preliminary.20260801t140000z/roles/01-data_analyst/analyst-synthesis.json",
+        "sha256": "4343434343434343434343434343434343434343434343434343434343434343",
+        "media_type": "application/json"
+      },
+      "accepted_artifact": {
+        "artifact_id": "artifact.p4.analyst_synthesis.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.analyst_synthesis.accepted.001",
+        "path": "runs/P4/run.p4.preliminary.20260801t140000z/artifacts/compact/analyst-synthesis.json",
+        "sha256": "4343434343434343434343434343434343434343434343434343434343434343",
+        "media_type": "application/json"
+      },
+      "byte_length": 6360,
+      "verified_at": "2026-08-01T14:55:07Z"
+    },
+    {
+      "output_id": "output.analyst_handoff",
+      "contract_output_id": "p4.analyst_handoff",
+      "output_kind": "handoff",
+      "schema_uri": "../schemas/handoff.schema.json",
+      "source_artifact": {
+        "artifact_id": "artifact.analyst_handoff",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.analyst_handoff",
+        "path": "runs/P4/run.p4.preliminary.20260801t140000z/roles/01-data_analyst/analyst-to-theorist-handoff.json",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "media_type": "application/json"
+      },
+      "accepted_artifact": {
+        "artifact_id": "artifact.analyst_handoff.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.analyst_handoff.accepted.001",
+        "path": "runs/P4/run.p4.preliminary.20260801t140000z/handoffs/01-data_analyst-to-theorist.json",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "media_type": "application/json"
+      },
+      "byte_length": 5270,
+      "verified_at": "2026-08-01T14:55:08Z"
+    }
+  ],
+  "accepted_handoffs": [
+    {
+      "output_id": "output.analyst_handoff",
+      "handoff_id": "handoff.p4.analyst_to_theorist.001",
+      "accepted_artifact": {
+        "artifact_id": "artifact.analyst_handoff.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.analyst_handoff.accepted.001",
+        "path": "runs/P4/run.p4.preliminary.20260801t140000z/handoffs/01-data_analyst-to-theorist.json",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "media_type": "application/json"
+      },
+      "consumer_stage_ids": [
+        "p4.theorist",
+        "p4.lead"
+      ],
+      "accepted_at": "2026-08-01T14:55:10Z"
+    }
+  ],
+  "closed_at": "2026-08-01T14:55:12Z",
+  "closure_sha256": "89ac283e342c467752aa4c9cf327c21f11b163dce2e11bc28200f7ec99bce448"
+}

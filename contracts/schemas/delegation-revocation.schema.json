@@ -1,0 +1,85 @@
+{
+    "$schema":  "https://json-schema.org/draft/2020-12/schema",
+    "$id":  "https://model-forge.local/architecture/schemas/delegation-revocation.schema.json",
+    "title":  "Delegation Revocation",
+    "description":  "Append-only user revocation of one exact delegation grant and revocation handle.",
+    "type":  "object",
+    "additionalProperties":  false,
+    "required":  [
+                     "schema_version",
+                     "revocation_type",
+                     "revocation_id",
+                     "grant_id",
+                     "revocation_handle",
+                     "project_id",
+                     "user_id",
+                     "reason",
+                     "revoked_at",
+                     "revocation_sequence",
+                     "content_sha256",
+                     "signature"
+                 ],
+    "properties":  {
+                       "schema_version":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/schemaVersion"
+                                          },
+                       "revocation_type":  {
+                                               "const":  "delegation_revocation"
+                                           },
+                       "revocation_id":  {
+                                             "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                         },
+                       "grant_id":  {
+                                        "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                    },
+                       "revocation_handle":  {
+                                                 "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                             },
+                       "project_id":  {
+                                          "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                      },
+                       "user_id":  {
+                                       "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                   },
+                       "reason":  {
+                                      "$ref":  "common-definitions.schema.json#/$defs/nonEmptyText"
+                                  },
+                       "revoked_at":  {
+                                          "type":  "string",
+                                          "format":  "date-time"
+                                      },
+                       "content_sha256":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/sha256",
+                                              "description":  "SHA-256 of RFC 8785 canonical revocation JSON with content_sha256 and signature omitted."
+                                          },
+                       "signature":  {
+                                         "type":  "object",
+                                         "additionalProperties":  false,
+                                         "required":  [
+                                                          "algorithm",
+                                                          "key_id",
+                                                          "value"
+                                                      ],
+                                         "properties":  {
+                                                            "algorithm":  {
+                                                                              "enum":  [
+                                                                                           "Ed25519",
+                                                                                           "ES256"
+                                                                                       ]
+                                                                          },
+                                                            "key_id":  {
+                                                                           "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                       },
+                                                            "value":  {
+                                                                          "type":  "string",
+                                                                          "minLength":  16
+                                                                      }
+                                                        }
+                                     },
+                       "revocation_sequence":  {
+                                                   "type":  "integer",
+                                                   "minimum":  1,
+                                                   "description":  "Monotone sequence assigned by the authorization service when the revocation becomes effective."
+                                               }
+                   }
+}

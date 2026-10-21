@@ -1,0 +1,114 @@
+{
+  "schema_version": "1.0.0",
+  "command_id": "command.p4.preliminary.001",
+  "idempotency_key": "demo-p4-preliminary-20260801",
+  "project_id": "project.demo",
+  "phase": "P4",
+  "mode": "p4.preliminary",
+  "requested_by": {
+    "user_id": "researcher.demo",
+    "operating_actor_type": "user"
+  },
+  "context_policy": "current_only",
+  "selected_current_input_ids": [
+    "p4.project_brief",
+    "p4.literature_synthesis",
+    "p4.method_catalog",
+    "p4.method_record"
+  ],
+  "resource_constraints": {
+    "wall_time_limit_seconds": 14400,
+    "network_policy": "approved_resources"
+  },
+  "content_sha256": "189c9de14151bb8ecbd903311f60fc6bfa469473f06c5d795941116b9fcb8bca",
+  "requested_at": "2026-08-01T14:00:00Z",
+  "phase_contract_version": "2.5.0",
+  "phase_contract_sha256": "e6b157a5e5629e87814d42489122a0bff7deb7c198161ebd668663c0f802dc1d",
+  "choice_values": {
+    "p4.selected_method": {
+      "stable_id": "method.overlap_stabilized_score",
+      "version": 1,
+      "definition_sha256": "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+    },
+    "p4.instructions": "Assess finite-sample bias, root mean squared error, and interval coverage under weak overlap before committing to a comprehensive study.",
+    "p4.selected_history": []
+  },
+  "sealed_basis": {
+    "project_id": "project.demo",
+    "action_type": "start_run",
+    "phase": "P4",
+    "mode": "p4.preliminary",
+    "phase_contract_version": "2.5.0",
+    "phase_contract_sha256": "e6b157a5e5629e87814d42489122a0bff7deb7c198161ebd668663c0f802dc1d",
+    "method_identity": {
+      "stable_id": "method.overlap_stabilized_score",
+      "version": 1,
+      "definition_sha256": "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+    },
+    "enabled": true,
+    "finding_codes": [],
+    "reviewed_current_inputs": [
+      {
+        "option_id": "p4.project_brief",
+        "required": true,
+        "artifact_id": "artifact.project_brief.g4",
+        "sha256": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+        "generation_id": "generation.project_brief.004"
+      },
+      {
+        "option_id": "p4.literature_synthesis",
+        "required": true,
+        "artifact_id": "artifact.literature_synthesis.g3",
+        "sha256": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b200",
+        "generation_id": "generation.literature_synthesis.003"
+      },
+      {
+        "option_id": "p4.method_catalog",
+        "required": true,
+        "artifact_id": "artifact.method_catalog.g2",
+        "sha256": "c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c300",
+        "generation_id": "generation.method_catalog.002"
+      },
+      {
+        "option_id": "p4.method_record",
+        "required": true,
+        "artifact_id": "artifact.method_record.g1",
+        "sha256": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c30000",
+        "generation_id": "generation.method_record.001"
+      }
+    ],
+    "authority_head": {
+      "authority_sequence": 12,
+      "authority_root_sha256": "abc123def456abc123def456abc123def456abc123def456abc123def456abc1",
+      "current_revision": 34
+    },
+    "role_resources": {
+      "research_lead": {
+        "profile": "research_lead",
+        "profile_version": "2026.08.01",
+        "soul_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "skills": [
+          {
+            "skill_id": "model-forge-research-lead",
+            "source": "bundled",
+            "source_revision": "rev-001",
+            "bundle_sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+          }
+        ]
+      },
+      "data_scientist": {
+        "profile": "data_scientist",
+        "profile_version": "2026.08.01",
+        "soul_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "skills": [
+          {
+            "skill_id": "model-forge-data-scientist",
+            "source": "bundled",
+            "source_revision": "rev-001",
+            "bundle_sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+          }
+        ]
+      }
+    }
+  }
+}

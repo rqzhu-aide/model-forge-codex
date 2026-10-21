@@ -1,0 +1,2 @@
+.math-block .katex-display { width: max-content; min-width: 100%; text-align: center; }
+.math-block .katex-display > .katex { white-space: nowrap; }

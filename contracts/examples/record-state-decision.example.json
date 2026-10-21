@@ -1,0 +1,57 @@
+{
+    "schema_version":  "1.0.0",
+    "state_projection_id":  "state.record.decision.p4.001",
+    "project_id":  "project.demo",
+    "subject":  {
+                    "kind":  "record_generation",
+                    "subject_id":  "decision.p4.preliminary",
+                    "generation_id":  "generation.decision.p4.001",
+                    "method_identity":  {
+                                            "stable_id":  "method.overlap_stabilized_score",
+                                            "version":  1,
+                                            "definition_sha256":  "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+                                        }
+                },
+    "publication_state":  "formal",
+    "record_position":  "current",
+    "alignment":  {
+                      "state":  "exact",
+                      "causes":  [
+                                     "exact_match"
+                                 ],
+                      "assessed_at":  "2026-08-01T15:05:00Z",
+                      "assessed_by":  "research_lead",
+                      "reasons":  [
+                                      "The decision brief summarizes the exact current Phase 4 record."
+                                  ],
+                      "assessed_method":  {
+                                              "stable_id":  "method.overlap_stabilized_score",
+                                              "version":  1,
+                                              "definition_sha256":  "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+                                          }
+                  },
+    "research_attention":  {
+                               "level":  "monitor",
+                               "open_item_ids":  [
+                                                     "attention.preliminary_scope.001"
+                                                 ],
+                               "reasons":  [
+                                               "The current evidence is aligned but scientifically narrow."
+                                           ],
+                               "next_question":  "Should the researcher authorize a comprehensive Phase 4 run?"
+                           },
+    "evidence_eligibility":  {
+                                 "status":  "not_applicable",
+                                 "method_match":  "not_applicable",
+                                 "reasons":  [
+
+                                             ]
+                             },
+    "source_event_ids":  [
+                             "event.decision.published.001"
+                         ],
+    "last_event_sequence":  17,
+    "event_root_sha256":  "064fa786627c5a6e0ebd8f2611be9318345a42b15843bae5eff20184589baae4",
+    "content_sha256":  "d2910473c3a29e92ac09838179c0b4785752587c80029bd78522a74a884e962e",
+    "computed_at":  "2026-08-01T15:10:04Z"
+}

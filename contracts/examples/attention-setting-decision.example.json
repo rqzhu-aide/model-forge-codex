@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.2.0",
+  "attention_id": "attention.target_population.001",
+  "source_run_id": "run.p1.setting.001",
+  "raised_by": "research_lead",
+  "question": "Who should the estimate describe: the enrolled cohort or a wider deployment population?",
+  "severity": "monitor",
+  "likely_consequence": "A deployment-population claim requires the team to justify transport beyond the enrolled cohort; cohort-only results do not establish that broader claim.",
+  "affected_record_ids": [],
+  "affected_statement_ids": [],
+  "disposition": "open",
+  "content_sha256": "d2541bf22a8473960500d4f652d44506a2bc21f1be7a1e56ff5b5292fc4be5fb",
+  "created_at": "2026-08-01T15:05:00Z",
+  "updated_at": "2026-08-01T15:05:00Z",
+  "attention_version_id": "attention_version.target_population.001.v1",
+  "authority_at_creation": "run_local_candidate",
+  "kind": "researcher_decision",
+  "target_phase": "P1",
+  "context_markdown": "For this structural example, the proposed target solves $\\mathbb E_{P_0}[\\psi(W;\\theta_0,\\eta_0)]=0$, where $W$ is the observed record, $P_0$ is the enrolled-cohort distribution, $\\psi$ defines the target $\\theta_0$ and $\\eta_0$ is its nuisance function. Intended deployment to a different population with distribution $P_*$ changes which population expectation the conclusion must address. The project instructions do not yet specify substantive observations or that intended use; neither population is established as the actual deployment setting. Choosing the wider population does not establish that it is identified from the available data.",
+  "decision_priority": "interpretation",
+  "response_kind": "choice",
+  "scope": {
+    "kind": "project"
+  },
+  "audience": [
+    "research_lead",
+    "theorist",
+    "data_analyst"
+  ],
+  "options": [
+    {
+      "id": "enrolled_cohort",
+      "label": "Describe the enrolled cohort",
+      "consequence": "Supports a conclusion about this cohort; generalization beyond it remains unestablished."
+    },
+    {
+      "id": "deployment_population",
+      "label": "Address the wider deployment population",
+      "consequence": "Matches broader use, but the team must first establish transport assumptions and what additional data are needed."
+    }
+  ],
+  "recommendation": "A recommendation needs the intended application, which the available material does not specify. Use the wider population if broader deployment is the goal; use the enrolled cohort only if that narrower claim answers the intended question. The team must separately assess whether the chosen target is identified.",
+  "source_refs": [
+    {
+      "role": "theorist",
+      "family": "theory_literature",
+      "run_id": "run.p1.literature.20260701t100000z",
+      "entry_id": "entry.orthogonal_scores.theory"
+    }
+  ]
+}

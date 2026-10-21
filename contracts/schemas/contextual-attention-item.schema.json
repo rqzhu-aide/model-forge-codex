@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/contextual-attention-item.schema.json",
+  "title": "Contextual Research Attention Item",
+  "description": "Contextual phase outputs retain their original schema versions for historical reads. Under consequential_researcher_decisions_v1, new researcher items also require decision_priority and response_kind; choice options, when authored, have unique id, label and consequence. The catalog applies this authoring rule without rewriting historical records.",
+  "allOf": [
+    {
+      "$ref": "attention-item.schema.json"
+    },
+    {
+      "properties": {
+        "schema_version": {
+          "enum": [
+            "1.1.0",
+            "1.2.0"
+          ]
+        }
+      }
+    }
+  ]
+}

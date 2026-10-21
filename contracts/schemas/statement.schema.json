@@ -1,0 +1,110 @@
+{
+    "$schema":  "https://json-schema.org/draft/2020-12/schema",
+    "$id":  "https://model-forge.local/architecture/schemas/statement.schema.json",
+    "title":  "Scientific Statement",
+    "description":  "An immutable statement within one record generation, with frozen scope, evidence, assessment, and creation-time alignment.",
+    "type":  "object",
+    "additionalProperties":  true,
+    "required":  [
+                     "schema_version",
+                     "statement_id",
+                     "record_id",
+                     "record_generation_id",
+                     "statement_type",
+                     "text",
+                     "scope",
+                     "assumptions",
+                     "supporting_evidence_ids",
+                     "counterevidence_ids",
+                     "scientific_outcome",
+                     "source_locations",
+                     "alignment_at_creation",
+                     "research_attention_at_creation",
+                     "assessed_at_creation"
+                 ],
+    "properties":  {
+                       "schema_version":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/schemaVersion"
+                                          },
+                       "statement_id":  {
+                                            "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                        },
+                       "record_id":  {
+                                         "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                     },
+                       "record_generation_id":  {
+                                                    "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                },
+                       "method_identity":  {
+                                               "$ref":  "common-definitions.schema.json#/$defs/methodIdentity"
+                                           },
+                       "statement_type":  {
+                                              "type":  "string",
+                                              "enum":  [
+                                                           "definition",
+                                                           "assumption",
+                                                           "proposition",
+                                                           "theorem",
+                                                           "corollary",
+                                                           "proof_obligation",
+                                                           "empirical_finding",
+                                                           "interpretation",
+                                                           "limitation",
+                                                           "recommendation",
+                                                           "open_question"
+                                                       ]
+                                          },
+                       "text":  {
+                                    "type":  "string",
+                                    "minLength":  1
+                                },
+                       "scope":  {
+                                     "type":  "string",
+                                     "minLength":  1
+                                 },
+                       "assumptions":  {
+                                           "type":  "array",
+                                           "items":  {
+                                                         "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                     },
+                                           "uniqueItems":  true
+                                       },
+                       "supporting_evidence_ids":  {
+                                                       "type":  "array",
+                                                       "items":  {
+                                                                     "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                 },
+                                                       "uniqueItems":  true
+                                                   },
+                       "counterevidence_ids":  {
+                                                   "type":  "array",
+                                                   "items":  {
+                                                                 "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                             },
+                                                   "uniqueItems":  true
+                                               },
+                       "scientific_outcome":  {
+                                                  "$ref":  "common-definitions.schema.json#/$defs/scientificOutcome"
+                                              },
+                       "source_locations":  {
+                                                "type":  "array",
+                                                "minItems":  1,
+                                                "items":  {
+                                                              "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                          }
+                                            },
+                       "supersedes_statement_id":  {
+                                                       "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                   },
+                       "alignment_at_creation":  {
+                                                     "$ref":  "common-definitions.schema.json#/$defs/alignmentAssessment"
+                                                 },
+                       "research_attention_at_creation":  {
+                                                              "$ref":  "common-definitions.schema.json#/$defs/researchAttention"
+                                                          },
+                       "assessed_at_creation":  {
+                                                    "type":  "string",
+                                                    "format":  "date-time"
+                                                }
+                   }
+}

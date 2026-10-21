@@ -1,0 +1,18 @@
+{
+  "headline": "The limiting step needs another argument",
+  "assessment_markdown": "The supplied proof does not yet justify exchanging the limit and expectation.",
+  "limitations": [
+    "This assessment is not a proof verification."
+  ],
+  "suggested_actions": [
+    "Supply a dominating bound.",
+    "State the result on a narrower regime."
+  ],
+  "evidence_refs": [
+    {
+      "family": "complete_theory",
+      "generation_id": "generation.example",
+      "object_id": "statement.example"
+    }
+  ]
+}

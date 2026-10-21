@@ -1,0 +1,169 @@
+{
+  "schema_version": "1.0.0",
+  "publication_id": "publication.p4.001",
+  "transaction_id": "transaction.p4.001",
+  "project_id": "project.demo",
+  "source": {
+    "kind": "research_run",
+    "command_id": "command.p4.preliminary.001",
+    "run_id": "run.p4.preliminary.20260801t140000z",
+    "phase": "P4",
+    "manifest_sha256": "c01cca36e0e05f5e24bb1968b957e877e699743958d74492ee03b857c459069c",
+    "submission_id": "submission.p4.001",
+    "submission_sha256": "c8ec41fe439171aca474ed5a0d4f89a399f6d25ff3ebc6f0e0bbd1e12b67e19f"
+  },
+  "validation_reports": [
+    {
+      "artifact_id": "artifact.validation_report.p4.001",
+      "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.validation_report.p4.001",
+      "sha256": "222222222222222222222222222222222222222222222222222222222222222a",
+      "media_type": "application/json"
+    }
+  ],
+  "prior_current_index_generation_id": "generation.current_index.004",
+  "prior_current_index_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "new_current_index_generation_id": "generation.current_index.005",
+  "new_current_index_sha256": "33f6c926b9f8f58438de9c9cff428d6e6b94b107bb89a828603264b7966b2b98",
+  "committed_event_range": {
+    "first_sequence": 12,
+    "last_sequence": 17,
+    "event_ids": [
+      "event.record.published.001",
+      "event.empirical_synthesis.published.001",
+      "event.implementation.published.001",
+      "event.decision.published.001",
+      "event.evidence_indexed.001",
+      "event.attention.published.001"
+    ],
+    "prior_event_root_sha256": "2020202020202020202020202020202020202020202020202020202020202020",
+    "new_event_root_sha256": "064fa786627c5a6e0ebd8f2611be9318345a42b15843bae5eff20184589baae4"
+  },
+  "derived_projection_digests": [
+    {
+      "projection_id": "state.record.empirical.001",
+      "projection_kind": "record_state",
+      "content_sha256": "dc791b2a7010ef7fd20acff1a1eb5b9a7a059f64b731851a56b88c57038892eb"
+    },
+    {
+      "projection_id": "state.record.empirical_synthesis.001",
+      "projection_kind": "record_state",
+      "content_sha256": "37fef4a4c0f4b29dd2fd5eca608af789183105c4f530fcf8589c0075ea97e78d"
+    },
+    {
+      "projection_id": "state.record.implementation.001",
+      "projection_kind": "record_state",
+      "content_sha256": "b738b8f288f29bda4d98e426d2af2404d4d44edd342f00010e6fb986b83151f4"
+    },
+    {
+      "projection_id": "state.record.decision.p4.001",
+      "projection_kind": "record_state",
+      "content_sha256": "d2910473c3a29e92ac09838179c0b4785752587c80029bd78522a74a884e962e"
+    },
+    {
+      "projection_id": "state.evidence.simulation.preliminary.001",
+      "projection_kind": "record_state",
+      "content_sha256": "adb5a5de2d23cefc6519736504cc0ae391887a401d09eb789308d9800d774a58"
+    },
+    {
+      "projection_id": "generation.current_index.005",
+      "projection_kind": "current_index",
+      "content_sha256": "33f6c926b9f8f58438de9c9cff428d6e6b94b107bb89a828603264b7966b2b98"
+    }
+  ],
+  "record_changes": [
+    {
+      "record_id": "record.empirical_evidence.overlap_stabilized_score",
+      "record_type": "empirical_evidence_index",
+      "new_generation_id": "generation.empirical.001",
+      "new_position": "current",
+      "change_kind": "create",
+      "authority_event_ids": [
+        "event.record.published.001"
+      ]
+    },
+    {
+      "record_id": "record.empirical_synthesis.overlap_stabilized_score",
+      "record_type": "empirical_synthesis",
+      "new_generation_id": "generation.empirical_synthesis.001",
+      "new_position": "current",
+      "change_kind": "create",
+      "authority_event_ids": [
+        "event.empirical_synthesis.published.001"
+      ]
+    },
+    {
+      "record_id": "record.implementation.overlap_stabilized_score",
+      "record_type": "implementation_record",
+      "new_generation_id": "generation.implementation.001",
+      "new_position": "current",
+      "change_kind": "create",
+      "authority_event_ids": [
+        "event.implementation.published.001"
+      ]
+    },
+    {
+      "record_id": "decision.p4.preliminary",
+      "record_type": "phase_decision",
+      "new_generation_id": "generation.decision.p4.001",
+      "new_position": "current",
+      "change_kind": "create",
+      "authority_event_ids": [
+        "event.decision.published.001"
+      ]
+    }
+  ],
+  "alignment_impacts": [],
+  "atomic": true,
+  "published_at": "2026-08-01T15:10:04Z",
+  "content_sha256": "d051ff37799fe14478ad1200b314140a2703312e362db5b827f2e161c889b51f",
+  "cumulative_object_changes": [
+    {
+      "object_id": "evidence.simulation.preliminary.001",
+      "object_type": "evidence_item",
+      "content_sha256": "ac15fc1af309668f302a40f119537e270836cc392d5227ca64288f7b96fb923b",
+      "change_kind": "publish",
+      "authority_event_ids": [
+        "event.evidence_indexed.001"
+      ]
+    },
+    {
+      "object_id": "attention_version.preliminary_scope.001.v1",
+      "object_type": "attention_item",
+      "content_sha256": "b40cdb0eceb6b0a3ad6701ce6550d18e6d9304087c98040c0e303f761604a806",
+      "change_kind": "publish",
+      "authority_event_ids": [
+        "event.attention.published.001"
+      ]
+    }
+  ],
+  "attention_impacts": [
+    {
+      "affected_record_id": "record.empirical_evidence.overlap_stabilized_score",
+      "before": "none",
+      "after": "monitor",
+      "open_item_ids": [
+        "attention.preliminary_scope.001"
+      ],
+      "automatic_run": false
+    },
+    {
+      "affected_record_id": "record.empirical_synthesis.overlap_stabilized_score",
+      "before": "none",
+      "after": "monitor",
+      "open_item_ids": [
+        "attention.preliminary_scope.001"
+      ],
+      "automatic_run": false
+    },
+    {
+      "affected_record_id": "decision.p4.preliminary",
+      "before": "none",
+      "after": "monitor",
+      "open_item_ids": [
+        "attention.preliminary_scope.001"
+      ],
+      "automatic_run": false
+    }
+  ],
+  "state_changes": []
+}

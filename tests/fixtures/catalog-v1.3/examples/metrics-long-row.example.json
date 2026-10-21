@@ -1,0 +1,13 @@
+{
+ "case_id": "gamma_0.95/B_0.18/binding",
+ "seed": 20260907,
+ "runtime_ms": 143.2,
+ "solver_status": "ok",
+ "converged": true,
+ "iterations": 12,
+ "metrics": {
+  "J": 0.8439,
+  "K": 0.8767,
+  "policy_eval_residual": 1.2e-09
+ }
+}

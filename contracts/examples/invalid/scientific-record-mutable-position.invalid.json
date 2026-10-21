@@ -1,0 +1,119 @@
+{
+    "schema_version":  "1.0.0",
+    "record_id":  "record.empirical_evidence.overlap_stabilized_score",
+    "generation_id":  "generation.empirical.001",
+    "generation_number":  1,
+    "record_type":  "empirical_evidence_index",
+    "phase":  "P4",
+    "source_run_id":  "run.p4.preliminary.20260801t140000z",
+    "method_identity":  {
+                            "stable_id":  "method.overlap_stabilized_score",
+                            "version":  1,
+                            "definition_sha256":  "1111111111111111111111111111111111111111111111111111111111111111"
+                        },
+    "representations":  [
+                            {
+                                "information_layer":  "primary_artifact",
+                                "artifact":  {
+                                                 "artifact_id":  "artifact.preliminary_report",
+                                                 "uri":  "artifact://artifact.preliminary_report",
+                                                 "sha256":  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                                                 "media_type":  "text/markdown"
+                                             }
+                            },
+                            {
+                                "information_layer":  "structured_record",
+                                "artifact":  {
+                                                 "artifact_id":  "artifact.empirical_evidence_index",
+                                                 "uri":  "generation://empirical_evidence_index/record.empirical_evidence.overlap_stabilized_score/generation.empirical.001",
+                                                 "sha256":  "8888888888888888888888888888888888888888888888888888888888888888",
+                                                 "media_type":  "application/json"
+                                             }
+                            },
+                            {
+                                "information_layer":  "compact_decision_view",
+                                "artifact":  {
+                                                 "artifact_id":  "artifact.empirical_status_summary",
+                                                 "uri":  "artifact://artifact.empirical_status_summary",
+                                                 "sha256":  "9999999999999999999999999999999999999999999999999999999999999999",
+                                                 "media_type":  "text/markdown"
+                                             }
+                            }
+                        ],
+    "basis":  [
+                  {
+                      "record_id":  "record.method.overlap_stabilized_score",
+                      "record_type":  "method_record",
+                      "generation_id":  "generation.method.001",
+                      "generation_number":  1,
+                      "content_sha256":  "2222222222222222222222222222222222222222222222222222222222222222",
+                      "publication_state_at_use":  "formal",
+                      "record_position_at_use":  "current",
+                      "dependency_class":  "hard",
+                      "method_identity":  {
+                                              "stable_id":  "method.overlap_stabilized_score",
+                                              "version":  1,
+                                              "definition_sha256":  "1111111111111111111111111111111111111111111111111111111111111111"
+                                          }
+                  },
+                  {
+                      "record_id":  "record.method_catalog",
+                      "record_type":  "method_catalog",
+                      "generation_id":  "generation.catalog.002",
+                      "generation_number":  2,
+                      "content_sha256":  "3333333333333333333333333333333333333333333333333333333333333333",
+                      "publication_state_at_use":  "formal",
+                      "record_position_at_use":  "current",
+                      "dependency_class":  "contextual"
+                  }
+              ],
+    "scientific_outcome":  {
+                               "state":  "partially_supported",
+                               "conclusion":  "Preliminary simulations support improved error performance under the evaluated weak-overlap conditions.",
+                               "scope":  "The exact current method and the two prespecified preliminary simulation regimes.",
+                               "assumptions":  [
+                                                   "The recorded implementation, configuration, seed, and environment reproduce the indexed results."
+                                               ],
+                               "strongest_evidence_ids":  [
+                                                              "evidence.simulation.preliminary.001"
+                                                          ],
+                               "strongest_counterevidence_ids":  [
+
+                                                                 ],
+                               "material_disagreement":  [
+
+                                                         ]
+                           },
+    "content_sha256":  "8888888888888888888888888888888888888888888888888888888888888888",
+    "publication_receipt_id":  "publication.p4.001",
+    "published_at":  "2026-08-01T15:10:04Z",
+    "created_at":  "2026-08-01T15:05:00Z",
+    "authority_at_creation":  "formal_generation",
+    "alignment_at_creation":  {
+                                  "state":  "exact",
+                                  "causes":  [
+                                                 "exact_match"
+                                             ],
+                                  "assessed_at":  "2026-08-01T15:02:00Z",
+                                  "assessed_by":  "theorist",
+                                  "reasons":  [
+                                                  "Every indexed selected-method result was computed from the exact current method definition and passed the mathematical-fidelity check."
+                                              ],
+                                  "assessed_method":  {
+                                                          "stable_id":  "method.overlap_stabilized_score",
+                                                          "version":  1,
+                                                          "definition_sha256":  "1111111111111111111111111111111111111111111111111111111111111111"
+                                                      }
+                              },
+    "research_attention_at_creation":  {
+                                           "level":  "monitor",
+                                           "open_item_ids":  [
+                                                                 "attention.preliminary_scope.001"
+                                                             ],
+                                           "reasons":  [
+                                                           "Evidence remains preliminary and covers a narrow simulation design."
+                                                       ],
+                                           "next_question":  "Should the researcher launch a comprehensive Phase 4 run before using the performance claim in a manuscript?"
+                                       },
+    "record_position":  "current"
+}

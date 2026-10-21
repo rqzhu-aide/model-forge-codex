@@ -1,0 +1,69 @@
+{
+    "schema_version":  "1.0.0",
+    "event_id":  "event.evidence_indexed.001",
+    "project_id":  "project.demo",
+    "event_sequence":  16,
+    "prior_event_root_sha256":  "0dafb1c80668720e33e77a98fd74c46396192b4f81081b39b51259a16b7e694e",
+    "event_root_sha256":  "9d7a9e6177b47d076926e89c4dd5e1c28f5122d76befa668aaa97fde115ee297",
+    "event_type":  "evidence_eligibility_changed",
+    "subject":  {
+                    "kind":  "evidence_item",
+                    "subject_id":  "evidence.simulation.preliminary.001",
+                    "method_identity":  {
+                                            "stable_id":  "method.overlap_stabilized_score",
+                                            "version":  1,
+                                            "definition_sha256":  "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+                                        }
+                },
+    "changes":  {
+                    "publication_state":  "formal",
+                    "alignment":  {
+                                      "state":  "exact",
+                                      "causes":  [
+                                                     "exact_match"
+                                                 ],
+                                      "assessed_at":  "2026-08-01T15:02:00Z",
+                                      "assessed_by":  "theorist",
+                                      "reasons":  [
+                                                      "Every indexed result was computed from the exact method definition and passed the mathematical-fidelity check."
+                                                  ],
+                                      "assessed_method":  {
+                                                              "stable_id":  "method.overlap_stabilized_score",
+                                                              "version":  1,
+                                                              "definition_sha256":  "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+                                                          }
+                                  },
+                    "research_attention":  {
+                                               "level":  "monitor",
+                                               "open_item_ids":  [
+                                                                     "attention.preliminary_scope.001"
+                                                                 ],
+                                               "reasons":  [
+                                                               "Evidence remains preliminary and covers a narrow simulation design."
+                                                           ],
+                                               "next_question":  "Should the researcher launch a comprehensive Phase 4 run before using the performance claim in a manuscript?"
+                                           },
+                    "evidence_eligibility":  {
+                                                 "status":  "included",
+                                                 "method_match":  "exact",
+                                                 "assessed_against_method_identity":  {
+                                                                                          "stable_id":  "method.overlap_stabilized_score",
+                                                                                          "version":  1,
+                                                                                          "definition_sha256":  "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+                                                                                      },
+                                                 "reasons":  [
+                                                                 "The computation and definition digests match exactly."
+                                                             ]
+                                             }
+                },
+    "reason":  {
+                   "code":  "reason.p4_evidence_publication",
+                   "explanation":  "The validated Phase 4 publication added this exact-method evidence to the cumulative evidence history."
+               },
+    "trigger":  {
+                    "kind":  "publication_receipt",
+                    "source_id":  "publication.p4.001"
+                },
+    "content_sha256":  "5a619941d3912fdf35c9f3a7bd058e99a4087769486ad5331dc958a57d7f72d6",
+    "created_at":  "2026-08-01T15:10:04Z"
+}

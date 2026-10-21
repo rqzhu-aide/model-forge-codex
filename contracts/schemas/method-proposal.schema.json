@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/method-proposal.schema.json",
+  "title": "Method Proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "proposal_id",
+    "method",
+    "data_requirements_markdown",
+    "proposed_evaluation_markdown",
+    "computational_profile"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.1.0"
+    },
+    "proposal_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "method": {
+      "$ref": "method.schema.json"
+    },
+    "data_requirements_markdown": {
+      "type": "string",
+      "minLength": 1
+    },
+    "proposed_evaluation_markdown": {
+      "type": "string",
+      "minLength": 1
+    },
+    "computational_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "per_iteration_markdown",
+        "memory_markdown",
+        "scaling_markdown"
+      ],
+      "properties": {
+        "per_iteration_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Dominant cost of one update or iteration of the proposed method, with defined symbols."
+        },
+        "memory_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Storage and memory footprint of the proposed method."
+        },
+        "scaling_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "How the cost grows with the problem dimensions."
+        }
+      },
+      "description": "The proposer's authored cost account for its own candidate. Stated uncertainty (\"unknown, because ...\") is legitimate content; invented precision is not."
+    },
+    "researcher_origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "specification_markdown",
+        "source_reference"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "specification_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The researcher's supplied method text or exact mathematics; preserve authorship and distinguish interpretation from the original."
+        },
+        "source_reference": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

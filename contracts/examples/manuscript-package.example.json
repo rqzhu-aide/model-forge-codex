@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "record.example_manuscript_tapered_quantile",
+  "generation_id": "generation.example_manuscript_001",
+  "generation_number": 1,
+  "record_type": "manuscript",
+  "phase": "P5",
+  "source_run_id": "run.example_p5_assembly_20260816t120000z",
+  "method_identity": {
+    "stable_id": "method.example_tapered_quantile",
+    "version": 1,
+    "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+  },
+  "authority_at_creation": "run_local_candidate",
+  "representations": [
+    {
+      "information_layer": "primary_artifact",
+      "artifact": {
+        "artifact_id": "artifact.example_manuscript_pdf",
+        "uri": "artifact://artifact.example_manuscript_pdf",
+        "path": "generations/manuscript/record.example_manuscript_tapered_quantile/generation.example_manuscript_001/manuscript.pdf",
+        "sha256": "ff66666666666666666666666666666666666666666666666666666666666666",
+        "media_type": "application/pdf"
+      }
+    },
+    {
+      "information_layer": "structured_record",
+      "artifact": {
+        "artifact_id": "artifact.example_manuscript_record_json",
+        "uri": "artifact://artifact.example_manuscript_record_json",
+        "sha256": "0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a",
+        "media_type": "application/json"
+      }
+    }
+  ],
+  "basis": [
+    {
+      "record_id": "record.example_theory_tapered_quantile",
+      "record_type": "theory_record",
+      "generation_id": "generation.example_theory_001",
+      "generation_number": 1,
+      "content_sha256": "ee55555555555555555555555555555555555555555555555555555555555555",
+      "publication_state_at_use": "formal",
+      "record_position_at_use": "current",
+      "dependency_class": "hard",
+      "method_identity": {
+        "stable_id": "method.example_tapered_quantile",
+        "version": 1,
+        "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+      }
+    },
+    {
+      "record_id": "record.example_evidence_tapered_quantile",
+      "record_type": "empirical_evidence_index",
+      "generation_id": "generation.example_empirical_001",
+      "generation_number": 1,
+      "content_sha256": "1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b",
+      "publication_state_at_use": "formal",
+      "record_position_at_use": "current",
+      "dependency_class": "hard",
+      "method_identity": {
+        "stable_id": "method.example_tapered_quantile",
+        "version": 1,
+        "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+      }
+    }
+  ],
+  "alignment_at_creation": {
+    "state": "exact",
+    "causes": [
+      "exact_match"
+    ],
+    "assessed_at": "2026-08-16T12:05:00Z",
+    "assessed_by": "research_lead",
+    "reasons": [
+      "Every numerical and formal claim in the manuscript traces to the formal theory generation and the formal empirical evidence generation named in the basis."
+    ],
+    "assessed_method": {
+      "stable_id": "method.example_tapered_quantile",
+      "version": 1,
+      "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+    }
+  },
+  "research_attention_at_creation": {
+    "level": "monitor",
+    "open_item_ids": [
+      "attention.example_heavy_tail.001"
+    ],
+    "reasons": [
+      "The heavy-tailed error question from Phase 3 remains open and is disclosed in the limitations section."
+    ],
+    "next_question": "Does uniform consistency survive when errors have only a finite fourth moment?"
+  },
+  "scientific_outcome": {
+    "state": "partially_supported",
+    "conclusion": "The manuscript reports uniform consistency and asymptotic normality of the tapered quantile estimator under sub-Gaussian errors, with preliminary simulation support for error decay and bootstrap coverage.",
+    "scope": "iid data, sub-Gaussian errors, and the two preliminary simulation settings executed in Phase 4.",
+    "assumptions": [
+      "The simulation implementation matches method version 1.",
+      "The prespecified protocol was followed without deviation."
+    ],
+    "strongest_evidence_ids": [
+      "evidence.example_simulation_preliminary_001"
+    ],
+    "strongest_counterevidence_ids": [],
+    "material_disagreement": []
+  },
+  "title": "Tapered Quantile Regression: Uniform Theory and Preliminary Simulation Evidence",
+  "manuscript_kind": "assembly_candidate",
+  "venue_length": "journal",
+  "target_audience": "Researchers in semiparametric regression and quantile methods.",
+  "manuscript_artifact": {
+    "artifact_id": "artifact.example_manuscript_pdf",
+    "uri": "artifact://artifact.example_manuscript_pdf",
+    "path": "generations/manuscript/record.example_manuscript_tapered_quantile/generation.example_manuscript_001/manuscript.pdf",
+    "sha256": "ff66666666666666666666666666666666666666666666666666666666666666",
+    "media_type": "application/pdf"
+  },
+  "sections_present": [
+    "abstract",
+    "introduction",
+    "method",
+    "theory",
+    "experiments",
+    "discussion",
+    "limitations",
+    "references",
+    "appendix"
+  ],
+  "claim_support_index": {
+    "p1_literature_claim_ids": [
+      "claim.example_lit_quantile_gap"
+    ],
+    "p2_method_claim_ids": [
+      "claim.example_method_taper_design"
+    ],
+    "p3_theory_claim_ids": [
+      "claim.example_uniform_consistency",
+      "claim.example_bootstrap_coverage"
+    ],
+    "p4_empirical_claim_ids": [
+      "claim.example_error_decay_observed"
+    ],
+    "interpretation_claim_ids": [
+      "claim.example_interpretation_practical_gain"
+    ]
+  },
+  "supplementary_artifacts": [
+    {
+      "artifact_id": "artifact.example_simulation_code",
+      "uri": "artifact://artifact.example_simulation_code",
+      "sha256": "2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c",
+      "media_type": "text/plain"
+    }
+  ],
+  "content_sha256": "8126f594e211f4ff54acc2ee370711c8ca220c6cc740a9a953c8f44db98ec53c",
+  "created_at": "2026-08-16T12:05:00Z"
+}

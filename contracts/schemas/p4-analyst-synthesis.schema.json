@@ -1,0 +1,353 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/p4-analyst-synthesis.schema.json",
+  "title": "Phase 4 Analyst Question Results",
+  "allOf": [
+    {
+      "$ref": "scientific-record.schema.json"
+    }
+  ],
+  "type": "object",
+  "required": [
+    "question_results",
+    "actual_data_application"
+  ],
+  "properties": {
+    "phase": {
+      "const": "P4"
+    },
+    "record_type": {
+      "const": "empirical_synthesis"
+    },
+    "question_results": {
+      "description": "Exactly one result for each effective protocol.claim_tests[].test_id, including prospectively added_tests. Use the exact test_id as question_id; do not invent aliases or merge tests into one result. Detailed reasoning may be shared through exact source references.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "question_id",
+          "test_ids",
+          "case_ids",
+          "metric_ids",
+          "comparator_ids",
+          "evidence_ids",
+          "plan_revision_ids",
+          "exhibit_ids",
+          "category",
+          "title",
+          "relevance_markdown",
+          "answer_markdown",
+          "comparison_markdown",
+          "conditions_markdown",
+          "design_markdown",
+          "reliability_markdown",
+          "uncertainty_markdown",
+          "limitations_markdown",
+          "decision_implication_markdown",
+          "next_steps_markdown",
+          "outcome",
+          "observed_counts"
+        ],
+        "properties": {
+          "question_id": {
+            "description": "The exact effective protocol.claim_tests[].test_id answered by this result, including prospectively added_tests. This is the existing protocol identifier, not a new question alias.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "test_ids": {
+            "description": "The singleton array [question_id], where question_id is the exact effective protocol test_id. Do not group multiple tests in one result.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "uniqueItems": true,
+            "minItems": 1
+          },
+          "case_ids": {
+            "description": "All and only effective protocol case IDs whose test_ids contains this exact question_id. Retain unfavorable and unrun cases; report invalidated observations separately without dropping their declared cases.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "uniqueItems": true
+          },
+          "metric_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "uniqueItems": true
+          },
+          "comparator_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "uniqueItems": true
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "uniqueItems": true
+          },
+          "plan_revision_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "uniqueItems": true,
+            "minItems": 1
+          },
+          "exhibit_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "uniqueItems": true
+          },
+          "category": {
+            "enum": [
+              "implementation",
+              "performance",
+              "cost",
+              "tuning",
+              "sensitivity",
+              "failures",
+              "other"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "relevance_markdown": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "answer_markdown": {
+            "examples": [
+              "Illustrative negative result: In the tested contaminated setting, the method had larger mean absolute error than the baseline (0.18 versus 0.12 outcome units; 200 usable paired datasets). The paired difference was 0.06 with Monte Carlo standard error 0.01. This argues against the intended robustness benefit in this setting, not against every possible use.",
+              "Illustrative inconclusive result: The estimated error difference was -0.003 outcome units with Monte Carlo standard error 0.008 across 40 usable paired datasets. The observed ordering does not establish improvement; the small experiment cannot distinguish the methods reliably.",
+              "Illustrative partial result: The implementation reproduced the deterministic reference solution to the declared tolerance. Performance and tuning sensitivity were not run within the authorized budget, so implementation agreement provides no evidence of advantage over the baseline.",
+              "Illustrative unassessed result: No computation was performed for the heavy-tail setting. Its effect on accuracy and uncertainty coverage remains unknown; the Gaussian comparison cannot answer this question."
+            ],
+            "description": "Answer the question directly for the exact evaluated method and regime. State observed effect, usable repetitions and recorded uncertainty where available; distinguish observed ordering from reliable improvement.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "comparison_markdown": {
+            "description": "Compare named alternatives with the recorded estimates, units and uncertainty, and explain the practical implication. Cite exact cases and metrics; do not imply unmeasured dominance.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "conditions_markdown": {
+            "description": "The tested data-generating or analysis conditions and assumptions that bound this answer.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "design_markdown": {
+            "description": "Explain study settings, comparator fairness, paired or independent repetitions and the planned versus exploratory scope, with exact protocol references.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "reliability_markdown": {
+            "description": "Explain usable, failed, invalidated and unrun observations and their reasons, and how those omissions affect the conclusion.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uncertainty_markdown": {
+            "description": "Name the recorded uncertainty measure, its units and usable repetition count; distinguish unavailable uncertainty from zero and explain the resulting inferential limit.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "limitations_markdown": {
+            "description": "Keep the important scientific caveat beside this answer, including untested regimes and deviations. Reference a detailed existing finding rather than copying it.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "decision_implication_markdown": {
+            "description": "Explain what this evidence changes for developing or using the method under the researcher objective, without inventing a researcher preference.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "next_steps_markdown": {
+            "description": "Name the next resolving question, why it matters and the appropriate phase. State that unperformed work remains unperformed.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "outcome": {
+            "enum": [
+              "supported",
+              "mixed",
+              "no_observed_advantage",
+              "contradicted",
+              "inconclusive",
+              "not_evaluated"
+            ]
+          },
+          "observed_counts": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "planned",
+              "completed",
+              "failed",
+              "not_run"
+            ],
+            "properties": {
+              "planned": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "completed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "failed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "not_run": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "invalidated": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "actual_data_application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "data_source_ids",
+        "question_ids",
+        "summary_markdown"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "analyzed",
+            "supplied_not_analyzed",
+            "not_supplied"
+          ]
+        },
+        "data_source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        },
+        "question_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "uniqueItems": true
+        },
+        "summary_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Final actual-data outcome and scope/omission reason. When analyzed, explain fitting the same model interface to the mapped supplied data and interpreting diagnostics without invented truth or causal identification."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "analyzed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data_source_ids": {
+                "minItems": 1
+              },
+              "question_ids": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "supplied_not_analyzed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data_source_ids": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "not_supplied"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data_source_ids": {
+                "maxItems": 0
+              },
+              "question_ids": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

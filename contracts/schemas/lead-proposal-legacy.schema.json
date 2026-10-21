@@ -1,0 +1,34 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://model-forge.local/architecture/schemas/lead-proposal-legacy.schema.json",
+ "title": "Historical Research Lead Method Contribution",
+ "description": "The lead develops a researcher method idea when present. General instructions may instead receive a recorded no-proposal response and be applied during reconciliation.",
+ "oneOf": [
+  {
+   "$ref": "method-proposal.schema.json"
+  },
+  {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "schema_version",
+    "no_method_proposed",
+    "reason_markdown"
+   ],
+   "properties": {
+    "schema_version": {
+     "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "no_method_proposed": {
+     "const": true
+    },
+    "reason_markdown": {
+     "type": "string",
+     "minLength": 1,
+     "pattern": "\\S",
+     "description": "Explain why these additional instructions do not call for a separate method and how they will inform the lead's comparison. This is not a scientific proposal or audit target."
+    }
+   }
+  }
+ ]
+}

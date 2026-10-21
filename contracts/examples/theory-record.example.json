@@ -1,0 +1,318 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "record.example_theory_tapered_quantile",
+  "generation_id": "generation.example_theory_001",
+  "generation_number": 1,
+  "record_type": "theory_record",
+  "phase": "P3",
+  "source_run_id": "run.example_p3_theory_20260816t100000z",
+  "method_identity": {
+    "stable_id": "method.example_tapered_quantile",
+    "version": 1,
+    "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+  },
+  "authority_at_creation": "run_local_candidate",
+  "representations": [
+    {
+      "information_layer": "primary_artifact",
+      "artifact": {
+        "artifact_id": "artifact.example_theory_manuscript",
+        "uri": "artifact://artifact.example_theory_manuscript",
+        "path": "generations/theory_record/record.example_theory_tapered_quantile/generation.example_theory_001/theory_manuscript.md",
+        "sha256": "aa11111111111111111111111111111111111111111111111111111111111111",
+        "media_type": "text/markdown"
+      }
+    },
+    {
+      "information_layer": "structured_record",
+      "artifact": {
+        "artifact_id": "artifact.example_theory_record_json",
+        "uri": "artifact://artifact.example_theory_record_json",
+        "sha256": "bb22222222222222222222222222222222222222222222222222222222222222",
+        "media_type": "application/json"
+      }
+    }
+  ],
+  "primary_artifact": {
+    "artifact_id": "artifact.example_theory_manuscript",
+    "uri": "artifact://artifact.example_theory_manuscript",
+    "path": "generations/theory_record/record.example_theory_tapered_quantile/generation.example_theory_001/theory_manuscript.md",
+    "sha256": "aa11111111111111111111111111111111111111111111111111111111111111",
+    "media_type": "text/markdown"
+  },
+  "basis": [
+    {
+      "record_id": "record.example_method_tapered_quantile",
+      "record_type": "method_record",
+      "generation_id": "generation.example_method_001",
+      "generation_number": 1,
+      "content_sha256": "cc33333333333333333333333333333333333333333333333333333333333333",
+      "publication_state_at_use": "formal",
+      "record_position_at_use": "current",
+      "dependency_class": "hard",
+      "method_identity": {
+        "stable_id": "method.example_tapered_quantile",
+        "version": 1,
+        "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+      }
+    }
+  ],
+  "alignment_at_creation": {
+    "state": "exact",
+    "causes": [
+      "exact_match"
+    ],
+    "assessed_at": "2026-08-16T10:05:00Z",
+    "assessed_by": "theorist",
+    "reasons": [
+      "The estimating equations, taper sequence, and bandwidth rule in the theory manuscript match method version 1 exactly."
+    ],
+    "assessed_method": {
+      "stable_id": "method.example_tapered_quantile",
+      "version": 1,
+      "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+    }
+  },
+  "research_attention_at_creation": {
+    "level": "monitor",
+    "open_item_ids": [
+      "attention.example_heavy_tail.001"
+    ],
+    "reasons": [
+      "The uniform consistency theorem assumes sub-Gaussian errors; behavior under heavy-tailed errors is not yet established."
+    ],
+    "next_question": "Does the taper sequence still control the maximal quantile process error when errors have only a finite fourth moment?"
+  },
+  "scientific_outcome": {
+    "state": "partially_supported",
+    "conclusion": "The tapered quantile estimator is uniformly consistent over a compact coefficient set under sub-Gaussian errors, and its limiting distribution is normal with a sandwich covariance that the paired bootstrap estimates consistently.",
+    "scope": "iid sampling, compact parameter space, sub-Gaussian error tails, and a taper sequence satisfying the stated decay condition.",
+    "assumptions": [
+      "Errors are sub-Gaussian with a uniformly bounded proxy variance.",
+      "The taper sequence decays at the rate stated in assumption a2."
+    ],
+    "strongest_evidence_ids": [],
+    "strongest_counterevidence_ids": [],
+    "material_disagreement": []
+  },
+  "development_mode": "p3.theory_establishment",
+  "theory_scope": "Uniform consistency and asymptotic normality of the tapered quantile regression estimator defined by method.example_tapered_quantile version 1, plus a bootstrap covariance validity claim and one resolved counterexample on naive variance estimation.",
+  "assumptions": [
+    {
+      "assumption_id": "assumption.example_a1",
+      "text": "The error distribution is sub-Gaussian with proxy variance bounded uniformly over the support of the covariates.",
+      "scope": "All consistency and normality statements in this generation.",
+      "status": "active",
+      "source_artifacts": [
+        {
+          "artifact_id": "artifact.example_theory_manuscript",
+          "uri": "artifact://artifact.example_theory_manuscript",
+          "sha256": "aa11111111111111111111111111111111111111111111111111111111111111",
+          "media_type": "text/markdown",
+          "locator": "Section 2, Assumption A1"
+        }
+      ],
+      "used_by_statement_ids": [
+        "statement.example_consistency",
+        "statement.example_normality"
+      ],
+      "sensitivity": "If the sub-Gaussian bound fails, the maximal inequality in the consistency proof degrades and the uniform rate is no longer guaranteed; normality may survive under a finite fourth moment but this is unverified."
+    },
+    {
+      "assumption_id": "assumption.example_a2",
+      "text": "The taper weights decay at least as fast as the inverse square of the quantile index distance from the boundary.",
+      "scope": "The asymptotic normality statement and the bootstrap validity statement.",
+      "status": "active",
+      "source_artifacts": [],
+      "used_by_statement_ids": [
+        "statement.example_normality",
+        "statement.example_bootstrap"
+      ],
+      "sensitivity": "A slower taper rate inflates the asymptotic variance and can shift the limiting distribution; the bootstrap claim then fails because the bootstrap mimics the stated taper."
+    }
+  ],
+  "statements": [
+    {
+      "statement_id": "statement.example_def_estimator",
+      "statement_type": "definition",
+      "text": "The tapered quantile estimator is the coefficient vector minimizing the tapered check-loss objective with weights given by the method taper sequence.",
+      "quantifiers": [],
+      "regime": "not applicable",
+      "assumption_ids": [],
+      "status": "established",
+      "justification": {
+        "kind": "definition",
+        "summary": "Restates the exact calculation defined by method.example_tapered_quantile version 1 in formal notation.",
+        "artifacts": []
+      },
+      "depends_on_statement_ids": [],
+      "empirical_implication_ids": []
+    },
+    {
+      "statement_id": "statement.example_consistency",
+      "statement_type": "theorem",
+      "text": "For every compact set of coefficient values, the supremum of the estimation error of the tapered quantile estimator converges in probability to zero.",
+      "quantifiers": [
+        "for all coefficient vectors in a compact set",
+        "uniformly over the quantile grid"
+      ],
+      "regime": "asymptotic as the sample size tends to infinity",
+      "assumption_ids": [
+        "assumption.example_a1"
+      ],
+      "status": "established",
+      "justification": {
+        "kind": "proof",
+        "summary": "A maximal inequality for the tapered empirical process controls the check-loss criterion uniformly, after which identifiability of the population quantile yields consistency.",
+        "artifacts": [
+          {
+            "artifact_id": "artifact.example_theory_manuscript",
+            "uri": "artifact://artifact.example_theory_manuscript",
+            "sha256": "aa11111111111111111111111111111111111111111111111111111111111111",
+            "media_type": "text/markdown",
+            "locator": "Theorem 1, Section 3"
+          }
+        ]
+      },
+      "depends_on_statement_ids": [
+        "statement.example_def_estimator"
+      ],
+      "empirical_implication_ids": [
+        "implication.example_error_decay"
+      ]
+    },
+    {
+      "statement_id": "statement.example_normality",
+      "statement_type": "theorem",
+      "text": "The scaled estimation error converges in distribution to a mean-zero normal law with a sandwich covariance matrix determined by the taper sequence and the error density at the quantile.",
+      "quantifiers": [
+        "for each fixed interior quantile index"
+      ],
+      "regime": "asymptotic as the sample size tends to infinity",
+      "assumption_ids": [
+        "assumption.example_a1",
+        "assumption.example_a2"
+      ],
+      "status": "established",
+      "justification": {
+        "kind": "proof",
+        "summary": "A Bahadur representation linearizes the estimator; the taper decay condition makes the remainder negligible and a Lindeberg argument gives normality.",
+        "artifacts": [
+          {
+            "artifact_id": "artifact.example_theory_manuscript",
+            "uri": "artifact://artifact.example_theory_manuscript",
+            "sha256": "aa11111111111111111111111111111111111111111111111111111111111111",
+            "media_type": "text/markdown",
+            "locator": "Theorem 2, Section 4"
+          }
+        ]
+      },
+      "depends_on_statement_ids": [
+        "statement.example_consistency"
+      ],
+      "empirical_implication_ids": [
+        "implication.example_interval_coverage"
+      ]
+    },
+    {
+      "statement_id": "statement.example_bootstrap",
+      "statement_type": "proposition",
+      "text": "The paired bootstrap distribution of the scaled estimation error consistently estimates the limiting normal law of the estimator.",
+      "quantifiers": [
+        "for almost all sample paths"
+      ],
+      "regime": "asymptotic as the sample size tends to infinity",
+      "assumption_ids": [
+        "assumption.example_a2"
+      ],
+      "status": "established",
+      "justification": {
+        "kind": "proof",
+        "summary": "The bootstrap mimics the Bahadur linearization conditionally on the data, and the taper condition transfers the Lindeberg property to the bootstrap world.",
+        "artifacts": [
+          {
+            "artifact_id": "artifact.example_theory_manuscript",
+            "uri": "artifact://artifact.example_theory_manuscript",
+            "sha256": "aa11111111111111111111111111111111111111111111111111111111111111",
+            "media_type": "text/markdown",
+            "locator": "Proposition 3, Section 5"
+          }
+        ]
+      },
+      "depends_on_statement_ids": [
+        "statement.example_normality"
+      ],
+      "empirical_implication_ids": [
+        "implication.example_interval_coverage"
+      ]
+    },
+    {
+      "statement_id": "statement.example_naive_variance",
+      "statement_type": "proposition",
+      "text": "The naive inverse-Hessian variance estimator is consistent for the asymptotic variance of the tapered quantile estimator.",
+      "quantifiers": [
+        "for each fixed interior quantile index"
+      ],
+      "regime": "asymptotic as the sample size tends to infinity",
+      "assumption_ids": [
+        "assumption.example_a2"
+      ],
+      "status": "contradicted",
+      "justification": {
+        "kind": "counterexample",
+        "summary": "A two-point covariate design with a boundary-heavy taper makes the inverse-Hessian estimator converge to half the true asymptotic variance, so the claimed consistency fails.",
+        "artifacts": [
+          {
+            "artifact_id": "artifact.example_counterexample_note",
+            "uri": "artifact://artifact.example_counterexample_note",
+            "sha256": "dd44444444444444444444444444444444444444444444444444444444444444",
+            "media_type": "text/markdown",
+            "locator": "Counterexample 1"
+          }
+        ]
+      },
+      "depends_on_statement_ids": [
+        "statement.example_normality"
+      ],
+      "empirical_implication_ids": []
+    }
+  ],
+  "empirical_implications": [
+    {
+      "implication_id": "implication.example_error_decay",
+      "statement_ids": [
+        "statement.example_consistency"
+      ],
+      "text": "Estimation error of the tapered quantile estimator should decrease toward zero as the sample size grows across repeated simulated datasets.",
+      "conditions": [
+        "iid simulated data with sub-Gaussian errors",
+        "coefficient values inside the compact set used in the theory"
+      ],
+      "observable_or_metric": "maximum absolute coefficient error across the quantile grid",
+      "expected_pattern": "the error distribution concentrates near zero as sample size increases from 200 to 2000",
+      "falsifying_result": "the median error fails to decrease, or the error spread grows, as sample size increases"
+    },
+    {
+      "implication_id": "implication.example_interval_coverage",
+      "statement_ids": [
+        "statement.example_normality",
+        "statement.example_bootstrap"
+      ],
+      "text": "Bootstrap confidence intervals for the coefficients should attain coverage close to the nominal 95 percent level at interior quantiles.",
+      "conditions": [
+        "paired bootstrap with at least 500 resamples",
+        "interior quantile indices away from the taper boundary"
+      ],
+      "observable_or_metric": "empirical coverage of nominal 95 percent bootstrap intervals",
+      "expected_pattern": "coverage between 93 and 97 percent across simulation replicates",
+      "falsifying_result": "coverage outside 90 to 99 percent at moderate sample sizes"
+    }
+  ],
+  "limitations": [
+    "All results require sub-Gaussian errors; heavy-tailed error behavior is an open item.",
+    "The theory covers iid sampling only and says nothing about dependent data.",
+    "The counterexample on naive variance estimation removes the simplest standard-error route; only bootstrap inference is currently justified."
+  ],
+  "content_sha256": "0042e88677b3ff9e12a81e666bc3e478cfe2c3aa7cd4c9cc110566323b1df763",
+  "created_at": "2026-08-16T10:05:00Z"
+}

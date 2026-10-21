@@ -1,0 +1,459 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/attention-item.schema.json",
+  "title": "Research Attention Item",
+  "description": "Immutable authored researcher choices, unavailable study facts or team tasks. Historical 1.0.0, contextual 1.1.0 and scoped 1.2.0 remain readable. The revised catalog validates compact researcher metadata for new outputs without inventing it for historical records.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "attention_id",
+    "source_run_id",
+    "raised_by",
+    "question",
+    "severity",
+    "likely_consequence",
+    "affected_record_ids",
+    "affected_statement_ids",
+    "disposition",
+    "content_sha256",
+    "created_at",
+    "updated_at",
+    "attention_version_id",
+    "authority_at_creation"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": [
+        "1.0.0",
+        "1.1.0",
+        "1.2.0"
+      ]
+    },
+    "attention_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "source_run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "raised_by": {
+      "$ref": "common-definitions.schema.json#/$defs/roleId"
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1,
+      "description": "One concise current choice, exact factual request or team task; mathematical notation is allowed."
+    },
+    "severity": {
+      "$ref": "common-definitions.schema.json#/$defs/attentionLevel"
+    },
+    "likely_consequence": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Practical effect on the target, intended conclusion, applicability or resources. Do not repeat the affected point or supporting derivation."
+    },
+    "affected_record_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+      },
+      "uniqueItems": true
+    },
+    "affected_statement_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+      },
+      "uniqueItems": true
+    },
+    "disposition": {
+      "type": "string",
+      "enum": [
+        "open",
+        "resolved",
+        "deferred",
+        "accepted_limitation",
+        "rejected",
+        "addressed",
+        "fixed",
+        "partially_fixed",
+        "wont_fix"
+      ]
+    },
+    "disposition_reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rerun_question": {
+      "type": "string",
+      "minLength": 1
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "attention_version_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "supersedes_attention_version_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "authority_at_creation": {
+      "$ref": "common-definitions.schema.json#/$defs/creationAuthority"
+    },
+    "publication_receipt_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "kind": {
+      "enum": [
+        "researcher_decision",
+        "research_task"
+      ],
+      "description": "The author distinguishes consequential unresolved researcher preferences or unavailable study facts from scientific justification, proof, implementation and evaluation work owned by the team."
+    },
+    "target_phase": {
+      "enum": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "description": "Phase where the researcher decision belongs or the team should carry out the work, not necessarily the originating phase. P1 setting clarifications and goal ambiguities belong in Decisions to Discuss."
+    },
+    "context_markdown": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "The exact affected target, model component, assumption or missing study fact, with only the explanation needed to understand it. Use the smallest useful mathematical expression and define its symbols locally. Preserve unknowns; do not invent mathematics. Full derivations and prior context remain available through exact source references rather than repeated in each brief."
+    },
+    "scope": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "project",
+            "model"
+          ]
+        },
+        "branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_ref": {
+          "type": "object",
+          "anyOf": [
+            {
+              "required": [
+                "stable_id",
+                "version",
+                "definition_sha256"
+              ]
+            },
+            {
+              "required": [
+                "identity"
+              ],
+              "properties": {
+                "identity": {
+                  "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+                }
+              }
+            },
+            {
+              "required": [
+                "generation_id",
+                "sha256"
+              ]
+            },
+            {
+              "required": [
+                "generation_id",
+                "content_sha256"
+              ]
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "model"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "branch",
+              "model_ref"
+            ]
+          }
+        }
+      ]
+    },
+    "audience": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "research_lead",
+          "theorist",
+          "data_analyst"
+        ]
+      }
+    },
+    "topic": {
+      "type": "string",
+      "minLength": 1
+    },
+    "why_it_matters": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional historical supporting rationale. New briefs need no separate repetition of the affected point and practical consequence."
+    },
+    "expected_consequence": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional historical supporting rationale. New briefs need no separate repetition of the affected point and practical consequence."
+    },
+    "checkability": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional historical supporting rationale. New briefs need no separate repetition of the affected point and practical consequence."
+    },
+    "information_limits": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional historical supporting rationale. New briefs need no separate repetition of the affected point and practical consequence."
+    },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "answer_applicability_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "attention_id",
+          "answer_revision",
+          "question_ref",
+          "reason"
+        ],
+        "properties": {
+          "attention_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "answer_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "question_ref": {
+            "type": "object"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "decision_priority": {
+      "enum": [
+        "interpretation",
+        "inference",
+        "data",
+        "resources"
+      ],
+      "description": "Highest material consequence, authored by the Lead. These are ordered priorities, not a questionnaire or urgency levels. Required for new researcher_decision items under consequential_researcher_decisions_v1; absent historical values stay absent."
+    },
+    "response_kind": {
+      "enum": [
+        "choice",
+        "study_fact"
+      ],
+      "description": "A choice asks for a consequential unresolved preference; study_fact requests unavailable information. Researcher reports remain unverified until supported. Required for new researcher_decision items under consequential_researcher_decisions_v1."
+    },
+    "options": {
+      "type": "array",
+      "description": "Authored alternatives for a genuine choice, usually two or three when useful, with benefits/costs in their consequences. New options use unique id, label and consequence; never fabricate researcher answers or preselect the recommendation. Legacy string and label-only alternatives remain readable. Omit for study facts and when no useful finite set exists.",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string",
+            "minLength": 1
+          },
+          {
+            "type": "object",
+            "required": [
+              "label"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "consequence": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": true
+          }
+        ]
+      }
+    },
+    "recommendation": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Lead advice in Markdown with its reason, or what evidence is missing if no advice is justified. This is never a researcher answer or a preselection. Omit for study facts."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "disposition": {
+            "enum": [
+              "resolved",
+              "deferred",
+              "accepted_limitation",
+              "rejected"
+            ]
+          }
+        },
+        "required": [
+          "disposition"
+        ]
+      },
+      "then": {
+        "required": [
+          "disposition_reason"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "severity": {
+            "enum": [
+              "reassessment_required",
+              "blocking"
+            ]
+          },
+          "disposition": {
+            "const": "open"
+          }
+        },
+        "required": [
+          "severity",
+          "disposition"
+        ]
+      },
+      "then": {
+        "required": [
+          "rerun_question"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "authority_at_creation": {
+            "const": "formal_generation"
+          }
+        },
+        "required": [
+          "authority_at_creation"
+        ]
+      },
+      "then": {
+        "required": [
+          "publication_receipt_id",
+          "published_at"
+        ]
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "publication_receipt_id"
+              ]
+            },
+            {
+              "required": [
+                "published_at"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "const": "1.1.0"
+          }
+        },
+        "required": [
+          "schema_version"
+        ]
+      },
+      "then": {
+        "required": [
+          "kind",
+          "target_phase",
+          "context_markdown"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "const": "1.2.0"
+          }
+        },
+        "required": [
+          "schema_version"
+        ]
+      },
+      "then": {
+        "required": [
+          "kind",
+          "target_phase",
+          "context_markdown",
+          "scope",
+          "audience"
+        ]
+      }
+    }
+  ]
+}

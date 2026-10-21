@@ -1,0 +1,55 @@
+{
+    "schema_version":  "1.0.0",
+    "project_id":  "project.replay",
+    "index_generation_id":  "generation.current_index.replay.001",
+    "slots":  [
+                  {
+                      "slot_id":  "p3.theory.current",
+                      "record_id":  "record.theory.replay",
+                      "record_type":  "theory_record",
+                      "current_generation_id":  "generation.theory.replay.001",
+                      "content_sha256":  "4444444444444444444444444444444444444444444444444444444444444444",
+                      "method_identity":  {
+                                              "stable_id":  "method.replay",
+                                              "version":  1,
+                                              "definition_sha256":  "3333333333333333333333333333333333333333333333333333333333333333"
+                                          },
+                      "publication_state":  "formal",
+                      "record_position":  "current",
+                      "alignment":  {
+                                        "state":  "exact",
+                                        "causes":  [
+                                                       "exact_match"
+                                                   ],
+                                        "assessed_at":  "2026-08-01T16:00:01Z",
+                                        "assessed_by":  "theorist",
+                                        "reasons":  [
+                                                        "The proof basis and method definition digest match exactly."
+                                                    ],
+                                        "assessed_method":  {
+                                                                "stable_id":  "method.replay",
+                                                                "version":  1,
+                                                                "definition_sha256":  "3333333333333333333333333333333333333333333333333333333333333333"
+                                                            }
+                                    },
+                      "research_attention":  {
+                                                 "level":  "none",
+                                                 "open_item_ids":  [
+
+                                                                   ],
+                                                 "reasons":  [
+
+                                                             ]
+                                             },
+                      "source_event_ids":  [
+                                               "event.replay.theory.published.001",
+                                               "event.replay.theory.aligned.001"
+                                           ]
+                  }
+              ],
+    "publication_receipt_id":  "publication.replay.001",
+    "last_event_sequence":  2,
+    "event_root_sha256":  "968a975c9323d85a8a481d9526487894dc15204a53887dc9dc72b5e16c47e8b3",
+    "content_sha256":  "05bd03906a6244196cbec02f37e60307d003d2cce1818cef572349c5903f7460",
+    "created_at":  "2026-08-01T16:00:01Z"
+}

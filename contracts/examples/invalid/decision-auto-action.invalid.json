@@ -1,0 +1,103 @@
+{
+    "schema_version":  "1.0.0",
+    "decision_id":  "decision.p4.preliminary",
+    "generation_id":  "generation.decision.p4.001",
+    "phase":  "P4",
+    "source_run_id":  "run.p4.preliminary.20260801t140000z",
+    "method_identity":  {
+                            "stable_id":  "method.overlap_stabilized_score",
+                            "version":  1,
+                            "definition_sha256":  "1111111111111111111111111111111111111111111111111111111111111111"
+                        },
+    "generated_by":  "research_lead",
+    "headline":  "Preliminary evidence favors the stabilized score, but broader simulation is still needed.",
+    "current_conclusion":  "The exact current method improved root mean squared error without material coverage loss in the evaluated weak-overlap settings.",
+    "fundamental_contribution":  "The bounded weight may preserve the practical value of orthogonal estimation when inverse propensity weights are unstable.",
+    "what_changed":  "This first Phase 4 run added reproducible preliminary simulation evidence for the exact current method and an independent mathematical-fidelity check.",
+    "strongest_evidence_ids":  [
+                                   "evidence.simulation.preliminary.001"
+                               ],
+    "principal_uncertainty":  "The result may depend on the narrow data-generating processes and correctly specified outcome regression.",
+    "principal_risk":  "A general performance claim would overstate what the current preliminary evidence establishes.",
+    "material_disagreement":  [
+
+                              ],
+    "smallest_decisive_result":  "A comprehensive simulation showing the same comparison across heterogeneous effects and nuisance-model misspecification would materially strengthen the method assessment.",
+    "scientific_outcome":  {
+                               "state":  "partially_supported",
+                               "conclusion":  "The preliminary performance claim is supported only within the evaluated simulation scope.",
+                               "scope":  "Method version 1 under the two preliminary weak-overlap regimes.",
+                               "assumptions":  [
+                                                   "The promoted computation remains reproducible from its recorded artifacts."
+                                               ],
+                               "strongest_evidence_ids":  [
+                                                              "evidence.simulation.preliminary.001"
+                                                          ],
+                               "strongest_counterevidence_ids":  [
+
+                                                                 ],
+                               "material_disagreement":  [
+
+                                                         ]
+                           },
+    "available_actions":  [
+                              {
+                                  "action_id":  "action.run_p4_comprehensive",
+                                  "action_type":  "rerun_phase",
+                                  "label":  "Run comprehensive empirical evaluation",
+                                  "consequence":  "Expands the evidence across heterogeneous effects, model misspecification, and additional overlap regimes.",
+                                  "launches_run":  true,
+                                  "requires_user_action":  false,
+                                  "target_phase":  "P4"
+                              },
+                              {
+                                  "action_id":  "action.run_p3_theory",
+                                  "action_type":  "run_phase",
+                                  "label":  "Develop the theory",
+                                  "consequence":  "Starts a separate Phase 3 run for the same exact method version without changing the current Phase 4 evidence.",
+                                  "launches_run":  true,
+                                  "requires_user_action":  true,
+                                  "target_phase":  "P3"
+                              },
+                              {
+                                  "action_id":  "action.defer",
+                                  "action_type":  "defer",
+                                  "label":  "Defer another run",
+                                  "consequence":  "Keeps the current preliminary record unchanged and starts no agent work.",
+                                  "launches_run":  false,
+                                  "requires_user_action":  true
+                              }
+                          ],
+    "rerun_question":  "Which additional regimes or comparisons would most affect your decision about this method?",
+    "content_sha256":  "2121212121212121212121212121212121212121212121212121212121212121",
+    "publication_receipt_id":  "publication.p4.001",
+    "published_at":  "2026-08-01T15:10:04Z",
+    "created_at":  "2026-08-01T15:05:00Z",
+    "authority_at_creation":  "formal_generation",
+    "alignment_at_creation":  {
+                                  "state":  "exact",
+                                  "causes":  [
+                                                 "exact_match"
+                                             ],
+                                  "assessed_at":  "2026-08-01T15:05:00Z",
+                                  "assessed_by":  "research_lead",
+                                  "reasons":  [
+                                                  "The theorist confirmed that the computation and interpretation match method version 1."
+                                              ],
+                                  "assessed_method":  {
+                                                          "stable_id":  "method.overlap_stabilized_score",
+                                                          "version":  1,
+                                                          "definition_sha256":  "1111111111111111111111111111111111111111111111111111111111111111"
+                                                      }
+                              },
+    "research_attention_at_creation":  {
+                                           "level":  "monitor",
+                                           "open_item_ids":  [
+                                                                 "attention.preliminary_scope.001"
+                                                             ],
+                                           "reasons":  [
+                                                           "The current evidence is aligned but scientifically narrow."
+                                                       ],
+                                           "next_question":  "Should the researcher authorize the comprehensive Phase 4 design now or develop the Phase 3 theory first?"
+                                       }
+}

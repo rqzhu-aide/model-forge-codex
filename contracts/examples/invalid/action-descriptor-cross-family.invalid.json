@@ -1,0 +1,46 @@
+{
+    "schema_version":  "1.0.0",
+    "descriptor_id":  "action.start.p3.001",
+    "action_type":  "start_run",
+    "execution_kind":  "research_run",
+    "project_id":  "project.demo",
+    "enabled":  true,
+    "researcher_message":  "Start a complete theory update for the selected method.",
+    "authorization":  {
+                          "status":  "direct_user",
+                          "user_id":  "researcher.demo"
+                      },
+    "consequence_summary":  "A valid result replaces the current theory record for this exact method identity.",
+    "issued_at":  "2026-08-02T14:00:00Z",
+    "command_contract":  {
+                             "phase":  "P3",
+                             "phase_contract_version":  "2.0.0",
+                             "phase_contract_sha256":  "2222222222222222222222222222222222222222222222222222222222222222",
+                             "mode":  "p3.theory_establishment",
+                             "selected_method":  {
+                                                     "stable_id":  "method.overlap_stabilized_score",
+                                                     "version":  2,
+                                                     "definition_sha256":  "3333333333333333333333333333333333333333333333333333333333333333"
+                                                 }
+                         },
+    "current_inputs":  [
+                           {
+                               "record_id":  "record.method.overlap_stabilized_score",
+                               "generation_id":  "generation.method.overlap_stabilized_score.004",
+                               "content_sha256":  "4444444444444444444444444444444444444444444444444444444444444444"
+                           }
+                       ],
+    "expected_publication_targets":  [
+                                         {
+                                             "operation":  "replace",
+                                             "record_type":  "theory_record",
+                                             "logical_slot":  "slot.theory.overlap_stabilized_score"
+                                         }
+                                     ],
+    "expected_control_head":  {
+                                  "current_index_generation_id":  "generation.current_index.040",
+                                  "current_index_sha256":  "4444444444444444444444444444444444444444444444444444444444444444",
+                                  "last_event_sequence":  40,
+                                  "event_root_sha256":  "5555555555555555555555555555555555555555555555555555555555555555"
+                              }
+}

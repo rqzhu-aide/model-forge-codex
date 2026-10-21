@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "event_id": "event.evidence.reclassification.missing_prior.invalid",
+  "project_id": "project.demo",
+  "event_sequence": 17,
+  "prior_event_root_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "event_root_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "event_type": "evidence_eligibility_changed",
+  "subject": {
+    "kind": "evidence_item",
+    "subject_id": "evidence.simulation.preliminary.001",
+    "method_identity": {
+      "stable_id": "method.overlap_stabilized_score",
+      "version": 1,
+      "definition_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    }
+  },
+  "changes": {
+    "evidence_eligibility": {
+      "status": "excluded",
+      "method_match": "older_method_version",
+      "assessed_against_method_identity": {
+        "stable_id": "method.overlap_stabilized_score",
+        "version": 2,
+        "definition_sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "reasons": ["The computation targets an older method version."]
+    }
+  },
+  "reason": {
+    "code": "reason.evidence_reclassification_missing_prior",
+    "explanation": "This noninitial eligibility reclassification omits the prior evidence-state digest."
+  },
+  "trigger": {
+    "kind": "upstream_generation",
+    "source_id": "generation.method.002"
+  },
+  "content_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "created_at": "2026-08-01T17:00:00Z"
+}

@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/record-state.schema.json",
+  "title": "Derived Research Object State",
+  "description": "A rebuildable projection of current authority, position, alignment, attention, and evidence eligibility from append-only authority events.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "state_projection_id",
+    "project_id",
+    "subject",
+    "publication_state",
+    "record_position",
+    "alignment",
+    "research_attention",
+    "evidence_eligibility",
+    "source_event_ids",
+    "last_event_sequence",
+    "event_root_sha256",
+    "content_sha256",
+    "computed_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "state_projection_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "project_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "subject_id"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["record_generation", "evidence_item"]
+        },
+        "subject_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "generation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "method_identity": {
+          "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "record_generation" } },
+            "required": ["kind"]
+          },
+          "then": { "required": ["generation_id"] }
+        }
+      ]
+    },
+    "publication_state": {
+      "$ref": "common-definitions.schema.json#/$defs/publicationState"
+    },
+    "record_position": {
+      "$ref": "common-definitions.schema.json#/$defs/recordPosition"
+    },
+    "alignment": {
+      "$ref": "common-definitions.schema.json#/$defs/alignmentAssessment"
+    },
+    "research_attention": {
+      "$ref": "common-definitions.schema.json#/$defs/researchAttention"
+    },
+    "evidence_eligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "method_match", "reasons"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["included", "excluded", "unassessed", "not_applicable"]
+        },
+        "method_match": {
+          "type": "string",
+          "enum": ["exact", "older_method_version", "unassessed", "not_applicable"]
+        },
+        "assessed_against_method_identity": {
+          "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+        },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "source_event_ids": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Complete event IDs for this subject through last_event_sequence, ordered by increasing authority-event sequence.",
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+      },
+      "uniqueItems": true
+    },
+    "last_event_sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "event_root_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "Authority-event journal root at the point represented by this projection."
+    },    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "SHA-256 of RFC 8785 canonical projection JSON with content_sha256 omitted. computed_at is the deterministic checkpoint-head event time."
+    },
+    "computed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The created_at time of the authority event at last_event_sequence, not the wall-clock time of replay."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "subject": {
+            "properties": { "kind": { "const": "record_generation" } },
+            "required": ["kind"]
+          }
+        },
+        "required": ["subject"]
+      },
+      "then": {
+        "properties": {
+          "evidence_eligibility": {
+            "properties": {
+              "status": { "const": "not_applicable" },
+              "method_match": { "const": "not_applicable" },
+              "reasons": { "maxItems": 0 }
+            },
+            "required": ["status", "method_match", "reasons"]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "record_position": { "const": "none" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "evidence_eligibility": {
+            "properties": { "status": { "const": "included" } },
+            "required": ["status"]
+          }
+        },
+        "required": ["evidence_eligibility"]
+      },
+      "then": {
+        "properties": {
+          "publication_state": { "const": "formal" },
+          "alignment": {
+            "properties": { "state": { "const": "exact" } },
+            "required": ["state"]
+          },
+          "evidence_eligibility": {
+            "properties": { "method_match": { "const": "exact" } },
+            "required": ["method_match", "assessed_against_method_identity"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "evidence_eligibility": {
+            "properties": { "method_match": { "const": "older_method_version" } },
+            "required": ["method_match"]
+          }
+        },
+        "required": ["evidence_eligibility"]
+      },
+      "then": {
+        "properties": {
+          "alignment": {
+            "properties": { "state": { "const": "outdated" } },
+            "required": ["state"]
+          },
+          "evidence_eligibility": {
+            "properties": { "status": { "const": "excluded" } },
+            "required": ["status", "assessed_against_method_identity"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "publication_state": { "enum": ["run_local", "submitted", "validated"] }
+        },
+        "required": ["publication_state"]
+      },
+      "then": {
+        "properties": { "record_position": { "const": "none" } }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "publication_state": { "const": "invalid" }
+        },
+        "required": ["publication_state"]
+      },
+      "then": {
+        "properties": {
+          "record_position": { "enum": ["none", "historical"] }
+        }
+      }
+    }
+  ]
+}

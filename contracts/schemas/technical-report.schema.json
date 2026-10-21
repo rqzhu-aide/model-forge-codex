@@ -1,0 +1,689 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/technical-report.schema.json",
+  "title": "Technical Report",
+  "description": "Concise statistical technical report in Markdown with KaTeX-supported LaTeX, claim-dependent support, exact numerical scope, separate completion/review status and no venue, word, equation or phase claim quotas.",
+  "allOf": [
+    {
+      "$ref": "scientific-record.schema.json"
+    },
+    {
+      "type": "object",
+      "required": [
+        "title",
+        "target_audience",
+        "report_kind",
+        "method_identity",
+        "problem_context_ref",
+        "report_artifact",
+        "sections_present",
+        "claims",
+        "numerical_analysis",
+        "expectation_outcomes",
+        "prose_values",
+        "section_anchors"
+      ],
+      "properties": {
+        "record_type": {
+          "const": "technical_report"
+        },
+        "phase": {
+          "const": "P5"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_audience": {
+          "type": "string",
+          "minLength": 1
+        },
+        "report_kind": {
+          "enum": [
+            "assembly_candidate",
+            "revised_candidate"
+          ]
+        },
+        "report_artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer",
+          "description": "Primary readable technical report in concise, conventional statistical prose. Develop the exact model, defining mathematics and findings once; preserve conditions and scientific scope, use cross-references for repeated material, and keep detailed provenance in structured records or declared supplements. Each body-relative file link or image resolves uniquely to a declared, digest-verified submitted material."
+        },
+        "problem_context_ref": {
+          "type": "object",
+          "required": [
+            "revision",
+            "sha256"
+          ],
+          "properties": {
+            "revision": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "sha256": {
+              "$ref": "common-definitions.schema.json#/$defs/sha256"
+            }
+          }
+        },
+        "sections_present": {
+          "type": "array",
+          "description": "Seven content obligations for a concise technical report, not a required full-paper structure or a length quota for each section.",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "problem",
+              "model",
+              "existing_approaches",
+              "justification",
+              "numerical_analysis",
+              "limitations",
+              "reproducibility"
+            ]
+          }
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "claim_id",
+              "text",
+              "anchor",
+              "support_route",
+              "source_refs"
+            ],
+            "properties": {
+              "claim_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "anchor": {
+                "type": "string",
+                "minLength": 1
+              },
+              "support_route": {
+                "enum": [
+                  "model_description",
+                  "numerical",
+                  "new_formal_result",
+                  "established_result",
+                  "qualified",
+                  "open"
+                ]
+              },
+              "source_refs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "phase",
+                    "branch",
+                    "family",
+                    "generation_id",
+                    "content_sha256"
+                  ],
+                  "properties": {
+                    "phase": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "branch": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "family": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "generation_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "content_sha256": {
+                      "$ref": "common-definitions.schema.json#/$defs/sha256"
+                    },
+                    "pointer": {
+                      "type": "string",
+                      "pattern": "^(/.*)?$"
+                    }
+                  }
+                }
+              },
+              "qualification": {
+                "type": "string",
+                "minLength": 1
+              },
+              "theorist_check": {
+                "type": "object",
+                "required": [
+                  "checked_by",
+                  "status",
+                  "source_locator",
+                  "statement_used",
+                  "conditions",
+                  "model_fit",
+                  "method_identity",
+                  "check_ref"
+                ],
+                "properties": {
+                  "checked_by": {
+                    "const": "theorist"
+                  },
+                  "status": {
+                    "enum": [
+                      "checked",
+                      "unchecked",
+                      "new_argument_required"
+                    ]
+                  },
+                  "source_locator": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "statement_used": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "conditions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "model_fit": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "method_identity": {
+                    "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+                  },
+                  "check_ref": {
+                    "type": "object",
+                    "required": [
+                      "phase",
+                      "branch",
+                      "family",
+                      "generation_id",
+                      "content_sha256"
+                    ],
+                    "properties": {
+                      "phase": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "branch": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "family": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "generation_id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "content_sha256": {
+                        "$ref": "common-definitions.schema.json#/$defs/sha256"
+                      },
+                      "pointer": {
+                        "type": "string",
+                        "pattern": "^(/.*)?$"
+                      }
+                    }
+                  }
+                }
+              },
+              "scientific_outcome": {
+                "$ref": "common-definitions.schema.json#/$defs/scientificOutcome"
+              }
+            }
+          }
+        },
+        "numerical_analysis": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "question",
+              "relevance",
+              "scope",
+              "data_origin",
+              "data_or_simulation_identity",
+              "evidence_refs",
+              "exhibit_refs",
+              "implementation_refs",
+              "comparison_applicability"
+            ],
+            "properties": {
+              "question": {
+                "type": "string",
+                "minLength": 1
+              },
+              "relevance": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scope": {
+                "type": "string",
+                "minLength": 1
+              },
+              "data_or_simulation_identity": {
+                "type": "string",
+                "minLength": 1
+              },
+              "comparison_applicability": {
+                "type": "string",
+                "minLength": 1
+              },
+              "data_origin": {
+                "enum": [
+                  "researcher_observations",
+                  "external_data",
+                  "proxy_data",
+                  "synthetic_mechanism",
+                  "computational_check"
+                ]
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "phase",
+                    "branch",
+                    "family",
+                    "generation_id",
+                    "content_sha256"
+                  ],
+                  "properties": {
+                    "phase": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "branch": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "family": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "generation_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "content_sha256": {
+                      "$ref": "common-definitions.schema.json#/$defs/sha256"
+                    },
+                    "pointer": {
+                      "type": "string",
+                      "pattern": "^(/.*)?$"
+                    }
+                  }
+                }
+              },
+              "exhibit_refs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "phase",
+                    "branch",
+                    "family",
+                    "generation_id",
+                    "content_sha256"
+                  ],
+                  "properties": {
+                    "phase": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "branch": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "family": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "generation_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "content_sha256": {
+                      "$ref": "common-definitions.schema.json#/$defs/sha256"
+                    },
+                    "pointer": {
+                      "type": "string",
+                      "pattern": "^(/.*)?$"
+                    }
+                  }
+                }
+              },
+              "implementation_refs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "phase",
+                    "branch",
+                    "family",
+                    "generation_id",
+                    "content_sha256"
+                  ],
+                  "properties": {
+                    "phase": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "branch": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "family": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "generation_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "content_sha256": {
+                      "$ref": "common-definitions.schema.json#/$defs/sha256"
+                    },
+                    "pointer": {
+                      "type": "string",
+                      "pattern": "^(/.*)?$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "expectation_outcomes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "context_item_id",
+              "context_item_revision",
+              "status",
+              "explanation",
+              "source_refs"
+            ],
+            "properties": {
+              "context_item_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "context_item_revision": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "status": {
+                "enum": [
+                  "met",
+                  "not_met",
+                  "inconclusive",
+                  "untested"
+                ]
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_refs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "phase",
+                    "branch",
+                    "family",
+                    "generation_id",
+                    "content_sha256"
+                  ],
+                  "properties": {
+                    "phase": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "branch": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "family": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "generation_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "content_sha256": {
+                      "$ref": "common-definitions.schema.json#/$defs/sha256"
+                    },
+                    "pointer": {
+                      "type": "string",
+                      "pattern": "^(/.*)?$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "prose_values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "text",
+              "anchor",
+              "source_refs",
+              "presentation",
+              "reported_value"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "anchor": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_refs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "phase",
+                    "branch",
+                    "family",
+                    "generation_id",
+                    "content_sha256"
+                  ],
+                  "properties": {
+                    "phase": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "branch": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "family": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "generation_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "content_sha256": {
+                      "$ref": "common-definitions.schema.json#/$defs/sha256"
+                    },
+                    "pointer": {
+                      "type": "string",
+                      "pattern": "^(/.*)?$",
+                      "description": "Exact JSON Pointer inside the named frozen record: a numeric scalar directly, or an artifact pointer when scalar_pointer is present."
+                    },
+                    "scalar_pointer": {
+                      "type": "string",
+                      "pattern": "^(/.*)?$",
+                      "description": "Optional exact JSON Pointer to one finite numeric scalar inside the digest-verified JSON artifact selected by pointer in an exact-model P4 record. The original artifact remains submitted material. Boolean and string values are not numerical scalars."
+                    }
+                  }
+                }
+              },
+              "presentation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reported_value": {
+                "type": "number"
+              },
+              "transformation": {
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "identity",
+                      "round",
+                      "scale",
+                      "scale_round"
+                    ]
+                  },
+                  "scale": {
+                    "type": "number"
+                  },
+                  "decimals": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 15
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "kind": {
+                          "enum": [
+                            "round",
+                            "scale_round"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "required": [
+                        "decimals"
+                      ]
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "kind": {
+                          "enum": [
+                            "scale",
+                            "scale_round"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "required": [
+                        "scale"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "supplementary_artifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+          },
+          "description": "Exact submitted pointers for copied or generated scientific files linked by the report, including relative path, media type and digest; file presence in a workspace is not declaration."
+        },
+        "completion": {
+          "type": "object",
+          "required": [
+            "status",
+            "missing_work",
+            "basis_scope"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "interim",
+                "complete"
+              ]
+            },
+            "missing_work": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "basis_scope": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "venue_length": false,
+        "manuscript_kind": false,
+        "manuscript_artifact": false,
+        "section_anchors": {
+          "type": "object",
+          "required": [
+            "problem",
+            "model",
+            "existing_approaches",
+            "justification",
+            "numerical_analysis",
+            "limitations",
+            "reproducibility"
+          ],
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "authorized_context_items": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "problem-context.schema.json#/properties/items/items"
+          },
+          "description": "Harness-retained exact researcher-accepted context item snapshots applied during this report generation; original problem_context_ref remains unchanged."
+        },
+        "artifact_authored_paths": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Existing alias map keyed by exact retained artifact_id when the report-relative target differs from that material's supported path aliases. Each value is one nonempty report-relative path string, not an array, and each target identifies exactly one submitted material. Additional copied scientific files require their own exact supplementary_artifacts declarations."
+        }
+      }
+    }
+  ]
+}

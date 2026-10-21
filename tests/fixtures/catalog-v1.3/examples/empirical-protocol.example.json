@@ -1,0 +1,176 @@
+{
+  "schema_version": "1.0.0",
+  "protocol_id": "protocol.example_p4_tapered_quantile_001",
+  "phase": "P4",
+  "source_run_id": "run.example_p4_preliminary_20260816t110000z",
+  "mode": "p4.preliminary",
+  "method_identity": {
+    "stable_id": "method.example_tapered_quantile",
+    "version": 1,
+    "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+  },
+  "basis": [
+    {
+      "record_id": "record.example_theory_tapered_quantile",
+      "record_type": "theory_record",
+      "generation_id": "generation.example_theory_001",
+      "generation_number": 1,
+      "content_sha256": "ee55555555555555555555555555555555555555555555555555555555555555",
+      "publication_state_at_use": "formal",
+      "record_position_at_use": "current",
+      "dependency_class": "hard",
+      "method_identity": {
+        "stable_id": "method.example_tapered_quantile",
+        "version": 1,
+        "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+      }
+    }
+  ],
+  "research_question": "Does the tapered quantile estimator attain the uniform error decay and bootstrap interval coverage predicted by the Phase 3 theory under two preliminary simulation settings?",
+  "scope": "Preliminary simulation study with two data-generating processes, sample sizes 200 and 1000, and the single baseline of untapered quantile regression.",
+  "scope_justification": "The two settings isolate the taper boundary effect that the theory identifies as decisive; passing them is necessary for the theory claims to be empirically plausible, which is the bar for preliminary scope.",
+  "claim_tests": [
+    {
+      "test_id": "test.example_error_decay",
+      "claim_id": "claim.example_uniform_consistency",
+      "target_statement_ids": [
+        "statement.example_consistency"
+      ],
+      "hypothesis": "Maximum absolute coefficient error decreases as sample size grows from 200 to 1000 in both settings.",
+      "design": "Monte Carlo simulation with 500 replicates per setting and sample size, comparing error distributions across sizes.",
+      "falsification_rule": "The test is falsified if the median maximum error at size 1000 is not strictly below the median at size 200 in either setting.",
+      "decision_threshold_ids": [
+        "threshold.example_error_decay"
+      ]
+    },
+    {
+      "test_id": "test.example_coverage",
+      "claim_id": "claim.example_bootstrap_coverage",
+      "target_statement_ids": [
+        "statement.example_normality",
+        "statement.example_bootstrap"
+      ],
+      "hypothesis": "Paired bootstrap intervals attain empirical coverage between 93 and 97 percent at interior quantiles.",
+      "design": "Within each replicate, 500 paired bootstrap resamples form nominal 95 percent intervals; coverage is averaged over replicates.",
+      "falsification_rule": "The test is falsified if coverage falls outside 90 to 99 percent in either setting at size 1000.",
+      "decision_threshold_ids": [
+        "threshold.example_coverage"
+      ]
+    }
+  ],
+  "estimand": {
+    "name": "maximum absolute coefficient error",
+    "mathematical_definition": "The supremum over the quantile grid of the absolute difference between the estimated and true coefficient vectors, in Euclidean norm per coordinate.",
+    "target_population_or_distribution": "The sampling distribution induced by each of the two prespecified data-generating processes.",
+    "analysis_unit": "one simulated dataset",
+    "aggregation": "median and upper quartile across the 500 replicates per condition",
+    "conditions": [
+      "interior quantile grid of 19 equally spaced indices",
+      "errors drawn from the setting-specific sub-Gaussian law"
+    ]
+  },
+  "data_or_simulation_unit": {
+    "source_type": "simulation",
+    "unit_definition": "One dataset of n iid observations with a scalar covariate and a continuous outcome generated under the setting-specific design.",
+    "sampling_or_generation_process": "Setting S1 uses Gaussian errors and a linear quantile structure; setting S2 uses Student-t errors with five degrees of freedom and a mildly nonlinear quantile structure.",
+    "sample_sizes": [
+      200,
+      1000
+    ],
+    "independence_structure": "All observations are independent within and across replicates.",
+    "splits": "No sample splitting; the estimator and bootstrap use the full dataset.",
+    "preprocessing": "Covariates are centered and scaled to unit variance before estimation."
+  },
+  "baselines": [
+    {
+      "baseline_id": "baseline.example_untapered_qr",
+      "name": "untapered quantile regression",
+      "rationale": "It is the natural ablation: identical objective without the taper sequence, isolating the contribution of the taper.",
+      "implementation_identity": "reference quantile regression solver, pinned version tag qrref-2.4.1",
+      "tuning_policy": "No tuning parameters; the solver runs at default settings.",
+      "compute_budget": "Same per-replicate compute envelope as the candidate method."
+    }
+  ],
+  "implementation_strategy": {
+    "strategy": "new",
+    "verification_checks": [
+      "unit test reproduces the untapered solution when taper weights are set to one",
+      "deterministic seed check reproduces one full replicate bitwise"
+    ],
+    "changes_from_prior": []
+  },
+  "tuning_budget": {
+    "selection_data": "A disjoint pilot simulation of 50 replicates, never used for the confirmatory tests.",
+    "search_space": "Taper decay exponent in the set {1.5, 2.0, 2.5}; all other parameters fixed by the method definition.",
+    "optimization_rule": "Select the exponent minimizing pilot median maximum error.",
+    "maximum_trials": 3,
+    "compute_limit": "200 core-hours total for pilot and confirmatory runs.",
+    "fairness_rule": "The baseline receives the same replicate count and compute envelope as the candidate."
+  },
+  "metrics": [
+    {
+      "metric_id": "metric.example_max_error",
+      "name": "maximum absolute coefficient error",
+      "definition": "Supremum of per-coordinate absolute estimation error over the quantile grid.",
+      "direction": "minimize",
+      "aggregation": "median across replicates",
+      "uncertainty_method": "bootstrap percentile interval over replicates"
+    },
+    {
+      "metric_id": "metric.example_coverage",
+      "name": "bootstrap interval coverage",
+      "definition": "Fraction of replicates whose nominal 95 percent bootstrap interval contains the true coefficient.",
+      "direction": "target",
+      "aggregation": "mean across replicates",
+      "uncertainty_method": "Wilson score interval for the coverage proportion"
+    }
+  ],
+  "repetitions_and_uncertainty": {
+    "repetitions": 500,
+    "random_seed_policy": "Seeds are drawn from a master seed of 20260816 by a counter-based generator recorded per replicate.",
+    "paired_design": true,
+    "interval_or_error_method": "Replicate-level bootstrap percentile intervals for error metrics and Wilson intervals for coverage.",
+    "target_precision": "Coverage standard error below one percentage point at 500 replicates."
+  },
+  "multiplicity": {
+    "family_definition": "The two claim tests form one confirmatory family.",
+    "correction_method": "Holm step-down correction across the two tests.",
+    "decision_rule": "A claim is supported only if its test passes at the Holm-adjusted 0.05 level."
+  },
+  "stopping_rules": [
+    {
+      "rule_id": "rule.example_compute_cap",
+      "condition": "The cumulative compute usage reaches the 200 core-hour limit before all replicates finish.",
+      "action": "Stop launching new replicates and report results with the achieved replicate count flagged as a deviation."
+    }
+  ],
+  "leakage_checks": [
+    {
+      "check_id": "check.example_pilot_isolation",
+      "risk": "Tuning on confirmatory data would inflate apparent performance.",
+      "procedure": "Verify by seed audit that no confirmatory replicate seed appears in the pilot seed list.",
+      "failure_action": "Discard the tuning choice, refit with the default exponent 2.0, and record a deviation."
+    }
+  ],
+  "decision_thresholds": [
+    {
+      "threshold_id": "threshold.example_error_decay",
+      "claim_id": "claim.example_uniform_consistency",
+      "metric_id": "metric.example_max_error",
+      "criterion": "Median maximum error at size 1000 is at least 30 percent below the median at size 200 in both settings.",
+      "interpretation": "Passing supports the uniform consistency claim at preliminary scope; failing blocks progression to comprehensive evaluation."
+    },
+    {
+      "threshold_id": "threshold.example_coverage",
+      "claim_id": "claim.example_bootstrap_coverage",
+      "metric_id": "metric.example_coverage",
+      "criterion": "Coverage lies within 93 to 97 percent at interior quantiles at size 1000 in both settings.",
+      "interpretation": "Passing supports the bootstrap validity claim; coverage below 93 percent contradicts it at preliminary scope."
+    }
+  ],
+  "deviations": [],
+  "protocol_status": "prespecified",
+  "finalized_at": "2026-08-16T11:00:00Z",
+  "content_sha256": "3e7c1e98a72cb371b3b3d5407bbfc55d10d286ccd6f1eef79e4cbadf39bf0818",
+  "created_at": "2026-08-16T11:00:00Z"
+}

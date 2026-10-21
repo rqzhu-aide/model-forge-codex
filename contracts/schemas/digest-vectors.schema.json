@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/digest-vectors.schema.json",
+  "title": "Digest Interoperability Vectors",
+  "description": "Accepted and fail-closed vectors for the bundled restricted RFC 8785 reference.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "canonicalization", "accepted_vectors", "rejected_vectors"],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "canonicalization": {
+      "const": "RFC8785"
+    },
+    "accepted_vectors": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["vector_id", "purpose", "input", "canonical_json", "sha256"],
+        "properties": {
+          "vector_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+          "purpose": {"type": "string", "minLength": 1},
+          "input": {},
+          "canonical_json": {"type": "string", "minLength": 1},
+          "sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"}
+        }
+      }
+    },
+    "rejected_vectors": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["vector_id", "purpose", "input", "error_code"],
+        "properties": {
+          "vector_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+          "purpose": {"type": "string", "minLength": 1},
+          "input": {},
+          "error_code": {
+            "type": "string",
+            "enum": ["unsupported_number", "invalid_unicode", "invalid_json_value"]
+          }
+        }
+      }
+    }
+  }
+}

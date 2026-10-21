@@ -1,0 +1,303 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/run-command.schema.json",
+  "title": "User Run Command",
+  "description": "The authenticated user authorization to create one controlled research run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command_id",
+    "idempotency_key",
+    "project_id",
+    "phase",
+    "phase_contract_version",
+    "phase_contract_sha256",
+    "mode",
+    "choice_values",
+    "requested_by",
+    "context_policy",
+    "selected_current_input_ids",
+    "content_sha256",
+    "requested_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "command_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 200
+    },
+    "project_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "phase": {
+      "$ref": "common-definitions.schema.json#/$defs/phaseId"
+    },
+    "mode": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "requested_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user_id",
+        "operating_actor_type"
+      ],
+      "properties": {
+        "user_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "operating_actor_type": {
+          "type": "string",
+          "enum": [
+            "user",
+            "authorized_remote_operator"
+          ]
+        },
+        "operator_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "delegation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operating_actor_type": {
+                "const": "authorized_remote_operator"
+              }
+            },
+            "required": [
+              "operating_actor_type"
+            ]
+          },
+          "then": {
+            "required": [
+              "operator_id",
+              "delegation_id"
+            ]
+          }
+        }
+      ]
+    },
+    "context_policy": {
+      "type": "string",
+      "enum": [
+        "current_only",
+        "current_plus_selected_history"
+      ]
+    },
+    "selected_current_input_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+      }
+    },
+    "resource_constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "wall_time_limit_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "network_policy": {
+          "type": "string",
+          "enum": [
+            "none",
+            "approved_resources",
+            "user_authorized"
+          ]
+        }
+      }
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "SHA-256 of RFC 8785 canonical command JSON with content_sha256 omitted."
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "phase_contract_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "phase_contract_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256"
+    },
+    "choice_values": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+      },
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 1
+          },
+          {
+            "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+            },
+            "uniqueItems": true
+          }
+        ]
+      }
+    },
+    "sealed_basis": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "project_id": {
+          "type": "string"
+        },
+        "action_type": {
+          "type": "string"
+        },
+        "phase": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "phase_contract_version": {
+          "type": "string"
+        },
+        "phase_contract_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        },
+        "method_identity": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "finding_codes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reviewed_current_inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "option_id": {
+                "type": "string"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "artifact_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "generation_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "authority_head": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "authority_sequence": {
+              "type": "integer"
+            },
+            "authority_root_sha256": {
+              "type": "string"
+            },
+            "current_revision": {
+              "type": "integer"
+            }
+          }
+        },
+        "role_resources": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "seed_inputs": {
+      "type": "object",
+      "description": "Researcher-supplied supplementary material, keyed by a declared supplementary contract input id (ADR-019). Seeds are additive only: each seed is content-addressed at preparation and frozen with researcher_seed provenance. A seed can never replace a required published input; required inputs always resolve from current records.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 1
+          },
+          "media_type": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "content",
+          "media_type"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "context_policy": {
+            "const": "current_only"
+          }
+        },
+        "required": [
+          "context_policy"
+        ]
+      },
+      "then": {
+        "properties": {
+          "choice_values": {
+            "patternProperties": {
+              "^p[1-5]\\.selected_history$": {
+                "type": "array",
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,323 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/problem-context.schema.json",
+  "title": "Researcher-owned Problem Context",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "project_id",
+    "revision",
+    "brief",
+    "items",
+    "proposals",
+    "retained_answers",
+    "history"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "brief": {
+      "type": "object",
+      "required": [
+        "kind",
+        "project_id",
+        "revision",
+        "sha256",
+        "instructions"
+      ],
+      "properties": {
+        "kind": {
+          "const": "project_brief"
+        },
+        "project_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        },
+        "instructions": {
+          "type": "string"
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "item_id",
+          "statement",
+          "origin",
+          "scope",
+          "revision",
+          "status",
+          "answer_refs",
+          "source_refs",
+          "amends"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "origin": {
+            "enum": [
+              "researcher_reported",
+              "evidence_supported",
+              "proposed_assumption",
+              "unknown"
+            ]
+          },
+          "scope": {
+            "type": "object",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "project",
+                  "model"
+                ]
+              },
+              "branch": {
+                "type": "string",
+                "minLength": 1
+              },
+              "model_ref": {
+                "type": "object"
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "model"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "branch",
+                    "model_ref"
+                  ]
+                }
+              }
+            ]
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "enum": [
+              "confirmed",
+              "proposed"
+            ]
+          },
+          "topic": {
+            "type": "string",
+            "minLength": 1
+          },
+          "answer_refs": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "source_refs": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "amends": {
+            "type": "array",
+            "items": {
+              "type": [
+                "object",
+                "string"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "proposals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "amendment_id",
+          "status",
+          "item",
+          "reason",
+          "conflicts_with"
+        ],
+        "properties": {
+          "amendment_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "confirmed",
+              "rejected",
+              "resolved_by_direct_edit"
+            ]
+          },
+          "item": {
+            "type": "object",
+            "required": [
+              "item_id",
+              "statement",
+              "origin",
+              "scope",
+              "revision",
+              "status",
+              "answer_refs",
+              "source_refs",
+              "amends"
+            ],
+            "properties": {
+              "item_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "statement": {
+                "type": "string",
+                "minLength": 1
+              },
+              "origin": {
+                "enum": [
+                  "researcher_reported",
+                  "evidence_supported",
+                  "proposed_assumption",
+                  "unknown"
+                ]
+              },
+              "scope": {
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "project",
+                      "model"
+                    ]
+                  },
+                  "branch": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "model_ref": {
+                    "type": "object"
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "kind": {
+                          "const": "model"
+                        }
+                      }
+                    },
+                    "then": {
+                      "required": [
+                        "branch",
+                        "model_ref"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "revision": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "status": {
+                "enum": [
+                  "confirmed",
+                  "proposed"
+                ]
+              },
+              "topic": {
+                "type": "string",
+                "minLength": 1
+              },
+              "answer_refs": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "source_refs": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "amends": {
+                "type": "array",
+                "items": {
+                  "type": [
+                    "object",
+                    "string"
+                  ]
+                }
+              }
+            }
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "conflicts_with": {
+            "type": "array",
+            "items": {
+              "type": [
+                "object",
+                "string"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "retained_answers": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}

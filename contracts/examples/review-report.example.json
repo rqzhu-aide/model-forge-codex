@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "report.example_outside_review_001",
+  "source_run_id": "run.example_p5_review_20260816t130000z",
+  "reviewer_role": "outside_reviewer",
+  "review_basis_generation_id": "generation.example_manuscript_001",
+  "reviewed_scope": "The full frozen manuscript packet for the tapered quantile regression method, including the main text, appendix proofs, and the simulation supplement.",
+  "missing_materials": [],
+  "overall_assessment": "The manuscript is technically careful and the counterexample on naive variance estimation is honestly reported. The main weakness is the heavy-tailed error gap, which the authors disclose but do not bound.",
+  "strengths": [
+    "The proof ledger separates assumptions from derived statements cleanly.",
+    "The preliminary simulation protocol is prespecified and matches the executed analyses."
+  ],
+  "prioritized_issues": [
+    {
+      "schema_version": "1.0.0",
+      "issue_id": "issue.example_review_001",
+      "source_run_id": "run.example_p5_review_20260816t130000z",
+      "raised_by": "outside_reviewer",
+      "review_basis_generation_id": "generation.example_manuscript_001",
+      "location": "Theory section, statement of Theorem 2",
+      "affected_statement_id": "statement.example_normality",
+      "finding_type": "clarity",
+      "issue": "The statement of Theorem 2 does not say whether the quantile index is held fixed or allowed to drift with sample size, which changes how the taper condition should be read.",
+      "severity": "minor",
+      "confidence": "high",
+      "scientific_consequence": "Readers may apply the normality result to drifting quantile sequences where the proof does not establish it.",
+      "evidence_basis": [
+        "The proof in Section 4 fixes the quantile index before applying the Lindeberg argument.",
+        "The theorem statement omits any quantifier over the quantile index."
+      ],
+      "requested_resolution": "Add an explicit fixed-index quantifier to the theorem statement or justify the drifting-index reading.",
+      "resolution_class": "rewrite",
+      "status": "open",
+      "content_sha256": "fb5f1d6626a8a3fc189f6fcde217409b2a49c1e92605eacef9f559d3d123e4a8",
+      "created_at": "2026-08-16T13:05:00Z",
+      "authority_at_creation": "run_local_candidate"
+    },
+    {
+      "schema_version": "1.0.0",
+      "issue_id": "issue.example_review_002",
+      "source_run_id": "run.example_p5_review_20260816t130000z",
+      "raised_by": "outside_reviewer",
+      "review_basis_generation_id": "generation.example_manuscript_001",
+      "location": "Experiments section, Setting S2 description",
+      "finding_type": "reproducibility",
+      "issue": "The degrees-of-freedom parameter for the Student-t errors in Setting S2 appears only in the supplement, not in the main text, so the main-text description is not independently reproducible.",
+      "severity": "minor",
+      "confidence": "medium",
+      "scientific_consequence": "A reader working only from the main text could rerun Setting S2 with the wrong error law and misread the coverage results.",
+      "evidence_basis": [
+        "The main text names the error family without the degrees-of-freedom value.",
+        "The supplement table lists five degrees of freedom."
+      ],
+      "requested_resolution": "State the degrees-of-freedom value in the main text where Setting S2 is introduced.",
+      "resolution_class": "rewrite",
+      "status": "open",
+      "content_sha256": "7c744164f9c29862758b2cde23da28b56d54a4f1e08d787ed254161a3a0803c6",
+      "created_at": "2026-08-16T13:06:00Z",
+      "authority_at_creation": "run_local_candidate"
+    }
+  ],
+  "novelty_search_boundary": {
+    "project_context_policy": "frozen_review_packet_only",
+    "external_search_performed": true,
+    "sources_consulted": [
+      "one public preprint index",
+      "one bibliographic database for statistics journals"
+    ],
+    "query_concepts": [
+      "tapered quantile regression",
+      "weighted check-loss estimation",
+      "boundary bias in quantile estimation"
+    ],
+    "searched_at": "2026-08-16T13:10:00Z",
+    "access_limits": [
+      "No access to paywalled conference proceedings.",
+      "Search limited to English-language sources indexed before 2026-08-01."
+    ],
+    "assessment_status": "bounded",
+    "conclusion": "Within the stated search boundary, no prior work combines this exact taper sequence with a uniform consistency and bootstrap-validity account; the novelty assessment is bounded by the access limits above."
+  },
+  "evidence_that_would_change_assessment": [
+    "A prior publication using the same taper sequence with an equivalent uniform consistency result.",
+    "A simulation showing the bootstrap coverage claim fails at interior quantiles under the stated conditions."
+  ],
+  "content_sha256": "a5195aa4f9c45c17b6e7d35c15dff73bb0230515c397331705732a93fd186603",
+  "created_at": "2026-08-16T13:15:00Z",
+  "authority_at_creation": "run_local_candidate"
+}

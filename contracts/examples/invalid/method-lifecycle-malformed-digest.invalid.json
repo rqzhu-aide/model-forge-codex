@@ -1,0 +1,41 @@
+{
+    "schema_version":  "1.0.0",
+    "command_type":  "method_lifecycle_change",
+    "command_id":  "command.method.retire.001",
+    "idempotency_key":  "demo-method-retire-20260801",
+    "project_id":  "project.demo",
+    "method_id":  "method.overlap_stabilized_score",
+    "expected_method":  {
+                            "record_id":  "record.method.overlap_stabilized_score",
+                            "generation_id":  "generation.method.overlap_stabilized_score.004",
+                            "content_sha256":  "1111111111111111111111111111111111111111111111111111111111111111",
+                            "method_identity":  {
+                                                    "stable_id":  "method.overlap_stabilized_score",
+                                                    "version":  2,
+                                                    "definition_sha256":  "2222222222222222222222222222222222222222222222222222222222222222"
+                                                },
+                            "lifecycle_state":  "active"
+                        },
+    "expected_catalog":  {
+                             "record_id":  "record.method_catalog.current",
+                             "generation_id":  "generation.method_catalog.009",
+                             "content_sha256":  "3333333333333333333333333333333333333333333333333333333333333333"
+                         },
+    "expected_control_head":  {
+                                  "current_index_generation_id":  "generation.current_index.040",
+                                  "current_index_sha256":  "4444444444444444444444444444444444444444444444444444444444444444",
+                                  "last_event_sequence":  40,
+                                  "event_root_sha256":  "5555555555555555555555555555555555555555555555555555555555555555"
+                              },
+    "target_lifecycle_state":  "retired",
+    "reason":  {
+                   "code":  "user_portfolio_decision",
+                   "explanation":  "Retire this method from ordinary follow-up work while preserving its formal scientific records."
+               },
+    "requested_by":  {
+                         "user_id":  "researcher.demo",
+                         "operating_actor_type":  "user"
+                     },
+    "content_sha256":  "malformed",
+    "requested_at":  "2026-08-01T16:00:00Z"
+}

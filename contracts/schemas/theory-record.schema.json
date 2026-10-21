@@ -1,0 +1,584 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/theory-record.schema.json",
+  "title": "Phase 3 Theory Record",
+  "description": "A complete Phase 3 theory account for one exact method identity. It carries a readable primary artifact, explicit assumptions, a statement-level proof ledger, dependencies, empirical implications, limitations, and revision provenance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_id",
+    "record_type",
+    "phase",
+    "source_run_id",
+    "method_identity",
+    "authority_at_creation",
+    "representations",
+    "primary_artifact",
+    "basis",
+    "alignment_at_creation",
+    "research_attention_at_creation",
+    "scientific_outcome",
+    "development_mode",
+    "theory_scope",
+    "assumptions",
+    "statements",
+    "empirical_implications",
+    "limitations",
+    "content_sha256",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "record_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "generation_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId",
+      "description": " Assigned by the publisher at promotion; candidates must not carry it (the harness strips it at closure)."
+    },
+    "generation_number": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "record_type": {
+      "const": "theory_record"
+    },
+    "phase": {
+      "const": "P3"
+    },
+    "source_run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "method_identity": {
+      "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+    },
+    "authority_at_creation": {
+      "$ref": "common-definitions.schema.json#/$defs/creationAuthority"
+    },
+    "representations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "information_layer",
+          "artifact"
+        ],
+        "properties": {
+          "information_layer": {
+            "type": "string",
+            "enum": [
+              "primary_artifact",
+              "structured_record",
+              "compact_decision_view"
+            ]
+          },
+          "artifact": {
+            "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+          }
+        }
+      }
+    },
+    "primary_artifact": {
+      "$ref": "common-definitions.schema.json#/$defs/artifactPointer",
+      "description": "The complete readable theory manuscript. Include the same pointer in representations with information_layer primary_artifact."
+    },
+    "basis": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/recordBasis"
+      },
+      "uniqueItems": true
+    },
+    "alignment_at_creation": {
+      "$ref": "common-definitions.schema.json#/$defs/alignmentAssessment"
+    },
+    "research_attention_at_creation": {
+      "$ref": "common-definitions.schema.json#/$defs/researchAttention"
+    },
+    "scientific_outcome": {
+      "$ref": "common-definitions.schema.json#/$defs/scientificOutcome"
+    },
+    "development_mode": {
+      "type": "string",
+      "enum": [
+        "p3.theory_establishment",
+        "p3.theory_revision"
+      ]
+    },
+    "theory_scope": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The exact formal objects, claim classes, and method-class properties addressed in this generation."
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/assumption"
+      }
+    },
+    "statements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/theoryStatement"
+      }
+    },
+    "empirical_implications": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/empiricalImplication"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "revision_account": {
+      "$ref": "#/$defs/revisionAccount"
+    },
+    "replaces_generation_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256"
+    },
+    "publication_receipt_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "assumption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assumption_id",
+        "text",
+        "scope",
+        "status",
+        "source_artifacts",
+        "used_by_statement_ids",
+        "sensitivity"
+      ],
+      "properties": {
+        "assumption_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "weakened",
+            "rejected",
+            "unverified"
+          ]
+        },
+        "source_artifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+          }
+        },
+        "used_by_statement_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "uniqueItems": true
+        },
+        "sensitivity": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Directly explain what absence of this condition changes for the named statements: an undefined procedure, loss of identification or a guarantee, demonstrated failure, or an unknown consequence. Cite the argument or probe; missing proof alone is not evidence of failure."
+        }
+      }
+    },
+    "theoryStatement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statement_id",
+        "statement_type",
+        "text",
+        "quantifiers",
+        "regime",
+        "assumption_ids",
+        "status",
+        "justification",
+        "depends_on_statement_ids",
+        "empirical_implication_ids"
+      ],
+      "properties": {
+        "statement_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "statement_type": {
+          "type": "string",
+          "enum": [
+            "definition",
+            "assumption",
+            "lemma",
+            "proposition",
+            "theorem",
+            "corollary",
+            "limitation",
+            "open_question"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "quantifiers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "All universal, existential, probabilistic, and uniformity quantifiers. Use an empty array only when genuinely not applicable."
+        },
+        "regime": {
+          "type": "string",
+          "minLength": 1,
+          "description": "For example finite-sample, asymptotic with its limit, optimization-time, Markov-chain time, or not applicable."
+        },
+        "assumption_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "uniqueItems": true
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "established",
+            "conditional",
+            "incomplete",
+            "contradicted",
+            "retracted",
+            "untested"
+          ]
+        },
+        "justification": {
+          "$ref": "#/$defs/justification"
+        },
+        "depends_on_statement_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "uniqueItems": true
+        },
+        "empirical_implication_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "statement_type": {
+                "enum": [
+                  "lemma",
+                  "proposition",
+                  "theorem",
+                  "corollary"
+                ]
+              },
+              "status": {
+                "const": "established"
+              }
+            },
+            "required": [
+              "statement_type",
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "justification": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "proof",
+                      "derivation"
+                    ]
+                  },
+                  "artifacts": {
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "contradicted"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "justification": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "counterexample",
+                      "empirical_evidence"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "justification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "summary",
+        "artifacts"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "proof",
+            "derivation",
+            "counterexample",
+            "open_obligation",
+            "definition",
+            "assumption",
+            "empirical_evidence",
+            "not_applicable"
+          ]
+        },
+        "summary": {
+          "description": "Explain what the argument establishes, its central reasoning, conditions and remaining gap, with references to the complete proof or other justification. A sketch or cited claim is not a complete checked proof.",
+          "type": "string",
+          "minLength": 1
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+          }
+        },
+        "open_obligation": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "proof",
+                  "derivation",
+                  "counterexample"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "artifacts": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "open_obligation"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "open_obligation"
+            ]
+          }
+        }
+      ]
+    },
+    "empiricalImplication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "implication_id",
+        "statement_ids",
+        "text",
+        "conditions",
+        "observable_or_metric",
+        "expected_pattern",
+        "falsifying_result"
+      ],
+      "properties": {
+        "implication_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "statement_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "uniqueItems": true
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "observable_or_metric": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected_pattern": {
+          "type": "string",
+          "minLength": 1
+        },
+        "falsifying_result": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "revisionAccount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prior_generation_id",
+        "change_summary",
+        "strengthened_statement_ids",
+        "weakened_statement_ids",
+        "conditioned_statement_ids",
+        "contradicted_statement_ids",
+        "retracted_statement_ids",
+        "new_statement_ids",
+        "unresolved_statement_ids"
+      ],
+      "properties": {
+        "prior_generation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "change_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "strengthened_statement_ids": {
+          "$ref": "#/$defs/statementIdSet"
+        },
+        "weakened_statement_ids": {
+          "$ref": "#/$defs/statementIdSet"
+        },
+        "conditioned_statement_ids": {
+          "$ref": "#/$defs/statementIdSet"
+        },
+        "contradicted_statement_ids": {
+          "$ref": "#/$defs/statementIdSet"
+        },
+        "retracted_statement_ids": {
+          "$ref": "#/$defs/statementIdSet"
+        },
+        "new_statement_ids": {
+          "$ref": "#/$defs/statementIdSet"
+        },
+        "unresolved_statement_ids": {
+          "$ref": "#/$defs/statementIdSet"
+        }
+      }
+    },
+    "statementIdSet": {
+      "type": "array",
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+      },
+      "uniqueItems": true
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "scientific-record.schema.json"
+    },
+    {
+      "if": {
+        "properties": {
+          "development_mode": {
+            "const": "p3.theory_revision"
+          }
+        },
+        "required": [
+          "development_mode"
+        ]
+      },
+      "then": {
+        "required": [
+          "revision_account"
+        ]
+      }
+    }
+  ]
+}

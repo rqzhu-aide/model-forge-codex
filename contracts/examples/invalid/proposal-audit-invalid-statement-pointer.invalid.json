@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.1.0",
+  "review_id": "review.overlap_stabilized_score",
+  "assessments": [
+    {
+      "proposal_id": "proposal.overlap_stabilized_score",
+      "assessment_markdown": "The original proposed population equation must be compared with its stated estimand.",
+      "findings": [
+        {
+          "finding_id": "finding.population_target",
+          "statement_reference": "method.mathematical_definition.canonical_definition.objective_or_estimating_equation",
+          "reasoning_markdown": "Changing score weights can alter the population moment and its root. Retaining the original estimand requires an explicit argument.",
+          "consequence_markdown": "State the target under the actual weighted equation before making an estimation claim.",
+          "title": "Weighted equation may change the target",
+          "statement_refs": [
+            "method.definition"
+          ]
+        }
+      ],
+      "headline": "The population target remains unresolved under the proposed weighting."
+    }
+  ]
+}

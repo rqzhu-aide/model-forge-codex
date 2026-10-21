@@ -1,0 +1,7 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://model-forge.local/architecture/schemas/lead-proposal.schema.json",
+ "title": "Research Lead Method Proposal",
+ "description": "Exactly one concrete method aligned with researcher intent is required from the lead in every P2 mode. Preserve researcher_origin when a method seed is supplied. Historical no-proposal responses remain readable under their original pinned schema.",
+ "$ref": "method-proposal.schema.json"
+}

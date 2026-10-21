@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/output-correction-command.schema.json",
+  "title": "Output Correction Command",
+  "description": "Authenticated user authorization to correct a specified role output without repeating completed scientific work. The command identifies the exact run, role closure, validation attempt, expected lifecycle head, correction type, permitted output scope, and optional user instruction.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command_id",
+    "run_id",
+    "role_closure_id",
+    "validation_attempt_id",
+    "expected_lifecycle_head",
+    "correction_type",
+    "permitted_output_scope",
+    "issued_at",
+    "issued_by"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "command_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "role_closure_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "validation_attempt_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "expected_lifecycle_head": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The lifecycle head sequence the researcher expects, for optimistic concurrency."
+    },
+    "correction_type": {
+      "type": "string",
+      "enum": ["revalidate", "normalize", "packaging", "scientific"],
+      "description": "revalidate: re-check unchanged bytes. normalize: apply allowlisted mechanical transformations. packaging: fix envelope structure without scientific change. scientific: fix a scientific claim within frozen scope."
+    },
+    "permitted_output_scope": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Output contract IDs that the correction may touch."
+    },
+    "user_instruction": {
+      "type": ["string", "null"],
+      "description": "Optional researcher-authored instruction for scientific correction. Null for revalidate, normalize, and packaging."
+    },
+    "transformation_codes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "timestamp_injection",
+          "additional_properties_strip",
+          "id_sanitization",
+          "hash_recomputation",
+          "schema_version_injection",
+          "null_strip",
+          "empty_string_strip"
+        ]
+      },
+      "description": "For normalize only: the allowlisted transformation codes to apply."
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "issued_by": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/run-submission.schema.json",
+  "title": "Immutable Run Submission",
+  "description": "The harness-assembled immutable candidate package accepted at the running-to-submitted boundary after every selected role-plan step has one successful validated closure.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "submission_id",
+    "run_id",
+    "project_id",
+    "phase",
+    "mode",
+    "manifest_binding",
+    "closure_chain",
+    "lead_closure",
+    "submitted_artifacts",
+    "submitted_at",
+    "submission_sha256"
+  ],
+  "properties": {
+    "schema_version": {"$ref": "common-definitions.schema.json#/$defs/schemaVersion"},
+    "submission_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "run_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "project_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "phase": {"$ref": "common-definitions.schema.json#/$defs/phaseId"},
+    "mode": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "manifest_binding": {"$ref": "#/$defs/manifestBinding"},
+    "closure_chain": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/closureBinding"}
+    },
+    "lead_closure": {"$ref": "#/$defs/leadClosureBinding"},
+    "submitted_artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/submittedArtifact"}
+    },
+    "submitted_at": {"type": "string", "format": "date-time"},
+    "submission_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "RFC 8785 SHA-256 over the complete immutable submission with this property omitted."
+    }
+  },
+  "$defs": {
+    "manifestBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "manifest_sha256"],
+      "properties": {
+        "artifact": {"$ref": "common-definitions.schema.json#/$defs/artifactPointer"},
+        "manifest_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"}
+      }
+    },
+    "closureBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence",
+        "stage_id",
+        "role",
+        "invocation_start_id",
+        "start_sha256",
+        "invocation_closure_id",
+        "closure_artifact",
+        "closure_sha256",
+        "terminal_status"
+      ],
+      "properties": {
+        "sequence": {"type": "integer", "minimum": 1},
+        "stage_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "role": {"$ref": "common-definitions.schema.json#/$defs/roleId"},
+        "invocation_start_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "start_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+        "invocation_closure_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "closure_artifact": {"$ref": "common-definitions.schema.json#/$defs/artifactPointer"},
+        "closure_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+        "terminal_status": {"const": "succeeded"}
+      }
+    },
+    "leadClosureBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invocation_closure_id", "closure_sha256"],
+      "properties": {
+        "invocation_closure_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "closure_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"}
+      }
+    },
+    "submittedArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "output_id",
+        "contract_output_id",
+        "source_invocation_closure_id",
+        "source_closure_sha256",
+        "artifact"
+      ],
+      "properties": {
+        "output_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "contract_output_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "source_invocation_closure_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+        "source_closure_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+        "artifact": {"$ref": "common-definitions.schema.json#/$defs/artifactPointer"}
+      }
+    }
+  }
+}

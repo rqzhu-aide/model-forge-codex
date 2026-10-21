@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/current-index.schema.json",
+  "title": "Formal Current Record Index",
+  "description": "The backend-owned mapping from logical record slots to exactly one current formal generation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "project_id",
+    "index_generation_id",
+    "slots",
+    "publication_receipt_id",
+    "last_event_sequence",
+    "event_root_sha256",
+    "content_sha256",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "project_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "index_generation_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "previous_index_generation_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "slots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "slot_id",
+          "record_id",
+          "record_type",
+          "current_generation_id",
+          "content_sha256",
+          "publication_state",
+          "record_position",
+          "alignment",
+          "research_attention",
+          "source_event_ids"
+        ],
+        "properties": {
+          "slot_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "record_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "record_type": {
+            "$ref": "common-definitions.schema.json#/$defs/recordType"
+          },
+          "current_generation_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "content_sha256": {
+            "$ref": "common-definitions.schema.json#/$defs/sha256"
+          },
+          "method_identity": {
+            "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+          },
+          "publication_state": {
+            "const": "formal"
+          },
+          "record_position": {
+            "const": "current"
+          },
+          "alignment": {
+            "$ref": "common-definitions.schema.json#/$defs/alignmentAssessment"
+          },
+          "research_attention": {
+            "$ref": "common-definitions.schema.json#/$defs/researchAttention"
+          },
+          "source_event_ids": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Complete event IDs for the selected generation through last_event_sequence, ordered by increasing authority-event sequence.",
+            "items": {
+              "$ref": "common-definitions.schema.json#/$defs/stableId"
+            },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "publication_receipt_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "last_event_sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "event_root_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "Authority-event journal root committed with this index generation."
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "SHA-256 of RFC 8785 canonical index JSON with content_sha256 omitted. created_at is fixed by the committing receipt."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The published_at time of the publication receipt that committed this index generation."
+    }
+  }
+}

@@ -1,0 +1,168 @@
+{
+  "schema_version": "1.1.0",
+  "proposal_id": "proposal.overlap_stabilized_score",
+  "method": {
+    "schema_version": "1.0.0",
+    "record_id": "record.method.overlap_stabilized_score",
+    "generation_id": "generation.method.001",
+    "identity": {
+      "stable_id": "method.overlap_stabilized_score",
+      "version": 1,
+      "definition_sha256": "c00d4790957b73fff1a3a1d2233f4703511f2ef431bbeb63c63e9493c6a07ea0"
+    },
+    "title": "Overlap-stabilized orthogonal score estimator",
+    "lifecycle_state": "active",
+    "scientific_question": "Can a bounded overlap weight reduce finite-sample instability while preserving first-order orthogonality for an average treatment effect estimator?",
+    "rationale": "The method replaces inverse propensity weights with a smooth bounded weight inside an orthogonal estimating equation, targeting improved stability under limited covariate overlap.",
+    "summary": "Estimate the stated average-treatment-effect target using out-of-fold outcome and propensity estimates and the bounded overlap weight $w_\\epsilon(e)$, where $e$ is propensity and $\\epsilon$ the prespecified overlap bound. Stabilization is a proposed benefit.",
+    "mathematical_definition": {
+      "canonical_artifact": {
+        "artifact_id": "artifact.method_definition",
+        "uri": "artifact://artifact.method_definition",
+        "path": "generations/method_record/record.method.overlap_stabilized_score/generation.method.001/method.md",
+        "sha256": "058b04bcaf71f8a48c844f75d311987f4675d15b906930b31bbb69bb516d84b3",
+        "media_type": "text/markdown",
+        "locator": "Definition 1"
+      },
+      "definition_locator": "Definition 1: overlap-stabilized orthogonal score",
+      "defining_components": [
+        "target_or_estimand",
+        "objective_or_estimating_equation",
+        "algorithm_or_update_rule",
+        "constraints_and_normalization",
+        "tuning_definition",
+        "calculation_defining_assumptions"
+      ],
+      "computational_consequences": [
+        "Every reported estimate uses the bounded overlap weight defined in Definition 1.",
+        "Cross-fitting partitions and clipping parameter values must be recorded for each computation."
+      ],
+      "canonical_definition": {
+        "definition_schema_version": "1.0.0",
+        "target_or_estimand": {
+          "object_id": "estimand.average_treatment_effect",
+          "symbol": "\\theta_0",
+          "definition": "\\theta_0 = E\\{Y(1) - Y(0)\\}",
+          "domain": "The observed-data distribution for units in the target population."
+        },
+        "objective_or_estimating_equation": {
+          "object_id": "equation.overlap_stabilized_score",
+          "symbol": "\\psi_\\epsilon(W; \\theta, \\eta)",
+          "definition": "\\psi_\\epsilon = \\mu_1(X) - \\mu_0(X) + w_\\epsilon\\{e(X)\\}[A\\{Y-\\mu_1(X)\\}/e(X) - (1-A)\\{Y-\\mu_0(X)\\}/\\{1-e(X)\\}] - \\theta",
+          "domain": "Observed data $W=(Y,A,X)$, nuisance functions $\\eta=(\\mu_0,\\mu_1,e)$, and $\\epsilon\\in(0,1/2)$."
+        },
+        "algorithm_or_update_rule": [
+          {
+            "step_id": "step.cross_fit_nuisance",
+            "order": 1,
+            "operation": "Partition observations into $K$ folds and estimate $\\mu_0$, $\\mu_1$, and $e$ outside each held-out fold."
+          },
+          {
+            "step_id": "step.evaluate_score",
+            "order": 2,
+            "operation": "Evaluate $\\psi_\\epsilon$ for each held-out observation using only its out-of-fold nuisance estimates."
+          },
+          {
+            "step_id": "step.solve_equation",
+            "order": 3,
+            "operation": "Set the empirical mean of $\\psi_\\epsilon$ to zero and solve for $\\theta$."
+          }
+        ],
+        "constraints_and_normalization": [
+          {
+            "object_id": "constraint.bounded_weight",
+            "symbol": "w_\\epsilon(e)",
+            "definition": "w_\\epsilon(e) = e(1-e)/[\\max\\{e,\\epsilon\\}\\max\\{1-e,\\epsilon\\}]",
+            "domain": "$e\\in[0,1]$ and $\\epsilon\\in(0,1/2)$."
+          },
+          {
+            "object_id": "constraint.fold_exclusion",
+            "symbol": "I_i^{(-k)}",
+            "definition": "Every nuisance value used for observation i is estimated without any observation in its held-out fold k.",
+            "domain": "A fixed K-fold partition with K at least 2."
+          }
+        ],
+        "tuning_definition": [
+          {
+            "parameter_id": "tuning.overlap_bound",
+            "symbol": "\\epsilon",
+            "admissible_values": "0 < \\epsilon < 1/2",
+            "selection_rule": "Choose $\\epsilon$ before outcome analysis from the prespecified overlap diagnostic rule and record the selected value."
+          },
+          {
+            "parameter_id": "tuning.fold_count",
+            "symbol": "K",
+            "admissible_values": "Integer K at least 2",
+            "selection_rule": "Use the prespecified fold count and frozen random partition recorded by the run."
+          }
+        ],
+        "calculation_defining_assumptions": [
+          {
+            "assumption_id": "assumption.conditional_exchangeability",
+            "statement": "Potential outcomes are conditionally independent of treatment given measured covariates.",
+            "mathematical_role": "Identifies $\\theta_0$ from the observed-data distribution."
+          },
+          {
+            "assumption_id": "assumption.weak_overlap",
+            "statement": "The overlap-stabilized score has a finite second moment under the analysis distribution.",
+            "mathematical_role": "Supports asymptotic linearity and variance estimation."
+          }
+        ]
+      }
+    },
+    "assumptions": [
+      {
+        "assumption_id": "assumption.conditional_exchangeability",
+        "statement": "Potential outcomes are conditionally independent of treatment given the measured covariates.",
+        "role": "identification"
+      },
+      {
+        "assumption_id": "assumption.weak_overlap",
+        "statement": "The propensity score may approach zero or one, but the weighted score has finite second moment under the analysis distribution.",
+        "role": "inference"
+      }
+    ],
+    "literature_provenance": [
+      {
+        "citation_id": "citation.orthogonal_scores.2018",
+        "relation": "foundation",
+        "contribution": "Provides the orthogonal score and cross-fitting framework used by the estimator."
+      },
+      {
+        "citation_id": "citation.overlap_weights.2019",
+        "relation": "contrast",
+        "contribution": "Motivates bounded weighting under limited overlap and defines a comparison estimator."
+      }
+    ],
+    "lineage": {
+      "change_class": "initial",
+      "change_summary": "Initial calculation-defining version selected from the Phase 2 method catalog.",
+      "change_source": {
+        "kind": "research_run",
+        "run_id": "run.p2.catalog.20260715t120000z"
+      }
+    },
+    "limitations": [
+      "The current definition does not establish finite-sample dominance over inverse-propensity weighting.",
+      "Inference still depends on nuisance estimation and the stated moment conditions."
+    ],
+    "content_sha256": "a7b8f8da75183db21ef7c5545dad618e99c50042d8702f7694bf72858ea70614",
+    "created_at": "2026-07-15T12:30:00Z",
+    "updated_at": "2026-07-15T12:30:00Z",
+    "authority_at_creation": "formal_generation",
+    "publication_receipt_id": "publication.p2.method.001",
+    "published_at": "2026-07-15T12:30:00Z"
+  },
+  "data_requirements_markdown": "Use the observed variables and nuisance fits required by the original structured method definition.",
+  "proposed_evaluation_markdown": "Evaluate bias and uncertainty coverage under the method's stated assumptions and recorded overlap regimes; this is a proposed evaluation, not executed evidence.",
+  "computational_profile": {
+    "per_iteration_markdown": "One cross-fitting pass trains K nuisance fits ($\\mu_0$, $\\mu_1$, $e$), each on $n(1-1/K)$ observations, then evaluates $\\psi_\\epsilon$ once per held-out observation; the dominant cost is K times the chosen nuisance learner's training cost.",
+    "memory_markdown": "Stores the $n \\times p$ covariate matrix, the K fitted nuisance models and one score value per observation: $O(np)$ plus the nuisance learners' own footprint.",
+    "scaling_markdown": "Score evaluation is linear in $n$; total cost follows the nuisance learner's training complexity in $n$ and $p$ with K as a constant multiplier. How that complexity grows with $p$ is unknown until the learner class is fixed, because the proposal leaves it open."
+  },
+  "researcher_origin": {
+    "title": "Researcher supplied method",
+    "specification_markdown": "Investigate the method specified in the referenced formulation.",
+    "source_reference": "Researcher input at P2 launch"
+  }
+}

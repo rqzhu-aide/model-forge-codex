@@ -1,0 +1,61 @@
+{
+    "schema_version":  "1.0.0",
+    "state_projection_id":  "state.evidence.simulation.preliminary.001",
+    "project_id":  "project.demo",
+    "subject":  {
+                    "kind":  "evidence_item",
+                    "subject_id":  "evidence.simulation.preliminary.001",
+                    "method_identity":  {
+                                            "stable_id":  "method.overlap_stabilized_score",
+                                            "version":  1,
+                                            "definition_sha256":  "1111111111111111111111111111111111111111111111111111111111111111"
+                                        }
+                },
+    "publication_state":  "formal",
+    "record_position":  "none",
+    "alignment":  {
+                      "state":  "exact",
+                      "causes":  [
+                                     "exact_match"
+                                 ],
+                      "assessed_at":  "2026-08-01T15:02:00Z",
+                      "assessed_by":  "system",
+                      "reasons":  [
+                                      "The evidence was computed under an older calculation-defining method version."
+                                  ],
+                      "assessed_method":  {
+                                              "stable_id":  "method.overlap_stabilized_score",
+                                              "version":  1,
+                                              "definition_sha256":  "1111111111111111111111111111111111111111111111111111111111111111"
+                                          }
+                  },
+    "research_attention":  {
+                               "level":  "monitor",
+                               "open_item_ids":  [
+                                                     "attention.preliminary_scope.001"
+                                                 ],
+                               "reasons":  [
+                                               "Evidence remains preliminary and covers a narrow simulation design."
+                                           ],
+                               "next_question":  "Should the researcher launch a comprehensive Phase 4 run before using the performance claim in a manuscript?"
+                           },
+    "evidence_eligibility":  {
+                                 "status":  "included",
+                                 "method_match":  "older_method_version",
+                                 "assessed_against_method_identity":  {
+                                                                          "stable_id":  "method.overlap_stabilized_score",
+                                                                          "version":  1,
+                                                                          "definition_sha256":  "1111111111111111111111111111111111111111111111111111111111111111"
+                                                                      },
+                                 "reasons":  [
+                                                 "The computation and definition digests match exactly."
+                                             ]
+                             },
+    "source_event_ids":  [
+                             "event.evidence_indexed.001"
+                         ],
+    "content_sha256":  "2121212121212121212121212121212121212121212121212121212121212121",
+    "computed_at":  "2026-08-01T15:10:05Z",
+    "last_event_sequence":  16,
+    "event_root_sha256":  "022a625046a4a6d6357d7971a5e0bb358b1bc113bfcd4d4622f6b72dd91da9f0"
+}

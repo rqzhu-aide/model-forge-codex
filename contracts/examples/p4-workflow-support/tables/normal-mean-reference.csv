@@ -1,0 +1,4 @@
+sample_size,outcome_sd,mean_standard_deviation
+25,1,0.2
+100,1,0.1
+400,1,0.05

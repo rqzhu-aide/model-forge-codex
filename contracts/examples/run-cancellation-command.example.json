@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "command_type": "run_cancellation",
+  "command_id": "command.run.cancel.001",
+  "idempotency_key": "demo-run-cancel-20260802",
+  "project_id": "project.demo",
+  "run_id": "run.p3.theory.20260802t140000z",
+  "expected_run_head": {
+    "current_state": "running",
+    "last_event_sequence": 4,
+    "journal_root_sha256": "8184ded221612977253015d00b6b01d5fa78341349a4a0cc25f8da86ca6d64b5"
+  },
+  "reason": {
+    "code": "user_requested_stop",
+    "explanation": "Stop this run before submission because the selected method needs correction."
+  },
+  "requested_by": {
+    "user_id": "researcher.demo",
+    "operating_actor_type": "authorized_remote_operator",
+    "operator_id": "operator.hermes.demo",
+    "delegation_id": "delegation.research.operator.001"
+  },  "content_sha256": "5d1815ee03229f6405fbae34c98a5ed297b5c5e7c753517d385fd29d0c0c6348",
+  "requested_at": "2026-08-02T14:20:00Z"
+}

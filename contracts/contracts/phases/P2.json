@@ -1,0 +1,983 @@
+{
+  "phase_id": "P2",
+  "contract_version": "3.11.0",
+  "prose_contract": "architecture/phases/phase-2.md",
+  "name": "Models",
+  "scientific_purpose": "Develop concrete candidate models and compare their applicability, assumptions and tradeoffs against the researcher target, observation process and intended use.",
+  "current_record_semantics": {
+    "strategy": "replaceable_catalog",
+    "canonical_record_types": [
+      "method_catalog",
+      "method_record",
+      "phase_decision"
+    ],
+    "research_meaning": "The catalog presents the latest structured definition and scientific assessment for each method while preserving stable identity and lineage.",
+    "history_policy": "Current in-scope method records are the default basis. Historical definitions and runs are opt-in and never silently merged."
+  },
+  "user_choices": [
+    {
+      "choice_id": "p2.selected_method",
+      "label": "Method",
+      "description": "Select the stable method ID when focused-method scope is used.",
+      "required": false,
+      "allowed_values": [],
+      "value_kind": "method_identity"
+    },
+    {
+      "choice_id": "p2.instructions",
+      "label": "Additional instructions or ideas for Phase 2",
+      "description": "Optional instructions or a method idea, delivered only to the Research Lead to guide the lead's single candidate. Each specialist independently proposes one method from the shared setting and literature, then audits the other specialist and the lead.",
+      "required": false,
+      "allowed_values": [],
+      "value_kind": "text"
+    },
+    {
+      "choice_id": "p2.selected_history",
+      "label": "Selected history",
+      "description": "Optionally include named historical records for an explicit comparison.",
+      "required": false,
+      "allowed_values": [],
+      "value_kind": "artifact_pointer_list"
+    },
+    {
+      "choice_id": "p2.researcher_method_spec",
+      "label": "Previously supplied method",
+      "description": "An attributed seed from P1, an API client or a selected published method. A selected-method seed freezes its exact catalog definition and originating proposal source, while the editable specification remains lead-directed input. Delivered only to the Research Lead; specialists propose independently.",
+      "required": false,
+      "allowed_values": [],
+      "value_kind": "text"
+    }
+  ],
+  "run_modes": [
+    {
+      "mode_id": "p2.full_catalog",
+      "label": "Full catalog",
+      "purpose": "Develop exactly one candidate per proposer and publish the three candidates and their comparison as one catalog transaction.",
+      "requires_method": false,
+      "entry_conditions": [
+        "A current Phase 1 literature basis is formal and readable."
+      ],
+      "required_choice_ids": [],
+      "optional_choice_ids": [
+        "p2.selected_history",
+        "p2.researcher_method_spec",
+        "p2.instructions"
+      ]
+    },
+    {
+      "mode_id": "p2.focused_method",
+      "label": "Focused method",
+      "purpose": "Reserved for a future selected-method revision workflow. Readiness currently rejects launch because its exact selected baseline cannot be supplied. A method supplied as the lead's starting point uses p2.researcher_proposal and does not activate this mode.",
+      "requires_method": true,
+      "entry_conditions": [
+        "The selected method exists and is active or explicitly reactivatable.",
+        "A current Phase 1 literature basis is formal and readable."
+      ],
+      "required_choice_ids": [
+        "p2.selected_method"
+      ],
+      "optional_choice_ids": [
+        "p2.selected_history",
+        "p2.instructions"
+      ],
+      "method_choice_id": "p2.selected_method"
+    },
+    {
+      "mode_id": "p2.researcher_proposal",
+      "label": "Development with lead instructions",
+      "purpose": "The Research Lead uses the additional instructions or supplied method as a starting point for the candidate most aligned with researcher intent. Theorist and Data Analyst each independently propose one candidate with their own scientific focus. All three proposals are required; supplying an existing definition does not guarantee a revision of its identity.",
+      "requires_method": false,
+      "entry_conditions": [
+        "A current Phase 1 literature basis is formal and readable.",
+        "Nonblank additional P2 instructions or an attributed supplied-method input is present."
+      ],
+      "required_choice_ids": [],
+      "optional_choice_ids": [
+        "p2.selected_history",
+        "p2.instructions",
+        "p2.researcher_method_spec"
+      ]
+    }
+  ],
+  "prerequisites": [
+    {
+      "requirement_id": "p2.current_project_brief",
+      "kind": "phase_record",
+      "description": "A formal current project brief is readable.",
+      "required": true
+    },
+    {
+      "requirement_id": "p2.current_literature",
+      "kind": "phase_record",
+      "description": "A formal current Phase 1 literature basis is readable.",
+      "required": true,
+      "phase": "P1"
+    }
+  ],
+  "required_inputs": [
+    {
+      "input_id": "p2.project_brief",
+      "record_type": "project_brief",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "not_applicable",
+      "purpose": "Preserve the scientific problem and intended scope.",
+      "condition": "Always required.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p2.literature_synthesis",
+      "record_type": "literature_synthesis",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "not_applicable",
+      "purpose": "Ground novelty, assumptions, comparisons, and substantive relevance.",
+      "condition": "Always required.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p2.literature_library",
+      "record_type": "literature_library",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "not_applicable",
+      "purpose": "Resolve the formal sources supporting method statements.",
+      "condition": "Always required.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p2.literature_coverage",
+      "record_type": "literature_coverage",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "not_applicable",
+      "purpose": "Expose the search boundaries and evidence gaps that constrain method novelty and scope.",
+      "condition": "Always required.",
+      "presence": "always"
+    },
+    {
+      "input_id": "p2.current_catalog",
+      "record_type": "method_catalog",
+      "publication_required": "formal",
+      "position_required": "current",
+      "method_match": "not_applicable",
+      "purpose": "Preserve stable identities and constrain the authorized update scope.",
+      "condition": "Required after the first catalog run and absent on the first run.",
+      "presence": "required_on_rerun"
+    },
+    {
+      "input_id": "p2.theory_result",
+      "record_type": "theory_record",
+      "presence": "if_exists",
+      "method_match": "exact",
+      "purpose": "Expose the current theory conclusion, scope, and assumptions when revising the method.",
+      "condition": "Optional in focused_method mode when theory results exist for the selected method.",
+      "publication_required": "formal",
+      "position_required": "current"
+    },
+    {
+      "input_id": "p2.empirical_result",
+      "record_type": "empirical_synthesis",
+      "presence": "if_exists",
+      "method_match": "exact",
+      "purpose": "Expose the current empirical conclusion and boundary behavior when revising the method.",
+      "condition": "Optional in focused_method mode when empirical results exist for the selected method.",
+      "publication_required": "formal",
+      "position_required": "current"
+    },
+    {
+      "input_id": "p2.manuscript_result",
+      "record_type": "manuscript",
+      "presence": "if_exists",
+      "method_match": "exact",
+      "purpose": "Expose the current manuscript draft and its scope when revising the method.",
+      "condition": "Optional in focused_method mode when manuscript results exist for the selected method.",
+      "publication_required": "formal",
+      "position_required": "current"
+    }
+  ],
+  "supplementary_inputs": [
+    {
+      "input_id": "p2.researcher_material",
+      "record_type": "researcher_material",
+      "purpose": "Accept researcher-supplied material (for example external method notes or prior drafts) as additional context for method development. It is additive only and never substitutes for published records."
+    }
+  ],
+  "prepared_contexts": [],
+  "optional_context_policy": {
+    "default": "current_only",
+    "allows_selected_history": true,
+    "history_selection_user_controlled": true,
+    "description": "Current literature and in-scope methods are loaded by default. Historical material is included only when the user selects it.",
+    "history_choice_id": "p2.selected_history"
+  },
+  "role_stages": [
+    {
+      "sequence": 1,
+      "stage_id": "p2.independent_proposals",
+      "applicable_modes": [
+        "p2.full_catalog",
+        "p2.focused_method"
+      ],
+      "execution": "parallel",
+      "roles": [
+        "research_lead",
+        "theorist",
+        "data_analyst"
+      ],
+      "objective": "The Research Lead, Theorist and Data Analyst each author exactly ONE complete method proposal, for exactly three candidates in this run. Each uses the shared frozen research setting and literature; only the lead receives additional P2 instructions or a supplied-method seed. Include exact structured mathematics and algorithm, defined symbols, assumptions, source relations, data requirements and a proposed evaluation. Each proposal also authors its complete computational_profile: the dominant cost of one update or iteration with defined symbols, the storage and memory footprint, and how cost grows with problem dimensions. Stated uncertainty is legitimate content (unknown, because ... is a complete entry); invented precision is not, consistent with the standing rule against invented mathematics. Distinguish intended claims from established results. One candidate may contain necessary algorithm steps, but do not present a menu of alternative methods inside it. Reuse these authored fields directly in the UI and later work without extra summaries, toy examples or display rewriting. In focused-method mode each candidate relates to the selected baseline; at most one may revise its existing stable ID, other alternatives use new IDs, and unrelated existing methods remain unchanged. This is method design and audit: record proof obligations for P3 and simulation plans for P4, but do not run proofs or simulations here. In method.summary, give a concise candidate purpose and mechanism, with mathematics when needed to explain its target or mechanism. Use proper Markdown/LaTeX and define notation where introduced. There is no fixed sentence, line or equation count. The complete calculation-defining mathematics, constraints, ordered algorithm and tuning remain in method.mathematical_definition; keep that canonical definition rigorous and complete. State the policy or model class and any sufficient surrogate or approximation in the existing scientific fields. Avoid forced novelty claims or unqualified proves, certifies or solves language when the result remains an obligation. The original proposal is the author's candidate account; later review conclusions remain separately attributed. Write for a researcher deciding how to develop or use this method. Answer the section's research question first, then explain its support, conditions, uncertainty and consequence for the next decision. State unknown or untested content explicitly. Define notation, delimit mathematics in mixed prose, and use readable labels and declared units. Keep exact science in its designated record and refer to exact supporting sources. Develop detailed reasoning once; use a brief consequence-focused recap and references elsewhere, preserving qualifications beside their claims and independent opinions. No extra summary artifacts, word quotas or presentation-only member turns are required. Explain the original candidate through its inputs, ordered computation, defining equations and returned output. Keep proposed benefit separate from demonstrated improvement. Consider the frozen researcher account of the target, observation and collection process, available information and performance expectations. Explain how relevant existing formulations and this model fit that setting. Identify only consequential missing questions for Lead consolidation, explain why the answer matters, what changes under plausible answers and what cannot be checked from available data. Unknown and no data yet are legitimate answers. Reuse exact answered question revisions when their premise still applies; a material model or setting change needs a successor question. Keep project facts shared and P2 additional directions lead-only. A researcher description, confirmed paraphrase or passing diagnostic does not verify a scientific assumption. Retain exact context item IDs and revisions used in consequential interpretations. Dialogue or saved answers cannot silently revise a model, launch computation or establish a guarantee. Use existing assumption and data-requirement sections to explain whether the target can be recovered and the procedure applied in the described setting, including conditions that data cannot check. Leave identification or applicability gaps explicit even when no P3 run is requested. Record consequential unanswered questions in the existing method.assumptions, method.limitations and data_requirements_markdown. State only the exact affected premise, practical answer effect or missing fact and source references needed for Lead consolidation, without repeating context and rationale. Unknown or no data is legitimate. This output schema has no attention_items or separate question artifact. Do not contact the researcher through native host question tools or request a blocking pause during this parallel stage. Continue conditionally where meaningful. The Lead consolidates these concerns into scoped attention_items after submissions close; retain exact proposal or finding references and applicable answer references in the existing scientific account. Ask only when both conditions hold: plausible answers materially change the target or interpretation, validity of the intended claim, data applicability or a meaningful resource compromise; and the missing input is an unresolved researcher preference or study fact the team cannot establish from available material. Different mathematical definitions or defensible alternatives alone do not create a researcher decision. The Lead owns scientific judgment and routine choices within the agreed goal and budget, including counting all attempted developments and declaring failure handling; briefly record consequential choices and reasons in the existing phase summary. Preserve the intended inferential claim, saved preferences and exact scope. A researcher cannot certify assumptions by preference. Empty attention output is valid. ",
+      "reads": [
+        "p2.project_brief",
+        "p2.literature_synthesis",
+        "p2.literature_library",
+        "p2.literature_coverage",
+        "p2.current_catalog"
+      ],
+      "writes": [
+        "p2.theory_proposal",
+        "p2.empirical_proposal",
+        "p2.lead_proposal"
+      ],
+      "handoff_required": true,
+      "isolation_rule": "Each proposer uses the shared frozen research setting, relevant literature and scoped catalog. Additional P2 instructions and the raw supplied-method origin are delivered only to the lead. Specialist input views omit P1 phase2_preparation and researcher_origin while preserving exact scientific content. No proposer reads another member's current-stage proposal before all independent submissions close.",
+      "artifact_contracts": {
+        "p2.theory_proposal": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "theorist",
+            "data_analyst",
+            "p5",
+            "user"
+          ],
+          "delivery": "inline"
+        },
+        "p2.empirical_proposal": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "theorist",
+            "data_analyst",
+            "p5",
+            "user"
+          ],
+          "delivery": "inline"
+        },
+        "p2.lead_proposal": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "theorist",
+            "data_analyst",
+            "p5",
+            "user"
+          ],
+          "delivery": "inline"
+        }
+      },
+      "role_objectives": {
+        "research_lead": "Propose exactly one concrete method that is most aligned with the researcher's shared objective, constraints and expressed intent. Apply the additional P2 instructions or supplied idea only to your candidate. When a supplied idea is present, develop that idea, preserve its exact attributed researcher_origin and distinguish your interpretation and extensions. If new instructions revise or withdraw an older seed, honor the new instructions and explain the change without misattributing your alternative. If input contains only general guidance or no method seed, still propose the best-aligned concrete candidate from the shared research setting and literature. Do not return no_method_proposed. Assess feasibility honestly and label conjectures and open obligations; alignment does not establish correctness.",
+        "theorist": "Independently propose exactly one method emphasizing mathematically principled structure: the objective and constraints, state and policy class, operators or optimization variables, assumptions, well-definedness and plausible guarantees. Make the intended mechanism exact and state what requires proof in P3. Do not read or imitate the lead's or analyst's current proposal. Choose your own candidate from the shared setting and literature rather than the lead-only P2 directions.",
+        "data_analyst": "Independently propose exactly one method emphasizing feasible estimation and computation: available data, learning or estimation procedure, implementable updates, resource requirements, error sources and a discriminating evaluation plan. Its computational_profile quantifies the actual cost drivers: the per-iteration cost of the implementable updates it specified, the memory footprint, and the scaling with problem dimensions; where the setting does not determine a driver, an honest unknown with its reason is a complete entry. Keep the objective and constraints mathematically exact. State what needs simulation in P4 without running it. Do not read or imitate the lead's or theorist's current proposal. Choose your own candidate from the shared setting and literature rather than the lead-only P2 directions."
+      }
+    },
+    {
+      "sequence": 2,
+      "stage_id": "p2.cross_review",
+      "applicable_modes": [
+        "p2.full_catalog",
+        "p2.focused_method"
+      ],
+      "execution": "parallel",
+      "roles": [
+        "theorist",
+        "data_analyst"
+      ],
+      "objective": "Each specialist authors one proposal-audit report containing exactly two target assessments. The theorist audits the analyst proposal and the lead proposal; the analyst audits the theorist proposal and the lead proposal. Identify the exact proposal and mathematical statement or algorithm step, give reasoning and explain its consequence. The theorist emphasizes coherence, assumptions and guarantees; the analyst emphasizes estimability, data, implementation and discriminating evaluation. Both audit the authored computational_profile: thin or missing cost reasoning is challenged as a finding, not left for the researcher to discover. Both may raise any substantive issue. Do not substitute self-review, invent numeric scores or rewrite proposals for display. Record P3 proof obligations and P4 evaluation needs without executing those phases. Use review schema_version 1.2.0. In each target assessment, author applicability_markdown for the Assumptions section. Begin with a direct applicability assessment: the setting in which this exact method can be used, whether the stated conditions are supported, not yet justified or unknown, and the main caution. Then distinguish formal assumptions, practical data and implementation requirements, and unchecked conditions. For each important condition, state what it enables and directly explain what changes if it is absent or violated. Distinguish an undefined procedure, loss of identification, loss of a stated guarantee and demonstrated method failure only as supported by the proposal or sources; losing a proof condition alone does not establish method failure. If the consequence is unknown, say what is unknown and identify the next argument, diagnostic or experiment that would resolve it. The theorist emphasizes well-definedness, identification and the scope of proposed guarantees; the data analyst emphasizes data availability, estimability, implementation, practical diagnostics and observable failure regimes. Tie these assessments to exact proposal or source references. A proposed assumption is not a verified guarantee, and generic statements that a condition is important do not answer when the method is applicable. When a caution is developed in a finding, cite its existing finding_id and briefly explain the consequence for applicability instead of repeating the full reasoning. Use existing proposal or literature IDs for source claims. Keep a brief recap where needed for this section to stand alone, and preserve independent authorship and disagreement. Each target assessment has a concise headline stating core support and its principal unresolved issue; each finding has a readable title. The assessment explains what the audit establishes, its limits and the next resolving work. Optional statement_refs are exact JSON Pointers into that assessment's original proposal, never invented equation anchors. Preserve the detailed mathematics in assessment_markdown, reasoning_markdown and consequence_markdown. Write for a researcher deciding how to develop or use this method. Answer the section's research question first, then explain its support, conditions, uncertainty and consequence for the next decision. State unknown or untested content explicitly. Define notation, delimit mathematics in mixed prose, and use readable labels and declared units. Keep exact science in its designated record and refer to exact supporting sources. Develop detailed reasoning once; use a brief consequence-focused recap and references elsewhere, preserving qualifications beside their claims and independent opinions. No extra summary artifacts, word quotas or presentation-only member turns are required. Within your permitted frozen read set, also assess whether the authored account directly answers its research question, faithfully describes its support and qualifications, and helps the researcher decide what to do next. Record misleading or missing explanation in the existing scientific findings with the affected source, consequence and resolving work. Do not claim review of later outputs or materials you cannot inspect. Consider the frozen researcher account of the target, observation and collection process, available information and performance expectations. Explain how relevant existing formulations and this model fit that setting. Identify only consequential missing questions for Lead consolidation, explain why the answer matters, what changes under plausible answers and what cannot be checked from available data. Unknown and no data yet are legitimate answers. Reuse exact answered question revisions when their premise still applies; a material model or setting change needs a successor question. Keep project facts shared and P2 additional directions lead-only. A researcher description, confirmed paraphrase or passing diagnostic does not verify a scientific assumption. Retain exact context item IDs and revisions used in consequential interpretations. Dialogue or saved answers cannot silently revise a model, launch computation or establish a guarantee. Use existing assumption and data-requirement sections to explain whether the target can be recovered and the procedure applied in the described setting, including conditions that data cannot check. Leave identification or applicability gaps explicit even when no P3 run is requested. Record consequential unanswered questions in the existing applicability_markdown and existing findings. State only the exact affected premise, practical answer effect or missing fact and source references needed for Lead consolidation, without repeating context and rationale. Unknown or no data is legitimate. This output schema has no attention_items or separate question artifact. Do not contact the researcher through native host question tools or request a blocking pause during this parallel stage. Continue conditionally where meaningful. The Lead consolidates these concerns into scoped attention_items after submissions close; retain exact proposal or finding references and applicable answer references in the existing scientific account. Ask only when both conditions hold: plausible answers materially change the target or interpretation, validity of the intended claim, data applicability or a meaningful resource compromise; and the missing input is an unresolved researcher preference or study fact the team cannot establish from available material. Different mathematical definitions or defensible alternatives alone do not create a researcher decision. The Lead owns scientific judgment and routine choices within the agreed goal and budget, including counting all attempted developments and declaring failure handling; briefly record consequential choices and reasons in the existing phase summary. Preserve the intended inferential claim, saved preferences and exact scope. A researcher cannot certify assumptions by preference. Empty attention output is valid. ",
+      "reads": [
+        "p2.project_brief",
+        "p2.literature_synthesis",
+        "p2.literature_library",
+        "p2.literature_coverage",
+        "p2.current_catalog"
+      ],
+      "role_reads": [
+        {
+          "role": "theorist",
+          "input_ids": [
+            "p2.project_brief",
+            "p2.literature_synthesis",
+            "p2.literature_library",
+            "p2.literature_coverage",
+            "p2.current_catalog",
+            "p2.empirical_proposal",
+            "p2.lead_proposal"
+          ]
+        },
+        {
+          "role": "data_analyst",
+          "input_ids": [
+            "p2.project_brief",
+            "p2.literature_synthesis",
+            "p2.literature_library",
+            "p2.literature_coverage",
+            "p2.current_catalog",
+            "p2.theory_proposal",
+            "p2.lead_proposal"
+          ]
+        }
+      ],
+      "writes": [
+        "p2.theory_review",
+        "p2.empirical_review"
+      ],
+      "handoff_required": true,
+      "isolation_rule": "Reviewers assess fixed proposal targets independently without the other current-stage audit.",
+      "artifact_contracts": {
+        "p2.theory_review": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "theorist",
+            "data_analyst",
+            "p5",
+            "user"
+          ],
+          "delivery": "inline"
+        },
+        "p2.empirical_review": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "theorist",
+            "data_analyst",
+            "p5",
+            "user"
+          ],
+          "delivery": "inline"
+        }
+      }
+    },
+    {
+      "sequence": 3,
+      "stage_id": "p2.lead_reconciliation",
+      "applicable_modes": [
+        "p2.full_catalog",
+        "p2.focused_method"
+      ],
+      "execution": "serial",
+      "roles": [
+        "research_lead"
+      ],
+      "objective": "Author exactly one catalog assessment comparing all THREE fixed proposals and both cross-audit reports. Apply researcher intent and the lead-only additional P2 instructions when explaining alignment and tradeoffs. Give each proposal_id exactly one retain/exclude disposition with mathematical rationale, unresolved disagreement and next work. Do not invent a fourth method during reconciliation. Do not replace or silently repair original proposal mathematics; publication extracts each retained original method unchanged. In focused mode preserve unrelated existing methods and allow at most one revision of the selected identity. Material revision requires an explicit later scientific run. Add no separate phase-summary artifact, display rewrite or numerical scoring substitute. Publication does not select or activate a method, launch P3 proofs or run P4 simulations. Every new attention item uses schema_version 1.2.0, kind researcher_decision or research_task, target_phase, exact scope, audience and source references. Author the compact brief directly in the ordinary deliverable, with no second writer or UI classifier. Record a consequential unresolved researcher preference or unavailable study fact in attention_items as kind researcher_decision for its exact affected method stable IDs. The existence of a modification option or different mathematical targets alone does not require a question. Read existing questions and saved answers first. Reuse the existing stable attention identity for the same unresolved decision, carry applicable answers forward and do not reopen an answered choice without a new method-specific reason. Do not invent researcher preferences or force questions when no steering decision is needed. Proof obligations, scientific error correction and checks the team can resolve are research_task items for the appropriate phase, not preference questions. Omission never resolves an existing item: preserve its stable identity until an explicit answer or reasoned team disposition supersedes it. Read current open tasks addressed to this phase as frozen scientific context; do not launch work in another phase automatically. Use catalog-assessment schema_version 1.3.0. Author overview_markdown as a short researcher-facing conclusion. Lead with the conditional recommendation and its decisive limitation; explain consequential differences in what the actual candidates compute, then identify the next scientific check or genuinely needed researcher choice. The overview appears once as a concise conditional comparative conclusion, not a replay of each candidate account. Preserve consequential differences in scientific targets rather than treating all candidates as interchangeable competitors. Keep detailed comparative reasoning in comparison_markdown and avoid repeating the workflow. Use human-readable model names and attributed scientific descriptions, not bare proposal, review, finding, context-item or generation IDs, schema versions, catalog state or execution terminology in the opening prose. Exact identities and pointers remain in their structured fields. If an overview citation is useful, use a descriptive Markdown label linked to the exact same-run proposal or review fragment, for example [Theorist review](#<exact review_id>); only actual proposal_id and review_id fragments are supported here, not finding IDs. These overview links do not replace required structured references. Preserve decisive qualifications beside the conclusion and do not add a separate summary artifact or writer. Each disposition.method_summary_markdown is the lead-authored concise methodological account of this exact proposal for the selected-model reader. Explain its essential inputs, exact target and model relationships, central estimation criterion or calculation, and returned estimate, model or decision. Include the key defining equations in proper Markdown/LaTeX with defined notation, keeping any model-defining constraint beside its definition. State decisive applicability conditions and the principal unresolved limitation; distinguish proposed benefits or guarantees from checked results. Explain the mechanism itself, not merely its motivation or a direction to read the original proposal. Retain the essential sequence where it defines the method, without repeating the complete ordered algorithm, expanded derivatives, numerical tolerances or full tuning details. Those details remain in the original method.mathematical_definition, which stays canonical and complete. There is no fixed word, line or equation count. State missing input facts and specifications honestly. Explain the exact original proposal faithfully with source references; do not change its mathematics, introduce new assumptions or silently complete missing steps. Each disposition.rationale is the separate lead evaluation for the Review section. Begin with a direct scientific assessment of this candidate, including its strongest reason to pursue and principal criticism or limitation. Evaluate potential innovation relative to specifically cited work, substantive strengths, unresolved evidence and the next work that would settle the main issue, with proposal, literature or finding references. A retain/exclude decision alone is not an evaluation. Distinguish claimed novelty from established differences; if novelty or the main concern cannot yet be assessed, state the missing comparison or evidence and the specific next check instead of implying it was established. Specialist-authored applicability_markdown serves the Assumptions section without a lead rewrite. When a criticism is already developed in a specialist finding or the proposal limitations, cite the existing finding_id or exact proposal reference and explain how it affects the lead evaluation instead of repeating the full explanation. Use existing literature IDs for comparisons, preserve specialist attribution and disagreements, and keep a brief recap where needed for the review to stand alone. Method-specific researcher_decision items and research_task items serve Next steps, including questions requiring the researcher's input. These sections are authored in the existing deliverables and ordinary turns, without another writer. Author modification_options: at least one option per retained proposal and at most three per proposal; an excluded proposal may carry an option when a modification would change its disposition, and if every proposal is excluded zero options are required. Each option modifies the candidate's own design choices and is not a new method; it names its exact proposal in applies_to, uses an option_id of the form mod.<proposal>.<slug>, states the exact mathematical change with defined symbols, and states the regime or preference under which it beats the proposed form. An option never silently edits the proposal's mathematics; the proposal record remains the proposer's attributed account. An option needs no answer to be useful; a choice that genuinely requires the researcher's preference remains a researcher_decision attention item naming the affected method stable IDs. For every attention item, affected_record_ids contains only exact method stable IDs from the actual proposals or frozen method catalog. Phase 2 publishes on trunk, but an exact model scope names the model applicability branch: for scope.kind model, set scope.branch to that method stable_id and include its exact stable_id, version and definition_sha256 in scope.model_ref. This model scope is valid before activation. The producing publication branch is recorded separately. Shared questions keep project scope and their declared affected method IDs. Every researcher_decision names at least one affected method, even when its target_phase is P3 or P4. A research_task may use an empty list only when it is explicitly phase-wide. Do not infer method scope from prose, use proposal IDs as method IDs, or broaden a branch-specific answer into shared instructions. Write for a researcher deciding how to develop or use this method. Answer the section's research question first, then explain its support, conditions, uncertainty and consequence for the next decision. State unknown or untested content explicitly. Define notation, delimit mathematics in mixed prose, and use readable labels and declared units. Keep exact science in its designated record and refer to exact supporting sources. Develop detailed reasoning once; use a brief consequence-focused recap and references elsewhere, preserving qualifications beside their claims and independent opinions. No extra summary artifacts, word quotas or presentation-only member turns are required. Before sealing your final account, check its explanatory adequacy and scientific fidelity against the available sources. Preserve material disagreement and unknowns; a successful run is not a favorable scientific finding. Each recommended next step states the research question, its decision value and the appropriate phase without authorizing another run. Use applicable frozen context and exact answered revisions with their sources, without reconstructing all cumulative history. Preserve unknown and no-data answers; synthetic conditions never become study facts. Keep project facts shared and P2 additional directions Lead-only. Researcher reports, confirmed paraphrases and passing diagnostics do not verify assumptions. A material premise change needs an exact successor question; saved preferences stay settled within their scope. Retain exact context and answer references. Dialogue or saved answers cannot revise a model, launch computation or establish a guarantee. Use existing assumption and data-requirement sections to explain whether the target can be recovered and the procedure applied in the described setting, including conditions that data cannot check. Leave identification or applicability gaps explicit even when no P3 run is requested. Author researcher-decision attention with schema_version 1.2.0, exact project/model scope and a named responsible audience; retain authored expectation topics and exact answer applicability references. Read the unanswered questions carried in proposal assumptions, limitations and data requirements and in specialist applicability and findings. Consolidate consequential researcher choices into exact-model attention_items with references to the originating proposal or finding; do not invent a researcher answer or turn a team-resolvable scientific obligation into a preference question. Use native host question tools neither for optional questions nor to substitute for the durable harness dialogue. Optional unknowns permit conditional work; a genuinely blocking question in this sequential stage uses the existing researcher-question.json pause mechanism. Ask only when both conditions hold: plausible answers materially change the target or interpretation, validity of the intended claim, data applicability or a meaningful resource compromise; and the missing input is an unresolved researcher preference or study fact the team cannot establish from available material. Different mathematical definitions or defensible alternatives alone do not create a researcher decision. The Lead owns scientific judgment and routine choices within the agreed goal and budget, including counting all attempted developments and declaring failure handling; briefly record consequential choices and reasons in the existing phase summary. Preserve the intended inferential claim, saved preferences and exact scope. A researcher cannot certify assumptions by preference. Empty attention output is valid. For each new researcher_decision author decision_priority as interpretation, inference, data or resources, using the highest material consequence in that order, and response_kind as choice or study_fact. Keep question to one current choice or exact factual request. context_markdown identifies the affected point with the minimum useful mathematics and locally defined symbols; likely_consequence gives its practical effect without repetition. For a choice, author options when a useful finite set exists, usually two or three realistic alternatives as {id,label,consequence} with unique IDs and actual benefits/costs. recommendation is Markdown Lead advice and reason, or the evidence needed before advice is justified; never preselect or save a recommendation as the researcher answer. A study_fact names the missing information, applicability limit and what can proceed while unknown, without options or recommendation. Inspect supplied material first. Do not repeatedly request unavailable facts during synthetic work. Consolidate duplicates while retaining independently answerable premises and exact scope/source/answer references. Carry forward only materially new consequences in the brief; retain derivations and earlier context through sources. No rigid word cap or separate rationale-writing checklist applies. ",
+      "reads": [
+        "p2.project_brief",
+        "p2.literature_synthesis",
+        "p2.literature_library",
+        "p2.literature_coverage",
+        "p2.current_catalog",
+        "p2.theory_proposal",
+        "p2.empirical_proposal",
+        "p2.lead_proposal",
+        "p2.theory_review",
+        "p2.empirical_review"
+      ],
+      "writes": [
+        "p2.catalog_assessment"
+      ],
+      "handoff_required": true,
+      "artifact_contracts": {
+        "p2.catalog_assessment": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "theorist",
+            "data_analyst",
+            "p5",
+            "user"
+          ],
+          "delivery": "inline"
+        }
+      }
+    },
+    {
+      "sequence": 1,
+      "stage_id": "p2.supplied_method_proposals",
+      "applicable_modes": [
+        "p2.researcher_proposal"
+      ],
+      "execution": "parallel",
+      "roles": [
+        "research_lead",
+        "theorist",
+        "data_analyst"
+      ],
+      "objective": "The Research Lead, Theorist and Data Analyst each author exactly ONE complete method proposal, for exactly three candidates in this run. Each uses the shared frozen research setting and literature; only the lead receives additional P2 instructions or a supplied-method seed. Include exact structured mathematics and algorithm, defined symbols, assumptions, source relations, data requirements and a proposed evaluation. Each proposal also authors its complete computational_profile: the dominant cost of one update or iteration with defined symbols, the storage and memory footprint, and how cost grows with problem dimensions. Stated uncertainty is legitimate content (unknown, because ... is a complete entry); invented precision is not, consistent with the standing rule against invented mathematics. Distinguish intended claims from established results. One candidate may contain necessary algorithm steps, but do not present a menu of alternative methods inside it. Reuse these authored fields directly in the UI and later work without extra summaries, toy examples or display rewriting. In focused-method mode each candidate relates to the selected baseline; at most one may revise its existing stable ID, other alternatives use new IDs, and unrelated existing methods remain unchanged. This is method design and audit: record proof obligations for P3 and simulation plans for P4, but do not run proofs or simulations here. In method.summary, give a concise candidate purpose and mechanism, with mathematics when needed to explain its target or mechanism. Use proper Markdown/LaTeX and define notation where introduced. There is no fixed sentence, line or equation count. The complete calculation-defining mathematics, constraints, ordered algorithm and tuning remain in method.mathematical_definition; keep that canonical definition rigorous and complete. State the policy or model class and any sufficient surrogate or approximation in the existing scientific fields. Avoid forced novelty claims or unqualified proves, certifies or solves language when the result remains an obligation. The original proposal is the author's candidate account; later review conclusions remain separately attributed. Write for a researcher deciding how to develop or use this method. Answer the section's research question first, then explain its support, conditions, uncertainty and consequence for the next decision. State unknown or untested content explicitly. Define notation, delimit mathematics in mixed prose, and use readable labels and declared units. Keep exact science in its designated record and refer to exact supporting sources. Develop detailed reasoning once; use a brief consequence-focused recap and references elsewhere, preserving qualifications beside their claims and independent opinions. No extra summary artifacts, word quotas or presentation-only member turns are required. Explain the original candidate through its inputs, ordered computation, defining equations and returned output. Keep proposed benefit separate from demonstrated improvement. Consider the frozen researcher account of the target, observation and collection process, available information and performance expectations. Explain how relevant existing formulations and this model fit that setting. Identify only consequential missing questions for Lead consolidation, explain why the answer matters, what changes under plausible answers and what cannot be checked from available data. Unknown and no data yet are legitimate answers. Reuse exact answered question revisions when their premise still applies; a material model or setting change needs a successor question. Keep project facts shared and P2 additional directions lead-only. A researcher description, confirmed paraphrase or passing diagnostic does not verify a scientific assumption. Retain exact context item IDs and revisions used in consequential interpretations. Dialogue or saved answers cannot silently revise a model, launch computation or establish a guarantee. Use existing assumption and data-requirement sections to explain whether the target can be recovered and the procedure applied in the described setting, including conditions that data cannot check. Leave identification or applicability gaps explicit even when no P3 run is requested. Record consequential unanswered questions in the existing method.assumptions, method.limitations and data_requirements_markdown. State only the exact affected premise, practical answer effect or missing fact and source references needed for Lead consolidation, without repeating context and rationale. Unknown or no data is legitimate. This output schema has no attention_items or separate question artifact. Do not contact the researcher through native host question tools or request a blocking pause during this parallel stage. Continue conditionally where meaningful. The Lead consolidates these concerns into scoped attention_items after submissions close; retain exact proposal or finding references and applicable answer references in the existing scientific account. Ask only when both conditions hold: plausible answers materially change the target or interpretation, validity of the intended claim, data applicability or a meaningful resource compromise; and the missing input is an unresolved researcher preference or study fact the team cannot establish from available material. Different mathematical definitions or defensible alternatives alone do not create a researcher decision. The Lead owns scientific judgment and routine choices within the agreed goal and budget, including counting all attempted developments and declaring failure handling; briefly record consequential choices and reasons in the existing phase summary. Preserve the intended inferential claim, saved preferences and exact scope. A researcher cannot certify assumptions by preference. Empty attention output is valid. ",
+      "reads": [
+        "p2.project_brief",
+        "p2.literature_synthesis",
+        "p2.literature_library",
+        "p2.literature_coverage",
+        "p2.current_catalog"
+      ],
+      "writes": [
+        "p2.theory_proposal",
+        "p2.empirical_proposal",
+        "p2.lead_proposal"
+      ],
+      "handoff_required": true,
+      "isolation_rule": "Each proposer uses the shared frozen research setting, relevant literature and scoped catalog. Additional P2 instructions and the raw supplied-method origin are delivered only to the lead. Specialist input views omit P1 phase2_preparation and researcher_origin while preserving exact scientific content. No proposer reads another member's current-stage proposal before all independent submissions close.",
+      "artifact_contracts": {
+        "p2.theory_proposal": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "theorist",
+            "data_analyst",
+            "p5",
+            "user"
+          ],
+          "delivery": "inline"
+        },
+        "p2.empirical_proposal": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "theorist",
+            "data_analyst",
+            "p5",
+            "user"
+          ],
+          "delivery": "inline"
+        },
+        "p2.lead_proposal": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "theorist",
+            "data_analyst",
+            "p5",
+            "user"
+          ],
+          "delivery": "inline"
+        }
+      },
+      "role_objectives": {
+        "research_lead": "Propose exactly one concrete method that is most aligned with the researcher's shared objective, constraints and expressed intent. Apply the additional P2 instructions or supplied idea only to your candidate. When a supplied idea is present, develop that idea, preserve its exact attributed researcher_origin and distinguish your interpretation and extensions. If new instructions revise or withdraw an older seed, honor the new instructions and explain the change without misattributing your alternative. If input contains only general guidance or no method seed, still propose the best-aligned concrete candidate from the shared research setting and literature. Do not return no_method_proposed. Assess feasibility honestly and label conjectures and open obligations; alignment does not establish correctness.",
+        "theorist": "Independently propose exactly one method emphasizing mathematically principled structure: the objective and constraints, state and policy class, operators or optimization variables, assumptions, well-definedness and plausible guarantees. Make the intended mechanism exact and state what requires proof in P3. Do not read or imitate the lead's or analyst's current proposal. Choose your own candidate from the shared setting and literature rather than the lead-only P2 directions.",
+        "data_analyst": "Independently propose exactly one method emphasizing feasible estimation and computation: available data, learning or estimation procedure, implementable updates, resource requirements, error sources and a discriminating evaluation plan. Its computational_profile quantifies the actual cost drivers: the per-iteration cost of the implementable updates it specified, the memory footprint, and the scaling with problem dimensions; where the setting does not determine a driver, an honest unknown with its reason is a complete entry. Keep the objective and constraints mathematically exact. State what needs simulation in P4 without running it. Do not read or imitate the lead's or theorist's current proposal. Choose your own candidate from the shared setting and literature rather than the lead-only P2 directions."
+      }
+    },
+    {
+      "sequence": 2,
+      "stage_id": "p2.supplied_method_reviews",
+      "applicable_modes": [
+        "p2.researcher_proposal"
+      ],
+      "execution": "parallel",
+      "roles": [
+        "theorist",
+        "data_analyst"
+      ],
+      "objective": "Each specialist authors one proposal-audit report containing exactly two target assessments. The theorist audits the analyst proposal and the lead proposal; the analyst audits the theorist proposal and the lead proposal. Identify the exact proposal and mathematical statement or algorithm step, give reasoning and explain its consequence. The theorist emphasizes coherence, assumptions and guarantees; the analyst emphasizes estimability, data, implementation and discriminating evaluation. Both audit the authored computational_profile: thin or missing cost reasoning is challenged as a finding, not left for the researcher to discover. Both may raise any substantive issue. Do not substitute self-review, invent numeric scores or rewrite proposals for display. Record P3 proof obligations and P4 evaluation needs without executing those phases. Use review schema_version 1.2.0. In each target assessment, author applicability_markdown for the Assumptions section. Begin with a direct applicability assessment: the setting in which this exact method can be used, whether the stated conditions are supported, not yet justified or unknown, and the main caution. Then distinguish formal assumptions, practical data and implementation requirements, and unchecked conditions. For each important condition, state what it enables and directly explain what changes if it is absent or violated. Distinguish an undefined procedure, loss of identification, loss of a stated guarantee and demonstrated method failure only as supported by the proposal or sources; losing a proof condition alone does not establish method failure. If the consequence is unknown, say what is unknown and identify the next argument, diagnostic or experiment that would resolve it. The theorist emphasizes well-definedness, identification and the scope of proposed guarantees; the data analyst emphasizes data availability, estimability, implementation, practical diagnostics and observable failure regimes. Tie these assessments to exact proposal or source references. A proposed assumption is not a verified guarantee, and generic statements that a condition is important do not answer when the method is applicable. When a caution is developed in a finding, cite its existing finding_id and briefly explain the consequence for applicability instead of repeating the full reasoning. Use existing proposal or literature IDs for source claims. Keep a brief recap where needed for this section to stand alone, and preserve independent authorship and disagreement. Each target assessment has a concise headline stating core support and its principal unresolved issue; each finding has a readable title. The assessment explains what the audit establishes, its limits and the next resolving work. Optional statement_refs are exact JSON Pointers into that assessment's original proposal, never invented equation anchors. Preserve the detailed mathematics in assessment_markdown, reasoning_markdown and consequence_markdown. Write for a researcher deciding how to develop or use this method. Answer the section's research question first, then explain its support, conditions, uncertainty and consequence for the next decision. State unknown or untested content explicitly. Define notation, delimit mathematics in mixed prose, and use readable labels and declared units. Keep exact science in its designated record and refer to exact supporting sources. Develop detailed reasoning once; use a brief consequence-focused recap and references elsewhere, preserving qualifications beside their claims and independent opinions. No extra summary artifacts, word quotas or presentation-only member turns are required. Within your permitted frozen read set, also assess whether the authored account directly answers its research question, faithfully describes its support and qualifications, and helps the researcher decide what to do next. Record misleading or missing explanation in the existing scientific findings with the affected source, consequence and resolving work. Do not claim review of later outputs or materials you cannot inspect. Consider the frozen researcher account of the target, observation and collection process, available information and performance expectations. Explain how relevant existing formulations and this model fit that setting. Identify only consequential missing questions for Lead consolidation, explain why the answer matters, what changes under plausible answers and what cannot be checked from available data. Unknown and no data yet are legitimate answers. Reuse exact answered question revisions when their premise still applies; a material model or setting change needs a successor question. Keep project facts shared and P2 additional directions lead-only. A researcher description, confirmed paraphrase or passing diagnostic does not verify a scientific assumption. Retain exact context item IDs and revisions used in consequential interpretations. Dialogue or saved answers cannot silently revise a model, launch computation or establish a guarantee. Use existing assumption and data-requirement sections to explain whether the target can be recovered and the procedure applied in the described setting, including conditions that data cannot check. Leave identification or applicability gaps explicit even when no P3 run is requested. Record consequential unanswered questions in the existing applicability_markdown and existing findings. State only the exact affected premise, practical answer effect or missing fact and source references needed for Lead consolidation, without repeating context and rationale. Unknown or no data is legitimate. This output schema has no attention_items or separate question artifact. Do not contact the researcher through native host question tools or request a blocking pause during this parallel stage. Continue conditionally where meaningful. The Lead consolidates these concerns into scoped attention_items after submissions close; retain exact proposal or finding references and applicable answer references in the existing scientific account. Ask only when both conditions hold: plausible answers materially change the target or interpretation, validity of the intended claim, data applicability or a meaningful resource compromise; and the missing input is an unresolved researcher preference or study fact the team cannot establish from available material. Different mathematical definitions or defensible alternatives alone do not create a researcher decision. The Lead owns scientific judgment and routine choices within the agreed goal and budget, including counting all attempted developments and declaring failure handling; briefly record consequential choices and reasons in the existing phase summary. Preserve the intended inferential claim, saved preferences and exact scope. A researcher cannot certify assumptions by preference. Empty attention output is valid. ",
+      "reads": [
+        "p2.project_brief",
+        "p2.literature_synthesis",
+        "p2.literature_library",
+        "p2.literature_coverage",
+        "p2.current_catalog"
+      ],
+      "role_reads": [
+        {
+          "role": "theorist",
+          "input_ids": [
+            "p2.project_brief",
+            "p2.literature_synthesis",
+            "p2.literature_library",
+            "p2.literature_coverage",
+            "p2.current_catalog",
+            "p2.empirical_proposal",
+            "p2.lead_proposal"
+          ]
+        },
+        {
+          "role": "data_analyst",
+          "input_ids": [
+            "p2.project_brief",
+            "p2.literature_synthesis",
+            "p2.literature_library",
+            "p2.literature_coverage",
+            "p2.current_catalog",
+            "p2.theory_proposal",
+            "p2.lead_proposal"
+          ]
+        }
+      ],
+      "writes": [
+        "p2.theory_review",
+        "p2.empirical_review"
+      ],
+      "handoff_required": true,
+      "isolation_rule": "Reviewers assess fixed proposal targets independently without the other current-stage audit.",
+      "artifact_contracts": {
+        "p2.theory_review": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "theorist",
+            "data_analyst",
+            "p5",
+            "user"
+          ],
+          "delivery": "inline"
+        },
+        "p2.empirical_review": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "theorist",
+            "data_analyst",
+            "p5",
+            "user"
+          ],
+          "delivery": "inline"
+        }
+      }
+    },
+    {
+      "sequence": 3,
+      "stage_id": "p2.supplied_method_reconciliation",
+      "applicable_modes": [
+        "p2.researcher_proposal"
+      ],
+      "execution": "serial",
+      "roles": [
+        "research_lead"
+      ],
+      "objective": "Author exactly one catalog assessment comparing all THREE fixed proposals and both cross-audit reports. Apply researcher intent and the lead-only additional P2 instructions when explaining alignment and tradeoffs. Give each proposal_id exactly one retain/exclude disposition with mathematical rationale, unresolved disagreement and next work. Do not invent a fourth method during reconciliation. Do not replace or silently repair original proposal mathematics; publication extracts each retained original method unchanged. In focused mode preserve unrelated existing methods and allow at most one revision of the selected identity. Material revision requires an explicit later scientific run. Add no separate phase-summary artifact, display rewrite or numerical scoring substitute. Publication does not select or activate a method, launch P3 proofs or run P4 simulations. Every new attention item uses schema_version 1.2.0, kind researcher_decision or research_task, target_phase, exact scope, audience and source references. Author the compact brief directly in the ordinary deliverable, with no second writer or UI classifier. Record a consequential unresolved researcher preference or unavailable study fact in attention_items as kind researcher_decision for its exact affected method stable IDs. The existence of a modification option or different mathematical targets alone does not require a question. Read existing questions and saved answers first. Reuse the existing stable attention identity for the same unresolved decision, carry applicable answers forward and do not reopen an answered choice without a new method-specific reason. Do not invent researcher preferences or force questions when no steering decision is needed. Proof obligations, scientific error correction and checks the team can resolve are research_task items for the appropriate phase, not preference questions. Omission never resolves an existing item: preserve its stable identity until an explicit answer or reasoned team disposition supersedes it. Read current open tasks addressed to this phase as frozen scientific context; do not launch work in another phase automatically. Use catalog-assessment schema_version 1.3.0. Author overview_markdown as a short researcher-facing conclusion. Lead with the conditional recommendation and its decisive limitation; explain consequential differences in what the actual candidates compute, then identify the next scientific check or genuinely needed researcher choice. The overview appears once as a concise conditional comparative conclusion, not a replay of each candidate account. Preserve consequential differences in scientific targets rather than treating all candidates as interchangeable competitors. Keep detailed comparative reasoning in comparison_markdown and avoid repeating the workflow. Use human-readable model names and attributed scientific descriptions, not bare proposal, review, finding, context-item or generation IDs, schema versions, catalog state or execution terminology in the opening prose. Exact identities and pointers remain in their structured fields. If an overview citation is useful, use a descriptive Markdown label linked to the exact same-run proposal or review fragment, for example [Theorist review](#<exact review_id>); only actual proposal_id and review_id fragments are supported here, not finding IDs. These overview links do not replace required structured references. Preserve decisive qualifications beside the conclusion and do not add a separate summary artifact or writer. Each disposition.method_summary_markdown is the lead-authored concise methodological account of this exact proposal for the selected-model reader. Explain its essential inputs, exact target and model relationships, central estimation criterion or calculation, and returned estimate, model or decision. Include the key defining equations in proper Markdown/LaTeX with defined notation, keeping any model-defining constraint beside its definition. State decisive applicability conditions and the principal unresolved limitation; distinguish proposed benefits or guarantees from checked results. Explain the mechanism itself, not merely its motivation or a direction to read the original proposal. Retain the essential sequence where it defines the method, without repeating the complete ordered algorithm, expanded derivatives, numerical tolerances or full tuning details. Those details remain in the original method.mathematical_definition, which stays canonical and complete. There is no fixed word, line or equation count. State missing input facts and specifications honestly. Explain the exact original proposal faithfully with source references; do not change its mathematics, introduce new assumptions or silently complete missing steps. Each disposition.rationale is the separate lead evaluation for the Review section. Begin with a direct scientific assessment of this candidate, including its strongest reason to pursue and principal criticism or limitation. Evaluate potential innovation relative to specifically cited work, substantive strengths, unresolved evidence and the next work that would settle the main issue, with proposal, literature or finding references. A retain/exclude decision alone is not an evaluation. Distinguish claimed novelty from established differences; if novelty or the main concern cannot yet be assessed, state the missing comparison or evidence and the specific next check instead of implying it was established. Specialist-authored applicability_markdown serves the Assumptions section without a lead rewrite. When a criticism is already developed in a specialist finding or the proposal limitations, cite the existing finding_id or exact proposal reference and explain how it affects the lead evaluation instead of repeating the full explanation. Use existing literature IDs for comparisons, preserve specialist attribution and disagreements, and keep a brief recap where needed for the review to stand alone. Method-specific researcher_decision items and research_task items serve Next steps, including questions requiring the researcher's input. These sections are authored in the existing deliverables and ordinary turns, without another writer. Author modification_options: at least one option per retained proposal and at most three per proposal; an excluded proposal may carry an option when a modification would change its disposition, and if every proposal is excluded zero options are required. Each option modifies the candidate's own design choices and is not a new method; it names its exact proposal in applies_to, uses an option_id of the form mod.<proposal>.<slug>, states the exact mathematical change with defined symbols, and states the regime or preference under which it beats the proposed form. An option never silently edits the proposal's mathematics; the proposal record remains the proposer's attributed account. An option needs no answer to be useful; a choice that genuinely requires the researcher's preference remains a researcher_decision attention item naming the affected method stable IDs. For every attention item, affected_record_ids contains only exact method stable IDs from the actual proposals or frozen method catalog. Phase 2 publishes on trunk, but an exact model scope names the model applicability branch: for scope.kind model, set scope.branch to that method stable_id and include its exact stable_id, version and definition_sha256 in scope.model_ref. This model scope is valid before activation. The producing publication branch is recorded separately. Shared questions keep project scope and their declared affected method IDs. Every researcher_decision names at least one affected method, even when its target_phase is P3 or P4. A research_task may use an empty list only when it is explicitly phase-wide. Do not infer method scope from prose, use proposal IDs as method IDs, or broaden a branch-specific answer into shared instructions. Write for a researcher deciding how to develop or use this method. Answer the section's research question first, then explain its support, conditions, uncertainty and consequence for the next decision. State unknown or untested content explicitly. Define notation, delimit mathematics in mixed prose, and use readable labels and declared units. Keep exact science in its designated record and refer to exact supporting sources. Develop detailed reasoning once; use a brief consequence-focused recap and references elsewhere, preserving qualifications beside their claims and independent opinions. No extra summary artifacts, word quotas or presentation-only member turns are required. Before sealing your final account, check its explanatory adequacy and scientific fidelity against the available sources. Preserve material disagreement and unknowns; a successful run is not a favorable scientific finding. Each recommended next step states the research question, its decision value and the appropriate phase without authorizing another run. Use applicable frozen context and exact answered revisions with their sources, without reconstructing all cumulative history. Preserve unknown and no-data answers; synthetic conditions never become study facts. Keep project facts shared and P2 additional directions Lead-only. Researcher reports, confirmed paraphrases and passing diagnostics do not verify assumptions. A material premise change needs an exact successor question; saved preferences stay settled within their scope. Retain exact context and answer references. Dialogue or saved answers cannot revise a model, launch computation or establish a guarantee. Use existing assumption and data-requirement sections to explain whether the target can be recovered and the procedure applied in the described setting, including conditions that data cannot check. Leave identification or applicability gaps explicit even when no P3 run is requested. Author researcher-decision attention with schema_version 1.2.0, exact project/model scope and a named responsible audience; retain authored expectation topics and exact answer applicability references. Read the unanswered questions carried in proposal assumptions, limitations and data requirements and in specialist applicability and findings. Consolidate consequential researcher choices into exact-model attention_items with references to the originating proposal or finding; do not invent a researcher answer or turn a team-resolvable scientific obligation into a preference question. Use native host question tools neither for optional questions nor to substitute for the durable harness dialogue. Optional unknowns permit conditional work; a genuinely blocking question in this sequential stage uses the existing researcher-question.json pause mechanism. Ask only when both conditions hold: plausible answers materially change the target or interpretation, validity of the intended claim, data applicability or a meaningful resource compromise; and the missing input is an unresolved researcher preference or study fact the team cannot establish from available material. Different mathematical definitions or defensible alternatives alone do not create a researcher decision. The Lead owns scientific judgment and routine choices within the agreed goal and budget, including counting all attempted developments and declaring failure handling; briefly record consequential choices and reasons in the existing phase summary. Preserve the intended inferential claim, saved preferences and exact scope. A researcher cannot certify assumptions by preference. Empty attention output is valid. For each new researcher_decision author decision_priority as interpretation, inference, data or resources, using the highest material consequence in that order, and response_kind as choice or study_fact. Keep question to one current choice or exact factual request. context_markdown identifies the affected point with the minimum useful mathematics and locally defined symbols; likely_consequence gives its practical effect without repetition. For a choice, author options when a useful finite set exists, usually two or three realistic alternatives as {id,label,consequence} with unique IDs and actual benefits/costs. recommendation is Markdown Lead advice and reason, or the evidence needed before advice is justified; never preselect or save a recommendation as the researcher answer. A study_fact names the missing information, applicability limit and what can proceed while unknown, without options or recommendation. Inspect supplied material first. Do not repeatedly request unavailable facts during synthetic work. Consolidate duplicates while retaining independently answerable premises and exact scope/source/answer references. Carry forward only materially new consequences in the brief; retain derivations and earlier context through sources. No rigid word cap or separate rationale-writing checklist applies. ",
+      "reads": [
+        "p2.project_brief",
+        "p2.literature_synthesis",
+        "p2.literature_library",
+        "p2.literature_coverage",
+        "p2.current_catalog",
+        "p2.theory_proposal",
+        "p2.empirical_proposal",
+        "p2.lead_proposal",
+        "p2.theory_review",
+        "p2.empirical_review"
+      ],
+      "writes": [
+        "p2.catalog_assessment"
+      ],
+      "handoff_required": true,
+      "artifact_contracts": {
+        "p2.catalog_assessment": {
+          "artifact_type": "record",
+          "audience": [
+            "research_lead",
+            "theorist",
+            "data_analyst",
+            "p5",
+            "user"
+          ],
+          "delivery": "inline"
+        }
+      }
+    }
+  ],
+  "run_local_outputs": [
+    {
+      "output_id": "p2.theory_proposal",
+      "output_kind": "scientific_record",
+      "producer": "theorist",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/method-proposal.schema.json",
+      "purpose": "Exactly one independent proposal or scoped revision.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p2.empirical_proposal",
+      "output_kind": "scientific_record",
+      "producer": "data_analyst",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/method-proposal.schema.json",
+      "purpose": "Exactly one independent proposal or scoped revision.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p2.lead_proposal",
+      "output_kind": "scientific_record",
+      "producer": "research_lead",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/lead-proposal.schema.json",
+      "purpose": "Exactly one concrete lead proposal aligned with researcher intent; preserve attributed origin when a method seed is supplied.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p2.theory_review",
+      "output_kind": "audit",
+      "producer": "theorist",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/proposal-audit.schema.json",
+      "purpose": "One report covering exactly the analyst proposal and the lead proposal.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p2.empirical_review",
+      "output_kind": "audit",
+      "producer": "data_analyst",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/proposal-audit.schema.json",
+      "purpose": "One report covering exactly the theorist proposal and the lead proposal.",
+      "required": true,
+      "requirement": "always"
+    },
+    {
+      "output_id": "p2.catalog_assessment",
+      "output_kind": "scientific_record",
+      "producer": "research_lead",
+      "schema_application": "object",
+      "schema_uri": "architecture/schemas/catalog-assessment.schema.json",
+      "purpose": "Lead-authored procedure summaries and critical evaluations referencing exact original proposals and audits, without replacing their mathematics.",
+      "required": true,
+      "requirement": "always"
+    }
+  ],
+  "validation_rules": [
+    {
+      "validator_id": "p2.role_sequence",
+      "category": "run_boundary",
+      "severity": "blocking",
+      "description": "Independent proposals, cross-reviews and lead reconciliation obey the declared order and visibility. Only the lead receives per-run P2 instructions or raw supplied-method origin; specialists receive the common research setting and literature, then the exact fixed scientific proposals for audit."
+    },
+    {
+      "validator_id": "p2.scope_boundary",
+      "category": "promotion_safety",
+      "severity": "blocking",
+      "description": "Focused proposals investigate the selected baseline: at most one may revise its existing stable ID, other alternatives use new stable IDs, and no unrelated existing method is modified. Full-catalog changes remain limited to the declared change set."
+    },
+    {
+      "validator_id": "p2.method_identity",
+      "category": "alignment",
+      "severity": "blocking",
+      "description": "Stable IDs remain permanent; calculation-defining changes advance the positive integer version by exactly one and change the digest; prose-only changes preserve both."
+    },
+    {
+      "validator_id": "p2.literature_authority",
+      "category": "provenance",
+      "severity": "blocking",
+      "description": "Formal claims cite formal Phase 1 sources. Unresolved new sources remain run-local until Phase 1 promotes them."
+    },
+    {
+      "validator_id": "p2.user_lifecycle_authority",
+      "category": "promotion_safety",
+      "severity": "blocking",
+      "description": "A retirement recommendation cannot change method lifecycle without a separate authenticated user action."
+    },
+    {
+      "validator_id": "p2.audit_target_coverage",
+      "category": "run_boundary",
+      "severity": "blocking",
+      "description": "Exactly one actual method proposal per Research Lead, Theorist and Data Analyst. Each specialist assesses the other specialist and the lead exactly once, without duplicate or self targets. Each of the three proposals has exactly one catalog disposition. Reconciliation cannot create a fourth method; retained definitions preserve original identity and content."
+    },
+    {
+      "validator_id": "catalog.unknown_modification_target",
+      "category": "scientific_completeness",
+      "severity": "blocking",
+      "description": "Every modification option's applies_to names one of the run's actual proposal_ids."
+    },
+    {
+      "validator_id": "catalog.modification_coverage",
+      "category": "scientific_completeness",
+      "severity": "blocking",
+      "description": "Every retained proposal carries at least one lead-authored modification option and at most three; option ids are unique. When every proposal is excluded, zero options are required."
+    }
+  ],
+  "publication_bindings": [
+    {
+      "binding_id": "p2.append_attention_items",
+      "applicable_modes": [
+        "p2.full_catalog",
+        "p2.focused_method"
+      ],
+      "operation": "append",
+      "output_ids": [
+        "p2.catalog_assessment"
+      ],
+      "target": {
+        "kind": "cumulative_collection",
+        "collection_id": "project.attention_history",
+        "object_type": "attention_item"
+      },
+      "prior_target_policy": "not_applicable",
+      "publisher_transform": "none",
+      "may_create_scientific_content": false
+    },
+    {
+      "binding_id": "p2.append_attention_items_supplied",
+      "applicable_modes": [
+        "p2.researcher_proposal"
+      ],
+      "operation": "append",
+      "output_ids": [
+        "p2.catalog_assessment"
+      ],
+      "target": {
+        "kind": "cumulative_collection",
+        "collection_id": "project.attention_history",
+        "object_type": "attention_item"
+      },
+      "prior_target_policy": "not_applicable",
+      "publisher_transform": "none",
+      "may_create_scientific_content": false
+    },
+    {
+      "binding_id": "p2.upsert_method_records",
+      "applicable_modes": [
+        "p2.full_catalog",
+        "p2.focused_method"
+      ],
+      "operation": "upsert_each",
+      "output_ids": [
+        "p2.theory_proposal",
+        "p2.empirical_proposal",
+        "p2.lead_proposal",
+        "p2.catalog_assessment"
+      ],
+      "target": {
+        "kind": "keyed_current_slots",
+        "collection_id": "p2.method_records",
+        "record_type": "method_record",
+        "item_key_pointer": "/identity/stable_id",
+        "slot_template": "methods/{item_key}/current"
+      },
+      "prior_target_policy": "absent_or_match_current",
+      "publisher_transform": "deterministic_index",
+      "may_create_scientific_content": false,
+      "source_input_ids": [
+        "p2.current_catalog"
+      ]
+    },
+    {
+      "binding_id": "p2.upsert_method_records_supplied",
+      "applicable_modes": [
+        "p2.researcher_proposal"
+      ],
+      "operation": "upsert_each",
+      "output_ids": [
+        "p2.theory_proposal",
+        "p2.empirical_proposal",
+        "p2.lead_proposal",
+        "p2.catalog_assessment"
+      ],
+      "target": {
+        "kind": "keyed_current_slots",
+        "collection_id": "p2.method_records",
+        "record_type": "method_record",
+        "item_key_pointer": "/identity/stable_id",
+        "slot_template": "methods/{item_key}/current"
+      },
+      "prior_target_policy": "absent_or_match_current",
+      "publisher_transform": "deterministic_index",
+      "may_create_scientific_content": false,
+      "source_input_ids": [
+        "p2.current_catalog"
+      ]
+    },
+    {
+      "binding_id": "p2.rebuild_method_catalog",
+      "applicable_modes": [
+        "p2.full_catalog",
+        "p2.focused_method"
+      ],
+      "operation": "replace",
+      "output_ids": [
+        "p2.theory_proposal",
+        "p2.empirical_proposal",
+        "p2.lead_proposal",
+        "p2.catalog_assessment"
+      ],
+      "source_input_ids": [
+        "p2.current_catalog"
+      ],
+      "target": {
+        "kind": "current_slot",
+        "slot_id": "p2.method_catalog.current",
+        "record_type": "method_catalog"
+      },
+      "prior_target_policy": "absent_or_match_current",
+      "publisher_transform": "deterministic_index",
+      "may_create_scientific_content": false
+    },
+    {
+      "binding_id": "p2.rebuild_method_catalog_supplied",
+      "applicable_modes": [
+        "p2.researcher_proposal"
+      ],
+      "operation": "replace",
+      "output_ids": [
+        "p2.theory_proposal",
+        "p2.empirical_proposal",
+        "p2.lead_proposal",
+        "p2.catalog_assessment"
+      ],
+      "source_input_ids": [
+        "p2.current_catalog"
+      ],
+      "target": {
+        "kind": "current_slot",
+        "slot_id": "p2.method_catalog.current",
+        "record_type": "method_catalog"
+      },
+      "prior_target_policy": "absent_or_match_current",
+      "publisher_transform": "deterministic_index",
+      "may_create_scientific_content": false
+    },
+    {
+      "binding_id": "p2.replace_phase_decision",
+      "applicable_modes": [
+        "p2.full_catalog",
+        "p2.focused_method"
+      ],
+      "operation": "replace",
+      "output_ids": [
+        "p2.catalog_assessment"
+      ],
+      "target": {
+        "kind": "current_slot",
+        "slot_id": "p2.phase_decision.current",
+        "record_type": "phase_decision"
+      },
+      "prior_target_policy": "absent_or_match_current",
+      "publisher_transform": "none",
+      "may_create_scientific_content": false
+    },
+    {
+      "binding_id": "p2.replace_phase_decision_supplied",
+      "applicable_modes": [
+        "p2.researcher_proposal"
+      ],
+      "operation": "replace",
+      "output_ids": [
+        "p2.catalog_assessment"
+      ],
+      "target": {
+        "kind": "current_slot",
+        "slot_id": "p2.phase_decision.current",
+        "record_type": "phase_decision"
+      },
+      "prior_target_policy": "absent_or_match_current",
+      "publisher_transform": "none",
+      "may_create_scientific_content": false
+    }
+  ],
+  "promotion": {
+    "strategy": "catalog_transaction",
+    "canonical_record_types": [
+      "method_catalog",
+      "method_record",
+      "phase_decision"
+    ],
+    "cumulative_object_types": [
+      "attention_item"
+    ],
+    "blocking_validator_ids": [
+      "p2.role_sequence",
+      "p2.scope_boundary",
+      "p2.method_identity",
+      "p2.literature_authority",
+      "p2.user_lifecycle_authority",
+      "p2.audit_target_coverage",
+      "catalog.unknown_modification_target",
+      "catalog.modification_coverage"
+    ],
+    "failure_behavior": "Keep the prior catalog current; retain the candidate only in its run workspace.",
+    "atomic": true
+  },
+  "downstream_effects": [
+    {
+      "trigger": "mathematical_method_change",
+      "affected_phases": [
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "description": "The latest method-bound records remain current in record position but cannot satisfy exact-method use until user-started replacement runs reassess the new identity.",
+      "automatic_run": false,
+      "alignment_effect": {
+        "action": "set",
+        "state": "outdated"
+      },
+      "attention_effect": {
+        "action": "create_required"
+      }
+    }
+  ],
+  "ui_projection": {
+    "researcher_questions": [
+      "Which methods are available?",
+      "What is each method's innovation and exact definition?",
+      "What changed?",
+      "Which methods have current exactly aligned P3 and P4 records?"
+    ],
+    "fields": [
+      {
+        "field_id": "p2.method_table",
+        "source": "method_catalog.current.methods",
+        "label": "Methods",
+        "meaning": "Original proposer-authored exact definitions, algorithms, assumptions and literature provenance."
+      },
+      {
+        "field_id": "p2.proposal_reviews",
+        "source": "proposal_audits.assessments",
+        "label": "Proposal assessments",
+        "meaning": "Attributed audits linked to the exact target proposal and statement."
+      },
+      {
+        "field_id": "p2.catalog_comparison",
+        "source": "catalog_assessment.comparison_markdown",
+        "label": "Method comparison",
+        "meaning": "The lead's comparison and retain/exclude rationale. Researcher method selection remains separate."
+      },
+      {
+        "field_id": "p2.phase_alignment",
+        "source": "method_catalog.current.projections",
+        "label": "P3 and P4",
+        "meaning": "Separate publication, current-position, alignment, attention, and outcome indicators."
+      },
+      {
+        "field_id": "p2.computational_profile",
+        "source": "method_proposals.computational_profile",
+        "label": "Computational profile",
+        "meaning": "The proposer's authored cost account for its candidate: dominant per-iteration cost with defined symbols, memory footprint and scaling with problem dimensions, including explicitly stated uncertainty."
+      },
+      {
+        "field_id": "p2.modification_options",
+        "source": "catalog_assessment.modification_options",
+        "label": "Modification options",
+        "meaning": "The lead's authored modifications of each candidate's own design choices: the exact mathematical change and the regime or preference under which it beats the proposed form. Options are not new methods and never edit the proposal's attributed mathematics."
+      }
+    ],
+    "user_action_choice_ids": [
+      "p2.selected_method",
+      "p2.instructions",
+      "p2.selected_history"
+    ]
+  },
+  "acceptance_scenarios": [
+    "s01.first_project",
+    "s02.phase2_scopes",
+    "s04.method_definition_change",
+    "s09.interrupted_promotion"
+  ],
+  "capabilities": [
+    "researcher_dialogue_v1",
+    "native_tool_preflight_v1",
+    "consequential_researcher_decisions_v1"
+  ]
+}

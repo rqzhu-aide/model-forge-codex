@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/exhibit.schema.json",
+  "title": "Exhibit",
+  "description": "A captioned, UI-renderable exhibit (Tez, 2026-09-07): a small structured card that says WHERE a result/table/figure lives and WHAT it shows. The heavyweight artifact itself is a T3w file sealed by sha256; this card is the display layer.",
+  "type": "object",
+  "required": ["exhibit_id", "kind", "title", "caption", "artifact_path", "artifact_sha256", "media_type"],
+  "additionalProperties": false,
+  "properties": {
+    "exhibit_id": { "type": "string", "pattern": "^exhibit\\.[a-z0-9_.-]+$" },
+    "kind": { "type": "string", "enum": ["figure", "table", "result"] },
+    "title": { "type": "string", "maxLength": 120 },
+    "caption": { "type": "string", "maxLength": 600, "description": "One or two sentences: what the exhibit shows, for UI display and paper captions." },
+    "detail_md": { "type": "string", "maxLength": 2000, "description": "Optional longer markdown explanation the UI can expand." },
+    "artifact_path": { "type": "string", "description": "Path to the T3w artifact (figure/table file), workspace-relative at authoring; the harness copies it into the run folder at collection." },
+    "artifact_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "media_type": { "type": "string", "enum": ["image/svg+xml", "image/png", "text/csv", "application/json", "text/markdown"] },
+    "figure_kind": { "type": "string", "enum": ["convergence", "variance", "trajectory", "feasibility", "calibration", "other"] }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/claim-map.schema.json",
+  "title": "Claim Map",
+  "description": "Structured proof-audit map (design/15 §4): per statement — proof granularity, dependency edges (which statements/assumptions it leans on), reverse edges (what depends on it), and novelty links back to P1 literature.",
+  "type": "object",
+  "required": [
+    "claims"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "statement_id",
+          "proof_status",
+          "depends_on"
+        ],
+        "properties": {
+          "statement_id": {
+            "type": "string"
+          },
+          "proof_status": {
+            "type": "string",
+            "enum": [
+              "full",
+              "sketch",
+              "cited",
+              "missing"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "description": "A short readable scientific label (for example, 'Flow equivalence') that identifies the exact statement without replacing or strengthening it. Prefer words to an internal ID."
+          },
+          "latex": {
+            "type": "string",
+            "description": "Display-math LaTeX for the claim's core statement (UI hover, paper reuse)."
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "statement.* / assumption.* ids this claim leans on.",
+            "uniqueItems": true
+          },
+          "used_by": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "novelty_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "lit.* ids from P1 this claim extends or contrasts."
+          },
+          "scientific_status": {
+            "enum": [
+              "established",
+              "conditional",
+              "incomplete",
+              "contradicted",
+              "retracted",
+              "untested"
+            ]
+          },
+          "proof_refs": {
+            "type": "array",
+            "items": {
+              "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/delegation-grant.schema.json",
+  "title": "Delegation Grant",
+  "description": "Immutable user-issued authority for one remote operator, one project, and explicit action-specific target scopes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "grant_type",
+    "grant_id",
+    "project_id",
+    "user_id",
+    "operator_id",
+    "permissions",
+    "issued_at",
+    "not_before",
+    "expires_at",
+    "revocation_handle",
+    "content_sha256",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "grant_type": {
+      "const": "delegation_grant"
+    },
+    "grant_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "project_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "user_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "operator_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "permissions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/permission"
+      }
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "not_before": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "revocation_handle": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "SHA-256 of RFC 8785 canonical grant JSON with content_sha256 and signature omitted."
+    },
+    "signature": {
+      "$ref": "#/$defs/signature"
+    }
+  },
+  "$defs": {
+    "permission": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/startRunPermission"
+        },
+        {
+          "$ref": "#/$defs/cancelRunPermission"
+        },
+        {
+          "$ref": "#/$defs/methodPermission"
+        }
+      ]
+    },
+    "startRunPermission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_type",
+        "phase_ids"
+      ],
+      "properties": {
+        "action_type": {
+          "const": "start_run"
+        },
+        "phase_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/phaseId"
+          }
+        },
+        "method_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          }
+        }
+      }
+    },
+    "cancelRunPermission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_type",
+        "run_scope"
+      ],
+      "properties": {
+        "action_type": {
+          "const": "cancel_run"
+        },
+        "run_scope": {
+          "oneOf": [
+            {
+              "const": "all_project_runs"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "common-definitions.schema.json#/$defs/stableId"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "methodPermission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_type",
+        "method_ids"
+      ],
+      "properties": {
+        "action_type": {
+          "enum": [
+            "retire_method",
+            "reactivate_method",
+            "activate_method"
+          ]
+        },
+        "method_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          }
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "key_id",
+        "value"
+      ],
+      "properties": {
+        "algorithm": {
+          "enum": [
+            "Ed25519",
+            "ES256"
+          ]
+        },
+        "key_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 16
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+# Copy this file to the location shown in Team Settings.
+# These provider settings apply to every project using the same backend data folder.
+# Edit by hand or in Team Settings (Edit provider file); a UI save validates
+# and rewrites this file, normalizing its formatting. New turns read the file again.
+
+# The optional [provider] table sets a shared default connection that members
+# without their own table inherit. The OpenAI account is the one shared
+# sign-in on this host; each member still gets its own conversation.
+[provider]
+type = "openai"
+model = "gpt-6.1-sol"
+reasoning_effort = "xhigh"
+
+# For a custom shared default, change type to "custom" and fill in these fields.
+# The endpoint must support the Responses API used by the Codex bridge.
+# id = "my-provider"
+# base_url = "https://your-provider.example/v1"
+# api_key = "paste-your-key-in-the-local-file"
+
+# Alternatively, use a key already in the backend process environment.
+# Use exactly one of api_key or api_key_env.
+# api_key_env = "MY_PROVIDER_API_KEY"
+
+# Member tables are optional. Without type, the member inherits the shared
+# default connection and may override only the model and reasoning effort.
+# [members.research_lead]
+# model = "your-lead-model"
+# reasoning_effort = "high"
+
+# A member table with a type is a complete connection of its own; it never
+# inherits another provider's key or endpoint. With type = "openai" the member
+# uses the connected OpenAI account even when the shared default is custom.
+# [members.theorist]
+# type = "custom"
+# id = "my-member-provider"
+# base_url = "https://your-provider.example/v1"
+# model = "your-theory-model"
+# api_key = ""
+
+# [members.data_analyst]
+# model = "your-analysis-model"
+
+# [members.outside_reviewer]
+# model = "your-review-model"
+
+# Members absent from this file keep their per-project saved settings.
+# Removing the file entirely restores per-project settings for every member.

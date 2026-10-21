@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/attention-item-collection.schema.json",
+  "title": "Research Attention Item Collection",
+  "description": "Newly authored contextual attention items, each with explicit researcher-decision or research-task kind, receiving phase and exact scientific context.",
+  "type": "array",
+  "items": {
+    "$ref": "contextual-attention-item.schema.json"
+  }
+}

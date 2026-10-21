@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0.0",
+  "event_type": "command_attempt_audit",
+  "audit_sequence": 1,
+  "audit_event_id": "audit.command.start.001",
+  "project_id": "project.demo",
+  "action_type": "start_run",
+  "target": {
+    "target_type": "run_start",
+    "phase": "P4",
+    "mode": "p4.preliminary",
+    "method_id": "method.overlap_stabilized_score"
+  },
+  "raw_request": {
+    "artifact_id": "artifact.command.request.p4.preliminary.001",
+    "uri": "artifact://project.demo/command-requests/command.p4.preliminary.001.json",
+    "sha256": "9a36d0c72df923afc9e615502a1d2e611cefaf778a748b565318bb1f7ed13e7e",
+    "media_type": "application/json",
+    "byte_length": 1658
+  },
+  "validated_command": {
+    "command_id": "command.p4.preliminary.001",
+    "command_sha256": "35e2cb11917c65400edef65fd85e3c27b889ec15889099566da57da163669240"
+  },
+  "requested_by": {
+    "user_id": "researcher.demo",
+    "operating_actor_type": "user"
+  },
+  "check_stage": "acceptance",
+  "authorization": {
+    "decision": "authorized",
+    "authentication_check": "passed"
+  },
+  "result": {
+    "status": "accepted"
+  },
+  "occurred_at": "2026-08-01T14:00:00Z",
+  "prior_audit_root_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "content_sha256": "9882c1d3f446755ecd5cde0260b44738d0ebe13ccbba6a54440518f680aaa648",
+  "audit_root_sha256": "48bff3473eaf025088fea94047ec911868979a3a200e6d2e5ce676526dcb7615"
+}

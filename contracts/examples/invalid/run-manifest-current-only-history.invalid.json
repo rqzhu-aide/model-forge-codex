@@ -1,0 +1,524 @@
+{
+    "schema_version":  "1.0.0",
+    "run_id":  "run.p4.preliminary.20260801t140000z",
+    "project_id":  "project.demo",
+    "command_id":  "command.p4.preliminary.001",
+    "command_sha256":  "ed29889e27d4e4e5965a972b06ac22f42193f86899cb4ed07e076f50ef8fdb5e",
+    "command_idempotency_key":  "demo-p4-preliminary-20260801",
+    "phase":  "P4",
+    "phase_contract_version":  "2.0.0",
+    "phase_contract_sha256":  "e0aa63edebdc8ec3d919507ce674b9865666b680732c5fa287b89ab97101ddd1",
+    "mode":  "p4.preliminary",
+    "initiated_by":  {
+                         "user_id":  "researcher.demo",
+                         "operating_actor_type":  "user"
+                     },
+    "user_request":  {
+                         "choice_values":  {
+                                               "p4.selected_method":  {
+                                                                          "stable_id":  "method.overlap_stabilized_score",
+                                                                          "version":  1,
+                                                                          "definition_sha256":  "1111111111111111111111111111111111111111111111111111111111111111"
+                                                                      },
+                                               "p4.instructions":  "Assess finite-sample bias, root mean squared error, and interval coverage under weak overlap before committing to a comprehensive study.",
+                                               "p4.selected_history":  [
+                                                                           {
+                                                                               "artifact_id":  "artifact.project_brief",
+                                                                               "uri":  "artifact://artifact.project_brief",
+                                                                               "sha256":  "1616161616161616161616161616161616161616161616161616161616161616",
+                                                                               "media_type":  "application/json"
+                                                                           }
+                                                                       ]
+                                           },
+                         "context_policy":  "current_only",
+                         "authorized_resource_constraints":  {
+                                                                 "wall_time_limit_seconds":  14400,
+                                                                 "network_policy":  "approved_resources"
+                                                             }
+                     },
+    "frozen_inputs":  [
+                          {
+                              "input_id":  "input.project_brief",
+                              "input_kind":  "formal_record",
+                              "dependency_class":  "contextual",
+                              "selected_by":  "phase_contract",
+                              "record_basis":  {
+                                                   "record_id":  "record.project_brief",
+                                                   "record_type":  "project_brief",
+                                                   "generation_id":  "generation.project_brief.003",
+                                                   "generation_number":  3,
+                                                   "content_sha256":  "1616161616161616161616161616161616161616161616161616161616161616",
+                                                   "publication_state_at_use":  "formal",
+                                                   "record_position_at_use":  "current",
+                                                   "dependency_class":  "contextual"
+                                               },
+                              "artifact":  {
+                                               "artifact_id":  "artifact.project_brief",
+                                               "uri":  "artifact://artifact.project_brief",
+                                               "sha256":  "1616161616161616161616161616161616161616161616161616161616161616",
+                                               "media_type":  "application/json"
+                                           },
+                              "purpose":  "Preserve the current scientific question and intended scope.",
+                              "contract_binding_id":  "p4.project_brief"
+                          },
+                          {
+                              "input_id":  "input.literature_synthesis",
+                              "input_kind":  "formal_record",
+                              "dependency_class":  "contextual",
+                              "selected_by":  "phase_contract",
+                              "record_basis":  {
+                                                   "record_id":  "record.literature_synthesis",
+                                                   "record_type":  "literature_synthesis",
+                                                   "generation_id":  "generation.literature_synthesis.004",
+                                                   "generation_number":  4,
+                                                   "content_sha256":  "1717171717171717171717171717171717171717171717171717171717171717",
+                                                   "publication_state_at_use":  "formal",
+                                                   "record_position_at_use":  "current",
+                                                   "dependency_class":  "contextual"
+                                               },
+                              "artifact":  {
+                                               "artifact_id":  "artifact.literature_synthesis",
+                                               "uri":  "artifact://artifact.literature_synthesis",
+                                               "sha256":  "1717171717171717171717171717171717171717171717171717171717171717",
+                                               "media_type":  "application/json"
+                                           },
+                              "purpose":  "Ground comparisons and substantive interpretation in the current literature.",
+                              "contract_binding_id":  "p4.literature_synthesis"
+                          },
+                          {
+                              "input_id":  "input.current_method",
+                              "input_kind":  "formal_record",
+                              "dependency_class":  "hard",
+                              "selected_by":  "phase_contract",
+                              "record_basis":  {
+                                                   "record_id":  "record.method.overlap_stabilized_score",
+                                                   "record_type":  "method_record",
+                                                   "generation_id":  "generation.method.001",
+                                                   "generation_number":  1,
+                                                   "content_sha256":  "2222222222222222222222222222222222222222222222222222222222222222",
+                                                   "publication_state_at_use":  "formal",
+                                                   "record_position_at_use":  "current",
+                                                   "dependency_class":  "hard",
+                                                   "method_identity":  {
+                                                                           "stable_id":  "method.overlap_stabilized_score",
+                                                                           "version":  1,
+                                                                           "definition_sha256":  "1111111111111111111111111111111111111111111111111111111111111111"
+                                                                       }
+                                               },
+                              "artifact":  {
+                                               "artifact_id":  "artifact.method_record",
+                                               "uri":  "artifact://artifact.method_record",
+                                               "sha256":  "2222222222222222222222222222222222222222222222222222222222222222",
+                                               "media_type":  "application/json"
+                                           },
+                              "purpose":  "Fix the exact calculation-defining method identity for every computation and assessment.",
+                              "contract_binding_id":  "p4.method"
+                          },
+                          {
+                              "input_id":  "input.current_method_catalog",
+                              "input_kind":  "formal_record",
+                              "dependency_class":  "contextual",
+                              "selected_by":  "phase_contract",
+                              "record_basis":  {
+                                                   "record_id":  "record.method_catalog",
+                                                   "record_type":  "method_catalog",
+                                                   "generation_id":  "generation.catalog.002",
+                                                   "generation_number":  2,
+                                                   "content_sha256":  "3333333333333333333333333333333333333333333333333333333333333333",
+                                                   "publication_state_at_use":  "formal",
+                                                   "record_position_at_use":  "current",
+                                                   "dependency_class":  "contextual"
+                                               },
+                              "artifact":  {
+                                               "artifact_id":  "artifact.method_catalog",
+                                               "uri":  "artifact://artifact.method_catalog",
+                                               "sha256":  "3333333333333333333333333333333333333333333333333333333333333333",
+                                               "media_type":  "application/json"
+                                           },
+                              "purpose":  "Provide the Phase 2 rationale, assumptions, and comparison methods.",
+                              "contract_binding_id":  "p4.method_catalog"
+                          },
+                          {
+                              "input_id":  "input.profile.data_analyst",
+                              "input_kind":  "profile",
+                              "dependency_class":  "hard",
+                              "selected_by":  "phase_contract",
+                              "artifact":  {
+                                               "artifact_id":  "artifact.profile.data_analyst.p4",
+                                               "uri":  "artifact://artifact.profile.data_analyst.p4",
+                                               "sha256":  "1515151515151515151515151515151515151515151515151515151515151515",
+                                               "media_type":  "application/json"
+                                           },
+                              "purpose":  "Freeze the data analyst\u0027s Phase 4 stance, memory, skills, tools, and output contract."
+                          },
+                          {
+                              "input_id":  "input.profile.theorist",
+                              "input_kind":  "profile",
+                              "dependency_class":  "hard",
+                              "selected_by":  "phase_contract",
+                              "artifact":  {
+                                               "artifact_id":  "artifact.profile.theorist.p4",
+                                               "uri":  "artifact://artifact.profile.theorist.p4",
+                                               "sha256":  "1818181818181818181818181818181818181818181818181818181818181818",
+                                               "media_type":  "application/json"
+                                           },
+                              "purpose":  "Freeze the theorist\u0027s Phase 4 mathematical-fidelity audit contract."
+                          },
+                          {
+                              "input_id":  "input.profile.research_lead",
+                              "input_kind":  "profile",
+                              "dependency_class":  "hard",
+                              "selected_by":  "phase_contract",
+                              "artifact":  {
+                                               "artifact_id":  "artifact.profile.research_lead.p4",
+                                               "uri":  "artifact://artifact.profile.research_lead.p4",
+                                               "sha256":  "1919191919191919191919191919191919191919191919191919191919191919",
+                                               "media_type":  "application/json"
+                                           },
+                              "purpose":  "Freeze the research lead\u0027s synthesis and user-decision contract."
+                          },
+                          {
+                              "input_id":  "input.skill.stat_paper_writing",
+                              "input_kind":  "skill",
+                              "dependency_class":  "hard",
+                              "selected_by":  "phase_contract",
+                              "artifact":  {
+                                               "artifact_id":  "artifact.skill.stat_paper_writing",
+                                               "uri":  "artifact://artifact.skill.stat_paper_writing",
+                                               "sha256":  "1414141414141414141414141414141414141414141414141414141414141414",
+                                               "media_type":  "application/json"
+                                           },
+                              "purpose":  "Provide the required statistical scientific communication workflow."
+                          },
+                          {
+                              "input_id":  "input.tool_manifest",
+                              "input_kind":  "tool_manifest",
+                              "dependency_class":  "hard",
+                              "selected_by":  "phase_contract",
+                              "artifact":  {
+                                               "artifact_id":  "artifact.tool.statistical_runtime",
+                                               "uri":  "artifact://artifact.tool.statistical_runtime",
+                                               "sha256":  "1818181818181818181818181818181818181818181818181818181818181818",
+                                               "media_type":  "application/json"
+                                           },
+                              "purpose":  "Freeze execution, data-access, write-boundary, and network permissions."
+                          }
+                      ],
+    "expected_target_generations":  [
+                                        {
+                                            "target_id":  "target.empirical_record",
+                                            "slot_id":  "p4.empirical_evidence_index.current",
+                                            "record_id":  "record.empirical_evidence.overlap_stabilized_score",
+                                            "record_type":  "empirical_evidence_index",
+                                            "expectation":  "absent"
+                                        },
+                                        {
+                                            "target_id":  "target.empirical_synthesis",
+                                            "slot_id":  "p4.empirical_synthesis.current",
+                                            "record_id":  "record.empirical_synthesis.overlap_stabilized_score",
+                                            "record_type":  "empirical_synthesis",
+                                            "expectation":  "absent"
+                                        },
+                                        {
+                                            "target_id":  "target.implementation_record",
+                                            "slot_id":  "p4.implementation_record.current",
+                                            "record_id":  "record.implementation.overlap_stabilized_score",
+                                            "record_type":  "implementation_record",
+                                            "expectation":  "absent"
+                                        },
+                                        {
+                                            "target_id":  "target.phase_decision",
+                                            "slot_id":  "p4.phase_decision.current",
+                                            "record_id":  "decision.p4.preliminary",
+                                            "record_type":  "phase_decision",
+                                            "expectation":  "absent"
+                                        }
+                                    ],
+    "publication_plan":  [
+                             {
+                                 "publication_binding_id":  "p4.append_attention_items",
+                                 "operation":  "append",
+                                 "source_output_mappings":  [
+                                                                {
+                                                                    "contract_output_id":  "p4.attention_items",
+                                                                    "output_id":  "output.attention_items"
+                                                                }
+                                                            ],
+                                 "target":  {
+                                                "kind":  "cumulative_collection",
+                                                "collection_id":  "project.attention_history",
+                                                "object_type":  "attention_item"
+                                            },
+                                 "prior_target_policy":  "not_applicable",
+                                 "publisher_transform":  "none",
+                                 "may_create_scientific_content":  false
+                             },
+                             {
+                                 "publication_binding_id":  "p4.append_evidence",
+                                 "operation":  "append",
+                                 "source_output_mappings":  [
+                                                                {
+                                                                    "contract_output_id":  "p4.evidence",
+                                                                    "output_id":  "output.preliminary_evidence"
+                                                                }
+                                                            ],
+                                 "target":  {
+                                                "kind":  "cumulative_collection",
+                                                "collection_id":  "p4.evidence_history",
+                                                "object_type":  "evidence_item"
+                                            },
+                                 "prior_target_policy":  "not_applicable",
+                                 "publisher_transform":  "none",
+                                 "may_create_scientific_content":  false
+                             },
+                             {
+                                 "publication_binding_id":  "p4.replace_evidence_index",
+                                 "operation":  "replace",
+                                 "source_output_mappings":  [
+                                                                {
+                                                                    "contract_output_id":  "p4.empirical_index_candidate",
+                                                                    "output_id":  "output.empirical_evidence_index"
+                                                                }
+                                                            ],
+                                 "target":  {
+                                                "kind":  "current_slot",
+                                                "expected_target_id":  "target.empirical_record"
+                                            },
+                                 "prior_target_policy":  "absent_or_match_current",
+                                 "publisher_transform":  "none",
+                                 "may_create_scientific_content":  false
+                             },
+                             {
+                                 "publication_binding_id":  "p4.replace_empirical_synthesis",
+                                 "operation":  "replace",
+                                 "source_output_mappings":  [
+                                                                {
+                                                                    "contract_output_id":  "p4.empirical_synthesis_candidate",
+                                                                    "output_id":  "output.empirical_synthesis"
+                                                                }
+                                                            ],
+                                 "target":  {
+                                                "kind":  "current_slot",
+                                                "expected_target_id":  "target.empirical_synthesis"
+                                            },
+                                 "prior_target_policy":  "absent_or_match_current",
+                                 "publisher_transform":  "none",
+                                 "may_create_scientific_content":  false
+                             },
+                             {
+                                 "publication_binding_id":  "p4.replace_implementation_record",
+                                 "operation":  "replace",
+                                 "source_output_mappings":  [
+                                                                {
+                                                                    "contract_output_id":  "p4.implementation_record_candidate",
+                                                                    "output_id":  "output.implementation_record"
+                                                                }
+                                                            ],
+                                 "target":  {
+                                                "kind":  "current_slot",
+                                                "expected_target_id":  "target.implementation_record"
+                                            },
+                                 "prior_target_policy":  "absent_or_match_current",
+                                 "publisher_transform":  "none",
+                                 "may_create_scientific_content":  false
+                             },
+                             {
+                                 "publication_binding_id":  "p4.replace_phase_decision",
+                                 "operation":  "replace",
+                                 "source_output_mappings":  [
+                                                                {
+                                                                    "contract_output_id":  "p4.decision",
+                                                                    "output_id":  "output.phase_decision"
+                                                                }
+                                                            ],
+                                 "target":  {
+                                                "kind":  "current_slot",
+                                                "expected_target_id":  "target.phase_decision"
+                                            },
+                                 "prior_target_policy":  "absent_or_match_current",
+                                 "publisher_transform":  "none",
+                                 "may_create_scientific_content":  false
+                             }
+                         ],
+    "role_plan":  [
+                      {
+                          "sequence":  1,
+                          "role":  "data_analyst",
+                          "profile_input_id":  "input.profile.data_analyst",
+                          "assignment":  "Implement the exact current method and conduct the preliminary simulation study.",
+                          "input_ids":  [
+                                            "input.project_brief",
+                                            "input.literature_synthesis",
+                                            "input.current_method_catalog",
+                                            "input.current_method",
+                                            "input.skill.stat_paper_writing",
+                                            "input.tool_manifest"
+                                        ],
+                          "output_ids":  [
+                                             "output.protocol",
+                                             "output.preliminary_evidence",
+                                             "output.analyst_synthesis",
+                                             "output.analyst_handoff"
+                                         ],
+                          "context_isolation":  false,
+                          "stage_id":  "p4.analyst",
+                          "execution_group_id":  "group.p4.1",
+                          "execution":  "serial",
+                          "role_write_root":  "runs/P4/run.p4.preliminary.20260801t140000z/roles/01-data_analyst/"
+                      },
+                      {
+                          "sequence":  2,
+                          "role":  "theorist",
+                          "profile_input_id":  "input.profile.theorist",
+                          "assignment":  "Check whether the implementation and interpretation match the exact mathematical definition and stated assumptions.",
+                          "input_ids":  [
+                                            "input.current_method",
+                                            "output.protocol",
+                                            "output.preliminary_evidence",
+                                            "output.analyst_synthesis",
+                                            "output.analyst_handoff"
+                                        ],
+                          "output_ids":  [
+                                             "output.theory_check",
+                                             "output.theorist_handoff"
+                                         ],
+                          "context_isolation":  false,
+                          "stage_id":  "p4.theorist",
+                          "execution_group_id":  "group.p4.2",
+                          "execution":  "serial",
+                          "role_write_root":  "runs/P4/run.p4.preliminary.20260801t140000z/roles/02-theorist/"
+                      },
+                      {
+                          "sequence":  3,
+                          "role":  "research_lead",
+                          "profile_input_id":  "input.profile.research_lead",
+                          "assignment":  "Synthesize the current evidence, unresolved limitations, and user choices without choosing the next run.",
+                          "input_ids":  [
+                                            "input.project_brief",
+                                            "input.literature_synthesis",
+                                            "input.current_method_catalog",
+                                            "input.current_method",
+                                            "output.protocol",
+                                            "output.preliminary_evidence",
+                                            "output.analyst_synthesis",
+                                            "output.analyst_handoff",
+                                            "output.theory_check",
+                                            "output.theorist_handoff"
+                                        ],
+                          "output_ids":  [
+                                             "output.empirical_evidence_index",
+                                             "output.empirical_synthesis",
+                                             "output.implementation_record",
+                                             "output.attention_items",
+                                             "output.phase_decision"
+                                         ],
+                          "context_isolation":  false,
+                          "stage_id":  "p4.lead",
+                          "execution_group_id":  "group.p4.3",
+                          "execution":  "serial",
+                          "role_write_root":  "runs/P4/run.p4.preliminary.20260801t140000z/roles/03-research_lead/"
+                      }
+                  ],
+    "allowed_write_root":  "runs/P4/run.p4.preliminary.20260801t140000z/",
+    "expected_outputs":  [
+                             {
+                                 "output_id":  "output.protocol",
+                                 "output_kind":  "protocol",
+                                 "relative_path":  "roles/01-data_analyst/protocol.json",
+                                 "schema_uri":  "../schemas/scientific-record.schema.json",
+                                 "required":  true,
+                                 "contract_output_id":  "p4.protocol"
+                             },
+                             {
+                                 "output_id":  "output.preliminary_evidence",
+                                 "output_kind":  "evidence_set",
+                                 "relative_path":  "roles/01-data_analyst/evidence.json",
+                                 "schema_uri":  "../schemas/evidence.schema.json",
+                                 "required":  true,
+                                 "contract_output_id":  "p4.evidence"
+                             },
+                             {
+                                 "output_id":  "output.analyst_synthesis",
+                                 "contract_output_id":  "p4.analyst_synthesis",
+                                 "output_kind":  "synthesis",
+                                 "relative_path":  "roles/01-data_analyst/analyst-synthesis.json",
+                                 "schema_uri":  "../schemas/scientific-record.schema.json",
+                                 "required":  true
+                             },
+                             {
+                                 "output_id":  "output.analyst_handoff",
+                                 "output_kind":  "handoff",
+                                 "relative_path":  "roles/01-data_analyst/analyst-to-theorist-handoff.json",
+                                 "schema_uri":  "../schemas/handoff.schema.json",
+                                 "required":  true,
+                                 "contract_output_id":  "p4.analyst_handoff"
+                             },
+                             {
+                                 "output_id":  "output.theory_check",
+                                 "output_kind":  "audit",
+                                 "relative_path":  "roles/02-theorist/method-fidelity-audit.json",
+                                 "schema_uri":  "../schemas/scientific-record.schema.json",
+                                 "required":  true,
+                                 "contract_output_id":  "p4.theory_audit"
+                             },
+                             {
+                                 "output_id":  "output.theorist_handoff",
+                                 "output_kind":  "handoff",
+                                 "relative_path":  "roles/02-theorist/theorist-to-lead-handoff.json",
+                                 "schema_uri":  "../schemas/handoff.schema.json",
+                                 "required":  true,
+                                 "contract_output_id":  "p4.theory_handoff"
+                             },
+                             {
+                                 "output_id":  "output.empirical_evidence_index",
+                                 "output_kind":  "scientific_record",
+                                 "record_type":  "empirical_evidence_index",
+                                 "relative_path":  "roles/03-research_lead/empirical-evidence-index.json",
+                                 "schema_uri":  "../schemas/scientific-record.schema.json",
+                                 "required":  true,
+                                 "contract_output_id":  "p4.empirical_index_candidate"
+                             },
+                             {
+                                 "output_id":  "output.empirical_synthesis",
+                                 "output_kind":  "synthesis",
+                                 "record_type":  "empirical_synthesis",
+                                 "relative_path":  "roles/03-research_lead/empirical-synthesis.json",
+                                 "schema_uri":  "../schemas/scientific-record.schema.json",
+                                 "required":  true,
+                                 "contract_output_id":  "p4.empirical_synthesis_candidate"
+                             },
+                             {
+                                 "output_id":  "output.implementation_record",
+                                 "contract_output_id":  "p4.implementation_record_candidate",
+                                 "output_kind":  "scientific_record",
+                                 "record_type":  "implementation_record",
+                                 "relative_path":  "roles/03-research_lead/implementation-record.json",
+                                 "schema_uri":  "../schemas/scientific-record.schema.json",
+                                 "required":  true
+                             },
+                             {
+                                 "output_id":  "output.attention_items",
+                                 "output_kind":  "attention_item_set",
+                                 "relative_path":  "roles/03-research_lead/attention-items.json",
+                                 "schema_uri":  "../schemas/attention-item.schema.json",
+                                 "required":  true,
+                                 "contract_output_id":  "p4.attention_items"
+                             },
+                             {
+                                 "output_id":  "output.phase_decision",
+                                 "output_kind":  "decision_record",
+                                 "record_type":  "phase_decision",
+                                 "relative_path":  "roles/03-research_lead/phase-decision.json",
+                                 "schema_uri":  "../schemas/decision-record.schema.json",
+                                 "required":  true,
+                                 "contract_output_id":  "p4.decision"
+                             }
+                         ],
+    "resource_policy":  {
+                            "network_policy":  "approved_resources",
+                            "secret_policy":  "no_secrets",
+                            "wall_time_limit_seconds":  14400
+                        },
+    "prepared_at":  "2026-08-01T14:00:02Z",
+    "manifest_sha256":  "7706690b1be8c01fbc7c21e960178ae046e0e4111d283f1af5d0b46ee301119f"
+}

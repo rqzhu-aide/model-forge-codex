@@ -1,0 +1,11 @@
+{
+  "summary_id": "t2s.p3.wsb-cmdp.1",
+  "phase": "P3",
+  "headline": "Affine evaluation and LP optimality hold; one bound false as stated; quantile scope unestablished.",
+  "evaluation_markdown": "## What is proven\nAffine fixed-policy evaluation, normalized flow, compact occupancy polytope, LP optimality, policy extraction, and conditional Slater-point duality.\n\n## What is false as stated\nThe uniform screen-validity bound fails for small support sets; registered in the false-as-stated register.\n\n## What P4 may rely on\nThe occupancy-LP pipeline is certifiable; the quantile variant is not.\n\n## Polish\nProofs are complete but notation drift between sections 3 and 5 should be fixed before P5.",
+  "method_scores": [
+    {"method_ref": "method.warfarin_screened_burden_cmdp", "score": 7.5, "rationale": "Sound core; one false bound; reproducibility proven in P4 round 2."}
+  ],
+  "open_items": ["quantile formulation unresolved", "notation drift sections 3-5"],
+  "created_at": "2026-09-06T06:00:00Z"
+}

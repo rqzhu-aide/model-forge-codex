@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Targeted theory assessment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "headline",
+    "assessment_markdown",
+    "limitations",
+    "suggested_actions",
+    "evidence_refs"
+  ],
+  "properties": {
+    "headline": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assessment_markdown": {
+      "type": "string",
+      "minLength": 1
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "suggested_actions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Frozen assessed source",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "family",
+          "generation_id"
+        ],
+        "properties": {
+          "family": {
+            "type": "string",
+            "minLength": 1
+          },
+          "generation_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "object_id": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "proposed_context_amendments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "statement",
+          "reason"
+        ],
+        "properties": {
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "item_id": {
+            "type": "string"
+          },
+          "origin": {
+            "enum": [
+              "researcher_reported",
+              "evidence_supported",
+              "proposed_assumption",
+              "unknown"
+            ]
+          },
+          "scope": {
+            "type": "object"
+          },
+          "answer_refs": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "source_refs": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "amends": {
+            "type": "array",
+            "items": {
+              "type": [
+                "object",
+                "string"
+              ]
+            }
+          },
+          "conflicts_with": {
+            "type": "array",
+            "items": {
+              "type": [
+                "object",
+                "string"
+              ]
+            }
+          },
+          "topic": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "followup_questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "question",
+          "scope"
+        ],
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scope": {
+            "type": "object"
+          },
+          "why_it_matters": {
+            "type": "string"
+          },
+          "consequence_markdown": {
+            "type": "string"
+          },
+          "responsible_role": {
+            "type": "string"
+          },
+          "audience": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$id": "https://model-forge.local/architecture/schemas/assessment.schema.json",
+  "description": "Assessment and options only. This output never replaces theory, changes current slots, or authorizes a revision."
+}

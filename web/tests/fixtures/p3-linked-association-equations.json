@@ -1,0 +1,17 @@
+{
+  "fixture_kind": "Standalone equation-rendering regression",
+  "blocks": [
+    {
+      "token": "$\n\\begin{aligned}\nm_\\beta(b)\n&=\\beta_{\\rm lin}\\mathcal T_{\\rm lin}\\!\\left(\\frac{b-\\bar b}{s_b}\\right)\n+\\beta_{\\rm quad}\\mathcal T_{\\rm quad}\\!\\left[\n\\left(\\frac{b-\\bar b}{s_b}\\right)^2-1\\right],\\\\\n\\log\\frac{h_L(u\\mid b_2,\\text{other features})}\n{h_L(u\\mid b_1,\\text{other features})}\n&=m_\\beta(b_2)-m_\\beta(b_1).\n\\end{aligned}\n$",
+      "latex": "\n\\begin{aligned}\nm_\\beta(b)\n&=\\beta_{\\rm lin}\\mathcal T_{\\rm lin}\\!\\left(\\frac{b-\\bar b}{s_b}\\right)\n+\\beta_{\\rm quad}\\mathcal T_{\\rm quad}\\!\\left[\n\\left(\\frac{b-\\bar b}{s_b}\\right)^2-1\\right],\\\\\n\\log\\frac{h_L(u\\mid b_2,\\text{other features})}\n{h_L(u\\mid b_1,\\text{other features})}\n&=m_\\beta(b_2)-m_\\beta(b_1).\n\\end{aligned}\n"
+    },
+    {
+      "token": "$\n\\frac{d^2m_\\beta(b)}{db^2}\n=\\frac{2\\beta_{\\rm quad}}{s_{\\rm quad}s_b^2}.\n$",
+      "latex": "\n\\frac{d^2m_\\beta(b)}{db^2}\n=\\frac{2\\beta_{\\rm quad}}{s_{\\rm quad}s_b^2}.\n"
+    },
+    {
+      "token": "$\n\\begin{aligned}\n\\Delta_c&=\\frac{\\beta_c}{s_c}\n\\{\\log(1+N_2)-\\log(1+N_1)\\},\\\\\n\\Delta_r&=\\frac{\\beta_r}{s_r}\n\\{\\log(1+a_2/90)-\\log(1+a_1/90)\\}.\n\\end{aligned}\n$",
+      "latex": "\n\\begin{aligned}\n\\Delta_c&=\\frac{\\beta_c}{s_c}\n\\{\\log(1+N_2)-\\log(1+N_1)\\},\\\\\n\\Delta_r&=\\frac{\\beta_r}{s_r}\n\\{\\log(1+a_2/90)-\\log(1+a_1/90)\\}.\n\\end{aligned}\n"
+    }
+  ]
+}

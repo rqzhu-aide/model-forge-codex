@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/prepared-role-context.schema.json",
+  "title": "Immutable Prepared Role Context",
+  "description": "The complete pre-execution context record fixed before a role starts. The later RoleContextSnapshot must reproduce these fields exactly and add only the sealed on-demand access ledger and closure identity.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "prepared_context_id",
+    "run_id",
+    "project_id",
+    "phase",
+    "mode",
+    "stage_id",
+    "execution_group_id",
+    "role",
+    "phase_contract",
+    "role_profile",
+    "model_capacity",
+    "packing_policy",
+    "preference_memory_binding",
+    "prepared_context",
+    "prepared_context_sha256",
+    "content_sha256"
+  ],
+  "properties": {
+    "schema_version": {"$ref": "common-definitions.schema.json#/$defs/schemaVersion"},
+    "prepared_context_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "run_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "project_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "phase": {"$ref": "common-definitions.schema.json#/$defs/phaseId"},
+    "mode": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "stage_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "execution_group_id": {"$ref": "common-definitions.schema.json#/$defs/stableId"},
+    "role": {"$ref": "common-definitions.schema.json#/$defs/roleId"},
+    "phase_contract": {"$ref": "role-context-snapshot.schema.json#/$defs/versionedBinding"},
+    "role_profile": {"$ref": "role-context-snapshot.schema.json#/properties/role_profile"},
+    "model_capacity": {"$ref": "role-context-snapshot.schema.json#/properties/model_capacity"},
+    "packing_policy": {"$ref": "role-context-snapshot.schema.json#/properties/packing_policy"},
+    "preference_memory_binding": {"$ref": "role-context-snapshot.schema.json#/properties/preference_memory_binding"},
+    "prepared_context": {"$ref": "role-context-snapshot.schema.json#/properties/prepared_context"},
+    "prepared_context_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "RFC 8785 SHA-256 over phase_contract, role_profile, model_capacity, packing_policy, preference_memory_binding, and prepared_context."
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "RFC 8785 SHA-256 over the complete immutable PreparedRoleContext with this property omitted."
+    }
+  }
+}

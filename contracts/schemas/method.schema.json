@@ -1,0 +1,595 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/method.schema.json",
+  "title": "Structured Method Record",
+  "description": "An immutable structured scientific and mathematical generation for one method version. Lifecycle state is frozen in the generation; the current catalog selects which generation supplies the current lifecycle view.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "record_id",
+    "identity",
+    "title",
+    "lifecycle_state",
+    "scientific_question",
+    "rationale",
+    "summary",
+    "mathematical_definition",
+    "assumptions",
+    "literature_provenance",
+    "lineage",
+    "limitations",
+    "content_sha256",
+    "created_at",
+    "updated_at",
+    "authority_at_creation"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "record_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "generation_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId",
+      "description": "Assigned by the publisher at promotion; candidates must not carry it (the harness strips it at closure)."
+    },
+    "identity": {
+      "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 350,
+      "description": "Short catalog display name that pinpoints the core mechanic: a few words plus an acronym in parentheses, e.g. 'Antithetic Shared-Noise Entangled Langevin (ASN-EL)'. No subtitle clauses, no descriptive tails, no marketing words."
+    },
+    "lifecycle_state": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "active",
+        "retired"
+      ],
+      "description": "Portfolio lifecycle only. Feasibility and scientific support belong in assessments."
+    },
+    "scientific_question": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Explain why this mechanism addresses the frozen researcher target, including the declared policy or model class, relation to prior work and researcher intent, and the key assumption or approximation. Separate established support from intended claims."
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A concise account of this candidate's purpose and mechanism, with mathematics when needed to explain its target or mechanism. Use proper Markdown/LaTeX and define notation where introduced. There is no fixed sentence, line or equation count. The full calculation-defining mathematics, constraints, ordered algorithm and tuning remain in mathematical_definition, which stays canonical and complete. Distinguish a sufficient surrogate or approximation from the exact target. Do not force a novelty claim or say the method proves, certifies or solves a problem unless the supporting result is established."
+    },
+    "mathematical_definition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "canonical_artifact",
+        "definition_locator",
+        "defining_components",
+        "canonical_definition"
+      ],
+      "properties": {
+        "canonical_artifact": {
+          "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+        },
+        "definition_locator": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The uniquely named section containing every calculation-defining object."
+        },
+        "defining_components": {
+          "type": "array",
+          "minItems": 0,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "target_or_estimand",
+              "objective_or_estimating_equation",
+              "algorithm_or_update_rule",
+              "constraints_and_normalization",
+              "tuning_definition",
+              "calculation_defining_assumptions"
+            ]
+          }
+        },
+        "canonical_definition": {
+          "$ref": "#/$defs/canonicalMethodDefinition",
+          "description": "The complete calculation-defining payload hashed as method identity. Artifact metadata and explanatory prose are outside this payload."
+        },
+        "computational_consequences": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "assumption_id",
+          "statement",
+          "role"
+        ],
+        "properties": {
+          "assumption_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "identification",
+              "estimation",
+              "computation",
+              "inference",
+              "interpretation"
+            ]
+          }
+        }
+      }
+    },
+    "literature_provenance": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "citation_id",
+          "relation",
+          "contribution"
+        ],
+        "properties": {
+          "citation_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "foundation",
+              "extension",
+              "contrast",
+              "benchmark",
+              "application_context"
+            ]
+          },
+          "contribution": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "change_class",
+        "change_summary",
+        "change_source"
+      ],
+      "properties": {
+        "predecessor": {
+          "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+        },
+        "change_class": {
+          "type": "string",
+          "enum": [
+            "initial",
+            "editorial",
+            "mathematical",
+            "lifecycle"
+          ]
+        },
+        "change_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "predecessor_generation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "change_source": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": true,
+              "required": [
+                "kind",
+                "run_id"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "research_run"
+                },
+                "run_id": {
+                  "$ref": "common-definitions.schema.json#/$defs/stableId"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": true,
+              "required": [
+                "kind",
+                "command_id",
+                "command_sha256"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "method_lifecycle_command"
+                },
+                "command_id": {
+                  "$ref": "common-definitions.schema.json#/$defs/stableId"
+                },
+                "command_sha256": {
+                  "$ref": "common-definitions.schema.json#/$defs/sha256"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "description": "Immutable generation lineage. A lifecycle-only replacement names the exact predecessor generation and preserves the predecessor method identity, definition, and scientific content."
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authority_at_creation": {
+      "$ref": "common-definitions.schema.json#/$defs/creationAuthority"
+    },
+    "publication_receipt_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "theoretical_validity",
+        "literature_positioning",
+        "empirical_feasibility",
+        "adjudicated_at",
+        "review_basis_ids"
+      ],
+      "properties": {
+        "theoretical_validity": {
+          "$ref": "#/$defs/axis_score"
+        },
+        "literature_positioning": {
+          "$ref": "#/$defs/axis_score"
+        },
+        "empirical_feasibility": {
+          "$ref": "#/$defs/axis_score"
+        },
+        "adjudicated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "review_basis_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "description": "Sealed three-axis lead adjudication (ADR-017). Optional: records produced before the structured-evaluation contract carry no evaluation block."
+    }
+  },
+  "$defs": {
+    "axis_score": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "justification",
+        "issue_refs"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "justification": {
+          "type": "string",
+          "minLength": 1
+        },
+        "issue_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "canonicalMethodDefinition": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "definition_schema_version",
+        "target_or_estimand",
+        "objective_or_estimating_equation",
+        "algorithm_or_update_rule",
+        "constraints_and_normalization",
+        "tuning_definition",
+        "calculation_defining_assumptions"
+      ],
+      "properties": {
+        "definition_schema_version": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "target_or_estimand": {
+          "$ref": "#/$defs/namedMathematicalObject"
+        },
+        "objective_or_estimating_equation": {
+          "$ref": "#/$defs/namedMathematicalObject"
+        },
+        "algorithm_or_update_rule": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "$ref": "#/$defs/algorithmStep"
+          }
+        },
+        "constraints_and_normalization": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "$ref": "#/$defs/namedMathematicalObject"
+          }
+        },
+        "tuning_definition": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "$ref": "#/$defs/tuningParameter"
+          }
+        },
+        "calculation_defining_assumptions": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "$ref": "#/$defs/definingAssumption"
+          }
+        }
+      }
+    },
+    "namedMathematicalObject": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "object_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "symbol": {
+          "type": "string",
+          "minLength": 1
+        },
+        "definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "domain": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "algorithmStep": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "step_id",
+        "order",
+        "operation"
+      ],
+      "properties": {
+        "step_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "operation": {
+          "description": "Explain this ordered computation using its inputs and output. In mixed prose, delimit every mathematical expression with $...$ or a display delimiter; do not leave bare TeX commands embedded in a sentence.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "tuningParameter": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "parameter_id",
+        "symbol",
+        "admissible_values",
+        "selection_rule"
+      ],
+      "properties": {
+        "parameter_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "symbol": {
+          "type": "string",
+          "minLength": 1
+        },
+        "admissible_values": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selection_rule": {
+          "description": "State how and when this tuning value is chosen and what remains unspecified. Use proper math delimiters for symbols within prose.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "definingAssumption": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "assumption_id",
+        "statement",
+        "mathematical_role"
+      ],
+      "properties": {
+        "assumption_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mathematical_role": {
+          "description": "Explain what this condition enables in the calculation or identification. Define symbols and delimit mathematics in prose; distinguish an intended role from a proved guarantee.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "lineage": {
+            "properties": {
+              "change_class": {
+                "const": "lifecycle"
+              }
+            },
+            "required": [
+              "change_class"
+            ]
+          }
+        },
+        "required": [
+          "lineage"
+        ]
+      },
+      "then": {
+        "properties": {
+          "lifecycle_state": {
+            "enum": [
+              "active",
+              "retired"
+            ]
+          },
+          "lineage": {
+            "properties": {
+              "change_source": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "method_lifecycle_command",
+                      "research_run"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "lineage": {
+            "properties": {
+              "change_source": {
+                "properties": {
+                  "kind": {
+                    "const": "research_run"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "authority_at_creation": {
+            "const": "formal_generation"
+          }
+        },
+        "required": [
+          "authority_at_creation"
+        ]
+      },
+      "then": {
+        "required": [
+          "publication_receipt_id",
+          "published_at"
+        ]
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "publication_receipt_id"
+              ]
+            },
+            {
+              "required": [
+                "published_at"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0.0",
+  "grant_type": "delegation_grant",
+  "grant_id": "delegation.research.operator.001",
+  "project_id": "project.demo",
+  "user_id": "researcher.demo",
+  "operator_id": "operator.hermes.demo",
+  "permissions": [
+    {
+      "action_type": "start_run",
+      "phase_ids": [
+        "P3",
+        "P4"
+      ],
+      "method_ids": [
+        "method.overlap_stabilized_score"
+      ]
+    },
+    {
+      "action_type": "cancel_run",
+      "run_scope": "all_project_runs"
+    },
+    {
+      "action_type": "retire_method",
+      "method_ids": [
+        "method.overlap_stabilized_score"
+      ]
+    },
+    {
+      "action_type": "reactivate_method",
+      "method_ids": [
+        "method.overlap_stabilized_score"
+      ]
+    },
+    {
+      "action_type": "activate_method",
+      "method_ids": [
+        "method.overlap_stabilized_score"
+      ]
+    }
+  ],
+  "issued_at": "2026-08-01T12:00:00Z",
+  "not_before": "2026-08-01T12:00:00Z",
+  "expires_at": "2026-08-03T12:00:00Z",
+  "revocation_handle": "revocation.handle.research.operator.001",
+  "content_sha256": "8a34fa67a83bdb8f20478d511fc9c4ccb29d4ace5ad5ceebedce9da883faed24",
+  "signature": {
+    "algorithm": "Ed25519",
+    "key_id": "key.researcher.demo.001",
+    "value": "MEUCIQDemosignaturevalueforarchitectureonly"
+  }
+}

@@ -1,0 +1,50 @@
+{
+ "diagnostics_id": "diag.p4.boc-v2.1",
+ "headline_numbers": [
+  {
+   "case_id": "gamma_0.95/B_0.18/binding",
+   "metric": "J",
+   "estimate": 0.8439,
+   "mcse": 0.0011,
+   "ci_lo": 0.8417,
+   "ci_hi": 0.8461
+  }
+ ],
+ "stability": [
+  {
+   "case_id": "gamma_0.95/B_0.18/binding",
+   "metric": "J",
+   "mean": 0.8437,
+   "sd": 0.0031,
+   "n_seeds": 8,
+   "seed_flip": false
+  }
+ ],
+ "solver_health": [
+  {
+   "regime": "binding",
+   "n_runs": 8,
+   "n_failures": 0,
+   "failure_rate": 0.0
+  }
+ ],
+ "runtime": {
+  "total_ms": 4210.0,
+  "per_case": [
+   {
+    "case_id": "gamma_0.95/B_0.18/binding",
+    "mean_ms": 145.0,
+    "max_ms": 162.4
+   }
+  ]
+ },
+ "regenerated_by": "make_diagnostics.py",
+ "environment": {
+  "python": "3.11.15",
+  "platform": "linux-x86_64",
+  "packages": {
+   "numpy": "2.2.1",
+   "scipy": "1.14.1"
+  }
+ }
+}

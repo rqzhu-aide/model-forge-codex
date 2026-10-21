@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "record.example_technical_report",
+  "record_type": "technical_report",
+  "phase": "P5",
+  "source_run_id": "run.example_report_assembly",
+  "method_identity": {
+    "stable_id": "method.overlap_stabilized_score",
+    "version": 1,
+    "definition_sha256": "c00d4790957b73fff1a3a1d2233f4703511f2ef431bbeb63c63e9493c6a07ea0"
+  },
+  "authority_at_creation": "run_local_candidate",
+  "representations": [
+    {
+      "information_layer": "primary_artifact",
+      "artifact": {
+        "artifact_id": "artifact.example_report_md",
+        "path": "report.md",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "media_type": "text/markdown",
+        "uri": "artifact://artifact.example_report_md"
+      }
+    }
+  ],
+  "basis": [],
+  "alignment_at_creation": {
+    "state": "unassessed",
+    "causes": [
+      "missing_dependency"
+    ],
+    "assessed_at": "2026-10-11T12:00:00Z",
+    "assessed_by": "research_lead",
+    "reasons": [
+      "This interim example declares no retained mathematical or numerical support."
+    ]
+  },
+  "research_attention_at_creation": {
+    "level": "monitor",
+    "open_item_ids": [],
+    "reasons": [
+      "Relevant numerical analysis remains to be performed and retained."
+    ]
+  },
+  "scientific_outcome": {
+    "state": "not_assessed",
+    "conclusion": "This interim report organizes the selected model and remaining work. No formal result or numerical conclusion is asserted.",
+    "scope": "Illustrative report structure before relevant numerical analysis and any claim-dependent formal work.",
+    "assumptions": []
+  },
+  "title": "Interim technical report: overlap-stabilized score model",
+  "target_audience": "Researcher developing and assessing the model",
+  "supplementary_artifacts": [],
+  "content_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "created_at": "2026-10-11T12:00:00Z",
+  "report_kind": "assembly_candidate",
+  "problem_context_ref": {
+    "revision": 1,
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "report_artifact": {
+    "artifact_id": "artifact.example_report_md",
+    "path": "report.md",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "media_type": "text/markdown",
+    "uri": "artifact://artifact.example_report_md"
+  },
+  "sections_present": [
+    "problem",
+    "model",
+    "existing_approaches",
+    "justification",
+    "numerical_analysis",
+    "limitations",
+    "reproducibility"
+  ],
+  "claims": [],
+  "numerical_analysis": [],
+  "expectation_outcomes": [],
+  "prose_values": [],
+  "section_anchors": {
+    "problem": "problem",
+    "model": "model",
+    "existing_approaches": "existing_approaches",
+    "justification": "justification",
+    "numerical_analysis": "numerical_analysis",
+    "limitations": "limitations",
+    "reproducibility": "reproducibility"
+  },
+  "completion": {
+    "status": "interim",
+    "missing_work": [
+      "Perform and retain relevant numerical analysis for this exact model"
+    ],
+    "basis_scope": "Declared support and exact retained source integrity; scientific adequacy remains an expert judgment."
+  }
+}

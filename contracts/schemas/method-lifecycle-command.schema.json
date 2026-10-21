@@ -1,0 +1,292 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/method-lifecycle-command.schema.json",
+  "title": "Method Lifecycle Command",
+  "description": "An authenticated user command that activates, retires, or reactivates one exact current method through an atomic catalog control transaction. It does not create a research run or role execution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command_type",
+    "command_id",
+    "idempotency_key",
+    "project_id",
+    "method_id",
+    "expected_method",
+    "expected_catalog",
+    "expected_control_head",
+    "target_lifecycle_state",
+    "reason",
+    "requested_by",
+    "content_sha256",
+    "requested_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "command_type": {
+      "const": "method_lifecycle_change"
+    },
+    "command_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 200
+    },
+    "project_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "method_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId",
+      "description": "Permanent stable method ID. It must equal expected_method.method_identity.stable_id."
+    },
+    "expected_method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "generation_id",
+        "content_sha256",
+        "method_identity",
+        "lifecycle_state"
+      ],
+      "properties": {
+        "record_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "generation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "content_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        },
+        "method_identity": {
+          "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+        },
+        "lifecycle_state": {
+          "type": "string",
+          "enum": [
+            "active",
+            "retired"
+          ]
+        }
+      }
+    },
+    "expected_catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "generation_id",
+        "content_sha256"
+      ],
+      "properties": {
+        "record_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "generation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "content_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        }
+      }
+    },
+    "expected_control_head": {
+      "$ref": "#/$defs/expectedControlHead"
+    },
+    "target_lifecycle_state": {
+      "type": "string",
+      "enum": [
+        "active",
+        "retired"
+      ]
+    },
+    "reason": {
+      "$ref": "#/$defs/reason"
+    },
+    "requested_by": {
+      "$ref": "#/$defs/requestedBy"
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "SHA-256 of the RFC 8785 canonical command JSON with content_sha256 omitted."
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "expected_method": {
+            "properties": {
+              "lifecycle_state": {
+                "const": "active"
+              }
+            },
+            "required": [
+              "lifecycle_state"
+            ]
+          }
+        },
+        "required": [
+          "expected_method"
+        ]
+      },
+      "then": {
+        "properties": {
+          "target_lifecycle_state": {
+            "const": "retired"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "expected_method": {
+            "properties": {
+              "lifecycle_state": {
+                "const": "retired"
+              }
+            },
+            "required": [
+              "lifecycle_state"
+            ]
+          }
+        },
+        "required": [
+          "expected_method"
+        ]
+      },
+      "then": {
+        "properties": {
+          "target_lifecycle_state": {
+            "const": "active"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "expected_method": {
+            "properties": {
+              "lifecycle_state": {
+                "const": "proposed"
+              }
+            },
+            "required": [
+              "lifecycle_state"
+            ]
+          }
+        },
+        "required": [
+          "expected_method"
+        ]
+      },
+      "then": {
+        "properties": {
+          "target_lifecycle_state": {
+            "const": "active"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "expectedControlHead": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_index_generation_id",
+        "current_index_sha256",
+        "last_event_sequence",
+        "event_root_sha256"
+      ],
+      "properties": {
+        "current_index_generation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "current_index_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        },
+        "last_event_sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "event_root_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        }
+      }
+    },
+    "reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "explanation"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "explanation": {
+          "$ref": "common-definitions.schema.json#/$defs/nonEmptyText"
+        }
+      }
+    },
+    "requestedBy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user_id",
+        "operating_actor_type"
+      ],
+      "properties": {
+        "user_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "operating_actor_type": {
+          "type": "string",
+          "enum": [
+            "user",
+            "authorized_remote_operator"
+          ]
+        },
+        "operator_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "delegation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operating_actor_type": {
+                "const": "authorized_remote_operator"
+              }
+            },
+            "required": [
+              "operating_actor_type"
+            ]
+          },
+          "then": {
+            "required": [
+              "operator_id",
+              "delegation_id"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

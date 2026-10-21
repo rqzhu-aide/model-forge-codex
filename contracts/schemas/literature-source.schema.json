@@ -1,0 +1,227 @@
+{
+    "$schema":  "https://json-schema.org/draft/2020-12/schema",
+    "$id":  "https://model-forge.local/architecture/schemas/literature-source.schema.json",
+    "title":  "Literature Source Record",
+    "description":  "An immutable generation of one stable, deduplicated literature identity with bibliographic metadata, search provenance, and source status at creation.",
+    "type":  "object",
+    "additionalProperties":  true,
+    "required":  [
+                     "schema_version",
+                     "record_id",
+                     "source_id",
+                     "source_type",
+                     "title",
+                     "authors",
+                     "year",
+                     "identifiers",
+                     "search_provenance",
+                     "source_status",
+                     "content_sha256",
+                     "created_at",
+                     "updated_at",
+                     "authority_at_creation"
+                 ],
+    "properties":  {
+                       "schema_version":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/schemaVersion"
+                                          },
+                       "record_id":  {
+                                         "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                     },
+                       "generation_id":  {
+                                             "$ref":  "common-definitions.schema.json#/$defs/stableId",
+                                             "description":  "Assigned by the publisher at promotion; candidates must not carry it (the harness strips it at closure)."
+                                         },
+                       "source_id":  {
+                                         "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                     },
+                       "source_type":  {
+                                           "type":  "string",
+                                           "enum":  [
+                                                        "journal_article",
+                                                        "conference_paper",
+                                                        "preprint",
+                                                        "book",
+                                                        "dataset",
+                                                        "software",
+                                                        "technical_report",
+                                                        "other"
+                                                    ]
+                                       },
+                       "title":  {
+                                     "type":  "string",
+                                     "minLength":  1
+                                 },
+                       "authors":  {
+                                       "type":  "array",
+                                       "minItems":  1,
+                                       "items":  {
+                                                     "type":  "string",
+                                                     "minLength":  1
+                                                 }
+                                   },
+                       "year":  {
+                                    "type":  "integer",
+                                    "minimum":  1000,
+                                    "maximum":  3000
+                                },
+                       "venue":  {
+                                     "type":  "string",
+                                     "minLength":  1
+                                 },
+                       "identifiers":  {
+                                           "type":  "array",
+                                           "minItems":  1,
+                                           "items":  {
+                                                         "type":  "object",
+                                                         "additionalProperties":  true,
+                                                         "required":  [
+                                                                          "kind",
+                                                                          "value"
+                                                                      ],
+                                                         "properties":  {
+                                                                            "kind":  {
+                                                                                         "type":  "string",
+                                                                                         "enum":  [
+                                                                                                      "doi",
+                                                                                                      "pmid",
+                                                                                                      "arxiv",
+                                                                                                      "isbn",
+                                                                                                      "url",
+                                                                                                      "repository",
+                                                                                                      "other"
+                                                                                                  ]
+                                                                                     },
+                                                                            "value":  {
+                                                                                          "type":  "string",
+                                                                                          "minLength":  1
+                                                                                      }
+                                                                        }
+                                                     }
+                                       },
+                       "source_artifact":  {
+                                               "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                           },
+                       "search_provenance":  {
+                                                 "type":  "array",
+                                                 "minItems":  1,
+                                                 "items":  {
+                                                               "type":  "object",
+                                                               "additionalProperties":  true,
+                                                               "required":  [
+                                                                                "run_id",
+                                                                                "role",
+                                                                                "search_source",
+                                                                                "query",
+                                                                                "searched_at"
+                                                                            ],
+                                                               "properties":  {
+                                                                                  "run_id":  {
+                                                                                                 "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                             },
+                                                                                  "role":  {
+                                                                                               "$ref":  "common-definitions.schema.json#/$defs/roleId"
+                                                                                           },
+                                                                                  "search_source":  {
+                                                                                                        "type":  "string",
+                                                                                                        "minLength":  1
+                                                                                                    },
+                                                                                  "query":  {
+                                                                                                "type":  "string",
+                                                                                                "minLength":  1
+                                                                                            },
+                                                                                  "searched_at":  {
+                                                                                                      "type":  "string",
+                                                                                                      "format":  "date-time"
+                                                                                                  }
+                                                                              }
+                                                           }
+                                             },
+                       "source_status":  {
+                                             "type":  "string",
+                                             "enum":  [
+                                                          "active",
+                                                          "corrected",
+                                                          "retracted",
+                                                          "withdrawn"
+                                                      ]
+                                         },
+                       "status_reason":  {
+                                             "type":  "string",
+                                             "minLength":  1
+                                         },
+                       "predecessor_generation_id":  {
+                                                         "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                     },
+                       "content_sha256":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/sha256"
+                                          },
+                       "created_at":  {
+                                          "type":  "string",
+                                          "format":  "date-time"
+                                      },
+                       "updated_at":  {
+                                          "type":  "string",
+                                          "format":  "date-time"
+                                      },
+                       "authority_at_creation":  {
+                                                     "$ref":  "common-definitions.schema.json#/$defs/creationAuthority"
+                                                 },
+                       "publication_receipt_id":  {
+                                                      "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                  },
+                       "published_at":  {
+                                            "type":  "string",
+                                            "format":  "date-time"
+                                        }
+                   },
+    "allOf":  [
+                  {
+                      "if":  {
+                                 "properties":  {
+                                                    "source_status":  {
+                                                                          "enum":  [
+                                                                                       "corrected",
+                                                                                       "retracted",
+                                                                                       "withdrawn"
+                                                                                   ]
+                                                                      }
+                                                },
+                                 "required":  [
+                                                  "source_status"
+                                              ]
+                             },
+                      "then":  {
+                                   "required":  [
+                                                    "status_reason"
+                                                ]
+                               }
+                  },
+                  {
+                      "if":  {
+                                 "properties":  {
+                                                    "authority_at_creation":  {
+                                                                                  "const":  "formal_generation"
+                                                                              }
+                                                },
+                                 "required":  [
+                                                  "authority_at_creation"
+                                              ]
+                             },
+                      "then":  {
+                                   "required":  [
+                                                    "publication_receipt_id",
+                                                    "published_at"
+                                                ]
+                               },
+                      "else":  {
+                                   "not":  {
+                                               "anyOf":  [
+                                                             { "required":  [ "publication_receipt_id" ] },
+                                                             { "required":  [ "published_at" ] }
+                                                         ]
+                                           }
+                               }
+                  }
+              ]
+}

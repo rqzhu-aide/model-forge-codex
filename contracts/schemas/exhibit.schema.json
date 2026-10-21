@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/exhibit.schema.json",
+  "title": "Exhibit",
+  "description": "A captioned, UI-renderable exhibit (Tez, 2026-09-07): a small structured card that says WHERE a result/table/figure lives and WHAT it shows. The heavyweight artifact itself is a T3w file sealed by sha256; this card is the display layer.",
+  "type": "object",
+  "required": [
+    "exhibit_id",
+    "kind",
+    "title",
+    "caption",
+    "artifact_path",
+    "artifact_sha256",
+    "media_type"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "exhibit_id": {
+      "type": "string",
+      "pattern": "^exhibit\\.[a-z0-9_.-]+$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "figure",
+        "table",
+        "result"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 120,
+      "description": "A readable scientific question or result label; labels and axis text in the artifact must remain legible and define measures and units."
+    },
+    "caption": {
+      "type": "string",
+      "maxLength": 600,
+      "description": "Explain what the exhibit shows, its comparison and tested scope. Define uncertainty/error bars, repetitions and units when applicable; do not infer general validity from a plotted ordering."
+    },
+    "detail_md": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Optional longer markdown explanation the UI can expand."
+    },
+    "artifact_path": {
+      "type": "string",
+      "description": "Path to the T3w artifact (figure/table file), workspace-relative at authoring; the harness copies it into the run folder at collection."
+    },
+    "artifact_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "media_type": {
+      "type": "string",
+      "enum": [
+        "image/svg+xml",
+        "image/png",
+        "text/csv",
+        "application/json",
+        "text/markdown"
+      ]
+    },
+    "figure_kind": {
+      "type": "string",
+      "enum": [
+        "convergence",
+        "variance",
+        "trajectory",
+        "feasibility",
+        "calibration",
+        "other"
+      ]
+    },
+    "test_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "case_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "table_columns": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "label"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "unit": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Optional presentation labels and units for columns read from the verified table artifact. Never duplicate data values here."
+    },
+    "data_exhibit_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^exhibit\\.[a-z0-9_.-]+$"
+      },
+      "description": "Explicit references to underlying table exhibits in this same saved exhibit manifest. Each target must be kind table with verified source bytes and contain the data used by this figure. Missing linkage remains unknown; the reader never guesses from a filename, caption or nearby table."
+    }
+  }
+}

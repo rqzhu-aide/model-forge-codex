@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/handoff.schema.json",
+  "title": "Role Handoff",
+  "description": "An immutable run-local research communication record that states what changed, what is supported, and what the next role must check.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "handoff_id",
+    "run_id",
+    "phase",
+    "sequence",
+    "from_role",
+    "producer_profile_input_id",
+    "basis_generation_ids",
+    "completed_work",
+    "material_changes",
+    "statement_ids",
+    "evidence_ids",
+    "unresolved_issues",
+    "required_checks",
+    "handoff_artifact",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "handoff_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "phase": {
+      "$ref": "common-definitions.schema.json#/$defs/phaseId"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "from_role": {
+      "$ref": "common-definitions.schema.json#/$defs/roleId"
+    },
+    "to_role": {
+      "$ref": "common-definitions.schema.json#/$defs/roleId"
+    },
+    "producer_profile_input_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "method_identity": {
+      "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+    },
+    "basis_generation_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+      },
+      "uniqueItems": true
+    },
+    "completed_work": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "material_changes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "statement_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+      },
+      "uniqueItems": true
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+      },
+      "uniqueItems": true
+    },
+    "unresolved_issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "issue_id",
+          "category",
+          "severity",
+          "statement",
+          "consequence"
+        ],
+        "properties": {
+          "issue_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "validity",
+              "scope",
+              "research_attention",
+              "presentation",
+              "identifiability",
+              "computation",
+              "empirical_testability",
+              "reproducibility"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "blocking",
+              "major",
+              "minor"
+            ]
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "consequence": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stable_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Contracted method stable_id this issue concerns, when method-scoped (E-1e)."
+          },
+          "component_ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "common-definitions.schema.json#/$defs/stableId"
+            },
+            "description": "Exact theory statements or assumptions addressed by this issue."
+          },
+          "justification": {
+            "$ref": "theory-record.schema.json#/$defs/justification",
+            "description": "Optional exact retained negative support. Required when this issue supplies a new canonical counterexample or empirical contradiction."
+          }
+        }
+      }
+    },
+    "required_checks": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "handoff_artifact": {
+      "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "method_evaluations": {
+      "type": "array",
+      "description": "Structured per-method evaluations keyed by the contracted method stable_id, within the reviewer competency axis (ADR-017, E-1e). Required on P2 stage-2 review outputs (enforced by the p2.review_evaluations_missing validator rule); the axis field is optional here because stage-specific validators own axis enforcement.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stable_id",
+          "assessment"
+        ],
+        "properties": {
+          "stable_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "axis": {
+            "enum": [
+              "theoretical_validity",
+              "empirical_feasibility"
+            ]
+          },
+          "assessment": {
+            "type": "string",
+            "minLength": 1
+          },
+          "issue_refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "phase": {
+            "enum": [
+              "P3",
+              "P4",
+              "P5"
+            ]
+          }
+        },
+        "required": [
+          "phase"
+        ]
+      },
+      "then": {
+        "required": [
+          "method_identity"
+        ]
+      }
+    }
+  ]
+}

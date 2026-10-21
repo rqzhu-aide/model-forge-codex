@@ -1,0 +1,6 @@
+.report-section-comment.contribution-surface { margin: 12px 0; padding: 10px 14px; border: 1px solid var(--contribution-border); }
+.report-section-comment.research-details > summary { background: var(--contribution-button); color: var(--contribution-ink); font-weight: 600; }
+.report-section-comment.research-details > summary:focus-visible { outline-color: var(--contribution-action); }
+.report-section-comment > form { margin-top: 12px; }
+.report-section-comment textarea { width: 100%; box-sizing: border-box; resize: vertical; }
+.report-section-comment .error > p:first-child { margin-top: 0; }

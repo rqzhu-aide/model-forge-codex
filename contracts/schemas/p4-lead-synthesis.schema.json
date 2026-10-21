@@ -1,0 +1,273 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/p4-lead-synthesis.schema.json",
+  "title": "Phase 4 Lead Decision Account",
+  "allOf": [
+    {
+      "$ref": "scientific-record.schema.json"
+    }
+  ],
+  "type": "object",
+  "required": [
+    "decision_summary",
+    "question_reviews"
+  ],
+  "properties": {
+    "phase": {
+      "const": "P4"
+    },
+    "record_type": {
+      "const": "empirical_synthesis"
+    },
+    "decision_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent_markdown",
+        "conclusion_markdown",
+        "tradeoff_markdown",
+        "limitations_markdown",
+        "recommendation_markdown",
+        "method_formulation_markdown",
+        "implementation_markdown",
+        "method_fidelity_markdown",
+        "theory_relation",
+        "coverage",
+        "headline_exhibit_ids"
+      ],
+      "properties": {
+        "method_formulation_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Concise mathematical recap of the exact implemented method from the frozen Phase 2 definition: essential inputs, model relationship, fitting criterion or estimating rule, target/output and decisive conditions. Define notation and use proper Markdown/LaTeX. A target equation alone is insufficient when the model and fitting criterion are needed to explain the method. Cite exact method and implementation sources; do not infer mathematics from observed results or extract isolated equations from prose. No quantitative result tables or figures belong here."
+        },
+        "implementation_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Briefly state what code was developed, revised or reused and what was actually tested on synthetic and supplied actual data, naming absence or unperformed work honestly. Cite the implementation and result sources. Keep the detailed scientific account, numerical tables and figures in their existing records and Experiments and Results."
+        },
+        "method_fidelity_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Short account for Implementation and Code: checked correspondence to the exact frozen Phase 2 method, consequential implementation choices, unresolved departures and verification gaps. Cite the analyst account and independent audit rather than repeating their full technical explanations. A completed run does not prove fidelity. Keep quantitative tables and figures in Experiments and Results."
+        },
+        "theory_relation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "explanation_markdown",
+            "statement_ids"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "unavailable",
+                "not_tested",
+                "tested"
+              ]
+            },
+            "explanation_markdown": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S",
+              "description": "Distinguish no applicable Phase 3 theory, available theory not tested, and empirical tests of named claims. Numerical agreement is not proof; identify contradictions and limitations."
+            },
+            "statement_ids": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "tested"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "statement_ids": {
+                    "minItems": 1
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "unavailable"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "statement_ids": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "intent_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "conclusion_markdown": {
+          "description": "Explain whether the exact evaluated method serves the researcher intent, supported by the principal quantitative findings and their decisive qualification. Execution success is not scientific support.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "tradeoff_markdown": {
+          "description": "Explain benefits and costs relevant to the researcher, distinguishing method runtime or memory from total evaluation budget.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "limitations_markdown": {
+          "description": "State consequential missing coverage, uncertain results, departures and attributed disagreement that limit the overall account.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "recommendation_markdown": {
+          "description": "Recommend the next research or use decision with its evidence and resolving question, preserving researcher authorization.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "coverage": {
+          "description": "Topical researcher accounts composed from the analyst answers and retained exhibits. New accounts use synthetic_example, performance, computation, tuning and robustness, plus actual_data when supplied. Include assessed/partial evidence or an explicit not_assessed/not_applicable reason without requiring additional experiments. Preserve substantive answers and their uncertainty and limitations.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "dimension",
+              "status",
+              "summary",
+              "limitation_markdown",
+              "implication_markdown",
+              "question_ids"
+            ],
+            "properties": {
+              "dimension": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S",
+                "description": "Canonical topic for new accounts: synthetic_example, performance, computation, tuning, robustness, or actual_data. Historical labels remain readable without rewriting their records."
+              },
+              "status": {
+                "enum": [
+                  "assessed",
+                  "partial",
+                  "not_assessed",
+                  "not_applicable"
+                ]
+              },
+              "summary": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S",
+                "description": "Direct topic account, with actual data origin and study scope. Synthetic example describes the DGP and simulation setup; performance addresses the declared target; computation reports recorded timing/convergence; tuning separates selection from sensitivity; robustness describes changed DGPs. Never invent an unmeasured result."
+              },
+              "limitation_markdown": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "implication_markdown": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "question_ids": {
+                "description": "Exact effective protocol.claim_tests[].test_id values covered by this decision dimension, including prospectively added_tests. Use the same identifiers as analyst question_results and lead question_reviews; do not invent aliases.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "uniqueItems": true
+              },
+              "exhibit_ids": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "pattern": "^exhibit\\.[a-z0-9_.-]+$"
+                },
+                "description": "Exact same-evaluation table/figure IDs supporting this topic, selected from existing analyst exhibits. New authored accounts name relevant exhibits here; empty when no observed exhibit applies. Optional for retained accounts. This routes complete exhibits without changing their values, scope or interpretation."
+              }
+            }
+          }
+        },
+        "headline_exhibit_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^exhibit\\.[a-z0-9_.-]+$"
+          },
+          "description": "Verified table/figure exhibits from this evaluation that support the overall result, in preferred order within Experiments and Results. Empty when no observed numerical result is available. Summary contains no exhibits. Detailed answers link to an exhibit's home in Experiments and Results."
+        }
+      }
+    },
+    "question_reviews": {
+      "description": "Exactly one review for each effective protocol.claim_tests[].test_id, including prospectively added_tests. Preserve the analyst's exact question identifiers; do not merge tests or replace them with aliases.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "question_id",
+          "review_markdown",
+          "theorist_findings_markdown",
+          "next_steps_markdown"
+        ],
+        "properties": {
+          "question_id": {
+            "description": "The exact effective protocol.claim_tests[].test_id reviewed here, matching the analyst result's question_id. This is the existing protocol identifier, not a new question alias.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "review_markdown": {
+            "description": "Assess the analyst answer against evidence available in this evaluation, retaining uncertainty and limitations and attributing disagreements.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "theorist_findings_markdown": {
+            "description": "Explain the applicable theorist findings and their consequence for this answer without implying a later independent check.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "next_steps_markdown": {
+            "description": "The next useful question and resolving work for this finding; reference the responsible phase and existing issue when applicable.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        }
+      }
+    }
+  }
+}

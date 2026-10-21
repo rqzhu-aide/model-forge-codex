@@ -1,0 +1,257 @@
+{
+  "schema_version": "1.0.0",
+  "prepared_context_id": "prepared_context.p4.analyst.001",
+  "run_id": "run.p4.preliminary.20260801t140000z",
+  "project_id": "project.demo",
+  "phase": "P4",
+  "mode": "p4.preliminary",
+  "stage_id": "p4.analyst",
+  "execution_group_id": "group.p4.1",
+  "role": "data_analyst",
+  "phase_contract": {
+    "binding_id": "phase_contract.p4",
+    "binding_version": "2.0.0",
+    "artifact": {
+      "artifact_id": "artifact.contract.phase.p4",
+      "uri": "artifact://artifact.contract.phase.p4",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "media_type": "application/json"
+    }
+  },
+  "role_profile": {
+    "profile_id": "profile.data_analyst.p4",
+    "profile_version": 1,
+    "artifact": {
+      "artifact_id": "artifact.profile.data_analyst.p4",
+      "uri": "artifact://artifact.profile.data_analyst.p4",
+      "sha256": "1515151515151515151515151515151515151515151515151515151515151515",
+      "media_type": "application/json"
+    }
+  },
+  "model_capacity": {
+    "model_id": "research-model-2026-07",
+    "tokenizer": {
+      "binding_id": "tokenizer.research_model",
+      "binding_version": "1.0.0",
+      "artifact": {
+        "artifact_id": "artifact.tokenizer.research_model",
+        "uri": "artifact://artifact.tokenizer.research_model",
+        "sha256": "2020202020202020202020202020202020202020202020202020202020202020",
+        "media_type": "application/json"
+      }
+    },
+    "context_window_tokens": 128000,
+    "reserved_output_tokens": 16000,
+    "reserved_runtime_tokens": 4000,
+    "usable_input_tokens": 108000,
+    "input_byte_limit": 800000
+  },
+  "packing_policy": {
+    "policy_id": "policy.context_packing",
+    "policy_version": "1.0.0",
+    "artifact": {
+      "artifact_id": "artifact.policy.context_packing",
+      "uri": "artifact://artifact.policy.context_packing",
+      "sha256": "2121212121212121212121212121212121212121212121212121212121212121",
+      "media_type": "application/json"
+    },
+    "required_overflow": "frozen_compaction",
+    "optional_overflow": "omit_whole_item_and_record",
+    "priority_rule": "required_and_user_selected_before_optional_then_ascending_priority",
+    "tie_break_rule": "context_class_then_contract_order_then_item_id",
+    "supplied_order_rule": "context_class_then_contract_order_then_item_id"
+  },
+  "preference_memory_binding": {
+    "status": "bound",
+    "memory_id": "preference.project.default",
+    "memory_version": 3,
+    "artifact": {
+      "artifact_id": "artifact.preference.project.default.v3",
+      "uri": "artifact://artifact.preference.project.default.v3",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "media_type": "application/json"
+    }
+  },
+  "prepared_context": {
+    "candidate_set_sha256": "2323232323232323232323232323232323232323232323232323232323232323",
+    "execution_metadata": {
+      "run_id": "run.p4.preliminary.20260801t140000z",
+      "phase": "P4",
+      "mode": "p4.preliminary",
+      "stage_id": "p4.analyst",
+      "execution_group_id": "group.p4.1",
+      "role": "data_analyst",
+      "phase_contract_artifact": {
+        "artifact_id": "artifact.contract.phase.p4",
+        "uri": "artifact://artifact.contract.phase.p4",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "media_type": "application/json"
+      },
+      "role_profile_artifact": {
+        "artifact_id": "artifact.profile.data_analyst.p4",
+        "uri": "artifact://artifact.profile.data_analyst.p4",
+        "sha256": "1515151515151515151515151515151515151515151515151515151515151515",
+        "media_type": "application/json"
+      },
+      "model_id": "research-model-2026-07",
+      "tokenizer_artifact": {
+        "artifact_id": "artifact.tokenizer.research_model",
+        "uri": "artifact://artifact.tokenizer.research_model",
+        "sha256": "2020202020202020202020202020202020202020202020202020202020202020",
+        "media_type": "application/json"
+      },
+      "input_budget_tokens": 108000,
+      "input_budget_bytes": 800000,
+      "output_contracts": [
+        {
+          "artifact_id": "artifact.contract.p4.evidence_output",
+          "uri": "artifact://artifact.contract.p4.evidence_output",
+          "sha256": "1919191919191919191919191919191919191919191919191919191919191919",
+          "media_type": "application/schema+json"
+        }
+      ],
+      "role_write_root": "runs/P4/run.p4.preliminary.20260801t140000z/roles/01-data_analyst/",
+      "network_policy": "approved_resources",
+      "wall_time_limit_seconds": 7200,
+      "project_storage_credentials_exposed": false,
+      "formal_storage_credentials_exposed": false
+    },
+    "rendered_context_artifact": {
+      "artifact_id": "artifact.context.p4.analyst.001.rendered",
+      "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.context.p4.analyst.001.rendered",
+      "sha256": "2424242424242424242424242424242424242424242424242424242424242424",
+      "media_type": "application/json"
+    },
+    "context_items": [
+      {
+        "item_id": "input.project_brief",
+        "contract_input_id": "p4.project_brief",
+        "context_class": "current_formal_record",
+        "requirement": "required",
+        "priority": 0,
+        "contract_order": 10,
+        "representation": "exact",
+        "source_artifacts": [
+          {
+            "artifact_id": "artifact.project_brief",
+            "uri": "artifact://artifact.project_brief",
+            "sha256": "1616161616161616161616161616161616161616161616161616161616161616",
+            "media_type": "application/json"
+          }
+        ],
+        "supplied_artifact": {
+          "artifact_id": "artifact.project_brief",
+          "uri": "artifact://artifact.project_brief",
+          "sha256": "1616161616161616161616161616161616161616161616161616161616161616",
+          "media_type": "application/json"
+        },
+        "supplied_tokens": 2000,
+        "supplied_bytes": 8000,
+        "purpose": "Supply the exact current project question and scope."
+      },
+      {
+        "item_id": "input.literature_synthesis",
+        "contract_input_id": "p4.literature_synthesis",
+        "context_class": "current_formal_record",
+        "requirement": "required",
+        "priority": 0,
+        "contract_order": 20,
+        "representation": "exact",
+        "source_artifacts": [
+          {
+            "artifact_id": "artifact.literature_synthesis",
+            "uri": "artifact://artifact.literature_synthesis",
+            "sha256": "1717171717171717171717171717171717171717171717171717171717171717",
+            "media_type": "application/json"
+          }
+        ],
+        "supplied_artifact": {
+          "artifact_id": "artifact.literature_synthesis",
+          "uri": "artifact://artifact.literature_synthesis",
+          "sha256": "1717171717171717171717171717171717171717171717171717171717171717",
+          "media_type": "application/json"
+        },
+        "supplied_tokens": 5000,
+        "supplied_bytes": 20000,
+        "purpose": "Supply the exact current literature synthesis for comparison and interpretation."
+      },
+      {
+        "item_id": "input.current_method_catalog",
+        "contract_input_id": "p4.method_catalog",
+        "context_class": "current_formal_record",
+        "requirement": "required",
+        "priority": 0,
+        "contract_order": 30,
+        "representation": "exact",
+        "source_artifacts": [
+          {
+            "artifact_id": "artifact.method_catalog",
+            "uri": "artifact://artifact.method_catalog",
+            "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "media_type": "application/json"
+          }
+        ],
+        "supplied_artifact": {
+          "artifact_id": "artifact.method_catalog",
+          "uri": "artifact://artifact.method_catalog",
+          "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+          "media_type": "application/json"
+        },
+        "supplied_tokens": 4000,
+        "supplied_bytes": 16000,
+        "purpose": "Supply the exact current method catalog and comparison rationale."
+      },
+      {
+        "item_id": "input.current_method",
+        "contract_input_id": "p4.method",
+        "context_class": "current_formal_record",
+        "requirement": "required",
+        "priority": 0,
+        "contract_order": 40,
+        "representation": "exact",
+        "source_artifacts": [
+          {
+            "artifact_id": "artifact.method_record",
+            "uri": "artifact://artifact.method_record",
+            "sha256": "d5f37f4aa79667f2bee90ed8b2d93a96bdaa17f393a331ee207cce9c1a5ba979",
+            "media_type": "application/json"
+          }
+        ],
+        "supplied_artifact": {
+          "artifact_id": "artifact.method_record",
+          "uri": "artifact://artifact.method_record",
+          "sha256": "d5f37f4aa79667f2bee90ed8b2d93a96bdaa17f393a331ee207cce9c1a5ba979",
+          "media_type": "application/json"
+        },
+        "supplied_tokens": 6200,
+        "supplied_bytes": 27100,
+        "purpose": "Supply the exact calculation-defining method for implementation and evaluation."
+      }
+    ],
+    "omitted_optional_items": [],
+    "on_demand_capabilities": [
+      {
+        "capability_id": "capability.read.p4.source_archive",
+        "artifact": {
+          "artifact_id": "artifact.source_archive.p4.current",
+          "uri": "generation://generation.evidence.004/artifact.source_archive.p4.current",
+          "sha256": "3131313131313131313131313131313131313131313131313131313131313131",
+          "media_type": "application/zip"
+        },
+        "purpose": "Inspect exact source code when the compact evidence summary is insufficient for reproducibility checks.",
+        "maximum_successful_reads": 2,
+        "maximum_returned_tokens": 8000,
+        "maximum_returned_bytes": 40000,
+        "expires_at": "2026-08-01T16:00:00Z"
+      }
+    ],
+    "capacity_result": "within_budget",
+    "supplied_input_tokens": 19120,
+    "supplied_input_bytes": 85800,
+    "remaining_input_tokens": 88880,
+    "remaining_input_bytes": 714200,
+    "prepared_at": "2026-08-01T14:00:00Z"
+  },
+  "prepared_context_sha256": "a2d182e2ed51e4ec19ed655d759ec0faeb13395dd30d8d5af085102def938fda",
+  "content_sha256": "7b196051f23e66813d6de774376f9e6934975449aa28646f0afa7f1bbb1111a6"
+}

@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/catalog-assessment.schema.json",
+  "title": "Catalog Assessment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "title",
+    "comparison_markdown",
+    "method_dispositions",
+    "overview_markdown",
+    "modification_options"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": ["1.2.0", "1.3.0"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "comparison_markdown": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Compare the actual proposals and audits, preserve disagreement and identify next work. Reference proposal IDs; do not copy or silently revise mathematical definitions."
+    },
+    "method_dispositions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposal_id",
+          "status",
+          "rationale"
+        ],
+        "properties": {
+          "proposal_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "status": {
+            "enum": [
+              "retain",
+              "exclude"
+            ]
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Begin with the lead's direct scientific assessment of this candidate: its strongest reason to pursue and principal criticism or limitation. Evaluate potential innovation relative to specifically cited work, strengths, unresolved evidence and the next work that would settle the main issue, with proposal, literature or finding references. Distinguish claimed novelty from established differences; if novelty or the main concern cannot yet be assessed, name the missing evidence and specific next check. Keep this evaluation separate from method_summary_markdown. A retain/exclude decision alone is not an evaluation, scientific certification or researcher selection. When a criticism is already developed in a specialist finding or the proposal limitations, cite the existing finding_id or exact proposal reference and explain how it affects the lead evaluation instead of repeating the full explanation. Use existing literature IDs for comparisons, preserve specialist attribution and disagreements, and keep a brief recap where needed for the review to stand alone."
+          },
+          "method_summary_markdown": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "The lead's concise methodological account of this exact proposal: essential inputs, exact target and model relationships, central estimation criterion or calculation, and returned estimate, model or decision. Include key defining equations in proper Markdown/LaTeX with defined notation and keep any model-defining constraint beside its definition. State decisive conditions and the principal unresolved limitation; separate proposed benefits or guarantees from checked results. Retain the essential sequence where it defines the method without repeating the complete ordered algorithm, expanded derivatives, numerical tolerances or full tuning details; those remain in the canonical complete mathematical_definition. No fixed word, line or equation count applies. Explain the mechanism itself, not only motivation or a direction to read the original. State missing input facts and specifications honestly; do not change the original mathematics, introduce assumptions or silently complete missing steps. Preserve source references. Detailed evaluation and novelty belong in rationale."
+          }
+        }
+      }
+    },
+    "attention_items": {
+      "type": "array",
+      "items": {
+        "$ref": "contextual-attention-item.schema.json"
+      },
+      "description": "Method-specific decisions and team follow-up use affected_record_ids containing the exact method stable IDs from the actual proposals or frozen method catalog. Researcher decisions always name their affected methods. Empty scope is reserved for an explicitly phase-wide research_task. Context states the mathematical issue and source references; branch scope is never inferred from prose. Explicitly record unresolved steering choices that materially affect a method and need researcher preference or input, including formulation, policy class, data regime, guarantee/computation tradeoffs and evaluation preferences. Give mathematical alternatives and their consequences. Reuse existing question identities and applicable answers; do not invent preferences or force questions. Proof obligations and scientific repairs remain research_task items."
+    },
+    "overview_markdown": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "A concise lead-authored conditional comparative conclusion shown once: the decisive recommendation and limitation, consequential differences in the actual candidates' targets or computations, and the next scientific check or genuinely needed researcher choice. Do not replay each candidate account. Keep detailed comparison in comparison_markdown. Distinguish checked algebra, proposed guarantees and demonstrated results. Reference the original proposals and audits; do not rewrite their definitions or select a method for the researcher."
+    },
+    "modification_options": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "option_id",
+          "applies_to",
+          "title",
+          "what_changes_markdown",
+          "when_preferable_markdown"
+        ],
+        "properties": {
+          "option_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId",
+            "description": "Stable option identifier of the form mod.<proposal>.<slug>."
+          },
+          "applies_to": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId",
+            "description": "The exact proposal_id of the candidate this option modifies."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "what_changes_markdown": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "The exact mathematical change to the candidate's own design choices, with defined symbols. An option is not a new method and never silently edits the proposal's attributed mathematics."
+          },
+          "when_preferable_markdown": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "The regime or preference under which this modification beats the proposed form."
+          }
+        }
+      },
+      "description": "The lead's authored modification options: at least one per retained proposal, at most three per proposal; an excluded proposal may carry an option when a modification would change its disposition. Options need no answer to be useful; a choice requiring researcher preference remains a researcher_decision attention item."
+    }
+  },
+  "description": "The lead's assessment of the fixed proposals and audits. Version 1.3.0 adds a per-method procedural summary distinct from the lead's evaluation. Version 1.2.0 remains readable without invented summaries; earlier records keep their original pinned schemas.",
+  "allOf": [
+    {
+      "if": {
+        "properties": {"schema_version": {"const": "1.3.0"}},
+        "required": ["schema_version"]
+      },
+      "then": {
+        "properties": {
+          "method_dispositions": {"items": {"required": ["method_summary_markdown"]}}
+        }
+      }
+    }
+  ]
+}

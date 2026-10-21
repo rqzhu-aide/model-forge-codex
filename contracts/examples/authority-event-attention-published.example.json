@@ -1,0 +1,32 @@
+{
+    "schema_version":  "1.0.0",
+    "event_id":  "event.attention.published.001",
+    "project_id":  "project.demo",
+    "event_sequence":  17,
+    "prior_event_root_sha256":  "9d7a9e6177b47d076926e89c4dd5e1c28f5122d76befa668aaa97fde115ee297",
+    "event_root_sha256":  "064fa786627c5a6e0ebd8f2611be9318345a42b15843bae5eff20184589baae4",
+    "event_type":  "published",
+    "subject":  {
+                    "kind":  "cumulative_object",
+                    "subject_id":  "attention_version.preliminary_scope.001.v1",
+                    "object_type":  "attention_item",
+                    "method_identity":  {
+                                            "stable_id":  "method.overlap_stabilized_score",
+                                            "version":  1,
+                                            "definition_sha256":  "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+                                        }
+                },
+    "changes":  {
+                    "publication_state":  "formal"
+                },
+    "reason":  {
+                   "code":  "reason.p4_attention_publication",
+                   "explanation":  "The lead-consolidated unresolved research question was published as an immutable attention-item version."
+               },
+    "trigger":  {
+                    "kind":  "publication_receipt",
+                    "source_id":  "publication.p4.001"
+                },
+    "content_sha256":  "dd1ce4a89c52273e5254dc60da7a1508f4a28a9dd8c7f787e0e0a6b998bb8382",
+    "created_at":  "2026-08-01T15:10:04Z"
+}

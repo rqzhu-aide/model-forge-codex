@@ -1,0 +1,204 @@
+{
+  "schema_version": "1.2.0",
+  "title": "Orthogonal estimation research basis",
+  "research_setting": {
+    "statement_markdown": "Develop an estimator of a parameter $\\theta_0$ defined by $\\mathbb E[\\psi(W;\\theta_0,\\eta_0)]=0$ under stated nuisance-estimation and identification assumptions.",
+    "component_interpretations": [
+      {
+        "symbol_latex": "W",
+        "mathematical_role_markdown": "Observed random vector.",
+        "problem_meaning_markdown": "The observations supplied or envisioned by the researcher; no dataset columns are asserted by this structural example."
+      },
+      {
+        "symbol_latex": "\\theta_0",
+        "mathematical_role_markdown": "Target defined through the stated moment equation.",
+        "problem_meaning_markdown": "The requested scientific quantity; its substantive interpretation must be clarified for the actual project."
+      }
+    ]
+  },
+  "phase2_preparation": {
+    "instructions_markdown": "Propose and compare methods for the stated moment problem; distinguish mathematical definition from unestablished claims."
+  },
+  "landscape": {
+    "summary_markdown": "The retained source supplies the orthogonal-score foundation.",
+    "topics": [
+      {
+        "topic_id": "topic.orthogonal_scores",
+        "title": "Orthogonal estimating equations",
+        "description_markdown": "Moment equations insensitive to first-order nuisance perturbations.",
+        "source_ids": [
+          "citation.orthogonal_scores.2018"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "framework_id": "framework.orthogonal_moments",
+        "title": "Orthogonal population moments",
+        "formulation_markdown": "Let $\\theta_0$ satisfy $\\mathbb E[\\psi(W;\\theta_0,\\eta_0)]=0$. Neyman orthogonality requires $\\left.\\partial_t\\mathbb E[\\psi(W;\\theta_0,\\eta_0+t h)]\\right|_{t=0}=0$ for admissible nuisance directions $h$.",
+        "assumptions_markdown": "The target $\\theta_0$ is identified by the population moment. The derivative exists for the declared admissible nuisance directions $h$; integrability and regularity must be stated for any inference claim.",
+        "explanation_markdown": "Nuisance perturbations have no first-order effect on the identifying population moment at the target.",
+        "relevance_markdown": "Separates the target-defining condition from the construction and estimation of nuisance functions.",
+        "entry_refs": [
+          {
+            "role": "theorist",
+            "family": "theory_literature",
+            "run_id": "run.p1.literature.20260701t100000z",
+            "entry_id": "entry.orthogonal_scores.theory"
+          }
+        ],
+        "support_status": "unverified",
+        "limitations": [
+          "Structural illustration using the existing source fixture, not a new scientific finding."
+        ],
+        "project_relevance": "conditional",
+        "relevance_reason_markdown": "Relevant if the researcher target can be identified by the stated moment equations; that connection is unresolved in this structural fixture."
+      }
+    ],
+    "variants": [
+      {
+        "variant_id": "variant.vector_moments",
+        "framework_id": "framework.orthogonal_moments",
+        "title": "Vector-valued orthogonal moments",
+        "formulation_markdown": "For $\\psi=(\\psi_1,\\ldots,\\psi_q)^\\top$, require $$\\mathbb E[\\psi(W;\\theta_0,\\eta_0)]=0\\in\\mathbb R^q,\\qquad \\left.\\frac{d}{dt}\\mathbb E[\\psi_j(W;\\theta_0,\\eta_0+t h)]\\right|_{t=0}=0,\\quad j=1,\\ldots,q.$$",
+        "assumptions_markdown": "Each component moment and directional derivative exists. Identification must be established for the chosen parameter dimension and moment system.",
+        "explanation_markdown": "The same local sensitivity requirement is imposed component by component.",
+        "changes_markdown": "Replace a scalar score by a declared $q$-dimensional score, without dropping the local derivative condition.",
+        "consequences_markdown": "A vector equation needs an identified solution and, when overidentified, a specified estimation criterion; orthogonality alone does not choose that criterion.",
+        "entry_refs": [
+          {
+            "role": "theorist",
+            "family": "theory_literature",
+            "run_id": "run.p1.literature.20260701t100000z",
+            "entry_id": "entry.orthogonal_scores.theory"
+          }
+        ],
+        "support_status": "unverified",
+        "limitations": [
+          "Structural illustration using the existing source fixture, not a new scientific finding."
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "relationship_id": "relationship.scalar_special_case",
+        "from_id": "framework.orthogonal_moments",
+        "to_id": "variant.vector_moments",
+        "relationship_type": "special_case",
+        "title": "Scalar as a componentwise special case",
+        "formulation_markdown": "Setting $q=1$ in $\\mathbb E[\\psi(W;\\theta_0,\\eta_0)]=0\\in\\mathbb R^q$ and its componentwise directional derivative condition yields the scalar moment and derivative equations.",
+        "assumptions_markdown": "Use the same distribution, parameter, nuisance class, admissible directions and regularity assumptions on both sides; no estimator or rate equivalence is asserted.",
+        "explanation_markdown": "This comparison concerns the dimension of the equations. It does not establish equality of statistical procedures or guarantees.",
+        "entry_refs": [
+          {
+            "role": "theorist",
+            "family": "theory_literature",
+            "run_id": "run.p1.literature.20260701t100000z",
+            "entry_id": "entry.orthogonal_scores.theory"
+          }
+        ],
+        "support_status": "unverified",
+        "limitations": [
+          "Structural illustration using the existing source fixture, not a new scientific finding."
+        ]
+      }
+    ],
+    "algorithm_families": [
+      {
+        "algorithm_family_id": "algorithm.cross_fitted_moments",
+        "framework_ids": [
+          "framework.orthogonal_moments"
+        ],
+        "title": "Cross-fitted estimating equations",
+        "formulation_markdown": "Let $I_1,\\ldots,I_K$ partition $\\{1,\\ldots,n\\}$ and let $\\widehat\\eta_{-k}$ be fit without fold $I_k$. A pooled estimating equation is $$\\frac1n\\sum_{k=1}^K\\sum_{i\\in I_k}\\psi(W_i;\\widehat\\theta,\\widehat\\eta_{-k})=0.$$ The score and a rule for choosing a solution must be specified.",
+        "assumptions_markdown": "The sample structure must permit the declared split, the nuisance fits and moments must be well defined, and sufficient nuisance rates and identification are needed for any asymptotic claim.",
+        "explanation_markdown": "Nuisance fitting and moment evaluation use separate folds. This is an estimation construction associated with the moment setting, not a different target definition.",
+        "computational_requirements_markdown": "Fit nuisance functions on $K$ training complements and solve the pooled moment system. Cost depends on the nuisance learner, score evaluation and root solver.",
+        "entry_refs": [
+          {
+            "role": "theorist",
+            "family": "theory_literature",
+            "run_id": "run.p1.literature.20260701t100000z",
+            "entry_id": "entry.orthogonal_scores.theory"
+          }
+        ],
+        "support_status": "unverified",
+        "limitations": [
+          "Structural illustration using the existing source fixture, not a new scientific finding."
+        ]
+      }
+    ],
+    "overview_item_ids": [
+      "framework.orthogonal_moments"
+    ],
+    "citation_refs": [],
+    "common_assumptions": []
+  },
+  "coverage_limits": [
+    "Structural fixture, not a new scientific run."
+  ],
+  "attention_items": [
+    {
+      "schema_version": "1.1.0",
+      "attention_id": "attention.nuisance_setting.001",
+      "source_run_id": "run.p1.setting.001",
+      "raised_by": "research_lead",
+      "question": "Which admissible nuisance class is part of the requested setting?",
+      "severity": "monitor",
+      "likely_consequence": "The admissible nuisance class determines the shared assumptions and which published results apply.",
+      "affected_record_ids": [],
+      "affected_statement_ids": [],
+      "disposition": "open",
+      "content_sha256": "0d88a8aff4bbcedfeb5a81e6cd5f1ed74ebd1e90e6206db6f79884bbbfd78c31",
+      "created_at": "2026-08-01T15:05:00Z",
+      "updated_at": "2026-08-01T15:05:00Z",
+      "attention_version_id": "attention_version.nuisance_setting.001.v1",
+      "authority_at_creation": "run_local_candidate",
+      "kind": "researcher_decision",
+      "target_phase": "P1",
+      "context_markdown": "The requested setting defines $\\theta_0$ by $\\mathbb E[\\psi(W;\\theta_0,\\eta_0)]=0$, where $W$ is the observed random vector, $\\theta_0$ the target and $\\eta_0$ a nuisance function. The source `citation.orthogonal_scores.2018` motivates sensitivity to admissible nuisance perturbations. Should the setting require a specified parametric class $\\eta_0\\in\\{\\eta_\\beta:\\beta\\in\\mathbb R^d\\}$, or a declared nonparametric function class $\\eta_0\\in\\mathcal H$? Please specify the intended class and associated regularity assumptions. This changes the common setting for every proposed method; it does not ask the researcher to derive an algorithm."
+    }
+  ],
+  "entry_corrections": [
+    {
+      "correction_id": "correction.orthogonality.scope",
+      "target": {
+        "role": "theorist",
+        "family": "theory_literature",
+        "run_id": "run.p1.literature.20260701t100000z",
+        "entry_id": "entry.orthogonal_scores.theory",
+        "entry_sha256": "5ca9385a8a962d73ceb88a32c5e1cdd11fb357f0558bdb6e75e7a2db86e821ae"
+      },
+      "changes": {
+        "limitations_markdown": "Identification, moment regularity and appropriate nuisance convergence remain necessary; the equation alone is not a finite-sample guarantee. A local derivative condition is not a claim of global nuisance invariance."
+      },
+      "reason_markdown": "Make the local scope explicit without changing the authored derivative condition. This fixture demonstrates revision provenance; it is not a newly performed source audit.",
+      "evidence_locations": [
+        "Existing fixture: derivative evaluated at t=0"
+      ]
+    }
+  ],
+  "scientific_review": {
+    "scope_markdown": "Structural fixture demonstrating one scoped entry correction and mathematical comparison. No new primary-source reading or proof verification is claimed.",
+    "findings": [
+      {
+        "finding_id": "finding.orthogonality.scope",
+        "target": {
+          "role": "theorist",
+          "family": "theory_literature",
+          "run_id": "run.p1.literature.20260701t100000z",
+          "entry_id": "entry.orthogonal_scores.theory",
+          "entry_sha256": "5ca9385a8a962d73ceb88a32c5e1cdd11fb357f0558bdb6e75e7a2db86e821ae"
+        },
+        "status": "corrected",
+        "assessment_markdown": "The displayed condition is local: $$\\left.\\frac{d}{dt}\\mathbb E[\\psi(W;\\theta_0,\\eta_0+t h)]\\right|_{t=0}=0.$$ It does not assert that the moment is unchanged for every finite $t$. The limitation now states this explicitly.",
+        "evidence_locations": [
+          "Existing fixture: orthogonality condition"
+        ]
+      }
+    ],
+    "limitations": [
+      "Schema example only; source support for the comparisons has not been independently checked."
+    ]
+  }
+}

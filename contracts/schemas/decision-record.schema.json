@@ -1,0 +1,375 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://model-forge.local/architecture/schemas/decision-record.schema.json",
+ "title": "Researcher Decision Record",
+ "description": "An immutable compact Lead synthesis that informs the researcher without selecting or launching the next action. Material Lead-owned scientific and evaluation choices are briefly recorded here, with reasons and limits, rather than manufactured researcher questions. Current authority and alignment are derived separately.",
+ "type": "object",
+ "additionalProperties": true,
+ "required": [
+  "schema_version",
+  "decision_id",
+  "phase",
+  "source_run_id",
+  "generated_by",
+  "headline",
+  "current_conclusion",
+  "fundamental_contribution",
+  "what_changed",
+  "strongest_evidence_ids",
+  "principal_uncertainty",
+  "principal_risk",
+  "material_disagreement",
+  "smallest_decisive_result",
+  "scientific_outcome",
+  "available_actions",
+  "content_sha256",
+  "created_at",
+  "authority_at_creation",
+  "alignment_at_creation",
+  "research_attention_at_creation"
+ ],
+ "properties": {
+  "schema_version": {
+   "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+  },
+  "decision_id": {
+   "$ref": "common-definitions.schema.json#/$defs/stableId"
+  },
+  "generation_id": {
+   "$ref": "common-definitions.schema.json#/$defs/stableId",
+   "description": "Assigned by the publisher at promotion; candidates must not carry it (the harness strips it at closure)."
+  },
+  "phase": {
+   "$ref": "common-definitions.schema.json#/$defs/phaseId"
+  },
+  "source_run_id": {
+   "$ref": "common-definitions.schema.json#/$defs/stableId"
+  },
+  "method_identity": {
+   "$ref": "common-definitions.schema.json#/$defs/methodIdentity"
+  },
+  "generated_by": {
+   "const": "research_lead"
+  },
+  "headline": {
+   "description": "A concise research conclusion that answers what was learned or developed, rather than reporting successful execution.",
+   "type": "string",
+   "minLength": 1,
+   "maxLength": 500
+  },
+  "current_conclusion": {
+   "description": "The scope-calibrated answer for the researcher, including its strongest support and decisive qualification. For P5 distinguish the exact draft reviewed from any later lead revision.",
+   "type": "string",
+   "minLength": 1
+  },
+  "fundamental_contribution": {
+   "description": "Explain the substantive contribution for the researcher objective and target audience. Distinguish intended novelty from established differences supported by exact sources.",
+   "type": "string",
+   "minLength": 1
+  },
+  "what_changed": {
+   "description": "Substantive changes and practical consequences, or the first account. Briefly record consequential Lead-owned choices and reasons, including evaluation and declared failure handling, in this existing summary. Refer to exact findings or sources instead of repeating their reasoning.",
+   "type": "string",
+   "minLength": 1
+  },
+  "strongest_evidence_ids": {
+   "type": "array",
+   "items": {
+    "$ref": "common-definitions.schema.json#/$defs/stableId"
+   },
+   "uniqueItems": true
+  },
+  "principal_uncertainty": {
+   "description": "The most consequential unresolved scientific obligation or unavailable fact and its applicability limit. Distinguish team work, missing information, untested scope and observed failure; this field does not itself require a researcher question.",
+   "type": "string",
+   "minLength": 1
+  },
+  "principal_risk": {
+   "description": "The decisive limitation or failure risk, its supporting evidence and consequence within the tested or established conditions.",
+   "type": "string",
+   "minLength": 1
+  },
+  "material_disagreement": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 1
+   },
+   "uniqueItems": true
+  },
+  "smallest_decisive_result": {
+   "type": "string",
+   "minLength": 1,
+   "description": "The smallest new result that would materially change the present decision."
+  },
+  "scientific_outcome": {
+   "$ref": "common-definitions.schema.json#/$defs/scientificOutcome"
+  },
+  "available_actions": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "additionalProperties": true,
+    "required": [
+     "action_id",
+     "action_type",
+     "label",
+     "consequence",
+     "launches_run",
+     "requires_user_action"
+    ],
+    "properties": {
+     "action_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "action_type": {
+      "type": "string",
+      "enum": [
+       "run_phase",
+       "rerun_phase",
+       "change_method",
+       "retire_method",
+       "reactivate_method",
+       "return_upstream",
+       "defer",
+       "prepare_submission"
+      ]
+     },
+     "label": {
+      "type": "string",
+      "minLength": 1
+     },
+     "consequence": {
+      "type": "string",
+      "minLength": 1
+     },
+     "launches_run": {
+      "type": "boolean"
+     },
+     "requires_user_action": {
+      "const": true
+     },
+     "target_phase": {
+      "$ref": "common-definitions.schema.json#/$defs/phaseId"
+     }
+    },
+    "allOf": [
+     {
+      "if": {
+       "properties": {
+        "launches_run": {
+         "const": true
+        }
+       },
+       "required": [
+        "launches_run"
+       ]
+      },
+      "then": {
+       "required": [
+        "target_phase"
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "rerun_question": {
+   "description": "The specific research question another explicitly authorized run would resolve, and why its answer matters.",
+   "type": "string",
+   "minLength": 1
+  },
+  "content_sha256": {
+   "$ref": "common-definitions.schema.json#/$defs/sha256"
+  },
+  "publication_receipt_id": {
+   "$ref": "common-definitions.schema.json#/$defs/stableId"
+  },
+  "published_at": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "created_at": {
+   "type": "string",
+   "format": "date-time"
+  },
+  "authority_at_creation": {
+   "$ref": "common-definitions.schema.json#/$defs/creationAuthority"
+  },
+  "alignment_at_creation": {
+   "$ref": "common-definitions.schema.json#/$defs/alignmentAssessment"
+  },
+  "research_attention_at_creation": {
+   "$ref": "common-definitions.schema.json#/$defs/researchAttention"
+  },
+  "method_scores": {
+   "type": "array",
+   "description": "Optional UI-facing scoring matrix (D11): the lead's per-method scores, updated after method-revision runs. User-facing only; not delivered to members.",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "method_ref",
+     "score",
+     "rationale"
+    ],
+    "properties": {
+     "method_ref": {
+      "type": "string"
+     },
+     "score": {
+      "type": "number"
+     },
+     "rationale": {
+      "type": "string",
+      "maxLength": 600
+     }
+    }
+   }
+  },
+  "issue_dispositions": {
+   "type": "array",
+   "description": "Lead response to each exact Analyst issue, required for P3 under conservative_assessment_v1. A response is not independent agreement.",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "issue_id",
+     "status",
+     "reason"
+    ],
+    "properties": {
+     "issue_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "status": {
+      "enum": [
+       "resolved",
+       "contested",
+       "unresolved"
+      ]
+     },
+     "reason": {
+      "type": "string",
+      "pattern": "\\S"
+     }
+    }
+   }
+  },
+  "assessment_changes": {
+   "type": "array",
+   "description": "Attribution for an actual changed canonical statement or assumption assessment. Status and support remain in the exact theory records.",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "component_id",
+     "origin",
+     "reason"
+    ],
+    "properties": {
+     "component_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "origin": {
+      "enum": [
+       "lead_concern",
+       "analyst_issue"
+      ]
+     },
+     "issue_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+     },
+     "reason": {
+      "type": "string",
+      "pattern": "\\S"
+     }
+    },
+    "allOf": [
+     {
+      "if": {
+       "properties": {
+        "origin": {
+         "const": "analyst_issue"
+        }
+       },
+       "required": [
+        "origin"
+       ]
+      },
+      "then": {
+       "required": [
+        "issue_id"
+       ]
+      },
+      "else": {
+       "not": {
+        "required": [
+         "issue_id"
+        ]
+       }
+      }
+     }
+    ]
+   }
+  }
+ },
+ "allOf": [
+  {
+   "if": {
+    "properties": {
+     "phase": {
+      "enum": [
+       "P3",
+       "P4",
+       "P5"
+      ]
+     }
+    },
+    "required": [
+     "phase"
+    ]
+   },
+   "then": {
+    "required": [
+     "method_identity"
+    ]
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "authority_at_creation": {
+      "const": "formal_generation"
+     }
+    },
+    "required": [
+     "authority_at_creation"
+    ]
+   },
+   "then": {
+    "required": [
+     "publication_receipt_id",
+     "published_at"
+    ]
+   },
+   "else": {
+    "not": {
+     "anyOf": [
+      {
+       "required": [
+        "publication_receipt_id"
+       ]
+      },
+      {
+       "required": [
+        "published_at"
+       ]
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

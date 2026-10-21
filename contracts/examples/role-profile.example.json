@@ -1,0 +1,97 @@
+{
+    "schema_version":  "1.0.0",
+    "profile_id":  "profile.data_analyst.p4",
+    "profile_version":  1,
+    "role":  "data_analyst",
+    "applicable_phases":  [
+                              "P4"
+                          ],
+    "applicable_modes":  [
+                             "p4.preliminary",
+                             "p4.comprehensive"
+                         ],
+    "scientific_stance":  {
+                              "artifact_id":  "artifact.profile.data_analyst.stance",
+                              "uri":  "artifact://artifact.profile.data_analyst.stance",
+                              "sha256":  "1212121212121212121212121212121212121212121212121212121212121212",
+                              "media_type":  "text/markdown"
+                          },
+    "phase_instruction":  {
+                              "artifact_id":  "artifact.profile.data_analyst.p4_instruction",
+                              "uri":  "artifact://artifact.profile.data_analyst.p4_instruction",
+                              "sha256":  "1313131313131313131313131313131313131313131313131313131313131313",
+                              "media_type":  "text/markdown"
+                          },
+    "output_contract":  {
+                            "artifact_id":  "artifact.contract.p4.evidence_output",
+                            "uri":  "artifact://artifact.contract.p4.evidence_output",
+                            "sha256":  "1919191919191919191919191919191919191919191919191919191919191919",
+                            "media_type":  "application/schema+json"
+                        },
+    "memory_policy":  {
+                          "run_working_memory":  "run_local",
+                          "project_preference_memory":  "versioned_visible",
+                          "scientific_memory_source":  "formal_records_only",
+                          "unindexed_transcripts_allowed":  false
+                      },
+    "skills":  [
+                   {
+                       "package_id":  "skill.stat_paper_writing",
+                       "package_version":  "1.0.0",
+                       "artifact":  {
+                                        "artifact_id":  "artifact.skill.stat_paper_writing",
+                                        "uri":  "artifact://artifact.skill.stat_paper_writing",
+                                        "sha256":  "1414141414141414141414141414141414141414141414141414141414141414",
+                                        "media_type":  "application/json"
+                                    },
+                       "required":  true
+                   }
+               ],
+    "knowledge_resources":  [
+                                {
+                                    "resource_id":  "resource.optimization_problems",
+                                    "resource_version":  "2026.1",
+                                    "access_policy":  "query_with_provenance",
+                                    "required":  false,
+                                    "artifact":  {
+                                                     "artifact_id":  "artifact.resource.optimization_problems",
+                                                     "uri":  "artifact://artifact.resource.optimization_problems",
+                                                     "sha256":  "1717171717171717171717171717171717171717171717171717171717171717",
+                                                     "media_type":  "application/json"
+                                                 }
+                                }
+                            ],
+    "tools":  [
+                  {
+                      "tool_id":  "tool.statistical_runtime",
+                      "tool_version":  "1.0.0",
+                      "read_scope":  [
+                                         "frozen_inputs",
+                                         "prior_role_handoffs"
+                                     ],
+                      "write_scope":  [
+                                          "active_role_workspace"
+                                      ],
+                      "network_scope":  "approved_resources",
+                      "required":  true,
+                      "artifact":  {
+                                       "artifact_id":  "artifact.tool.statistical_runtime",
+                                       "uri":  "artifact://artifact.tool.statistical_runtime",
+                                       "sha256":  "1818181818181818181818181818181818181818181818181818181818181818",
+                                       "media_type":  "application/json"
+                                   }
+                  }
+              ],
+    "context_policy":  {
+                           "default_context":  "current_formal_records",
+                           "history_selection":  "user_selected_only",
+                           "handoff_policy":  "phase_contract_only",
+                           "primary_artifact_access":  "required"
+                       },
+    "review_isolation":  "none",
+    "content_sha256":  "1515151515151515151515151515151515151515151515151515151515151515",
+    "created_at":  "2026-07-20T10:00:00Z",
+    "applicable_stage_ids":  [
+                                 "p4.analyst"
+                             ]
+}

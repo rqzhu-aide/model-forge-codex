@@ -1,0 +1,661 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/command-attempt-audit-event.schema.json",
+  "title": "Command Attempt Audit Event",
+  "description": "One append-only, tamper-evident operational record of a controlled command check. It records authorization and command-processing facts but has no scientific authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_type",
+    "audit_sequence",
+    "audit_event_id",
+    "project_id",
+    "action_type",
+    "target",
+    "raw_request",
+    "requested_by",
+    "check_stage",
+    "authorization",
+    "result",
+    "occurred_at",
+    "prior_audit_root_sha256",
+    "content_sha256",
+    "audit_root_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "event_type": {
+      "const": "command_attempt_audit"
+    },
+    "audit_sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "audit_event_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "project_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "start_run",
+        "cancel_run",
+        "retire_method",
+        "reactivate_method",
+        "activate_method"
+      ]
+    },
+    "target": {
+      "oneOf": [
+        {"$ref": "#/$defs/runStartTarget"},
+        {"$ref": "#/$defs/runCancellationTarget"},
+        {"$ref": "#/$defs/methodLifecycleTarget"},
+        {"$ref": "#/$defs/unresolvedTarget"}
+      ]
+    },
+    "raw_request": {
+      "$ref": "#/$defs/rawRequestArtifact"
+    },
+    "validated_command": {
+      "$ref": "#/$defs/validatedCommand"
+    },
+    "requested_by": {
+      "oneOf": [
+        {"$ref": "#/$defs/authenticatedRequester"},
+        {"$ref": "#/$defs/unauthenticatedRequester"}
+      ]
+    },
+    "check_stage": {
+      "type": "string",
+      "enum": ["acceptance", "pre_commit"]
+    },
+    "authorization": {
+      "$ref": "#/$defs/authorizationCheck"
+    },
+    "result": {
+      "$ref": "#/$defs/checkResult"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "prior_audit_root_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "The preceding audit_root_sha256, or 64 zero hexadecimal characters for the first event."
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "SHA-256 of RFC 8785 canonical event JSON with content_sha256 and audit_root_sha256 omitted."
+    },
+    "audit_root_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256",
+      "description": "SHA-256 of the 32-byte prior audit root followed by the 32-byte content digest."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"action_type": {"const": "start_run"}},
+        "required": ["action_type"]
+      },
+      "then": {
+        "properties": {
+          "target": {
+            "oneOf": [
+              {"$ref": "#/$defs/runStartTarget"},
+              {"$ref": "#/$defs/unresolvedTarget"}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"action_type": {"const": "cancel_run"}},
+        "required": ["action_type"]
+      },
+      "then": {
+        "properties": {
+          "target": {
+            "oneOf": [
+              {"$ref": "#/$defs/runCancellationTarget"},
+              {"$ref": "#/$defs/unresolvedTarget"}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_type": {
+            "enum": ["retire_method", "reactivate_method", "activate_method"]
+          }
+        },
+        "required": ["action_type"]
+      },
+      "then": {
+        "properties": {
+          "target": {
+            "oneOf": [
+              {"$ref": "#/$defs/methodLifecycleTarget"},
+              {"$ref": "#/$defs/unresolvedTarget"}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_type": {"const": "retire_method"},
+          "target": {
+            "properties": {"target_type": {"const": "method_lifecycle"}},
+            "required": ["target_type"]
+          }
+        },
+        "required": ["action_type", "target"]
+      },
+      "then": {
+        "properties": {
+          "target": {
+            "properties": {
+              "target_lifecycle_state": {"const": "retired"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_type": {"const": "reactivate_method"},
+          "target": {
+            "properties": {"target_type": {"const": "method_lifecycle"}},
+            "required": ["target_type"]
+          }
+        },
+        "required": ["action_type", "target"]
+      },
+      "then": {
+        "properties": {
+          "target": {
+            "properties": {
+              "target_lifecycle_state": {"const": "active"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "target": {
+            "properties": {"target_type": {"const": "unresolved"}},
+            "required": ["target_type"]
+          }
+        },
+        "required": ["target"]
+      },
+      "then": {
+        "properties": {
+          "check_stage": {"const": "acceptance"},
+          "result": {
+            "properties": {"status": {"const": "rejected"}}
+          }
+        },
+        "not": {"required": ["validated_command"]}
+      }
+    },
+    {
+      "if": {
+        "properties": {"check_stage": {"const": "pre_commit"}},
+        "required": ["check_stage"]
+      },
+      "then": {
+        "required": ["validated_command"],
+        "properties": {
+          "target": {
+            "properties": {
+              "target_type": {"not": {"const": "unresolved"}}
+            }
+          },
+          "requested_by": {
+            "properties": {
+              "operating_actor_type": {
+                "enum": ["user", "authorized_remote_operator"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "result": {
+            "properties": {"status": {"const": "accepted"}},
+            "required": ["status"]
+          }
+        },
+        "required": ["result"]
+      },
+      "then": {
+        "required": ["validated_command"],
+        "properties": {
+          "target": {
+            "properties": {
+              "target_type": {"not": {"const": "unresolved"}}
+            }
+          },
+          "requested_by": {
+            "properties": {
+              "operating_actor_type": {
+                "enum": ["user", "authorized_remote_operator"]
+              }
+            }
+          },
+          "authorization": {
+            "properties": {"decision": {"const": "authorized"}}
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "check_stage": {"const": "pre_commit"},
+          "result": {
+            "properties": {"status": {"const": "accepted"}},
+            "required": ["status"]
+          }
+        },
+        "required": ["check_stage", "result"]
+      },
+      "then": {
+        "properties": {
+          "result": {"required": ["effect_ref"]}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requested_by": {
+            "properties": {
+              "operating_actor_type": {"const": "authorized_remote_operator"}
+            },
+            "required": ["operating_actor_type"]
+          }
+        },
+        "required": ["requested_by"]
+      },
+      "then": {
+        "properties": {
+          "authorization": {"required": ["delegation_check"]}
+        }
+      },
+      "else": {
+        "properties": {
+          "authorization": {"not": {"required": ["delegation_check"]}}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requested_by": {
+            "properties": {
+              "operating_actor_type": {"const": "unauthenticated"}
+            },
+            "required": ["operating_actor_type"]
+          }
+        },
+        "required": ["requested_by"]
+      },
+      "then": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "decision": {"const": "denied"},
+              "authentication_check": {"const": "failed"}
+            }
+          },
+          "result": {
+            "properties": {"status": {"const": "rejected"}}
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "rawRequestArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "uri",
+        "sha256",
+        "media_type",
+        "byte_length"
+      ],
+      "properties": {
+        "artifact_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "uri": {
+          "type": "string",
+          "pattern": "^artifact://[^\\s]+$"
+        },
+        "sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256",
+          "description": "SHA-256 of the exact received request bytes, before parsing or normalization."
+        },
+        "media_type": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+$"
+        },
+        "byte_length": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "validatedCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_id", "command_sha256"],
+      "properties": {
+        "command_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "command_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        }
+      }
+    },
+    "runStartTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_type", "phase", "mode"],
+      "properties": {
+        "target_type": {"const": "run_start"},
+        "phase": {
+          "$ref": "common-definitions.schema.json#/$defs/phaseId"
+        },
+        "mode": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "method_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        }
+      }
+    },
+    "runCancellationTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_type",
+        "run_id",
+        "expected_state",
+        "expected_last_event_sequence",
+        "expected_journal_root_sha256"
+      ],
+      "properties": {
+        "target_type": {"const": "run_cancellation"},
+        "run_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "expected_state": {
+          "type": "string",
+          "enum": ["created", "preparing", "prepared", "running"]
+        },
+        "expected_last_event_sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "expected_journal_root_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        }
+      }
+    },
+    "methodLifecycleTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_type",
+        "method_id",
+        "expected_generation_id",
+        "expected_content_sha256",
+        "target_lifecycle_state"
+      ],
+      "properties": {
+        "target_type": {"const": "method_lifecycle"},
+        "method_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "expected_generation_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "expected_content_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        },
+        "target_lifecycle_state": {
+          "type": "string",
+          "enum": ["active", "retired"]
+        }
+      }
+    },
+    "unresolvedTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_type", "resolution_error_code"],
+      "properties": {
+        "target_type": {"const": "unresolved"},
+        "resolution_error_code": {
+          "type": "string",
+          "enum": [
+            "COMMAND_SCHEMA_INVALID",
+            "COMMAND_DIGEST_MISMATCH",
+            "AUTHENTICATION_REQUIRED"
+          ]
+        },
+        "untrusted_presented_target": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    },
+    "authenticatedRequester": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["user_id", "operating_actor_type"],
+      "properties": {
+        "user_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "operating_actor_type": {
+          "type": "string",
+          "enum": ["user", "authorized_remote_operator"]
+        },
+        "operator_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operating_actor_type": {"const": "authorized_remote_operator"}
+            },
+            "required": ["operating_actor_type"]
+          },
+          "then": {
+            "required": ["operator_id"]
+          },
+          "else": {
+            "not": {"required": ["operator_id"]}
+          }
+        }
+      ]
+    },
+    "unauthenticatedRequester": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operating_actor_type"],
+      "properties": {
+        "operating_actor_type": {"const": "unauthenticated"},
+        "untrusted_presented_identity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    },
+    "authorizationCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "authentication_check"],
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": ["authorized", "denied"]
+        },
+        "authentication_check": {
+          "type": "string",
+          "enum": ["passed", "failed"]
+        },
+        "delegation_check": {
+          "$ref": "#/$defs/delegationCheck"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "authentication_check": {"const": "failed"}
+            },
+            "required": ["authentication_check"]
+          },
+          "then": {
+            "properties": {
+              "decision": {"const": "denied"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "decision": {"const": "authorized"}
+            },
+            "required": ["decision"]
+          },
+          "then": {
+            "properties": {
+              "authentication_check": {"const": "passed"},
+              "delegation_check": {
+                "properties": {
+                  "project_scope_check": {"const": "passed"},
+                  "action_scope_check": {"const": "passed"},
+                  "target_scope_check": {"const": "passed"},
+                  "time_window_check": {"const": "passed"},
+                  "revocation_check": {"const": "passed"}
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "delegationCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "grant_id",
+        "grant_sha256",
+        "project_scope_check",
+        "action_scope_check",
+        "target_scope_check",
+        "time_window_check",
+        "revocation_check"
+      ],
+      "properties": {
+        "grant_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "grant_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256"
+        },
+        "project_scope_check": {
+          "type": "string",
+          "enum": ["passed", "failed"]
+        },
+        "action_scope_check": {
+          "type": "string",
+          "enum": ["passed", "failed"]
+        },
+        "target_scope_check": {
+          "type": "string",
+          "enum": ["passed", "failed"]
+        },
+        "time_window_check": {
+          "type": "string",
+          "enum": ["passed", "failed"]
+        },
+        "revocation_check": {
+          "type": "string",
+          "enum": ["passed", "failed"]
+        }
+      }
+    },
+    "durableEffectRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["effect_kind", "effect_id", "effect_sha256"],
+      "properties": {
+        "effect_kind": {
+          "type": "string",
+          "enum": ["run_state_event", "publication_receipt"]
+        },
+        "effect_id": {
+          "$ref": "common-definitions.schema.json#/$defs/stableId"
+        },
+        "effect_sha256": {
+          "$ref": "common-definitions.schema.json#/$defs/sha256",
+          "description": "Digest of the exact durable run-state event or publication receipt named by effect_id."
+        }
+      }
+    },    "checkResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status"],
+          "properties": {
+            "status": {"const": "accepted"},
+            "effect_ref": {
+              "$ref": "#/$defs/durableEffectRef"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "command_error"],
+          "properties": {
+            "status": {"const": "rejected"},
+            "command_error": {
+              "$ref": "command-error.schema.json"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

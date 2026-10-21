@@ -1,0 +1,57 @@
+{
+    "schema_version":  "1.0.0",
+    "state_projection_id":  "state.record.theory.replay.001",
+    "project_id":  "project.replay",
+    "subject":  {
+                    "kind":  "record_generation",
+                    "subject_id":  "record.theory.replay",
+                    "generation_id":  "generation.theory.replay.001",
+                    "method_identity":  {
+                                            "stable_id":  "method.replay",
+                                            "version":  1,
+                                            "definition_sha256":  "3333333333333333333333333333333333333333333333333333333333333333"
+                                        }
+                },
+    "publication_state":  "formal",
+    "record_position":  "current",
+    "alignment":  {
+                      "state":  "exact",
+                      "causes":  [
+                                     "exact_match"
+                                 ],
+                      "assessed_at":  "2026-08-01T16:00:01Z",
+                      "assessed_by":  "theorist",
+                      "reasons":  [
+                                      "The proof basis and method definition digest match exactly."
+                                  ],
+                      "assessed_method":  {
+                                              "stable_id":  "method.replay",
+                                              "version":  1,
+                                              "definition_sha256":  "3333333333333333333333333333333333333333333333333333333333333333"
+                                          }
+                  },
+    "research_attention":  {
+                               "level":  "none",
+                               "open_item_ids":  [
+
+                                                 ],
+                               "reasons":  [
+
+                                           ]
+                           },
+    "evidence_eligibility":  {
+                                 "status":  "not_applicable",
+                                 "method_match":  "not_applicable",
+                                 "reasons":  [
+
+                                             ]
+                             },
+    "source_event_ids":  [
+                             "event.replay.theory.published.001",
+                             "event.replay.theory.aligned.001"
+                         ],
+    "last_event_sequence":  2,
+    "event_root_sha256":  "968a975c9323d85a8a481d9526487894dc15204a53887dc9dc72b5e16c47e8b3",
+    "content_sha256":  "8c64f2dfbb93125cb475440a85ab3e6c632d27a4bee1e506c6208b22f3e2cc42",
+    "computed_at":  "2026-08-01T16:00:01Z"
+}

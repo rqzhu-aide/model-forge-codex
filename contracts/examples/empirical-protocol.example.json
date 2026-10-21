@@ -1,0 +1,2249 @@
+{
+  "schema_version": "1.0.0",
+  "protocol_id": "protocol.example_p4_tapered_quantile_001",
+  "phase": "P4",
+  "source_run_id": "run.example_p4_preliminary_20260816t110000z",
+  "mode": "p4.preliminary",
+  "method_identity": {
+    "stable_id": "method.example_tapered_quantile",
+    "version": 1,
+    "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+  },
+  "basis": [
+    {
+      "record_id": "record.example_theory_tapered_quantile",
+      "record_type": "theory_record",
+      "generation_id": "generation.example_theory_001",
+      "generation_number": 1,
+      "content_sha256": "ee55555555555555555555555555555555555555555555555555555555555555",
+      "publication_state_at_use": "formal",
+      "record_position_at_use": "current",
+      "dependency_class": "hard",
+      "method_identity": {
+        "stable_id": "method.example_tapered_quantile",
+        "version": 1,
+        "definition_sha256": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809"
+      }
+    }
+  ],
+  "research_question": "Does the tapered quantile estimator attain the uniform error decay and bootstrap interval coverage predicted by the Phase 3 theory under two preliminary simulation settings?",
+  "scope": "Preliminary simulation study with two data-generating processes, sample sizes 200 and 1000, and the single baseline of untapered quantile regression.",
+  "scope_justification": "The two settings isolate the taper boundary effect that the theory identifies as decisive; passing them is necessary for the theory claims to be empirically plausible, which is the bar for preliminary scope.",
+  "claim_tests": [
+    {
+      "test_id": "test.example_error_decay",
+      "claim_id": "claim.example_uniform_consistency",
+      "target_statement_ids": [
+        "statement.example_consistency"
+      ],
+      "hypothesis": "Maximum absolute coefficient error decreases as sample size grows from 200 to 1000 in both settings.",
+      "design": "Monte Carlo simulation with 500 replicates per setting and sample size, comparing error distributions across sizes.",
+      "falsification_rule": "The test is falsified if the median maximum error at size 1000 is not strictly below the median at size 200 in either setting.",
+      "decision_threshold_ids": [
+        "threshold.example_error_decay"
+      ]
+    },
+    {
+      "test_id": "test.example_coverage",
+      "claim_id": "claim.example_bootstrap_coverage",
+      "target_statement_ids": [
+        "statement.example_normality",
+        "statement.example_bootstrap"
+      ],
+      "hypothesis": "Paired bootstrap intervals attain empirical coverage between 93 and 97 percent at interior quantiles.",
+      "design": "For each independent generated dataset, 500 illustrative paired bootstrap resamples form its coefficient interval. Outer datasets estimate coverage with explicit returned and attempted denominators; the inner resamples are not independent simulation datasets. No fixed bootstrap count is a general contract requirement.",
+      "falsification_rule": "The test is falsified if coverage falls outside 90 to 99 percent in either setting at size 1000.",
+      "decision_threshold_ids": [
+        "threshold.example_coverage"
+      ]
+    }
+  ],
+  "estimand": {
+    "name": "maximum absolute coefficient error",
+    "mathematical_definition": "The supremum over the quantile grid of the absolute difference between the estimated and true coefficient vectors, in Euclidean norm per coordinate.",
+    "target_population_or_distribution": "The sampling distribution induced by each of the two prespecified data-generating processes.",
+    "analysis_unit": "one simulated dataset",
+    "aggregation": "median and upper quartile across the 500 replicates per condition",
+    "conditions": [
+      "interior quantile grid of 19 equally spaced indices",
+      "errors drawn from the setting-specific sub-Gaussian law"
+    ]
+  },
+  "data_or_simulation_unit": {
+    "source_type": "simulation",
+    "unit_definition": "One dataset of n iid observations with a scalar covariate and a continuous outcome generated under the setting-specific design.",
+    "sampling_or_generation_process": "Setting S1 uses Gaussian errors and a linear quantile structure; setting S2 uses Student-t errors with five degrees of freedom and the same linear location, preserving independently defined coefficient truth.",
+    "sample_sizes": [
+      200,
+      1000
+    ],
+    "independence_structure": "All observations are independent within and across replicates.",
+    "splits": "No sample splitting; the estimator and bootstrap use the full dataset.",
+    "preprocessing": "Covariates are centered and scaled to unit variance before estimation."
+  },
+  "baselines": [
+    {
+      "baseline_id": "baseline.example_untapered_qr",
+      "name": "untapered quantile regression",
+      "rationale": "It is the natural ablation: identical objective without the taper sequence, isolating the contribution of the taper.",
+      "implementation_identity": "reference quantile regression solver, pinned version tag qrref-2.4.1",
+      "tuning_policy": "No tuning parameters; the solver runs at default settings.",
+      "compute_budget": "Same per-replicate compute envelope as the candidate method."
+    }
+  ],
+  "implementation_strategy": {
+    "strategy": "new",
+    "verification_checks": [
+      "unit test reproduces the untapered solution when taper weights are set to one",
+      "deterministic seed check reproduces one full replicate bitwise"
+    ],
+    "changes_from_prior": [],
+    "route": "custom_implementation",
+    "route_rationale": "The frozen tapered objective requires custom model code; this is the first project implementation, not reuse of prior verified project code.",
+    "packages": []
+  },
+  "tuning_budget": {
+    "selection_data": "A disjoint pilot simulation of 50 replicates, never used for the confirmatory tests.",
+    "search_space": "Taper decay exponent in the set {1.5, 2.0, 2.5}; all other parameters fixed by the method definition.",
+    "optimization_rule": "Select the exponent minimizing pilot median maximum error.",
+    "maximum_trials": 3,
+    "compute_limit": "200 core-hours total for pilot and confirmatory runs.",
+    "fairness_rule": "The baseline receives the same replicate count and compute envelope as the candidate."
+  },
+  "metrics": [
+    {
+      "metric_id": "metric.example_max_error",
+      "name": "maximum absolute coefficient error",
+      "definition": "Supremum of per-coordinate absolute estimation error over the quantile grid.",
+      "direction": "minimize",
+      "aggregation": "median across replicates",
+      "uncertainty_method": "bootstrap percentile interval over replicates",
+      "summary": {
+        "aggregation": "median",
+        "uncertainty": "custom"
+      }
+    },
+    {
+      "metric_id": "metric.example_coverage",
+      "name": "bootstrap interval coverage",
+      "definition": "Coverage among returned intervals: number of returned nominal 95 percent coefficient intervals containing the independently known coefficient, divided by returned intervals. Also report interval-return among attempted full procedures and joint return-and-cover among attempted procedures; administratively unrun datasets stay separate.",
+      "direction": "target",
+      "aggregation": "mean across replicates",
+      "uncertainty_method": "Wilson score interval for the coverage proportion",
+      "summary": {
+        "aggregation": "mean",
+        "uncertainty": "custom"
+      }
+    }
+  ],
+  "repetitions_and_uncertainty": {
+    "repetitions": 500,
+    "random_seed_policy": "Seeds are drawn from a master seed of 20260816 by a counter-based generator recorded per replicate.",
+    "paired_design": true,
+    "interval_or_error_method": "Outer repetitions are independent generated datasets. A paired bootstrap within each dataset forms intervals for the declared coefficient target; its inner resamples do not increase the independent-dataset count. Summarize error across outer datasets with the declared median bootstrap interval; report interval-return, coverage among returns, and joint return-and-cover separately, using Wilson intervals with explicit attempted/returned denominators.",
+    "target_precision": "Illustrative allocation of 500 outer datasets per declared setting/size; this is not a universal quota or an achieved precision claim. Report actual Monte Carlo uncertainty and completed, failed and unrun counts."
+  },
+  "multiplicity": {
+    "family_definition": "The two claim tests form one confirmatory family.",
+    "correction_method": "Holm step-down correction across the two tests.",
+    "decision_rule": "A claim is supported only if its test passes at the Holm-adjusted 0.05 level."
+  },
+  "stopping_rules": [
+    {
+      "rule_id": "rule.example_compute_cap",
+      "condition": "The cumulative compute usage reaches the 200 core-hour limit before all replicates finish.",
+      "action": "Stop launching new replicates and report results with the achieved replicate count flagged as a deviation."
+    }
+  ],
+  "leakage_checks": [
+    {
+      "check_id": "check.example_pilot_isolation",
+      "risk": "Tuning on confirmatory data would inflate apparent performance.",
+      "procedure": "Verify by seed audit that no confirmatory replicate seed appears in the pilot seed list.",
+      "failure_action": "Discard the tuning choice, refit with the default exponent 2.0, and record a deviation."
+    }
+  ],
+  "decision_thresholds": [
+    {
+      "threshold_id": "threshold.example_error_decay",
+      "claim_id": "claim.example_uniform_consistency",
+      "metric_id": "metric.example_max_error",
+      "criterion": "Median maximum error at size 1000 is at least 30 percent below the median at size 200 in both settings.",
+      "interpretation": "Passing supports the uniform consistency claim at preliminary scope; failing blocks progression to comprehensive evaluation."
+    },
+    {
+      "threshold_id": "threshold.example_coverage",
+      "claim_id": "claim.example_bootstrap_coverage",
+      "metric_id": "metric.example_coverage",
+      "criterion": "Coverage lies within 93 to 97 percent at interior quantiles at size 1000 in both settings.",
+      "interpretation": "Passing supports the bootstrap validity claim; coverage below 93 percent contradicts it at preliminary scope."
+    }
+  ],
+  "deviations": [],
+  "protocol_status": "prespecified",
+  "finalized_at": "2026-08-16T11:00:00Z",
+  "content_sha256": "3e7c1e98a72cb371b3b3d5407bbfc55d10d286ccd6f1eef79e4cbadf39bf0818",
+  "created_at": "2026-08-16T11:00:00Z",
+  "cases": [
+    {
+      "case_id": "case.example.screen",
+      "label": "Preliminary feasibility screen",
+      "test_ids": [
+        "test.example_error_decay",
+        "test.example_coverage"
+      ],
+      "metric_ids": [
+        "metric.example_max_error",
+        "metric.example_coverage"
+      ],
+      "comparator_id": "selected_method",
+      "regime": "screen",
+      "replicates": [
+        {
+          "replicate_id": "replicate.1",
+          "seed": 1
+        },
+        {
+          "replicate_id": "replicate.2",
+          "seed": 2
+        },
+        {
+          "replicate_id": "replicate.3",
+          "seed": 3
+        },
+        {
+          "replicate_id": "replicate.4",
+          "seed": 4
+        },
+        {
+          "replicate_id": "replicate.5",
+          "seed": 5
+        },
+        {
+          "replicate_id": "replicate.6",
+          "seed": 6
+        },
+        {
+          "replicate_id": "replicate.7",
+          "seed": 7
+        },
+        {
+          "replicate_id": "replicate.8",
+          "seed": 8
+        },
+        {
+          "replicate_id": "replicate.9",
+          "seed": 9
+        },
+        {
+          "replicate_id": "replicate.10",
+          "seed": 10
+        },
+        {
+          "replicate_id": "replicate.11",
+          "seed": 11
+        },
+        {
+          "replicate_id": "replicate.12",
+          "seed": 12
+        },
+        {
+          "replicate_id": "replicate.13",
+          "seed": 13
+        },
+        {
+          "replicate_id": "replicate.14",
+          "seed": 14
+        },
+        {
+          "replicate_id": "replicate.15",
+          "seed": 15
+        },
+        {
+          "replicate_id": "replicate.16",
+          "seed": 16
+        },
+        {
+          "replicate_id": "replicate.17",
+          "seed": 17
+        },
+        {
+          "replicate_id": "replicate.18",
+          "seed": 18
+        },
+        {
+          "replicate_id": "replicate.19",
+          "seed": 19
+        },
+        {
+          "replicate_id": "replicate.20",
+          "seed": 20
+        },
+        {
+          "replicate_id": "replicate.21",
+          "seed": 21
+        },
+        {
+          "replicate_id": "replicate.22",
+          "seed": 22
+        },
+        {
+          "replicate_id": "replicate.23",
+          "seed": 23
+        },
+        {
+          "replicate_id": "replicate.24",
+          "seed": 24
+        },
+        {
+          "replicate_id": "replicate.25",
+          "seed": 25
+        },
+        {
+          "replicate_id": "replicate.26",
+          "seed": 26
+        },
+        {
+          "replicate_id": "replicate.27",
+          "seed": 27
+        },
+        {
+          "replicate_id": "replicate.28",
+          "seed": 28
+        },
+        {
+          "replicate_id": "replicate.29",
+          "seed": 29
+        },
+        {
+          "replicate_id": "replicate.30",
+          "seed": 30
+        },
+        {
+          "replicate_id": "replicate.31",
+          "seed": 31
+        },
+        {
+          "replicate_id": "replicate.32",
+          "seed": 32
+        },
+        {
+          "replicate_id": "replicate.33",
+          "seed": 33
+        },
+        {
+          "replicate_id": "replicate.34",
+          "seed": 34
+        },
+        {
+          "replicate_id": "replicate.35",
+          "seed": 35
+        },
+        {
+          "replicate_id": "replicate.36",
+          "seed": 36
+        },
+        {
+          "replicate_id": "replicate.37",
+          "seed": 37
+        },
+        {
+          "replicate_id": "replicate.38",
+          "seed": 38
+        },
+        {
+          "replicate_id": "replicate.39",
+          "seed": 39
+        },
+        {
+          "replicate_id": "replicate.40",
+          "seed": 40
+        },
+        {
+          "replicate_id": "replicate.41",
+          "seed": 41
+        },
+        {
+          "replicate_id": "replicate.42",
+          "seed": 42
+        },
+        {
+          "replicate_id": "replicate.43",
+          "seed": 43
+        },
+        {
+          "replicate_id": "replicate.44",
+          "seed": 44
+        },
+        {
+          "replicate_id": "replicate.45",
+          "seed": 45
+        },
+        {
+          "replicate_id": "replicate.46",
+          "seed": 46
+        },
+        {
+          "replicate_id": "replicate.47",
+          "seed": 47
+        },
+        {
+          "replicate_id": "replicate.48",
+          "seed": 48
+        },
+        {
+          "replicate_id": "replicate.49",
+          "seed": 49
+        },
+        {
+          "replicate_id": "replicate.50",
+          "seed": 50
+        },
+        {
+          "replicate_id": "replicate.51",
+          "seed": 51
+        },
+        {
+          "replicate_id": "replicate.52",
+          "seed": 52
+        },
+        {
+          "replicate_id": "replicate.53",
+          "seed": 53
+        },
+        {
+          "replicate_id": "replicate.54",
+          "seed": 54
+        },
+        {
+          "replicate_id": "replicate.55",
+          "seed": 55
+        },
+        {
+          "replicate_id": "replicate.56",
+          "seed": 56
+        },
+        {
+          "replicate_id": "replicate.57",
+          "seed": 57
+        },
+        {
+          "replicate_id": "replicate.58",
+          "seed": 58
+        },
+        {
+          "replicate_id": "replicate.59",
+          "seed": 59
+        },
+        {
+          "replicate_id": "replicate.60",
+          "seed": 60
+        },
+        {
+          "replicate_id": "replicate.61",
+          "seed": 61
+        },
+        {
+          "replicate_id": "replicate.62",
+          "seed": 62
+        },
+        {
+          "replicate_id": "replicate.63",
+          "seed": 63
+        },
+        {
+          "replicate_id": "replicate.64",
+          "seed": 64
+        },
+        {
+          "replicate_id": "replicate.65",
+          "seed": 65
+        },
+        {
+          "replicate_id": "replicate.66",
+          "seed": 66
+        },
+        {
+          "replicate_id": "replicate.67",
+          "seed": 67
+        },
+        {
+          "replicate_id": "replicate.68",
+          "seed": 68
+        },
+        {
+          "replicate_id": "replicate.69",
+          "seed": 69
+        },
+        {
+          "replicate_id": "replicate.70",
+          "seed": 70
+        },
+        {
+          "replicate_id": "replicate.71",
+          "seed": 71
+        },
+        {
+          "replicate_id": "replicate.72",
+          "seed": 72
+        },
+        {
+          "replicate_id": "replicate.73",
+          "seed": 73
+        },
+        {
+          "replicate_id": "replicate.74",
+          "seed": 74
+        },
+        {
+          "replicate_id": "replicate.75",
+          "seed": 75
+        },
+        {
+          "replicate_id": "replicate.76",
+          "seed": 76
+        },
+        {
+          "replicate_id": "replicate.77",
+          "seed": 77
+        },
+        {
+          "replicate_id": "replicate.78",
+          "seed": 78
+        },
+        {
+          "replicate_id": "replicate.79",
+          "seed": 79
+        },
+        {
+          "replicate_id": "replicate.80",
+          "seed": 80
+        },
+        {
+          "replicate_id": "replicate.81",
+          "seed": 81
+        },
+        {
+          "replicate_id": "replicate.82",
+          "seed": 82
+        },
+        {
+          "replicate_id": "replicate.83",
+          "seed": 83
+        },
+        {
+          "replicate_id": "replicate.84",
+          "seed": 84
+        },
+        {
+          "replicate_id": "replicate.85",
+          "seed": 85
+        },
+        {
+          "replicate_id": "replicate.86",
+          "seed": 86
+        },
+        {
+          "replicate_id": "replicate.87",
+          "seed": 87
+        },
+        {
+          "replicate_id": "replicate.88",
+          "seed": 88
+        },
+        {
+          "replicate_id": "replicate.89",
+          "seed": 89
+        },
+        {
+          "replicate_id": "replicate.90",
+          "seed": 90
+        },
+        {
+          "replicate_id": "replicate.91",
+          "seed": 91
+        },
+        {
+          "replicate_id": "replicate.92",
+          "seed": 92
+        },
+        {
+          "replicate_id": "replicate.93",
+          "seed": 93
+        },
+        {
+          "replicate_id": "replicate.94",
+          "seed": 94
+        },
+        {
+          "replicate_id": "replicate.95",
+          "seed": 95
+        },
+        {
+          "replicate_id": "replicate.96",
+          "seed": 96
+        },
+        {
+          "replicate_id": "replicate.97",
+          "seed": 97
+        },
+        {
+          "replicate_id": "replicate.98",
+          "seed": 98
+        },
+        {
+          "replicate_id": "replicate.99",
+          "seed": 99
+        },
+        {
+          "replicate_id": "replicate.100",
+          "seed": 100
+        },
+        {
+          "replicate_id": "replicate.101",
+          "seed": 101
+        },
+        {
+          "replicate_id": "replicate.102",
+          "seed": 102
+        },
+        {
+          "replicate_id": "replicate.103",
+          "seed": 103
+        },
+        {
+          "replicate_id": "replicate.104",
+          "seed": 104
+        },
+        {
+          "replicate_id": "replicate.105",
+          "seed": 105
+        },
+        {
+          "replicate_id": "replicate.106",
+          "seed": 106
+        },
+        {
+          "replicate_id": "replicate.107",
+          "seed": 107
+        },
+        {
+          "replicate_id": "replicate.108",
+          "seed": 108
+        },
+        {
+          "replicate_id": "replicate.109",
+          "seed": 109
+        },
+        {
+          "replicate_id": "replicate.110",
+          "seed": 110
+        },
+        {
+          "replicate_id": "replicate.111",
+          "seed": 111
+        },
+        {
+          "replicate_id": "replicate.112",
+          "seed": 112
+        },
+        {
+          "replicate_id": "replicate.113",
+          "seed": 113
+        },
+        {
+          "replicate_id": "replicate.114",
+          "seed": 114
+        },
+        {
+          "replicate_id": "replicate.115",
+          "seed": 115
+        },
+        {
+          "replicate_id": "replicate.116",
+          "seed": 116
+        },
+        {
+          "replicate_id": "replicate.117",
+          "seed": 117
+        },
+        {
+          "replicate_id": "replicate.118",
+          "seed": 118
+        },
+        {
+          "replicate_id": "replicate.119",
+          "seed": 119
+        },
+        {
+          "replicate_id": "replicate.120",
+          "seed": 120
+        },
+        {
+          "replicate_id": "replicate.121",
+          "seed": 121
+        },
+        {
+          "replicate_id": "replicate.122",
+          "seed": 122
+        },
+        {
+          "replicate_id": "replicate.123",
+          "seed": 123
+        },
+        {
+          "replicate_id": "replicate.124",
+          "seed": 124
+        },
+        {
+          "replicate_id": "replicate.125",
+          "seed": 125
+        },
+        {
+          "replicate_id": "replicate.126",
+          "seed": 126
+        },
+        {
+          "replicate_id": "replicate.127",
+          "seed": 127
+        },
+        {
+          "replicate_id": "replicate.128",
+          "seed": 128
+        },
+        {
+          "replicate_id": "replicate.129",
+          "seed": 129
+        },
+        {
+          "replicate_id": "replicate.130",
+          "seed": 130
+        },
+        {
+          "replicate_id": "replicate.131",
+          "seed": 131
+        },
+        {
+          "replicate_id": "replicate.132",
+          "seed": 132
+        },
+        {
+          "replicate_id": "replicate.133",
+          "seed": 133
+        },
+        {
+          "replicate_id": "replicate.134",
+          "seed": 134
+        },
+        {
+          "replicate_id": "replicate.135",
+          "seed": 135
+        },
+        {
+          "replicate_id": "replicate.136",
+          "seed": 136
+        },
+        {
+          "replicate_id": "replicate.137",
+          "seed": 137
+        },
+        {
+          "replicate_id": "replicate.138",
+          "seed": 138
+        },
+        {
+          "replicate_id": "replicate.139",
+          "seed": 139
+        },
+        {
+          "replicate_id": "replicate.140",
+          "seed": 140
+        },
+        {
+          "replicate_id": "replicate.141",
+          "seed": 141
+        },
+        {
+          "replicate_id": "replicate.142",
+          "seed": 142
+        },
+        {
+          "replicate_id": "replicate.143",
+          "seed": 143
+        },
+        {
+          "replicate_id": "replicate.144",
+          "seed": 144
+        },
+        {
+          "replicate_id": "replicate.145",
+          "seed": 145
+        },
+        {
+          "replicate_id": "replicate.146",
+          "seed": 146
+        },
+        {
+          "replicate_id": "replicate.147",
+          "seed": 147
+        },
+        {
+          "replicate_id": "replicate.148",
+          "seed": 148
+        },
+        {
+          "replicate_id": "replicate.149",
+          "seed": 149
+        },
+        {
+          "replicate_id": "replicate.150",
+          "seed": 150
+        },
+        {
+          "replicate_id": "replicate.151",
+          "seed": 151
+        },
+        {
+          "replicate_id": "replicate.152",
+          "seed": 152
+        },
+        {
+          "replicate_id": "replicate.153",
+          "seed": 153
+        },
+        {
+          "replicate_id": "replicate.154",
+          "seed": 154
+        },
+        {
+          "replicate_id": "replicate.155",
+          "seed": 155
+        },
+        {
+          "replicate_id": "replicate.156",
+          "seed": 156
+        },
+        {
+          "replicate_id": "replicate.157",
+          "seed": 157
+        },
+        {
+          "replicate_id": "replicate.158",
+          "seed": 158
+        },
+        {
+          "replicate_id": "replicate.159",
+          "seed": 159
+        },
+        {
+          "replicate_id": "replicate.160",
+          "seed": 160
+        },
+        {
+          "replicate_id": "replicate.161",
+          "seed": 161
+        },
+        {
+          "replicate_id": "replicate.162",
+          "seed": 162
+        },
+        {
+          "replicate_id": "replicate.163",
+          "seed": 163
+        },
+        {
+          "replicate_id": "replicate.164",
+          "seed": 164
+        },
+        {
+          "replicate_id": "replicate.165",
+          "seed": 165
+        },
+        {
+          "replicate_id": "replicate.166",
+          "seed": 166
+        },
+        {
+          "replicate_id": "replicate.167",
+          "seed": 167
+        },
+        {
+          "replicate_id": "replicate.168",
+          "seed": 168
+        },
+        {
+          "replicate_id": "replicate.169",
+          "seed": 169
+        },
+        {
+          "replicate_id": "replicate.170",
+          "seed": 170
+        },
+        {
+          "replicate_id": "replicate.171",
+          "seed": 171
+        },
+        {
+          "replicate_id": "replicate.172",
+          "seed": 172
+        },
+        {
+          "replicate_id": "replicate.173",
+          "seed": 173
+        },
+        {
+          "replicate_id": "replicate.174",
+          "seed": 174
+        },
+        {
+          "replicate_id": "replicate.175",
+          "seed": 175
+        },
+        {
+          "replicate_id": "replicate.176",
+          "seed": 176
+        },
+        {
+          "replicate_id": "replicate.177",
+          "seed": 177
+        },
+        {
+          "replicate_id": "replicate.178",
+          "seed": 178
+        },
+        {
+          "replicate_id": "replicate.179",
+          "seed": 179
+        },
+        {
+          "replicate_id": "replicate.180",
+          "seed": 180
+        },
+        {
+          "replicate_id": "replicate.181",
+          "seed": 181
+        },
+        {
+          "replicate_id": "replicate.182",
+          "seed": 182
+        },
+        {
+          "replicate_id": "replicate.183",
+          "seed": 183
+        },
+        {
+          "replicate_id": "replicate.184",
+          "seed": 184
+        },
+        {
+          "replicate_id": "replicate.185",
+          "seed": 185
+        },
+        {
+          "replicate_id": "replicate.186",
+          "seed": 186
+        },
+        {
+          "replicate_id": "replicate.187",
+          "seed": 187
+        },
+        {
+          "replicate_id": "replicate.188",
+          "seed": 188
+        },
+        {
+          "replicate_id": "replicate.189",
+          "seed": 189
+        },
+        {
+          "replicate_id": "replicate.190",
+          "seed": 190
+        },
+        {
+          "replicate_id": "replicate.191",
+          "seed": 191
+        },
+        {
+          "replicate_id": "replicate.192",
+          "seed": 192
+        },
+        {
+          "replicate_id": "replicate.193",
+          "seed": 193
+        },
+        {
+          "replicate_id": "replicate.194",
+          "seed": 194
+        },
+        {
+          "replicate_id": "replicate.195",
+          "seed": 195
+        },
+        {
+          "replicate_id": "replicate.196",
+          "seed": 196
+        },
+        {
+          "replicate_id": "replicate.197",
+          "seed": 197
+        },
+        {
+          "replicate_id": "replicate.198",
+          "seed": 198
+        },
+        {
+          "replicate_id": "replicate.199",
+          "seed": 199
+        },
+        {
+          "replicate_id": "replicate.200",
+          "seed": 200
+        },
+        {
+          "replicate_id": "replicate.201",
+          "seed": 201
+        },
+        {
+          "replicate_id": "replicate.202",
+          "seed": 202
+        },
+        {
+          "replicate_id": "replicate.203",
+          "seed": 203
+        },
+        {
+          "replicate_id": "replicate.204",
+          "seed": 204
+        },
+        {
+          "replicate_id": "replicate.205",
+          "seed": 205
+        },
+        {
+          "replicate_id": "replicate.206",
+          "seed": 206
+        },
+        {
+          "replicate_id": "replicate.207",
+          "seed": 207
+        },
+        {
+          "replicate_id": "replicate.208",
+          "seed": 208
+        },
+        {
+          "replicate_id": "replicate.209",
+          "seed": 209
+        },
+        {
+          "replicate_id": "replicate.210",
+          "seed": 210
+        },
+        {
+          "replicate_id": "replicate.211",
+          "seed": 211
+        },
+        {
+          "replicate_id": "replicate.212",
+          "seed": 212
+        },
+        {
+          "replicate_id": "replicate.213",
+          "seed": 213
+        },
+        {
+          "replicate_id": "replicate.214",
+          "seed": 214
+        },
+        {
+          "replicate_id": "replicate.215",
+          "seed": 215
+        },
+        {
+          "replicate_id": "replicate.216",
+          "seed": 216
+        },
+        {
+          "replicate_id": "replicate.217",
+          "seed": 217
+        },
+        {
+          "replicate_id": "replicate.218",
+          "seed": 218
+        },
+        {
+          "replicate_id": "replicate.219",
+          "seed": 219
+        },
+        {
+          "replicate_id": "replicate.220",
+          "seed": 220
+        },
+        {
+          "replicate_id": "replicate.221",
+          "seed": 221
+        },
+        {
+          "replicate_id": "replicate.222",
+          "seed": 222
+        },
+        {
+          "replicate_id": "replicate.223",
+          "seed": 223
+        },
+        {
+          "replicate_id": "replicate.224",
+          "seed": 224
+        },
+        {
+          "replicate_id": "replicate.225",
+          "seed": 225
+        },
+        {
+          "replicate_id": "replicate.226",
+          "seed": 226
+        },
+        {
+          "replicate_id": "replicate.227",
+          "seed": 227
+        },
+        {
+          "replicate_id": "replicate.228",
+          "seed": 228
+        },
+        {
+          "replicate_id": "replicate.229",
+          "seed": 229
+        },
+        {
+          "replicate_id": "replicate.230",
+          "seed": 230
+        },
+        {
+          "replicate_id": "replicate.231",
+          "seed": 231
+        },
+        {
+          "replicate_id": "replicate.232",
+          "seed": 232
+        },
+        {
+          "replicate_id": "replicate.233",
+          "seed": 233
+        },
+        {
+          "replicate_id": "replicate.234",
+          "seed": 234
+        },
+        {
+          "replicate_id": "replicate.235",
+          "seed": 235
+        },
+        {
+          "replicate_id": "replicate.236",
+          "seed": 236
+        },
+        {
+          "replicate_id": "replicate.237",
+          "seed": 237
+        },
+        {
+          "replicate_id": "replicate.238",
+          "seed": 238
+        },
+        {
+          "replicate_id": "replicate.239",
+          "seed": 239
+        },
+        {
+          "replicate_id": "replicate.240",
+          "seed": 240
+        },
+        {
+          "replicate_id": "replicate.241",
+          "seed": 241
+        },
+        {
+          "replicate_id": "replicate.242",
+          "seed": 242
+        },
+        {
+          "replicate_id": "replicate.243",
+          "seed": 243
+        },
+        {
+          "replicate_id": "replicate.244",
+          "seed": 244
+        },
+        {
+          "replicate_id": "replicate.245",
+          "seed": 245
+        },
+        {
+          "replicate_id": "replicate.246",
+          "seed": 246
+        },
+        {
+          "replicate_id": "replicate.247",
+          "seed": 247
+        },
+        {
+          "replicate_id": "replicate.248",
+          "seed": 248
+        },
+        {
+          "replicate_id": "replicate.249",
+          "seed": 249
+        },
+        {
+          "replicate_id": "replicate.250",
+          "seed": 250
+        },
+        {
+          "replicate_id": "replicate.251",
+          "seed": 251
+        },
+        {
+          "replicate_id": "replicate.252",
+          "seed": 252
+        },
+        {
+          "replicate_id": "replicate.253",
+          "seed": 253
+        },
+        {
+          "replicate_id": "replicate.254",
+          "seed": 254
+        },
+        {
+          "replicate_id": "replicate.255",
+          "seed": 255
+        },
+        {
+          "replicate_id": "replicate.256",
+          "seed": 256
+        },
+        {
+          "replicate_id": "replicate.257",
+          "seed": 257
+        },
+        {
+          "replicate_id": "replicate.258",
+          "seed": 258
+        },
+        {
+          "replicate_id": "replicate.259",
+          "seed": 259
+        },
+        {
+          "replicate_id": "replicate.260",
+          "seed": 260
+        },
+        {
+          "replicate_id": "replicate.261",
+          "seed": 261
+        },
+        {
+          "replicate_id": "replicate.262",
+          "seed": 262
+        },
+        {
+          "replicate_id": "replicate.263",
+          "seed": 263
+        },
+        {
+          "replicate_id": "replicate.264",
+          "seed": 264
+        },
+        {
+          "replicate_id": "replicate.265",
+          "seed": 265
+        },
+        {
+          "replicate_id": "replicate.266",
+          "seed": 266
+        },
+        {
+          "replicate_id": "replicate.267",
+          "seed": 267
+        },
+        {
+          "replicate_id": "replicate.268",
+          "seed": 268
+        },
+        {
+          "replicate_id": "replicate.269",
+          "seed": 269
+        },
+        {
+          "replicate_id": "replicate.270",
+          "seed": 270
+        },
+        {
+          "replicate_id": "replicate.271",
+          "seed": 271
+        },
+        {
+          "replicate_id": "replicate.272",
+          "seed": 272
+        },
+        {
+          "replicate_id": "replicate.273",
+          "seed": 273
+        },
+        {
+          "replicate_id": "replicate.274",
+          "seed": 274
+        },
+        {
+          "replicate_id": "replicate.275",
+          "seed": 275
+        },
+        {
+          "replicate_id": "replicate.276",
+          "seed": 276
+        },
+        {
+          "replicate_id": "replicate.277",
+          "seed": 277
+        },
+        {
+          "replicate_id": "replicate.278",
+          "seed": 278
+        },
+        {
+          "replicate_id": "replicate.279",
+          "seed": 279
+        },
+        {
+          "replicate_id": "replicate.280",
+          "seed": 280
+        },
+        {
+          "replicate_id": "replicate.281",
+          "seed": 281
+        },
+        {
+          "replicate_id": "replicate.282",
+          "seed": 282
+        },
+        {
+          "replicate_id": "replicate.283",
+          "seed": 283
+        },
+        {
+          "replicate_id": "replicate.284",
+          "seed": 284
+        },
+        {
+          "replicate_id": "replicate.285",
+          "seed": 285
+        },
+        {
+          "replicate_id": "replicate.286",
+          "seed": 286
+        },
+        {
+          "replicate_id": "replicate.287",
+          "seed": 287
+        },
+        {
+          "replicate_id": "replicate.288",
+          "seed": 288
+        },
+        {
+          "replicate_id": "replicate.289",
+          "seed": 289
+        },
+        {
+          "replicate_id": "replicate.290",
+          "seed": 290
+        },
+        {
+          "replicate_id": "replicate.291",
+          "seed": 291
+        },
+        {
+          "replicate_id": "replicate.292",
+          "seed": 292
+        },
+        {
+          "replicate_id": "replicate.293",
+          "seed": 293
+        },
+        {
+          "replicate_id": "replicate.294",
+          "seed": 294
+        },
+        {
+          "replicate_id": "replicate.295",
+          "seed": 295
+        },
+        {
+          "replicate_id": "replicate.296",
+          "seed": 296
+        },
+        {
+          "replicate_id": "replicate.297",
+          "seed": 297
+        },
+        {
+          "replicate_id": "replicate.298",
+          "seed": 298
+        },
+        {
+          "replicate_id": "replicate.299",
+          "seed": 299
+        },
+        {
+          "replicate_id": "replicate.300",
+          "seed": 300
+        },
+        {
+          "replicate_id": "replicate.301",
+          "seed": 301
+        },
+        {
+          "replicate_id": "replicate.302",
+          "seed": 302
+        },
+        {
+          "replicate_id": "replicate.303",
+          "seed": 303
+        },
+        {
+          "replicate_id": "replicate.304",
+          "seed": 304
+        },
+        {
+          "replicate_id": "replicate.305",
+          "seed": 305
+        },
+        {
+          "replicate_id": "replicate.306",
+          "seed": 306
+        },
+        {
+          "replicate_id": "replicate.307",
+          "seed": 307
+        },
+        {
+          "replicate_id": "replicate.308",
+          "seed": 308
+        },
+        {
+          "replicate_id": "replicate.309",
+          "seed": 309
+        },
+        {
+          "replicate_id": "replicate.310",
+          "seed": 310
+        },
+        {
+          "replicate_id": "replicate.311",
+          "seed": 311
+        },
+        {
+          "replicate_id": "replicate.312",
+          "seed": 312
+        },
+        {
+          "replicate_id": "replicate.313",
+          "seed": 313
+        },
+        {
+          "replicate_id": "replicate.314",
+          "seed": 314
+        },
+        {
+          "replicate_id": "replicate.315",
+          "seed": 315
+        },
+        {
+          "replicate_id": "replicate.316",
+          "seed": 316
+        },
+        {
+          "replicate_id": "replicate.317",
+          "seed": 317
+        },
+        {
+          "replicate_id": "replicate.318",
+          "seed": 318
+        },
+        {
+          "replicate_id": "replicate.319",
+          "seed": 319
+        },
+        {
+          "replicate_id": "replicate.320",
+          "seed": 320
+        },
+        {
+          "replicate_id": "replicate.321",
+          "seed": 321
+        },
+        {
+          "replicate_id": "replicate.322",
+          "seed": 322
+        },
+        {
+          "replicate_id": "replicate.323",
+          "seed": 323
+        },
+        {
+          "replicate_id": "replicate.324",
+          "seed": 324
+        },
+        {
+          "replicate_id": "replicate.325",
+          "seed": 325
+        },
+        {
+          "replicate_id": "replicate.326",
+          "seed": 326
+        },
+        {
+          "replicate_id": "replicate.327",
+          "seed": 327
+        },
+        {
+          "replicate_id": "replicate.328",
+          "seed": 328
+        },
+        {
+          "replicate_id": "replicate.329",
+          "seed": 329
+        },
+        {
+          "replicate_id": "replicate.330",
+          "seed": 330
+        },
+        {
+          "replicate_id": "replicate.331",
+          "seed": 331
+        },
+        {
+          "replicate_id": "replicate.332",
+          "seed": 332
+        },
+        {
+          "replicate_id": "replicate.333",
+          "seed": 333
+        },
+        {
+          "replicate_id": "replicate.334",
+          "seed": 334
+        },
+        {
+          "replicate_id": "replicate.335",
+          "seed": 335
+        },
+        {
+          "replicate_id": "replicate.336",
+          "seed": 336
+        },
+        {
+          "replicate_id": "replicate.337",
+          "seed": 337
+        },
+        {
+          "replicate_id": "replicate.338",
+          "seed": 338
+        },
+        {
+          "replicate_id": "replicate.339",
+          "seed": 339
+        },
+        {
+          "replicate_id": "replicate.340",
+          "seed": 340
+        },
+        {
+          "replicate_id": "replicate.341",
+          "seed": 341
+        },
+        {
+          "replicate_id": "replicate.342",
+          "seed": 342
+        },
+        {
+          "replicate_id": "replicate.343",
+          "seed": 343
+        },
+        {
+          "replicate_id": "replicate.344",
+          "seed": 344
+        },
+        {
+          "replicate_id": "replicate.345",
+          "seed": 345
+        },
+        {
+          "replicate_id": "replicate.346",
+          "seed": 346
+        },
+        {
+          "replicate_id": "replicate.347",
+          "seed": 347
+        },
+        {
+          "replicate_id": "replicate.348",
+          "seed": 348
+        },
+        {
+          "replicate_id": "replicate.349",
+          "seed": 349
+        },
+        {
+          "replicate_id": "replicate.350",
+          "seed": 350
+        },
+        {
+          "replicate_id": "replicate.351",
+          "seed": 351
+        },
+        {
+          "replicate_id": "replicate.352",
+          "seed": 352
+        },
+        {
+          "replicate_id": "replicate.353",
+          "seed": 353
+        },
+        {
+          "replicate_id": "replicate.354",
+          "seed": 354
+        },
+        {
+          "replicate_id": "replicate.355",
+          "seed": 355
+        },
+        {
+          "replicate_id": "replicate.356",
+          "seed": 356
+        },
+        {
+          "replicate_id": "replicate.357",
+          "seed": 357
+        },
+        {
+          "replicate_id": "replicate.358",
+          "seed": 358
+        },
+        {
+          "replicate_id": "replicate.359",
+          "seed": 359
+        },
+        {
+          "replicate_id": "replicate.360",
+          "seed": 360
+        },
+        {
+          "replicate_id": "replicate.361",
+          "seed": 361
+        },
+        {
+          "replicate_id": "replicate.362",
+          "seed": 362
+        },
+        {
+          "replicate_id": "replicate.363",
+          "seed": 363
+        },
+        {
+          "replicate_id": "replicate.364",
+          "seed": 364
+        },
+        {
+          "replicate_id": "replicate.365",
+          "seed": 365
+        },
+        {
+          "replicate_id": "replicate.366",
+          "seed": 366
+        },
+        {
+          "replicate_id": "replicate.367",
+          "seed": 367
+        },
+        {
+          "replicate_id": "replicate.368",
+          "seed": 368
+        },
+        {
+          "replicate_id": "replicate.369",
+          "seed": 369
+        },
+        {
+          "replicate_id": "replicate.370",
+          "seed": 370
+        },
+        {
+          "replicate_id": "replicate.371",
+          "seed": 371
+        },
+        {
+          "replicate_id": "replicate.372",
+          "seed": 372
+        },
+        {
+          "replicate_id": "replicate.373",
+          "seed": 373
+        },
+        {
+          "replicate_id": "replicate.374",
+          "seed": 374
+        },
+        {
+          "replicate_id": "replicate.375",
+          "seed": 375
+        },
+        {
+          "replicate_id": "replicate.376",
+          "seed": 376
+        },
+        {
+          "replicate_id": "replicate.377",
+          "seed": 377
+        },
+        {
+          "replicate_id": "replicate.378",
+          "seed": 378
+        },
+        {
+          "replicate_id": "replicate.379",
+          "seed": 379
+        },
+        {
+          "replicate_id": "replicate.380",
+          "seed": 380
+        },
+        {
+          "replicate_id": "replicate.381",
+          "seed": 381
+        },
+        {
+          "replicate_id": "replicate.382",
+          "seed": 382
+        },
+        {
+          "replicate_id": "replicate.383",
+          "seed": 383
+        },
+        {
+          "replicate_id": "replicate.384",
+          "seed": 384
+        },
+        {
+          "replicate_id": "replicate.385",
+          "seed": 385
+        },
+        {
+          "replicate_id": "replicate.386",
+          "seed": 386
+        },
+        {
+          "replicate_id": "replicate.387",
+          "seed": 387
+        },
+        {
+          "replicate_id": "replicate.388",
+          "seed": 388
+        },
+        {
+          "replicate_id": "replicate.389",
+          "seed": 389
+        },
+        {
+          "replicate_id": "replicate.390",
+          "seed": 390
+        },
+        {
+          "replicate_id": "replicate.391",
+          "seed": 391
+        },
+        {
+          "replicate_id": "replicate.392",
+          "seed": 392
+        },
+        {
+          "replicate_id": "replicate.393",
+          "seed": 393
+        },
+        {
+          "replicate_id": "replicate.394",
+          "seed": 394
+        },
+        {
+          "replicate_id": "replicate.395",
+          "seed": 395
+        },
+        {
+          "replicate_id": "replicate.396",
+          "seed": 396
+        },
+        {
+          "replicate_id": "replicate.397",
+          "seed": 397
+        },
+        {
+          "replicate_id": "replicate.398",
+          "seed": 398
+        },
+        {
+          "replicate_id": "replicate.399",
+          "seed": 399
+        },
+        {
+          "replicate_id": "replicate.400",
+          "seed": 400
+        },
+        {
+          "replicate_id": "replicate.401",
+          "seed": 401
+        },
+        {
+          "replicate_id": "replicate.402",
+          "seed": 402
+        },
+        {
+          "replicate_id": "replicate.403",
+          "seed": 403
+        },
+        {
+          "replicate_id": "replicate.404",
+          "seed": 404
+        },
+        {
+          "replicate_id": "replicate.405",
+          "seed": 405
+        },
+        {
+          "replicate_id": "replicate.406",
+          "seed": 406
+        },
+        {
+          "replicate_id": "replicate.407",
+          "seed": 407
+        },
+        {
+          "replicate_id": "replicate.408",
+          "seed": 408
+        },
+        {
+          "replicate_id": "replicate.409",
+          "seed": 409
+        },
+        {
+          "replicate_id": "replicate.410",
+          "seed": 410
+        },
+        {
+          "replicate_id": "replicate.411",
+          "seed": 411
+        },
+        {
+          "replicate_id": "replicate.412",
+          "seed": 412
+        },
+        {
+          "replicate_id": "replicate.413",
+          "seed": 413
+        },
+        {
+          "replicate_id": "replicate.414",
+          "seed": 414
+        },
+        {
+          "replicate_id": "replicate.415",
+          "seed": 415
+        },
+        {
+          "replicate_id": "replicate.416",
+          "seed": 416
+        },
+        {
+          "replicate_id": "replicate.417",
+          "seed": 417
+        },
+        {
+          "replicate_id": "replicate.418",
+          "seed": 418
+        },
+        {
+          "replicate_id": "replicate.419",
+          "seed": 419
+        },
+        {
+          "replicate_id": "replicate.420",
+          "seed": 420
+        },
+        {
+          "replicate_id": "replicate.421",
+          "seed": 421
+        },
+        {
+          "replicate_id": "replicate.422",
+          "seed": 422
+        },
+        {
+          "replicate_id": "replicate.423",
+          "seed": 423
+        },
+        {
+          "replicate_id": "replicate.424",
+          "seed": 424
+        },
+        {
+          "replicate_id": "replicate.425",
+          "seed": 425
+        },
+        {
+          "replicate_id": "replicate.426",
+          "seed": 426
+        },
+        {
+          "replicate_id": "replicate.427",
+          "seed": 427
+        },
+        {
+          "replicate_id": "replicate.428",
+          "seed": 428
+        },
+        {
+          "replicate_id": "replicate.429",
+          "seed": 429
+        },
+        {
+          "replicate_id": "replicate.430",
+          "seed": 430
+        },
+        {
+          "replicate_id": "replicate.431",
+          "seed": 431
+        },
+        {
+          "replicate_id": "replicate.432",
+          "seed": 432
+        },
+        {
+          "replicate_id": "replicate.433",
+          "seed": 433
+        },
+        {
+          "replicate_id": "replicate.434",
+          "seed": 434
+        },
+        {
+          "replicate_id": "replicate.435",
+          "seed": 435
+        },
+        {
+          "replicate_id": "replicate.436",
+          "seed": 436
+        },
+        {
+          "replicate_id": "replicate.437",
+          "seed": 437
+        },
+        {
+          "replicate_id": "replicate.438",
+          "seed": 438
+        },
+        {
+          "replicate_id": "replicate.439",
+          "seed": 439
+        },
+        {
+          "replicate_id": "replicate.440",
+          "seed": 440
+        },
+        {
+          "replicate_id": "replicate.441",
+          "seed": 441
+        },
+        {
+          "replicate_id": "replicate.442",
+          "seed": 442
+        },
+        {
+          "replicate_id": "replicate.443",
+          "seed": 443
+        },
+        {
+          "replicate_id": "replicate.444",
+          "seed": 444
+        },
+        {
+          "replicate_id": "replicate.445",
+          "seed": 445
+        },
+        {
+          "replicate_id": "replicate.446",
+          "seed": 446
+        },
+        {
+          "replicate_id": "replicate.447",
+          "seed": 447
+        },
+        {
+          "replicate_id": "replicate.448",
+          "seed": 448
+        },
+        {
+          "replicate_id": "replicate.449",
+          "seed": 449
+        },
+        {
+          "replicate_id": "replicate.450",
+          "seed": 450
+        },
+        {
+          "replicate_id": "replicate.451",
+          "seed": 451
+        },
+        {
+          "replicate_id": "replicate.452",
+          "seed": 452
+        },
+        {
+          "replicate_id": "replicate.453",
+          "seed": 453
+        },
+        {
+          "replicate_id": "replicate.454",
+          "seed": 454
+        },
+        {
+          "replicate_id": "replicate.455",
+          "seed": 455
+        },
+        {
+          "replicate_id": "replicate.456",
+          "seed": 456
+        },
+        {
+          "replicate_id": "replicate.457",
+          "seed": 457
+        },
+        {
+          "replicate_id": "replicate.458",
+          "seed": 458
+        },
+        {
+          "replicate_id": "replicate.459",
+          "seed": 459
+        },
+        {
+          "replicate_id": "replicate.460",
+          "seed": 460
+        },
+        {
+          "replicate_id": "replicate.461",
+          "seed": 461
+        },
+        {
+          "replicate_id": "replicate.462",
+          "seed": 462
+        },
+        {
+          "replicate_id": "replicate.463",
+          "seed": 463
+        },
+        {
+          "replicate_id": "replicate.464",
+          "seed": 464
+        },
+        {
+          "replicate_id": "replicate.465",
+          "seed": 465
+        },
+        {
+          "replicate_id": "replicate.466",
+          "seed": 466
+        },
+        {
+          "replicate_id": "replicate.467",
+          "seed": 467
+        },
+        {
+          "replicate_id": "replicate.468",
+          "seed": 468
+        },
+        {
+          "replicate_id": "replicate.469",
+          "seed": 469
+        },
+        {
+          "replicate_id": "replicate.470",
+          "seed": 470
+        },
+        {
+          "replicate_id": "replicate.471",
+          "seed": 471
+        },
+        {
+          "replicate_id": "replicate.472",
+          "seed": 472
+        },
+        {
+          "replicate_id": "replicate.473",
+          "seed": 473
+        },
+        {
+          "replicate_id": "replicate.474",
+          "seed": 474
+        },
+        {
+          "replicate_id": "replicate.475",
+          "seed": 475
+        },
+        {
+          "replicate_id": "replicate.476",
+          "seed": 476
+        },
+        {
+          "replicate_id": "replicate.477",
+          "seed": 477
+        },
+        {
+          "replicate_id": "replicate.478",
+          "seed": 478
+        },
+        {
+          "replicate_id": "replicate.479",
+          "seed": 479
+        },
+        {
+          "replicate_id": "replicate.480",
+          "seed": 480
+        },
+        {
+          "replicate_id": "replicate.481",
+          "seed": 481
+        },
+        {
+          "replicate_id": "replicate.482",
+          "seed": 482
+        },
+        {
+          "replicate_id": "replicate.483",
+          "seed": 483
+        },
+        {
+          "replicate_id": "replicate.484",
+          "seed": 484
+        },
+        {
+          "replicate_id": "replicate.485",
+          "seed": 485
+        },
+        {
+          "replicate_id": "replicate.486",
+          "seed": 486
+        },
+        {
+          "replicate_id": "replicate.487",
+          "seed": 487
+        },
+        {
+          "replicate_id": "replicate.488",
+          "seed": 488
+        },
+        {
+          "replicate_id": "replicate.489",
+          "seed": 489
+        },
+        {
+          "replicate_id": "replicate.490",
+          "seed": 490
+        },
+        {
+          "replicate_id": "replicate.491",
+          "seed": 491
+        },
+        {
+          "replicate_id": "replicate.492",
+          "seed": 492
+        },
+        {
+          "replicate_id": "replicate.493",
+          "seed": 493
+        },
+        {
+          "replicate_id": "replicate.494",
+          "seed": 494
+        },
+        {
+          "replicate_id": "replicate.495",
+          "seed": 495
+        },
+        {
+          "replicate_id": "replicate.496",
+          "seed": 496
+        },
+        {
+          "replicate_id": "replicate.497",
+          "seed": 497
+        },
+        {
+          "replicate_id": "replicate.498",
+          "seed": 498
+        },
+        {
+          "replicate_id": "replicate.499",
+          "seed": 499
+        },
+        {
+          "replicate_id": "replicate.500",
+          "seed": 500
+        }
+      ],
+      "data_source_ids": [
+        "source.example.gaussian"
+      ],
+      "replication_unit": "independent_dataset"
+    }
+  ],
+  "data_sources": [
+    {
+      "data_source_id": "source.example.reference",
+      "label": "Deterministic reference inputs",
+      "origin": "computational_check",
+      "input_ids": [],
+      "support_files": [
+        {
+          "kind": "reference_plan",
+          "artifact": {
+            "artifact_id": "artifact.example.readme.md",
+            "uri": "artifact://p4-workflow/README.md",
+            "path": "examples/p4-workflow-support/README.md",
+            "sha256": "1a559904b7945e3e57ce1cf0b2fa935bf4ad363660281f5f7eb0174791980d24"
+          }
+        }
+      ],
+      "description_markdown": "Planned deterministic reference check; this structural example does not retain or claim a completed reference solver. The retained README makes that limitation explicit.",
+      "mapping_markdown": "Declared covariate/outcome arrays and coefficients use the same standardized units as the selected method."
+    },
+    {
+      "data_source_id": "source.example.gaussian",
+      "label": "Independent S1/S2 simulation mechanisms",
+      "origin": "synthetic",
+      "input_ids": [],
+      "support_files": [
+        {
+          "kind": "generator_and_independent_truth",
+          "artifact": {
+            "artifact_id": "artifact.example.examples.quantile_sources.py",
+            "uri": "artifact://p4-workflow/examples/quantile_sources.py",
+            "path": "examples/p4-workflow-support/examples/quantile_sources.py",
+            "sha256": "9202795d608e29473801bdc44b4566f5eafe23e2f73599409cd4199d48d7c702"
+          }
+        }
+      ],
+      "description_markdown": "Illustrative S1: $X_i\\sim N(0,1)$, $Y_i=1+X_i+\\epsilon_i$, with independent $\\epsilon_i\\sim N(0,1)$, so $Q_{Y|X}(\\tau|x)=1+x+\\Phi^{-1}(\\tau)$. S2 uses independent $t_5$ errors and location $1+x$. The retained source computes population quantiles independently of any fitted estimator. Independent seeds generate independent datasets; neither bootstrap draws nor internal solver fits increase that count.",
+      "mapping_markdown": "x is a unitless covariate and y is an outcome in declared outcome units. Preserve the centering/scaling transformation in target comparisons; no researcher-supplied actual dataset is represented."
+    }
+  ]
+}

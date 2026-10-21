@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/role-profile.schema.json",
+  "title": "Versioned Research Role Profile",
+  "description": "The frozen scientific stance, instruction, memory, skills, knowledge resources, tools, and visibility contract for one role stage.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_id",
+    "profile_version",
+    "role",
+    "applicable_phases",
+    "applicable_modes",
+    "applicable_stage_ids",
+    "scientific_stance",
+    "phase_instruction",
+    "output_contract",
+    "memory_policy",
+    "skills",
+    "knowledge_resources",
+    "tools",
+    "context_policy",
+    "review_isolation",
+    "content_sha256",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "profile_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "profile_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "role": {
+      "$ref": "common-definitions.schema.json#/$defs/roleId"
+    },
+    "applicable_phases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/phaseId"
+      },
+      "uniqueItems": true
+    },
+    "applicable_modes": {
+      "type": "array",
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+      },
+      "uniqueItems": true
+    },
+    "applicable_stage_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "common-definitions.schema.json#/$defs/stableId"
+      },
+      "uniqueItems": true
+    },
+    "scientific_stance": {
+      "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+    },
+    "phase_instruction": {
+      "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+    },
+    "output_contract": {
+      "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+    },
+    "memory_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_working_memory",
+        "project_preference_memory",
+        "scientific_memory_source",
+        "unindexed_transcripts_allowed"
+      ],
+      "properties": {
+        "run_working_memory": {
+          "const": "run_local"
+        },
+        "project_preference_memory": {
+          "type": "string",
+          "enum": ["disabled", "versioned_visible"]
+        },
+        "scientific_memory_source": {
+          "const": "formal_records_only"
+        },
+        "unindexed_transcripts_allowed": {
+          "const": false
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "package_id",
+          "package_version",
+          "artifact",
+          "required"
+        ],
+        "properties": {
+          "package_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "package_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "artifact": {
+            "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+          },
+          "required": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "knowledge_resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource_id",
+          "resource_version",
+          "artifact",
+          "access_policy",
+          "required"
+        ],
+        "properties": {
+          "resource_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "resource_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "artifact": {
+            "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+          },
+          "access_policy": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "query_with_provenance",
+              "user_authorized"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tool_id",
+          "tool_version",
+          "artifact",
+          "read_scope",
+          "write_scope",
+          "network_scope",
+          "required"
+        ],
+        "properties": {
+          "tool_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "tool_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "artifact": {
+            "$ref": "common-definitions.schema.json#/$defs/artifactPointer"
+          },
+          "read_scope": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "write_scope": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "network_scope": {
+            "type": "string",
+            "enum": ["none", "approved_resources", "user_authorized"]
+          },
+          "required": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "context_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default_context",
+        "history_selection",
+        "handoff_policy",
+        "primary_artifact_access"
+      ],
+      "properties": {
+        "default_context": {
+          "const": "current_formal_records"
+        },
+        "history_selection": {
+          "const": "user_selected_only"
+        },
+        "handoff_policy": {
+          "const": "phase_contract_only"
+        },
+        "primary_artifact_access": {
+          "type": "string",
+          "enum": ["none", "declared_on_demand", "required"]
+        }
+      }
+    },
+    "review_isolation": {
+      "type": "string",
+      "enum": ["none", "manuscript_without_internal_audits"]
+    },
+    "content_sha256": {
+      "$ref": "common-definitions.schema.json#/$defs/sha256"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "role": { "const": "outside_reviewer" }
+        },
+        "required": ["role"]
+      },
+      "then": {
+        "properties": {
+          "review_isolation": {
+            "const": "manuscript_without_internal_audits"
+          },
+          "applicable_phases": {
+            "contains": { "const": "P5" }
+          }
+        }
+      }
+    }
+  ]
+}

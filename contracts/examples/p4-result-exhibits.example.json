@@ -1,0 +1,41 @@
+[
+  {
+    "exhibit_id": "exhibit.example.normal_mean_table",
+    "kind": "table",
+    "title": "Illustrative normal-mean reference uncertainty",
+    "caption": "Analytic standard deviation of the mean is sigma/sqrt(n), with sigma=1 outcome unit at n=25,100,400. Values are theoretical, not observed performance; no Monte Carlo repetitions, confidence intervals or failure rates are claimed.",
+    "artifact_path": "examples/p4-workflow-support/tables/normal-mean-reference.csv",
+    "artifact_sha256": "a4fa5a10b4244a05784b6af3ce684f672f0a776e3c20833745758940db3f9e41",
+    "media_type": "text/csv",
+    "table_columns": [
+      {
+        "key": "sample_size",
+        "label": "Sample size",
+        "unit": "independent observations"
+      },
+      {
+        "key": "outcome_sd",
+        "label": "Outcome SD",
+        "unit": "outcome units"
+      },
+      {
+        "key": "mean_standard_deviation",
+        "label": "Analytic SD of sample mean",
+        "unit": "outcome units"
+      }
+    ]
+  },
+  {
+    "exhibit_id": "exhibit.example.normal_mean_figure",
+    "kind": "figure",
+    "title": "Illustrative normal-mean reference uncertainty",
+    "caption": "Analytic standard deviation of the mean is sigma/sqrt(n), with sigma=1 outcome unit at n=25,100,400. Values are theoretical, not observed performance; no Monte Carlo repetitions, confidence intervals or failure rates are claimed.",
+    "artifact_path": "examples/p4-workflow-support/figures/normal-mean-reference.svg",
+    "artifact_sha256": "ca674cf9913757cab4d8fe0a8bf97aebea16c1ed7767ad4e48f4c3745a8a9e35",
+    "media_type": "image/svg+xml",
+    "figure_kind": "variance",
+    "data_exhibit_ids": [
+      "exhibit.example.normal_mean_table"
+    ]
+  }
+]

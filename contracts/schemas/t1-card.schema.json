@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/t1-card.schema.json",
+  "title": "T1 Card",
+  "description": "A user-facing capsule (system_artifact_types.md): title, key innovation, definition formula, high-level evaluation. Displayed directly in the UI (per method, per paper, per finding). NEVER delivered into any member's brief. Structured-lite: short required fields, free text inside. Total serialized size must stay under 2048 bytes (runtime-enforced hard cap).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["card_id", "subject_ref", "title", "innovation", "definition", "evaluation", "created_at"],
+  "properties": {
+    "card_id": {"type": "string", "minLength": 1},
+    "subject_ref": {"type": "string", "minLength": 1, "description": "What this card describes: a method stable_id, a literature source id, or a record family+generation."},
+    "title": {"type": "string", "minLength": 1, "maxLength": 120, "description": "The display title. For methods this IS the T0 title (proposer-authored in P2; lead may revise at P2 reconciliation)."},
+    "innovation": {"type": "string", "maxLength": 600, "description": "The key innovation in one or two sentences."},
+    "definition": {"type": "string", "maxLength": 600, "description": "The definition formula or formulation, as compactly as it can be stated."},
+    "evaluation": {"type": "string", "maxLength": 600, "description": "Very high-level evaluation: status, strengths, caveats."},
+    "created_at": {"type": "string", "format": "date-time"}
+  }
+}

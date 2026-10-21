@@ -1,0 +1,533 @@
+{
+    "$schema":  "https://json-schema.org/draft/2020-12/schema",
+    "$id":  "https://model-forge.local/architecture/schemas/role-invocation-start.schema.json",
+    "title":  "Immutable Role Invocation Start",
+    "description":  "The exact execution basis accepted by the harness immediately before one role process starts. It resolves one sealed run-manifest recipe step without claiming future outputs, reads, or terminal status.",
+    "type":  "object",
+    "additionalProperties":  false,
+    "required":  [
+                     "schema_version",
+                     "invocation_start_id",
+                     "run_id",
+                     "project_id",
+                     "phase",
+                     "mode",
+                     "manifest_binding",
+                     "role_plan_step",
+                     "resolved_profile_artifact",
+                     "actual_input_bindings",
+                     "output_contract_bindings",
+                     "prepared_context_binding",
+                     "executor_binding",
+                     "capability_grants",
+                     "role_write_root",
+                     "started_at",
+                     "start_sha256"
+                 ],
+    "properties":  {
+                       "schema_version":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/schemaVersion"
+                                          },
+                       "invocation_start_id":  {
+                                                   "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                               },
+                       "run_id":  {
+                                      "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                  },
+                       "project_id":  {
+                                          "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                      },
+                       "phase":  {
+                                     "$ref":  "common-definitions.schema.json#/$defs/phaseId"
+                                 },
+                       "mode":  {
+                                    "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                },
+                       "manifest_binding":  {
+                                                "$ref":  "#/$defs/manifestBinding"
+                                            },
+                       "role_plan_step":  {
+                                              "$ref":  "#/$defs/rolePlanStep"
+                                          },
+                       "resolved_profile_artifact":  {
+                                                         "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                     },
+                       "actual_input_bindings":  {
+                                                     "type":  "array",
+                                                     "minItems":  1,
+                                                     "items":  {
+                                                                   "$ref":  "#/$defs/inputBinding"
+                                                               }
+                                                 },
+                       "output_contract_bindings":  {
+                                                        "type":  "array",
+                                                        "minItems":  1,
+                                                        "items":  {
+                                                                      "$ref":  "#/$defs/outputBinding"
+                                                                  }
+                                                    },
+                       "prepared_context_binding":  {
+                                                        "$ref":  "#/$defs/preparedContextBinding"
+                                                    },
+                       "capability_grants":  {
+                                                 "$ref":  "#/$defs/capabilityGrants"
+                                             },
+                       "role_write_root":  {
+                                               "type":  "string",
+                                               "pattern":  "^runs/(P1|P2|P3|P4|P5)/[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*/roles/[0-9]{2}-(research_lead|theorist|data_analyst|outside_reviewer)/$"
+                                           },
+                       "started_at":  {
+                                          "type":  "string",
+                                          "format":  "date-time"
+                                      },
+                       "start_sha256":  {
+                                            "$ref":  "common-definitions.schema.json#/$defs/sha256",
+                                            "description":  "RFC 8785 SHA-256 over the complete immutable start record with this property omitted."
+                                        },
+                       "executor_binding":  {
+                                                "$ref":  "#/$defs/executorBinding"
+                                            }
+                   },
+    "$defs":  {
+                  "manifestBinding":  {
+                                          "type":  "object",
+                                          "additionalProperties":  false,
+                                          "required":  [
+                                                           "artifact",
+                                                           "manifest_sha256"
+                                                       ],
+                                          "properties":  {
+                                                             "artifact":  {
+                                                                              "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                                          },
+                                                             "manifest_sha256":  {
+                                                                                     "$ref":  "common-definitions.schema.json#/$defs/sha256"
+                                                                                 }
+                                                         }
+                                      },
+                  "rolePlanStep":  {
+                                       "type":  "object",
+                                       "additionalProperties":  false,
+                                       "required":  [
+                                                        "sequence",
+                                                        "stage_id",
+                                                        "execution_group_id",
+                                                        "execution",
+                                                        "role",
+                                                        "profile_input_id",
+                                                        "assignment",
+                                                        "input_ids",
+                                                        "output_ids",
+                                                        "role_write_root",
+                                                        "context_isolation",
+                                                        "role_plan_entry_sha256"
+                                                    ],
+                                       "properties":  {
+                                                          "sequence":  {
+                                                                           "type":  "integer",
+                                                                           "minimum":  1
+                                                                       },
+                                                          "stage_id":  {
+                                                                           "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                       },
+                                                          "execution_group_id":  {
+                                                                                     "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                 },
+                                                          "execution":  {
+                                                                            "type":  "string",
+                                                                            "enum":  [
+                                                                                         "serial",
+                                                                                         "parallel"
+                                                                                     ]
+                                                                        },
+                                                          "role":  {
+                                                                       "$ref":  "common-definitions.schema.json#/$defs/roleId"
+                                                                   },
+                                                          "profile_input_id":  {
+                                                                                   "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                               },
+                                                          "assignment":  {
+                                                                             "$ref":  "common-definitions.schema.json#/$defs/nonEmptyText"
+                                                                         },
+                                                          "input_ids":  {
+                                                                            "type":  "array",
+                                                                            "uniqueItems":  true,
+                                                                            "items":  {
+                                                                                          "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                      }
+                                                                        },
+                                                          "output_ids":  {
+                                                                             "type":  "array",
+                                                                             "minItems":  1,
+                                                                             "uniqueItems":  true,
+                                                                             "items":  {
+                                                                                           "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                       }
+                                                                         },
+                                                          "role_write_root":  {
+                                                                                  "type":  "string",
+                                                                                  "pattern":  "^runs/(P1|P2|P3|P4|P5)/[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*/roles/[0-9]{2}-(research_lead|theorist|data_analyst|outside_reviewer)/$"
+                                                                              },
+                                                          "context_isolation":  {
+                                                                                    "type":  "boolean"
+                                                                                },
+                                                          "role_plan_entry_sha256":  {
+                                                                                         "$ref":  "common-definitions.schema.json#/$defs/sha256",
+                                                                                         "description":  "RFC 8785 SHA-256 over this copied role-plan entry after removing only role_plan_entry_sha256."
+                                                                                     }
+                                                      }
+                                   },
+                  "upstreamClosureBinding":  {
+                                                 "type":  "object",
+                                                 "additionalProperties":  false,
+                                                 "required":  [
+                                                                  "invocation_closure_id",
+                                                                  "closure_artifact",
+                                                                  "closure_sha256",
+                                                                  "output_id"
+                                                              ],
+                                                 "properties":  {
+                                                                    "invocation_closure_id":  {
+                                                                                                  "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                              },
+                                                                    "closure_artifact":  {
+                                                                                             "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                                                         },
+                                                                    "closure_sha256":  {
+                                                                                           "$ref":  "common-definitions.schema.json#/$defs/sha256"
+                                                                                       },
+                                                                    "output_id":  {
+                                                                                      "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                  }
+                                                                }
+                                             },
+                  "inputBinding":  {
+                                       "type":  "object",
+                                       "additionalProperties":  false,
+                                       "required":  [
+                                                        "input_id",
+                                                        "source_kind",
+                                                        "artifact",
+                                                        "delivery"
+                                                    ],
+                                       "properties":  {
+                                                          "input_id":  {
+                                                                           "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                       },
+                                                          "source_kind":  {
+                                                                              "type":  "string",
+                                                                              "enum":  [
+                                                                                           "manifest_frozen_input",
+                                                                                           "accepted_upstream_output"
+                                                                                       ]
+                                                                          },
+                                                          "artifact":  {
+                                                                           "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                                       },
+                                                          "delivery":  {
+                                                                           "type":  "string",
+                                                                           "enum":  [
+                                                                                        "prepared_context",
+                                                                                        "broker_read",
+                                                                                        "execution_resource"
+                                                                                    ]
+                                                                       },
+                                                          "upstream_closure":  {
+                                                                                   "$ref":  "#/$defs/upstreamClosureBinding"
+                                                                               }
+                                                      },
+                                       "allOf":  [
+                                                     {
+                                                         "if":  {
+                                                                    "properties":  {
+                                                                                       "source_kind":  {
+                                                                                                           "const":  "accepted_upstream_output"
+                                                                                                       }
+                                                                                   },
+                                                                    "required":  [
+                                                                                     "source_kind"
+                                                                                 ]
+                                                                },
+                                                         "then":  {
+                                                                      "required":  [
+                                                                                       "upstream_closure"
+                                                                                   ]
+                                                                  },
+                                                         "else":  {
+                                                                      "not":  {
+                                                                                  "required":  [
+                                                                                                   "upstream_closure"
+                                                                                               ]
+                                                                              }
+                                                                  }
+                                                     }
+                                                 ]
+                                   },
+                  "outputBinding":  {
+                                        "type":  "object",
+                                        "additionalProperties":  false,
+                                        "required":  [
+                                                         "output_id",
+                                                         "contract_output_id",
+                                                         "output_kind",
+                                                         "relative_path",
+                                                         "schema_uri",
+                                                         "required"
+                                                     ],
+                                        "properties":  {
+                                                           "output_id":  {
+                                                                             "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                         },
+                                                           "contract_output_id":  {
+                                                                                      "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                  },
+                                                           "output_kind":  {
+                                                                               "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                           },
+                                                           "relative_path":  {
+                                                                                 "type":  "string",
+                                                                                 "minLength":  1,
+                                                                                 "pattern":  "^(?![A-Za-z]:)(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+$"
+                                                                             },
+                                                           "schema_uri":  {
+                                                                              "type":  "string",
+                                                                              "format":  "uri-reference"
+                                                                          },
+                                                           "required":  {
+                                                                            "type":  "boolean"
+                                                                        }
+                                                       }
+                                    },
+                  "preparedContextBinding":  {
+                                                 "type":  "object",
+                                                 "additionalProperties":  false,
+                                                 "required":  [
+                                                                  "prepared_context_id",
+                                                                  "prepared_context_artifact",
+                                                                  "prepared_context_content_sha256",
+                                                                  "prepared_context_sha256",
+                                                                  "prepared_at"
+                                                              ],
+                                                 "properties":  {
+                                                                    "prepared_context_id":  {
+                                                                                                "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                            },
+                                                                    "prepared_context_artifact":  {
+                                                                                                      "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                                                                  },
+                                                                    "prepared_context_content_sha256":  {
+                                                                                                            "$ref":  "common-definitions.schema.json#/$defs/sha256"
+                                                                                                        },
+                                                                    "prepared_context_sha256":  {
+                                                                                                    "$ref":  "common-definitions.schema.json#/$defs/sha256"
+                                                                                                },
+                                                                    "prepared_at":  {
+                                                                                        "type":  "string",
+                                                                                        "format":  "date-time"
+                                                                                    }
+                                                                }
+                                             },
+                  "capabilityGrants":  {
+                                           "type":  "object",
+                                           "additionalProperties":  false,
+                                           "required":  [
+                                                            "capability_set_id",
+                                                            "broker_policy",
+                                                            "read_input_ids",
+                                                            "write_output_ids",
+                                                            "on_demand_reads",
+                                                            "tool_input_ids",
+                                                            "network_policy",
+                                                            "approved_network_resources",
+                                                            "expires_at",
+                                                            "project_storage_credentials_exposed",
+                                                            "formal_storage_credentials_exposed"
+                                                        ],
+                                           "properties":  {
+                                                              "capability_set_id":  {
+                                                                                        "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                    },
+                                                              "broker_policy":  {
+                                                                                    "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                                                },
+                                                              "read_input_ids":  {
+                                                                                     "type":  "array",
+                                                                                     "minItems":  1,
+                                                                                     "uniqueItems":  true,
+                                                                                     "items":  {
+                                                                                                   "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                               }
+                                                                                 },
+                                                              "write_output_ids":  {
+                                                                                       "type":  "array",
+                                                                                       "minItems":  1,
+                                                                                       "uniqueItems":  true,
+                                                                                       "items":  {
+                                                                                                     "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                 }
+                                                                                   },
+                                                              "on_demand_reads":  {
+                                                                                      "type":  "array",
+                                                                                      "items":  {
+                                                                                                    "$ref":  "role-context-snapshot.schema.json#/$defs/readCapability"
+                                                                                                }
+                                                                                  },
+                                                              "tool_input_ids":  {
+                                                                                     "type":  "array",
+                                                                                     "uniqueItems":  true,
+                                                                                     "items":  {
+                                                                                                   "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                               }
+                                                                                 },
+                                                              "network_policy":  {
+                                                                                     "type":  "string",
+                                                                                     "enum":  [
+                                                                                                  "none",
+                                                                                                  "approved_resources",
+                                                                                                  "user_authorized"
+                                                                                              ]
+                                                                                 },
+                                                              "approved_network_resources":  {
+                                                                                                 "type":  "array",
+                                                                                                 "uniqueItems":  true,
+                                                                                                 "items":  {
+                                                                                                               "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                                           }
+                                                                                             },
+                                                              "expires_at":  {
+                                                                                 "type":  "string",
+                                                                                 "format":  "date-time"
+                                                                             },
+                                                              "project_storage_credentials_exposed":  {
+                                                                                                          "const":  false
+                                                                                                      },
+                                                              "formal_storage_credentials_exposed":  {
+                                                                                                         "const":  false
+                                                                                                     }
+                                                          },
+                                           "allOf":  [
+                                                         {
+                                                             "if":  {
+                                                                        "properties":  {
+                                                                                           "network_policy":  {
+                                                                                                                  "const":  "none"
+                                                                                                              }
+                                                                                       },
+                                                                        "required":  [
+                                                                                         "network_policy"
+                                                                                     ]
+                                                                    },
+                                                             "then":  {
+                                                                          "properties":  {
+                                                                                             "approved_network_resources":  {
+                                                                                                                                "maxItems":  0
+                                                                                                                            }
+                                                                                         }
+                                                                      },
+                                                             "else":  {
+                                                                          "properties":  {
+                                                                                             "approved_network_resources":  {
+                                                                                                                                "minItems":  1
+                                                                                                                            }
+                                                                                         }
+                                                                      }
+                                                         }
+                                                     ]
+                                       },
+                  "executorBinding":  {
+                                          "type":  "object",
+                                          "additionalProperties":  false,
+                                          "required":  [
+                                                           "executor_profile_id",
+                                                           "executor_profile_artifact",
+                                                           "backend",
+                                                           "hermes_executable",
+                                                           "role_definition_revision",
+                                                           "project_state_snapshot",
+                                                           "working_roots",
+                                                           "process_control",
+                                                           "broker_transport"
+                                                       ],
+                                          "properties":  {
+                                                             "executor_profile_id":  {
+                                                                                         "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                                     },
+                                                             "executor_profile_artifact":  {
+                                                                                         "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                                                     },
+                                                             "backend":  {
+                                                                                         "const":  "trusted_local"
+                                                                        },
+                                                             "hermes_executable":  {
+                                                                                         "type":  "object",
+                                                                                         "additionalProperties":  false,
+                                                                                         "required":  [
+                                                                                                          "path",
+                                                                                                          "version"
+                                                                                                     ],
+                                                                                         "properties":  {
+                                                                                                                     "path":  {
+                                                                                                                                                 "type":  "string",
+                                                                                                                                                 "minLength":  1
+                                                                                                                             },
+                                                                                                                     "version":  {
+                                                                                                                                                 "type":  "string",
+                                                                                                                                                 "minLength":  1
+                                                                                                                               },
+                                                                                                                     "sha256":  {
+                                                                                                                                                 "$ref":  "common-definitions.schema.json#/$defs/sha256"
+                                                                                                                               }
+                                                                                                       }
+                                                                                 },
+                                                             "role_definition_revision":  {
+                                                                                         "type":  "integer",
+                                                                                         "minimum":  1
+                                                                                       },
+                                                             "project_state_snapshot":  {
+                                                                                         "$ref":  "common-definitions.schema.json#/$defs/artifactPointer"
+                                                                                      },
+                                                             "working_roots":  {
+                                                                                         "type":  "object",
+                                                                                         "additionalProperties":  false,
+                                                                                         "required":  [
+                                                                                                          "run_profile",
+                                                                                                          "workspace"
+                                                                                                     ],
+                                                                                         "properties":  {
+                                                                                                                     "run_profile":  {
+                                                                                                                                                 "type":  "string",
+                                                                                                                                                 "minLength":  1
+                                                                                                                                    },
+                                                                                                                     "workspace":  {
+                                                                                                                                                 "type":  "string",
+                                                                                                                                                 "minLength":  1
+                                                                                                                                  }
+                                                                                                       }
+                                                                             },
+                                                             "process_control":  {
+                                                                                         "type":  "object",
+                                                                                         "additionalProperties":  false,
+                                                                                         "required":  [
+                                                                                                          "supervision",
+                                                                                                          "termination",
+                                                                                                          "quiescence_required"
+                                                                                                     ],
+                                                                                         "properties":  {
+                                                                                                                     "supervision":  {
+                                                                                                                                                 "const":  "local_process_group"
+                                                                                                                                    },
+                                                                                                                     "termination":  {
+                                                                                                                                                 "const":  "sigterm_then_sigkill"
+                                                                                                                                    },
+                                                                                                                     "quiescence_required":  {
+                                                                                                                                                 "const":  true
+                                                                                                                                            }
+                                                                                                       }
+                                                                               },
+                                                             "broker_transport":  {
+                                                                                         "const":  "unix_socket"
+                                                                                }
+                                                         }
+                                      }
+              }
+}

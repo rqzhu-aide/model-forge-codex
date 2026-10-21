@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/literature-findings.schema.json",
+  "title": "Literature Findings",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "title",
+    "search_scope",
+    "coverage_limits",
+    "papers"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        "1.0.0",
+        "1.1.0",
+        "1.2.0"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "search_scope": {
+      "type": "string",
+      "minLength": 1,
+      "description": "This member's search in this literature update, including actual queries or source discovery process and access limits. Record it once for this collection; the cumulative library is separate."
+    },
+    "coverage_limits": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Actual limits of this member search, recorded once. The required array may be empty when honest."
+    },
+    "papers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entry_id",
+          "source",
+          "formulation_markdown",
+          "explanation_markdown",
+          "relevance_markdown",
+          "limitations_markdown",
+          "evidence_locations"
+        ],
+        "properties": {
+          "entry_id": {
+            "$ref": "common-definitions.schema.json#/$defs/stableId"
+          },
+          "source": {
+            "$ref": "literature-source.schema.json"
+          },
+          "formulation_markdown": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Fuller exact relevant mathematical formulation in Markdown with LaTeX: definitions, assumptions, criterion, algorithm, result or derivations, expanding the source-specific method already explained in the visible explanation_markdown. Do not hide the method's defining mathematics only here. State unavailable information honestly; never invent mathematics."
+          },
+          "explanation_markdown": {
+            "description": "Visible paper summary in concise, connected methodology-style prose describing this source's actual model, formulation or method, not merely its broad family. Explain what it models or estimates and how it works, including the source-supported defining relationships, criterion, update or construction needed to understand it. Use LaTeX with symbols and decisive conditions interpreted in context. The visible summary must be understandable without opening formulation details; a method name, notation list or generic family description is insufficient. Full definitions and derivations remain in formulation_markdown, which must not be the only place containing the method's defining mathematics. Keep reported findings distinct from personal checks. For nonmethodological papers, explain the actual contribution and decisive statement or evidence without forcing an algorithm or equation. State inaccessible mathematics honestly and never invent it.",
+            "type": "string",
+            "minLength": 1
+          },
+          "relevance_markdown": {
+            "description": "Short account of this paper fit to the requested problem or meaningful next method-development choice, without another contribution or formulation recap.",
+            "type": "string",
+            "minLength": 1
+          },
+          "limitations_markdown": {
+            "description": "Concise material conditions, unresolved evidence and access limits; keep a necessary qualification beside its affected claim. Full mathematics and evidence locations remain in their designated fields.",
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence_locations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "topics": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "reading_extent": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Material actually read, identified sections or abstract only, and which reported claims the author personally checked. Required in 1.1.0; do not imply full-text or proof verification from metadata access.",
+            "pattern": "\\S"
+          }
+        }
+      }
+    },
+    "data_profiles": {
+      "type": "array",
+      "description": "Optional Data Analyst bounded read-only supplied-data inspection in P1, without fitting a selected model or using the P4 computation controller. Observations do not establish collection mechanisms.",
+      "items": {
+        "type": "object",
+        "required": [
+          "source_identity",
+          "source_sha256",
+          "inspection_scope",
+          "observed_structure_markdown",
+          "limitations_markdown",
+          "runtime"
+        ],
+        "properties": {
+          "source_identity": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_sha256": {
+            "$ref": "common-definitions.schema.json#/$defs/sha256"
+          },
+          "inspection_scope": {
+            "type": "string",
+            "minLength": 1
+          },
+          "observed_structure_markdown": {
+            "type": "string",
+            "minLength": 1
+          },
+          "limitations_markdown": {
+            "type": "string",
+            "minLength": 1
+          },
+          "runtime": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_refs": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "dialogue_questions": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "proposed_questions": {
+      "type": "array",
+      "description": "Propose only an unavailable study fact or unresolved researcher preference whose answer materially changes interpretation, inferential validity, data applicability or a meaningful resource compromise and cannot be established from supplied material. Mathematical alternatives alone are insufficient. Keep the exact premise, answer effect and sources concise for Lead consolidation. An empty array is valid.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "question",
+          "context_markdown",
+          "answer_consequences_markdown",
+          "source_refs"
+        ],
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "context_markdown": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Exact affected point or missing fact with the minimum necessary explanation, locally defined mathematics only when useful, and honest information limits. Do not repeat the answer effect."
+          },
+          "why_it_matters_markdown": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Optional historical rationale; new questions need no separate repetition of context and answer consequences."
+          },
+          "answer_consequences_markdown": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "What the answer changes in intended use, validity, applicability or resources, or what can proceed while a study fact stays unknown."
+          },
+          "source_refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "enum": [
+              "1.1.0",
+              "1.2.0"
+            ]
+          }
+        },
+        "required": [
+          "schema_version"
+        ]
+      },
+      "then": {
+        "properties": {
+          "papers": {
+            "items": {
+              "required": [
+                "reading_extent"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "enum": [
+              "1.0.0",
+              "1.1.0"
+            ]
+          }
+        },
+        "required": [
+          "schema_version"
+        ]
+      },
+      "then": {
+        "not": {
+          "required": [
+            "proposed_questions"
+          ]
+        }
+      }
+    }
+  ]
+}

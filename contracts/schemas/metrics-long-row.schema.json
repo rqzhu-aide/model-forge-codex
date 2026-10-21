@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/metrics-long-row.schema.json",
+  "title": "Metrics-Long Row",
+  "description": "One row of the per-replicate diagnostic substrate (design/15 §3). The output FILE is JSONL — one such row per line, one line per (case × seed). Every P4 diagnostic table and figure must be derivable from these rows by the shipped regeneration script.",
+  "type": "object",
+  "required": [
+    "case_id",
+    "replicate_id",
+    "status",
+    "metrics"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "maxLength": 120,
+      "description": "Protocol-declared case identifier (e.g. 'gamma_0.95/B_0.18/binding')."
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "runtime_ms": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Wall time of this replicate's compute (instrumented, not guessed)."
+    },
+    "solver_status": {
+      "type": "string",
+      "maxLength": 80,
+      "description": "Raw optimizer/solver status string (e.g. scipy linprog status, 'infeasible', 'ok')."
+    },
+    "converged": {
+      "type": "boolean"
+    },
+    "iterations": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Metric name → numeric value (estimands, quantiles, residuals — whatever the protocol declares).",
+      "additionalProperties": {
+        "type": [
+          "number",
+          "null"
+        ]
+      }
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "replicate_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "completed",
+        "failed",
+        "not_run"
+      ]
+    },
+    "batch_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "Host execution identity for progressive evaluations; historical rows retain their original shape."
+    },
+    "attempt_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "Host execution identity for progressive evaluations; historical rows retain their original shape."
+    },
+    "plan_revision_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "Host execution identity for progressive evaluations; historical rows retain their original shape."
+    },
+    "eligibility": {
+      "enum": [
+        "eligible",
+        "invalidated"
+      ],
+      "description": "Invalidated attempts remain visible but never supply final numerical estimates."
+    },
+    "invalidation_reason": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "completed"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "required": [
+          "runtime_ms"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "eligibility": {
+            "const": "invalidated"
+          }
+        },
+        "required": [
+          "eligibility"
+        ]
+      },
+      "then": {
+        "required": [
+          "invalidation_reason"
+        ]
+      }
+    }
+  ]
+}

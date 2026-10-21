@@ -1,0 +1,17 @@
+{
+  "fixture_id": "fixture.authority_replay.existing_evidence_reset",
+  "existing_subjects": [
+    {
+      "kind": "evidence_item",
+      "subject_id": "evidence.simulation.preliminary.001",
+      "method_identity": {
+        "stable_id": "method.overlap_stabilized_score",
+        "version": 1,
+        "definition_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      }
+    }
+  ],
+  "event_example_names": [
+    "authority-event.example.json"
+  ]
+}

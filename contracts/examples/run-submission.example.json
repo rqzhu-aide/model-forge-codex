@@ -1,0 +1,207 @@
+{
+  "schema_version": "1.0.0",
+  "submission_id": "submission.p4.001",
+  "run_id": "run.p4.preliminary.20260801t140000z",
+  "project_id": "project.demo",
+  "phase": "P4",
+  "mode": "p4.preliminary",
+  "manifest_binding": {
+    "artifact": {
+      "artifact_id": "artifact.run_manifest.p4.001",
+      "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.run_manifest.p4.001",
+      "sha256": "c01cca36e0e05f5e24bb1968b957e877e699743958d74492ee03b857c459069c",
+      "media_type": "application/json"
+    },
+    "manifest_sha256": "c01cca36e0e05f5e24bb1968b957e877e699743958d74492ee03b857c459069c"
+  },
+  "closure_chain": [
+    {
+      "sequence": 1,
+      "stage_id": "p4.analyst",
+      "role": "data_analyst",
+      "invocation_start_id": "invocation_start.p4.analyst.001",
+      "start_sha256": "af9f63b60674d4360c51e5b94ecfac9a8baad5c83805cd04cf2e0e99976505cb",
+      "invocation_closure_id": "invocation_closure.p4.analyst.001",
+      "closure_artifact": {
+        "artifact_id": "artifact.invocation_closure.p4.analyst.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.invocation_closure.p4.analyst.001",
+        "sha256": "58c85d3613cdeefd0c84bbaed948ef2f4b98fd3bafe2ed9d875fc517674094c6",
+        "media_type": "application/json"
+      },
+      "closure_sha256": "89ac283e342c467752aa4c9cf327c21f11b163dce2e11bc28200f7ec99bce448",
+      "terminal_status": "succeeded"
+    },
+    {
+      "sequence": 2,
+      "stage_id": "p4.theorist",
+      "role": "theorist",
+      "invocation_start_id": "invocation_start.p4.theorist.001",
+      "start_sha256": "5eb388f19d7f02fcc0d4366aa30fdcb4b606a55c9ce4c2e5b7773c099d4a563a",
+      "invocation_closure_id": "invocation_closure.p4.theorist.001",
+      "closure_artifact": {
+        "artifact_id": "artifact.invocation_closure.p4.theorist.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.invocation_closure.p4.theorist.001",
+        "sha256": "6161616161616161616161616161616161616161616161616161616161616161",
+        "media_type": "application/json"
+      },
+      "closure_sha256": "6161616161616161616161616161616161616161616161616161616161616161",
+      "terminal_status": "succeeded"
+    },
+    {
+      "sequence": 3,
+      "stage_id": "p4.lead",
+      "role": "research_lead",
+      "invocation_start_id": "invocation_start.p4.lead.001",
+      "start_sha256": "0443fbc45586cce090e0622cddcf57e94a7b4da1be592e0fa8fb4c12dfff29b3",
+      "invocation_closure_id": "invocation_closure.p4.lead.001",
+      "closure_artifact": {
+        "artifact_id": "artifact.invocation_closure.p4.lead.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.invocation_closure.p4.lead.001",
+        "sha256": "6363636363636363636363636363636363636363636363636363636363636363",
+        "media_type": "application/json"
+      },
+      "closure_sha256": "6363636363636363636363636363636363636363636363636363636363636363",
+      "terminal_status": "succeeded"
+    }
+  ],
+  "lead_closure": {
+    "invocation_closure_id": "invocation_closure.p4.lead.001",
+    "closure_sha256": "6363636363636363636363636363636363636363636363636363636363636363"
+  },
+  "submitted_artifacts": [
+    {
+      "output_id": "output.protocol",
+      "contract_output_id": "p4.protocol",
+      "source_invocation_closure_id": "invocation_closure.p4.analyst.001",
+      "source_closure_sha256": "89ac283e342c467752aa4c9cf327c21f11b163dce2e11bc28200f7ec99bce448",
+      "artifact": {
+        "artifact_id": "artifact.p4.protocol.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.protocol.accepted.001",
+        "sha256": "4141414141414141414141414141414141414141414141414141414141414141",
+        "media_type": "application/json"
+      }
+    },
+    {
+      "output_id": "output.preliminary_evidence",
+      "contract_output_id": "p4.evidence",
+      "source_invocation_closure_id": "invocation_closure.p4.analyst.001",
+      "source_closure_sha256": "89ac283e342c467752aa4c9cf327c21f11b163dce2e11bc28200f7ec99bce448",
+      "artifact": {
+        "artifact_id": "artifact.p4.evidence.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.evidence.accepted.001",
+        "sha256": "4242424242424242424242424242424242424242424242424242424242424242",
+        "media_type": "application/json"
+      }
+    },
+    {
+      "output_id": "output.analyst_synthesis",
+      "contract_output_id": "p4.analyst_synthesis",
+      "source_invocation_closure_id": "invocation_closure.p4.analyst.001",
+      "source_closure_sha256": "89ac283e342c467752aa4c9cf327c21f11b163dce2e11bc28200f7ec99bce448",
+      "artifact": {
+        "artifact_id": "artifact.p4.analyst_synthesis.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.analyst_synthesis.accepted.001",
+        "sha256": "4343434343434343434343434343434343434343434343434343434343434343",
+        "media_type": "application/json"
+      }
+    },
+    {
+      "output_id": "output.analyst_handoff",
+      "contract_output_id": "p4.analyst_handoff",
+      "source_invocation_closure_id": "invocation_closure.p4.analyst.001",
+      "source_closure_sha256": "89ac283e342c467752aa4c9cf327c21f11b163dce2e11bc28200f7ec99bce448",
+      "artifact": {
+        "artifact_id": "artifact.analyst_handoff.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.analyst_handoff.accepted.001",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "media_type": "application/json"
+      }
+    },
+    {
+      "output_id": "output.theory_check",
+      "contract_output_id": "p4.theory_audit",
+      "source_invocation_closure_id": "invocation_closure.p4.theorist.001",
+      "source_closure_sha256": "6161616161616161616161616161616161616161616161616161616161616161",
+      "artifact": {
+        "artifact_id": "artifact.p4.theory_check.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.theory_check.accepted.001",
+        "sha256": "5353535353535353535353535353535353535353535353535353535353535353",
+        "media_type": "application/json"
+      }
+    },
+    {
+      "output_id": "output.theorist_handoff",
+      "contract_output_id": "p4.theory_handoff",
+      "source_invocation_closure_id": "invocation_closure.p4.theorist.001",
+      "source_closure_sha256": "6161616161616161616161616161616161616161616161616161616161616161",
+      "artifact": {
+        "artifact_id": "artifact.p4.theorist_handoff.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.theorist_handoff.accepted.001",
+        "sha256": "5454545454545454545454545454545454545454545454545454545454545454",
+        "media_type": "application/json"
+      }
+    },
+    {
+      "output_id": "output.empirical_evidence_index",
+      "contract_output_id": "p4.empirical_index_candidate",
+      "source_invocation_closure_id": "invocation_closure.p4.lead.001",
+      "source_closure_sha256": "6363636363636363636363636363636363636363636363636363636363636363",
+      "artifact": {
+        "artifact_id": "artifact.p4.empirical_index.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.empirical_index.accepted.001",
+        "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "media_type": "application/json"
+      }
+    },
+    {
+      "output_id": "output.empirical_synthesis",
+      "contract_output_id": "p4.empirical_synthesis_candidate",
+      "source_invocation_closure_id": "invocation_closure.p4.lead.001",
+      "source_closure_sha256": "6363636363636363636363636363636363636363636363636363636363636363",
+      "artifact": {
+        "artifact_id": "artifact.p4.empirical_synthesis.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.empirical_synthesis.accepted.001",
+        "sha256": "5656565656565656565656565656565656565656565656565656565656565656",
+        "media_type": "application/json"
+      }
+    },
+    {
+      "output_id": "output.implementation_record",
+      "contract_output_id": "p4.implementation_record_candidate",
+      "source_invocation_closure_id": "invocation_closure.p4.lead.001",
+      "source_closure_sha256": "6363636363636363636363636363636363636363636363636363636363636363",
+      "artifact": {
+        "artifact_id": "artifact.p4.implementation_record.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.implementation_record.accepted.001",
+        "sha256": "5757575757575757575757575757575757575757575757575757575757575757",
+        "media_type": "application/json"
+      }
+    },
+    {
+      "output_id": "output.attention_items",
+      "contract_output_id": "p4.attention_items",
+      "source_invocation_closure_id": "invocation_closure.p4.lead.001",
+      "source_closure_sha256": "6363636363636363636363636363636363636363636363636363636363636363",
+      "artifact": {
+        "artifact_id": "artifact.p4.attention_items.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.attention_items.accepted.001",
+        "sha256": "5858585858585858585858585858585858585858585858585858585858585858",
+        "media_type": "application/json"
+      }
+    },
+    {
+      "output_id": "output.phase_decision",
+      "contract_output_id": "p4.decision",
+      "source_invocation_closure_id": "invocation_closure.p4.lead.001",
+      "source_closure_sha256": "6363636363636363636363636363636363636363636363636363636363636363",
+      "artifact": {
+        "artifact_id": "artifact.p4.phase_decision.accepted.001",
+        "uri": "run://run.p4.preliminary.20260801t140000z/artifact/artifact.p4.phase_decision.accepted.001",
+        "sha256": "5959595959595959595959595959595959595959595959595959595959595959",
+        "media_type": "application/json"
+      }
+    }
+  ],
+  "submitted_at": "2026-08-01T15:10:00Z",
+  "submission_sha256": "c8ec41fe439171aca474ed5a0d4f89a399f6d25ff3ebc6f0e0bbd1e12b67e19f"
+}

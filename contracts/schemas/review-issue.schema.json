@@ -1,0 +1,199 @@
+{
+    "$schema":  "https://json-schema.org/draft/2020-12/schema",
+    "$id":  "https://model-forge.local/architecture/schemas/review-issue.schema.json",
+    "title":  "Manuscript Review Issue",
+    "description":  "An immutable criticism and disposition from one frozen manuscript-review run.",
+    "type":  "object",
+    "additionalProperties":  true,
+    "required":  [
+                     "schema_version",
+                     "issue_id",
+                     "issue_version_id",
+                     "source_run_id",
+                     "raised_by",
+                     "review_basis_generation_id",
+                     "location",
+                     "issue",
+                     "severity",
+                     "scientific_consequence",
+                     "requested_resolution",
+                     "disposition",
+                     "content_sha256",
+                     "created_at",
+                     "updated_at",
+                     "authority_at_creation"
+                 ],
+    "properties":  {
+                       "schema_version":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/schemaVersion"
+                                          },
+                       "issue_id":  {
+                                        "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                    },
+                       "issue_version_id":  {
+                                                "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                            },
+                       "supersedes_issue_version_id":  {
+                                                           "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                       },
+                       "source_run_id":  {
+                                             "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                         },
+                       "raised_by":  {
+                                         "type":  "string",
+                                         "enum":  [
+                                                      "theorist",
+                                                      "data_analyst",
+                                                      "outside_reviewer"
+                                                  ]
+                                     },
+                       "review_basis_generation_id":  {
+                                                          "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                      },
+                       "location":  {
+                                        "type":  "string",
+                                        "minLength":  1
+                                    },
+                       "affected_statement_id":  {
+                                                     "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                 },
+                       "stable_id":  {
+                                         "type":  "string",
+                                         "minLength":  1,
+                                         "description":  "The contracted method key this issue attributes to (ADR-017); ends attribution by naming convention."
+                                     },
+                       "issue":  {
+                                     "type":  "string",
+                                     "minLength":  1
+                                 },
+                       "severity":  {
+                                        "type":  "string",
+                                        "enum":  [
+                                                     "blocking",
+                                                     "major",
+                                                     "minor"
+                                                 ]
+                                    },
+                       "scientific_consequence":  {
+                                                      "type":  "string",
+                                                      "minLength":  1
+                                                  },
+                       "requested_resolution":  {
+                                                    "type":  "string",
+                                                    "minLength":  1
+                                                },
+                       "disposition":  {
+                                           "type":  "string",
+                                           "enum":  [
+                                                        "open",
+                                                        "fixed",
+                                                        "partially_fixed",
+                                                        "deferred",
+                                                        "rejected"
+                                                    ]
+                                       },
+                       "disposition_reason":  {
+                                                  "type":  "string",
+                                                  "minLength":  1
+                                              },
+                       "revision_locations":  {
+                                                  "type":  "array",
+                                                  "items":  {
+                                                                "type":  "string",
+                                                                "minLength":  1
+                                                            },
+                                                  "uniqueItems":  true
+                                              },
+                       "content_sha256":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/sha256"
+                                          },
+                       "created_at":  {
+                                          "type":  "string",
+                                          "format":  "date-time"
+                                      },
+                       "updated_at":  {
+                                          "type":  "string",
+                                          "format":  "date-time"
+                                      },
+                       "authority_at_creation":  {
+                                                     "$ref":  "common-definitions.schema.json#/$defs/creationAuthority"
+                                                 },
+                       "publication_receipt_id":  {
+                                                      "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                  },
+                       "published_at":  {
+                                            "type":  "string",
+                                            "format":  "date-time"
+                                        }
+                   },
+    "allOf":  [
+                  {
+                      "if":  {
+                                 "properties":  {
+                                                    "disposition":  {
+                                                                        "enum":  [
+                                                                                     "fixed",
+                                                                                     "partially_fixed",
+                                                                                     "deferred",
+                                                                                     "rejected"
+                                                                                 ]
+                                                                    }
+                                                },
+                                 "required":  [
+                                                  "disposition"
+                                              ]
+                             },
+                      "then":  {
+                                   "required":  [
+                                                    "disposition_reason"
+                                                ]
+                               }
+                  },
+                  {
+                      "if":  {
+                                 "properties":  {
+                                                    "disposition":  {
+                                                                        "enum":  [
+                                                                                     "fixed",
+                                                                                     "partially_fixed"
+                                                                                 ]
+                                                                    }
+                                                },
+                                 "required":  [
+                                                  "disposition"
+                                              ]
+                             },
+                      "then":  {
+                                   "required":  [
+                                                    "revision_locations"
+                                                ]
+                               }
+                  },
+                  {
+                      "if":  {
+                                 "properties":  {
+                                                    "authority_at_creation":  {
+                                                                                  "const":  "formal_generation"
+                                                                              }
+                                                },
+                                 "required":  [
+                                                  "authority_at_creation"
+                                              ]
+                             },
+                      "then":  {
+                                   "required":  [
+                                                    "publication_receipt_id",
+                                                    "published_at"
+                                                ]
+                               },
+                      "else":  {
+                                   "not":  {
+                                               "anyOf":  [
+                                                             { "required":  [ "publication_receipt_id" ] },
+                                                             { "required":  [ "published_at" ] }
+                                                         ]
+                                           }
+                               }
+                  }
+              ]
+}

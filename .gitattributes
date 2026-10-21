@@ -1,0 +1,9 @@
+# Catalog hashes seal exact bytes, including historical line endings.
+# Do not normalize them during Git add or checkout on any platform.
+contracts/** -text whitespace=cr-at-eol
+
+# PDF byte offsets and cross-reference records must remain unchanged.
+*.pdf binary
+
+# This fixture intentionally contains raw malformed request bytes.
+contracts/examples/raw-command-request-malformed.txt -text

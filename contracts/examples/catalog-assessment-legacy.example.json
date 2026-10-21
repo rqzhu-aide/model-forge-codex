@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "title": "Comparison of the submitted proposal",
+  "comparison_markdown": "The proposal retains a precise original definition; the target identified by the weighted equation remains a recorded question for subsequent theory.",
+  "method_dispositions": [
+    {
+      "proposal_id": "proposal.overlap_stabilized_score",
+      "status": "retain",
+      "rationale": "Retain for explicit investigation of the population target, without claiming that this audit proves validity."
+    }
+  ]
+}

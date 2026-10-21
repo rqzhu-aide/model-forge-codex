@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "attention_id": "attention.preliminary_scope.001",
+  "source_run_id": "run.p4.preliminary.20260801t140000z",
+  "raised_by": "research_lead",
+  "question": "Does the preliminary error reduction persist under heterogeneous treatment effects and nuisance-model misspecification?",
+  "severity": "monitor",
+  "likely_consequence": "Without broader evaluation, the manuscript must restrict the performance claim to the two current simulation regimes.",
+  "affected_record_ids": [
+    "record.empirical_evidence.overlap_stabilized_score"
+  ],
+  "affected_statement_ids": [
+    "claim.rmse.reduction"
+  ],
+  "disposition": "open",
+  "rerun_question": "Which additional simulation regimes would most change the researcher's assessment of the method?",
+  "content_sha256": "b40cdb0eceb6b0a3ad6701ce6550d18e6d9304087c98040c0e303f761604a806",
+  "created_at": "2026-08-01T15:05:00Z",
+  "updated_at": "2026-08-01T15:05:00Z",
+  "attention_version_id": "attention_version.preliminary_scope.001.v1",
+  "authority_at_creation": "formal_generation",
+  "publication_receipt_id": "publication.p4.001",
+  "published_at": "2026-08-01T15:10:04Z"
+}

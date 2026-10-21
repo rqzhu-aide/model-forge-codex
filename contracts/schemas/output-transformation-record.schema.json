@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/output-transformation-record.schema.json",
+  "title": "Output Transformation Record",
+  "description": "Immutable record of one mechanical transformation applied to a role output, with source and result digests, allowlisted transformation code, affected paths, and confirmation that no primary scientific artifact changed.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "transformationSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transformation_code",
+        "source_digest",
+        "result_digest"
+      ],
+      "properties": {
+        "transformation_code": {
+          "type": "string",
+          "enum": [
+            "timestamp_injection",
+            "additional_properties_strip",
+            "id_sanitization",
+            "hash_recomputation",
+            "schema_version_injection",
+            "null_value_removal",
+            "empty_string_removal"
+          ]
+        },
+        "source_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "result_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "affected_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "pathChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["json_pointer", "transformation_code"],
+      "properties": {
+        "json_pointer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "transformation_code": {
+          "type": "string",
+          "enum": [
+            "timestamp_injection",
+            "additional_properties_strip",
+            "id_sanitization",
+            "hash_recomputation",
+            "schema_version_injection",
+            "null_value_removal",
+            "empty_string_removal"
+          ]
+        },
+        "before_value": {},
+        "after_value": {}
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "record_id",
+    "run_id",
+    "role",
+    "stage_id",
+    "source_digest",
+    "result_digest",
+    "transformation_codes",
+    "affected_paths",
+    "harness_version",
+    "no_scientific_artifact_changed",
+    "content_sha256",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
+    },
+    "record_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "run_id": {
+      "$ref": "common-definitions.schema.json#/$defs/stableId"
+    },
+    "role": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stage_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "SHA-256 digest of the raw output bytes before transformation."
+    },
+    "result_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "SHA-256 digest of the candidate output bytes after transformation."
+    },
+    "transformation_codes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "timestamp_injection",
+          "additional_properties_strip",
+          "id_sanitization",
+          "hash_recomputation",
+          "schema_version_injection",
+          "null_value_removal",
+          "empty_string_removal"
+        ]
+      }
+    },
+    "affected_paths": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pathChange"
+      }
+    },
+    "harness_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "no_scientific_artifact_changed": {
+      "type": "boolean",
+      "description": "True when the transformation did not alter any primary scientific claim, assumption, result, citation, or provenance assertion."
+    },
+    "content_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

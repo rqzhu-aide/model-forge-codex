@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.2.0",
+  "review_id": "review.overlap_stabilized_score",
+  "assessments": [
+    {
+      "proposal_id": "proposal.overlap_stabilized_score",
+      "applicability_markdown": "This proposal is a candidate for the recorded observational-data setting, but the available audit does not establish that its reported estimate has the claimed target or inference guarantee.\n\n### Conditions and what changes without them\n- Conditional exchangeability is the proposal's identification condition (assumption.conditional_exchangeability). Without it, the stated observed-data argument no longer identifies the causal target; a different identification argument or additional information is needed. This is a limitation of the causal interpretation, not evidence that the numerical equation cannot be solved.\n- The finite-second-moment condition (assumption.weak_overlap) supplies the proposal's variance argument. If it is absent, that variance and asymptotic-normality argument is unavailable. This audit establishes neither estimator failure nor a replacement limit theorem; P3 must determine whether weaker conditions support another result.\n- The fold-exclusion constraint requires nuisance fits to omit each held-out fold. Using in-fold fits changes the declared procedure, so its proposed guarantee cannot simply be carried over.\n\n### Data and implementation\nThe procedure needs outcomes, treatment indicators and measured covariates, as well as the prespecified overlap bound and recorded fold partition in proposal.overlap_stabilized_score. The analyst should examine the observed propensity and weight distributions in P4; these diagnostics do not establish exchangeability or a population moment condition.\n\n### Remaining caution\nFinding.population_target still requires an argument connecting the actual weighted score to the stated target. Weight stabilization alone does not supply that argument. The exact score and calculation assumptions in the original proposal remain the source of these conditions.",
+      "assessment_markdown": "The original proposed population equation must be compared with its stated estimand.",
+      "findings": [
+        {
+          "finding_id": "finding.population_target",
+          "statement_reference": "method.mathematical_definition.canonical_definition.objective_or_estimating_equation",
+          "reasoning_markdown": "Changing score weights can alter the population moment and its root. Retaining the original estimand requires an explicit argument.",
+          "consequence_markdown": "State the target under the actual weighted equation before making an estimation claim.",
+          "title": "Weighted equation may change the target",
+          "statement_refs": [
+            "/method/mathematical_definition/canonical_definition/objective_or_estimating_equation"
+          ]
+        }
+      ],
+      "headline": "The population target remains unresolved under the proposed weighting."
+    }
+  ]
+}

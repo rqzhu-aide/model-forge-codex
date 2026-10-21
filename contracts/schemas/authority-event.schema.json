@@ -1,0 +1,480 @@
+{
+    "$schema":  "https://json-schema.org/draft/2020-12/schema",
+    "$id":  "https://model-forge.local/architecture/schemas/authority-event.schema.json",
+    "title":  "Append-only research authority event",
+    "description":  "An immutable event that changes derived publication, record-position, alignment, attention, or evidence-eligibility state without mutating a scientific generation.",
+    "type":  "object",
+    "additionalProperties":  false,
+    "required":  [
+                     "schema_version",
+                     "event_id",
+                     "project_id",
+                     "event_sequence",
+                     "prior_event_root_sha256",
+                     "event_root_sha256",
+                     "event_type",
+                     "subject",
+                     "changes",
+                     "reason",
+                     "trigger",
+                     "content_sha256",
+                     "created_at"
+                 ],
+    "properties":  {
+                       "schema_version":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/schemaVersion"
+                                          },
+                       "event_id":  {
+                                        "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                    },
+                       "project_id":  {
+                                          "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                      },
+                       "event_sequence":  {
+                                              "type":  "integer",
+                                              "minimum":  1
+                                          },
+                       "prior_event_root_sha256":  {
+                                                       "$ref":  "common-definitions.schema.json#/$defs/sha256",
+                                                       "description":  "Root digest before this append. Sequence 1 uses 64 zero hexadecimal characters."
+                                                   },
+                       "event_root_sha256":  {
+                                                 "$ref":  "common-definitions.schema.json#/$defs/sha256",
+                                                 "description":  "SHA-256 of the 32 binary bytes of prior_event_root_sha256 followed by the 32 binary bytes of content_sha256."
+                                             },
+                       "event_type":  {
+                                          "type":  "string",
+                                          "enum":  [
+                                                       "published",
+                                                       "superseded",
+                                                       "alignment_recomputed",
+                                                       "attention_changed",
+                                                       "invalidated",
+                                                       "evidence_eligibility_changed"
+                                                   ]
+                                      },
+                       "subject":  {
+                                       "type":  "object",
+                                       "additionalProperties":  false,
+                                       "required":  [
+                                                        "kind",
+                                                        "subject_id"
+                                                    ],
+                                       "properties":  {
+                                                          "kind":  {
+                                                                       "type":  "string",
+                                                                       "enum":  [
+                                                                                    "record_generation",
+                                                                                    "evidence_item",
+                                                                                    "cumulative_object"
+                                                                                ]
+                                                                   },
+                                                          "subject_id":  {
+                                                                             "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                         },
+                                                          "generation_id":  {
+                                                                                "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                            },
+                                                          "method_identity":  {
+                                                                                  "$ref":  "common-definitions.schema.json#/$defs/methodIdentity"
+                                                                              },
+                                                          "object_type":  {
+                                                                              "$ref":  "common-definitions.schema.json#/$defs/cumulativeObjectType"
+                                                                          }
+                                                      },
+                                       "allOf":  [
+                                                     {
+                                                         "if":  {
+                                                                    "properties":  {
+                                                                                       "kind":  {
+                                                                                                    "const":  "record_generation"
+                                                                                                }
+                                                                                   },
+                                                                    "required":  [
+                                                                                     "kind"
+                                                                                 ]
+                                                                },
+                                                         "then":  {
+                                                                      "required":  [
+                                                                                       "generation_id"
+                                                                                   ]
+                                                                  }
+                                                     },
+                                                     {
+                                                         "if":  {
+                                                                    "properties":  {
+                                                                                       "kind":  {
+                                                                                                    "const":  "cumulative_object"
+                                                                                                }
+                                                                                   },
+                                                                    "required":  [
+                                                                                     "kind"
+                                                                                 ]
+                                                                },
+                                                         "then":  {
+                                                                      "required":  [
+                                                                                       "object_type"
+                                                                                   ]
+                                                                  }
+                                                     }
+                                                 ]
+                                   },
+                       "changes":  {
+                                       "type":  "object",
+                                       "additionalProperties":  false,
+                                       "minProperties":  1,
+                                       "properties":  {
+                                                          "publication_state":  {
+                                                                                    "$ref":  "common-definitions.schema.json#/$defs/publicationState"
+                                                                                },
+                                                          "record_position":  {
+                                                                                  "$ref":  "common-definitions.schema.json#/$defs/recordPosition"
+                                                                              },
+                                                          "alignment":  {
+                                                                            "$ref":  "common-definitions.schema.json#/$defs/alignmentAssessment"
+                                                                        },
+                                                          "research_attention":  {
+                                                                                     "$ref":  "common-definitions.schema.json#/$defs/researchAttention"
+                                                                                 },
+                                                          "evidence_eligibility":  {
+                                                                                       "type":  "object",
+                                                                                       "additionalProperties":  false,
+                                                                                       "required":  [
+                                                                                                        "status",
+                                                                                                        "method_match",
+                                                                                                        "assessed_against_method_identity",
+                                                                                                        "reasons"
+                                                                                                    ],
+                                                                                       "properties":  {
+                                                                                                          "status":  {
+                                                                                                                         "type":  "string",
+                                                                                                                         "enum":  [
+                                                                                                                                      "included",
+                                                                                                                                      "excluded",
+                                                                                                                                      "unassessed"
+                                                                                                                                  ]
+                                                                                                                     },
+                                                                                                          "method_match":  {
+                                                                                                                               "type":  "string",
+                                                                                                                               "enum":  [
+                                                                                                                                            "exact",
+                                                                                                                                            "older_method_version",
+                                                                                                                                            "unassessed"
+                                                                                                                                        ]
+                                                                                                                           },
+                                                                                                          "assessed_against_method_identity":  {
+                                                                                                                                                   "$ref":  "common-definitions.schema.json#/$defs/methodIdentity"
+                                                                                                                                               },
+                                                                                                          "reasons":  {
+                                                                                                                          "type":  "array",
+                                                                                                                          "items":  {
+                                                                                                                                        "type":  "string",
+                                                                                                                                        "minLength":  1
+                                                                                                                                    },
+                                                                                                                          "uniqueItems":  true
+                                                                                                                      }
+                                                                                                      }
+                                                                                   }
+                                                      }
+                                   },
+                       "reason":  {
+                                      "type":  "object",
+                                      "additionalProperties":  false,
+                                      "required":  [
+                                                       "code",
+                                                       "explanation"
+                                                   ],
+                                      "properties":  {
+                                                         "code":  {
+                                                                      "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                  },
+                                                         "explanation":  {
+                                                                             "type":  "string",
+                                                                             "minLength":  1
+                                                                         }
+                                                     }
+                                  },
+                       "trigger":  {
+                                       "type":  "object",
+                                       "additionalProperties":  false,
+                                       "required":  [
+                                                        "kind",
+                                                        "source_id"
+                                                    ],
+                                       "properties":  {
+                                                          "kind":  {
+                                                                       "type":  "string",
+                                                                       "enum":  [
+                                                                                    "publication_receipt",
+                                                                                    "user_command",
+                                                                                    "upstream_generation",
+                                                                                    "integrity_audit",
+                                                                                    "system_recovery"
+                                                                                ]
+                                                                   },
+                                                          "source_id":  {
+                                                                            "$ref":  "common-definitions.schema.json#/$defs/stableId"
+                                                                        }
+                                                      }
+                                   },
+                       "prior_state_sha256":  {
+                                                  "$ref":  "common-definitions.schema.json#/$defs/sha256",
+                                                  "description":  "Optional content_sha256 of this subject's deterministic RecordState at the immediately preceding authority-event checkpoint."
+                                              },
+                       "content_sha256":  {
+                                              "$ref":  "common-definitions.schema.json#/$defs/sha256",
+                                              "description":  "SHA-256 of RFC 8785 canonical event JSON with content_sha256 and event_root_sha256 omitted."
+                                          },
+                       "created_at":  {
+                                          "type":  "string",
+                                          "format":  "date-time"
+                                      }
+                   },
+    "allOf": [
+      {
+        "if": {
+          "properties": { "event_type": { "const": "published" } },
+          "required": ["event_type"]
+        },
+        "then": {
+          "properties": {
+            "subject": {
+              "properties": {
+                "kind": { "enum": ["record_generation", "cumulative_object"] }
+              },
+              "required": ["kind"]
+            },
+            "changes": {
+              "required": ["publication_state"],
+              "propertyNames": {
+                "enum": ["publication_state", "record_position", "alignment", "research_attention"]
+              },
+              "properties": {
+                "publication_state": { "const": "formal" }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "subject": {
+                    "properties": { "kind": { "const": "record_generation" } },
+                    "required": ["kind"]
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "changes": {
+                    "required": ["record_position"],
+                    "properties": { "record_position": { "const": "current" } }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "subject": {
+                    "properties": { "kind": { "const": "cumulative_object" } },
+                    "required": ["kind"]
+                  }
+                }
+              },
+              "then": {
+                "properties": { "changes": { "maxProperties": 1 } }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "if": {
+          "properties": { "event_type": { "const": "superseded" } },
+          "required": ["event_type"]
+        },
+        "then": {
+          "required": ["prior_state_sha256"],
+          "properties": {
+            "subject": {
+              "properties": { "kind": { "const": "record_generation" } },
+              "required": ["kind"]
+            },
+            "changes": {
+              "required": ["publication_state", "record_position"],
+              "minProperties": 2,
+              "maxProperties": 2,
+              "properties": {
+                "publication_state": { "const": "formal" },
+                "record_position": { "const": "historical" }
+              }
+            }
+          }
+        }
+      },
+      {
+        "if": {
+          "properties": { "event_type": { "const": "alignment_recomputed" } },
+          "required": ["event_type"]
+        },
+        "then": {
+          "required": ["prior_state_sha256"],
+          "properties": {
+            "subject": {
+              "properties": { "kind": { "enum": ["record_generation", "evidence_item"] } },
+              "required": ["kind"]
+            },
+            "changes": {
+              "required": ["alignment"],
+              "minProperties": 1,
+              "maxProperties": 1
+            }
+          }
+        }
+      },
+      {
+        "if": {
+          "properties": { "event_type": { "const": "attention_changed" } },
+          "required": ["event_type"]
+        },
+        "then": {
+          "required": ["prior_state_sha256"],
+          "properties": {
+            "subject": {
+              "properties": { "kind": { "enum": ["record_generation", "evidence_item"] } },
+              "required": ["kind"]
+            },
+            "changes": {
+              "required": ["research_attention"],
+              "minProperties": 1,
+              "maxProperties": 1
+            }
+          }
+        }
+      },
+      {
+        "if": {
+          "properties": { "event_type": { "const": "evidence_eligibility_changed" } },
+          "required": ["event_type"]
+        },
+        "then": {
+          "properties": {
+            "subject": {
+              "properties": { "kind": { "const": "evidence_item" } },
+              "required": ["kind"]
+            },
+            "changes": {
+              "required": ["evidence_eligibility"],
+              "propertyNames": {
+                "enum": ["publication_state", "alignment", "research_attention", "evidence_eligibility"]
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "changes": { "maxProperties": 1 }
+                },
+                "required": ["changes"]
+              },
+              "then": {
+                "required": ["prior_state_sha256"]
+              },
+              "else": {
+                "properties": {
+                  "changes": {
+                    "required": [
+                      "publication_state",
+                      "alignment",
+                      "research_attention",
+                      "evidence_eligibility"
+                    ],
+                    "minProperties": 4,
+                    "maxProperties": 4,
+                    "properties": {
+                      "publication_state": { "const": "formal" }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "if": {
+          "properties": { "event_type": { "const": "invalidated" } },
+          "required": ["event_type"]
+        },
+        "then": {
+          "required": ["prior_state_sha256"],
+          "properties": {
+            "changes": {
+              "required": ["publication_state"],
+              "properties": {
+                "publication_state": { "const": "invalid" },
+                "record_position": { "enum": ["historical", "none"] },
+                "evidence_eligibility": {
+                  "properties": { "status": { "const": "excluded" } },
+                  "required": ["status"]
+                }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "subject": {
+                    "properties": { "kind": { "const": "record_generation" } },
+                    "required": ["kind"]
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "changes": {
+                    "required": ["record_position"],
+                    "propertyNames": { "enum": ["publication_state", "record_position"] }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "subject": {
+                    "properties": { "kind": { "const": "evidence_item" } },
+                    "required": ["kind"]
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "changes": {
+                    "required": ["evidence_eligibility"],
+                    "propertyNames": { "enum": ["publication_state", "evidence_eligibility"] }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "subject": {
+                    "properties": { "kind": { "const": "cumulative_object" } },
+                    "required": ["kind"]
+                  }
+                }
+              },
+              "then": {
+                "properties": { "changes": { "maxProperties": 1 } }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }

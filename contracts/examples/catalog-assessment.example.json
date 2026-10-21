@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.3.0",
+  "title": "Comparison of the three method proposals",
+  "comparison_markdown": "The overlap-stabilized score keeps the orthogonal estimating equation and bounds the weights; the doubly robust series proposal replaces the nuisance fits with series estimators; the penalized inverse-propensity sieve proposal stabilizes the weights through a penalized sieve propensity model. All three target the same estimand with distinct assumptions and open obligations recorded in their proposals and audits.",
+  "method_dispositions": [
+    {
+      "proposal_id": "proposal.overlap_stabilized_score",
+      "status": "retain",
+      "method_summary_markdown": "From observations $W_i=(Y_i,A_i,X_i)$ of outcome, treatment and covariates, the bounded-weight score aims at $\\theta_0=E\\{Y(1)-Y(0)\\}$. Write $\\hat\\mu_{ai}$ for the outcome estimate under treatment $a$ and $\\hat e_i$ for the propensity estimate at $X_i$, each fitted without observation $i$'s held-out fold. The returned estimate is\n\n$$\\hat\\theta=\\frac1n\\sum_{i=1}^n\\left[\\hat\\mu_{1i}-\\hat\\mu_{0i}+w_\\epsilon(\\hat e_i)\\left\\{\\frac{A_i(Y_i-\\hat\\mu_{1i})}{\\hat e_i}-\\frac{(1-A_i)(Y_i-\\hat\\mu_{0i})}{1-\\hat e_i}\\right\\}\\right],\\qquad w_\\epsilon(e)=\\frac{e(1-e)}{\\max\\{e,\\epsilon\\}\\max\\{1-e,\\epsilon\\}},\\quad 0<\\epsilon<1/2.$$\n\nThe overlap bound is prespecified and fold exclusion defines the procedure. Conditional exchangeability and finite score second moment remain assumptions; the nuisance learner and data availability are unspecified. The weighted equation's population target and inference guarantee remain unresolved ([original proposal](#proposal.overlap_stabilized_score), [specialist audit](#review.overlap_stabilized_score)).",
+      "rationale": "This is a concrete stabilization candidate worth investigating, but its proposed guarantees remain unresolved. The explicit design difference is the bounded-weight correction inside the cross-fitted score in proposal.overlap_stabilized_score; the supplied comparison does not establish that this construction is new relative to the cited literature. Its strongest feature is an inspectable weight rule and fold-exclusion procedure. The main criticism is finding.population_target: the connection between the actual weighted equation and the claimed estimand needs an argument, and weight stabilization alone does not establish orthogonality or valid inference. Retain for P3 analysis of that exact equation and a subsequent P4 bias and coverage study under the stated conditions."
+    },
+    {
+      "proposal_id": "proposal.doubly_robust_series",
+      "status": "retain",
+      "method_summary_markdown": "The comparison describes series estimates for nuisance functions in a doubly robust equation. The exact basis, series-order rule and estimating equation are not available in this standalone example, so its precise mechanism cannot be assessed.",
+      "rationale": "Series nuisance estimation gives this candidate an explicit approximation choice that can be inspected and varied. That is a stated design difference in proposal.doubly_robust_series, not evidence of novelty: the original proposal and cited literature are needed to assess the contribution. Its main criticism is the unresolved effect of the series-order choice on estimation error and the proposed guarantee. Retain as a candidate for analysis of that error and evaluation across the proposed order choices; no validity or performance advantage is established by this disposition."
+    },
+    {
+      "proposal_id": "proposal.penalized_ipw_sieve",
+      "status": "retain",
+      "method_summary_markdown": "The comparison describes penalized sieve estimation of a propensity model for inverse-propensity weighting. The exact sieve, penalty and estimating equation are not available in this standalone example, so its precise mechanism cannot be assessed.",
+      "rationale": "Penalized propensity estimation offers a concrete way to investigate the stability of inverse-propensity weights. The penalty is the candidate's stated design choice in proposal.penalized_ipw_sieve; whether it is innovative relative to prior work remains unestablished in this standalone comparison. The central criticism is that a penalty on model coefficients does not, without an argument, establish the required control of the resulting weight tails. Retain for checking that relationship and then testing weight diagnostics, bias and coverage in the relevant overlap regimes."
+    }
+  ],
+  "overview_markdown": "Investigate the bounded-score candidate when weight instability is the priority, while checking its population target before causal or inference claims. Series and penalized sieve choices offer different nuisance-model tradeoffs; their order and tail control remain unresolved. The next scientific check is whether the weighted equation estimates the intended effect.",
+  "modification_options": [
+    {
+      "option_id": "mod.proposal.overlap_stabilized_score.data_driven_clip",
+      "applies_to": "proposal.overlap_stabilized_score",
+      "title": "Data-driven clipping bound",
+      "what_changes_markdown": "Replace the prespecified constant $\\epsilon$ in $w_\\epsilon(e) = e(1-e)/[\\max\\{e,\\epsilon\\}\\max\\{1-e,\\epsilon\\}]$ with $\\hat\\epsilon_n$ chosen by the recorded overlap diagnostic quantile rule.",
+      "when_preferable_markdown": "Preferable when overlap deteriorates slowly with $n$ and a fixed $\\epsilon$ is either too conservative or too aggressive for the observed propensity range."
+    },
+    {
+      "option_id": "mod.proposal.doubly_robust_series.series_order",
+      "applies_to": "proposal.doubly_robust_series",
+      "title": "Cross-validated series order",
+      "what_changes_markdown": "Replace the fixed series order $K_n$ in the nuisance estimators with the cross-validated choice over the prespecified grid stated in the proposal.",
+      "when_preferable_markdown": "Preferable when the covariate dimension or smoothness is uncertain enough that a single fixed order risks visible under- or over-smoothing."
+    },
+    {
+      "option_id": "mod.proposal.penalized_ipw_sieve.penalty_tuning",
+      "applies_to": "proposal.penalized_ipw_sieve",
+      "title": "Stronger tail penalty",
+      "what_changes_markdown": "Increase the sieve penalty on the propensity model's tail coefficients from $\\lambda_n$ to $2\\lambda_n$ in the stated penalized likelihood.",
+      "when_preferable_markdown": "Preferable when the estimated propensities concentrate near zero or one and the recorded weights show heavy tails under the proposed penalty."
+    }
+  ]
+}

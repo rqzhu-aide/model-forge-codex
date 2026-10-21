@@ -1,0 +1,119 @@
+{
+  "schema_version": "1.0.0",
+  "record_id": "record.implementation.portable_normal_mean",
+  "record_type": "implementation_record",
+  "phase": "P4",
+  "source_run_id": "run.p4.preliminary.20260801t140000z",
+  "method_identity": {
+    "stable_id": "method.example_normal_mean",
+    "version": 1,
+    "definition_sha256": "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+  },
+  "authority_at_creation": "run_local_candidate",
+  "representations": [],
+  "basis": [],
+  "alignment_at_creation": {
+    "state": "exact",
+    "causes": [
+      "exact_match"
+    ],
+    "assessed_at": "2026-08-01T15:02:00Z",
+    "assessed_by": "data_analyst",
+    "reasons": [
+      "This is a portable code authoring fixture; no numerical or scientific verification is asserted."
+    ],
+    "assessed_method": {
+      "stable_id": "method.example_normal_mean",
+      "version": 1,
+      "definition_sha256": "b274bbb26acde9604faad22d05b3f4015f75491a31b5d0f67f139a64f7a7a4f1"
+    }
+  },
+  "research_attention_at_creation": {
+    "level": "monitor",
+    "open_item_ids": [],
+    "reasons": [
+      "Source bundle is illustrative and not a published empirical study."
+    ]
+  },
+  "scientific_outcome": {
+    "state": "not_assessed",
+    "conclusion": "Portable illustrative source bytes are retained; no statistical performance result is asserted.",
+    "scope": "Illustrative normal population mean only.",
+    "assumptions": [],
+    "strongest_evidence_ids": [],
+    "strongest_counterevidence_ids": [],
+    "material_disagreement": []
+  },
+  "implementation_summary": {
+    "rule": "The illustrative custom implementation estimates the population mean using $\\widehat\\mu=n^{-1}\\sum_i Y_i$.",
+    "correspondence": "model.fit accepts mapped outcome records and configuration, returning estimate, n, sample standard error and input diagnostics. Generator and truth are separate retained modules. This is not the tapered-quantile implementation.",
+    "environment": "This fixture needs the shared Python standard library only. No package installation or project environment is used.",
+    "verification": "No research experiment or statistical performance check is claimed by this authoring fixture. The separate-directory contract test checks only portable invocation, input mapping and source-byte identity.",
+    "limitations": "One synthetic example cannot establish bias, RMSE, coverage, robustness or suitability for a real researcher dataset. The interface does not itself verify representativeness or intervention identification."
+  },
+  "content_sha256": "92f46e9ed1803ed843134f3e0b285631dca746019cb670e81300a9c1bdb34786",
+  "created_at": "2026-08-01T15:05:00Z",
+  "reproduction": {
+    "status": "available",
+    "language": "python",
+    "model_entrypoint": {
+      "kind": "model_entrypoint",
+      "artifact": {
+        "artifact_id": "artifact.example.implementation.model.py",
+        "uri": "artifact://p4-workflow/implementation/model.py",
+        "path": "examples/p4-workflow-support/implementation/model.py",
+        "sha256": "790265574538403e7be0af03786db1ee64a6fc6358e63bd75b1e939fc4f4e7a6"
+      }
+    },
+    "example_generator": {
+      "kind": "example_generator",
+      "artifact": {
+        "artifact_id": "artifact.example.examples.generate_example.py",
+        "uri": "artifact://p4-workflow/examples/generate_example.py",
+        "path": "examples/p4-workflow-support/examples/generate_example.py",
+        "sha256": "2fb9d7108c59fdf48dee532d8515b3ee9859a61789d5d3ca7da530e94ef7939b"
+      }
+    },
+    "example_runner": {
+      "kind": "example_runner",
+      "artifact": {
+        "artifact_id": "artifact.example.examples.run_example.py",
+        "uri": "artifact://p4-workflow/examples/run_example.py",
+        "path": "examples/p4-workflow-support/examples/run_example.py",
+        "sha256": "931da881078b3109164fc9c0aa4c02486211dfe2f5e89755ceb0a824d39ee0e2"
+      }
+    },
+    "readme": {
+      "kind": "readme",
+      "artifact": {
+        "artifact_id": "artifact.example.readme.md",
+        "uri": "artifact://p4-workflow/README.md",
+        "path": "examples/p4-workflow-support/README.md",
+        "sha256": "1a559904b7945e3e57ce1cf0b2fa935bf4ad363660281f5f7eb0174791980d24"
+      }
+    },
+    "invocation": "python <bundle>/examples/run_example.py --config <bundle>/implementation/example-config.json --output example-result.json; add --data <frozen-input-copy>.csv for mapped supplied data. See README for input/output units, failures and seed behavior.",
+    "support_files": [
+      {
+        "kind": "example_configuration",
+        "artifact": {
+          "artifact_id": "artifact.example.implementation.example_config.json",
+          "uri": "artifact://p4-workflow/implementation/example-config.json",
+          "path": "examples/p4-workflow-support/implementation/example-config.json",
+          "sha256": "3cc252f3c9a2affe7b7ca58d0d46b69050a744b5e2f240b5bdcaee8018fcbbe5"
+        }
+      },
+      {
+        "kind": "independent_truth",
+        "artifact": {
+          "artifact_id": "artifact.example.examples.truth.py",
+          "uri": "artifact://p4-workflow/examples/truth.py",
+          "path": "examples/p4-workflow-support/examples/truth.py",
+          "sha256": "4b9fc9af2c949b27c05fc2a3aabe4791a041cb5f78ec97697d77655442e38126"
+        }
+      }
+    ],
+    "dependencies": [],
+    "runtime_identity": "Authoring fixture; Python standard library. The actual interpreter identity is recorded by the portability test, not inferred from source availability."
+  }
+}
