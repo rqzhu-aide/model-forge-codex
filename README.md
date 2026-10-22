@@ -4,6 +4,8 @@
 
 Model Forge is a local workbench for developing statistical models, machine learning models, and algorithms with an AI research team. Start with a problem, explore methods, examine theory and numerical results, and produce a concise **technical report** with mathematical notation, citations, and reproducible sources.
 
+**Interactive model development is a core feature.** The team actively invites your feedback on critical decisions affecting model interpretation, assumptions, statistical inference, or practical use. Decision cards explain what is affected and the trade-offs. You can discuss the issue, request a recommendation, choose an option, or save an editable instruction to guide subsequent work. The Lead handles routine choices.
+
 ## Install and use
 
 Use shared **Node.js 22+ with npm** and **Python 3.11+** installations. Install the Python dependencies once, then launch the prerelease:
@@ -44,7 +46,6 @@ npx @rqzhu-aide/model-forge-codex@next stop
 | **Phase 4 - Numerical Eval** | Implement and evaluate methods on synthetic or available real data. |
 | **Phase 5 - Report** | Read, discuss, revise, and export the technical report. |
 
-- **Researcher direction.** The Lead handles routine choices and raises consequential decisions with concise explanations and options.
 - **Specialized team.** A Research Lead, Theorist, Data Analyst, and Outside Reviewer work through a Codex bridge. Structured outputs feed the interface directly.
 - **Clear interaction.** Blue marks team findings, green marks system controls, and orange marks researcher input. Reports support section-level discussion and self-contained HTML export.
 - **Traceable work.** Results retain their method, theory, and experiment sources. Application updates preserve research history; each project retains its workflow catalog until explicitly updated.
