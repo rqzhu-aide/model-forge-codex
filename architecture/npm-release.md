@@ -78,7 +78,14 @@ The prerelease launch command then becomes:
 npx @rqzhu-aide/model-forge-codex@next web
 ```
 
-Keep `latest` reserved for a formal release. Verify the published version,
-distribution tags, integrity, and launch command from a fresh user environment. GitHub
+Publish prerelease updates with `--tag next` and leave an existing `latest`
+tag unchanged. npm may assign `latest` on the first publication even when
+another tag was requested; removing it can fail with HTTP 400, as recorded in
+[npm/cli issue 8490](https://github.com/npm/cli/issues/8490). Do not promise
+that the package can have no `latest` tag. The default npm page selects that
+tag; use the version-specific page to inspect a prerelease README.
+
+Verify the published version, distribution tags, integrity, and launch command
+from a fresh user environment. GitHub
 pushes, tags, releases, and npm publication are separate actions. Use the
 reviewed artifact for any GitHub release attachment as well.
