@@ -1,8 +1,8 @@
-# Preparing the 0.9.0 npm prerelease
+# Preparing an npm prerelease
 
-Model Forge 0.9.0 is a pre-1.0 release. This guide prepares a reviewed artifact;
+Model Forge 0.9.1 is a documentation update to the 0.9.0 prerelease. This guide prepares a reviewed artifact;
 it does not imply that the npm package or a GitHub release has been published.
-The application version is 0.9.0. The workflow catalog has its own version,
+The application version is 0.9.1. The workflow catalog has its own version,
 pinned in `contracts/catalog-pin.json`.
 
 The package uses existing shared Python 3.11+ and Node.js 22+ installations.
@@ -23,7 +23,7 @@ From the repository root, using the shared runtimes:
 ```sh
 npm pack
 npm run test:npm
-python -B scripts/smoke_npm_release.py rqzhu-aide-model-forge-codex-0.9.0.tgz
+python -B scripts/smoke_npm_release.py rqzhu-aide-model-forge-codex-0.9.1.tgz
 ```
 
 `npm pack` runs `scripts/prepare_npm_package.mjs`. It verifies catalog hashes,
@@ -69,7 +69,7 @@ After explicit publication authorization, an npm maintainer with access to the
 `@rqzhu-aide` scope can publish the exact reviewed tarball under `next`:
 
 ```sh
-npm publish rqzhu-aide-model-forge-codex-0.9.0.tgz --access public --tag next
+npm publish rqzhu-aide-model-forge-codex-0.9.1.tgz --access public --tag next
 ```
 
 The prerelease launch command then becomes:
@@ -78,7 +78,7 @@ The prerelease launch command then becomes:
 npx @rqzhu-aide/model-forge-codex@next web
 ```
 
-Publishing under `next` leaves `latest` unchanged. Verify the published version,
-dist-tag, integrity, and launch command from a fresh user environment. GitHub
+Keep `latest` reserved for a formal release. Verify the published version,
+distribution tags, integrity, and launch command from a fresh user environment. GitHub
 pushes, tags, releases, and npm publication are separate actions. Use the
 reviewed artifact for any GitHub release attachment as well.

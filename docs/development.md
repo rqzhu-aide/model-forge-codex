@@ -18,7 +18,7 @@ node web/scripts/vite.mjs build
 python -B scripts/run_from_source.py
 ```
 
-This checks out the development branch. To use the released source instead, add `--branch v0.9.0` to the clone command. Python installation includes the backend and development dependencies. Use `python3` or `py -3` consistently if that selects your shared Python. On systems that prohibit `--user`, use the supported shared installation method.
+This checks out the development branch. To use the original 0.9.0 release source instead, add `--branch v0.9.0` to the clone command. Python installation includes the backend and development dependencies. Use `python3` or `py -3` consistently if that selects your shared Python. On systems that prohibit `--user`, use the supported shared installation method.
 
 The launcher opens `http://127.0.0.1:8766` and uses `~/.model-forge-codex` by default. For development, choose a separate research folder outside the repository with `--data-root PATH`. Keep the terminal open; finish or cancel research before using Ctrl+C. Stop the source service before updating its checkout, then rebuild and restart.
 

@@ -1,4 +1,7 @@
-# Implementation status for 0.9.0
+# Implementation status for 0.9.1
+
+Version 0.9.1 updates the documentation from 0.9.0. Application behavior,
+workflow catalog, and scientific verification limits are unchanged.
 
 This prerelease provides the five researcher-directed phases described in the
 [architecture guide](README.md). The pinned workflow catalog is 1.26.0:

@@ -5,7 +5,7 @@ models, and algorithms. A Research Lead, Theorist, Data Analyst, and Outside
 Reviewer produce structured research that the application presents as concise
 cards and a technical report. The researcher chooses which phase to run.
 
-Application **0.9.0** uses workflow catalog **1.26.0**. Application releases,
+Application **0.9.1** uses workflow catalog **1.26.0**. Application releases,
 project workflow adoption, and scientific publications are separate versions.
 An existing project keeps its catalog and historical results until an explicit
 update or new run. Application updates do not rewrite past research.
