@@ -1,18 +1,46 @@
 # Development and verification
 
-Use the [source installation steps](../README.md#source-checkout) and existing shared Python 3.11+ and Node.js 22+ installations. Install packages user-wide or machine-wide. Do not create a `.venv`, `.Rlib`, project-local `node_modules`, or a private copy of a runtime or development tool.
+Use existing shared Python 3.11+ and Node.js 22+ installations. Install packages user-wide or machine-wide. Do not create a `.venv`, `.Rlib`, project-local `node_modules`, or a private copy of a runtime or development tool. The [README](../README.md#install-and-use) covers the recommended npm installation.
 
 If a restricted terminal cannot access an existing shared installation, verify it through a normal-access check before treating it as missing. Set `MF_SHARED_NODE_MODULES` to the intended global package directory when automatic discovery selects the wrong installation.
 
-## Python development dependencies
+## Source checkout
 
-From the repository root, install the development extras into the same shared Python:
+Install Git and the shared runtimes above, then run:
 
 ```text
+git clone https://github.com/rqzhu-aide/model-forge-codex.git
+cd model-forge-codex
+python -m pip install --user "setuptools>=68" wheel
 python -m pip install --user --no-build-isolation ".[dev]"
+npm install --global react@18.3.1 react-dom@18.3.1 katex@0.18.7 vite@5.4.11 @vitejs/plugin-react@4.3.4
+node web/scripts/vite.mjs build
+python -B scripts/run_from_source.py
 ```
 
-The build requires shared `setuptools>=68`, as described in the README. On systems that prohibit `--user`, use the supported shared installation method.
+This checks out the development branch. To use the released source instead, add `--branch v0.9.0` to the clone command. Python installation includes the backend and development dependencies. Use `python3` or `py -3` consistently if that selects your shared Python. On systems that prohibit `--user`, use the supported shared installation method.
+
+The launcher opens `http://127.0.0.1:8766` and uses `~/.model-forge-codex` by default. For development, choose a separate research folder outside the repository with `--data-root PATH`. Keep the terminal open; finish or cancel research before using Ctrl+C. Stop the source service before updating its checkout, then rebuild and restart.
+
+Use the same data folder and port with these commands:
+
+```text
+python -B scripts/run_from_source.py status
+python -B scripts/run_from_source.py stop
+```
+
+Both launchers accept `--port NUMBER` and `--no-open`. The source launcher uses the Python that invokes it; the packaged launcher accepts `--python PATH` or `MF_PYTHON`.
+
+## Prepared release tarball
+
+Download `rqzhu-aide-model-forge-codex-0.9.0.tgz` and `SHA256SUMS.txt` from the [GitHub prerelease](https://github.com/rqzhu-aide/model-forge-codex/releases/tag/v0.9.0), verify the tarball checksum, then run from the download folder:
+
+```text
+python -m pip install --user "fastapi>=0.115" "uvicorn>=0.30" "jsonschema>=4.20" "httpx>=0.27" "openai-codex>=0.147,<0.148"
+npm exec --yes --package ./rqzhu-aide-model-forge-codex-0.9.0.tgz -- model-forge-codex web
+```
+
+The tarball includes the built interface and mathematics tools. It needs no frontend build packages. Application snapshots live in `~/.model-forge-codex-app/releases`, separately from research and settings. They contain application code, not private runtime installations. Starting the same release reuses its running service. Switching releases stops an idle earlier service; active research must finish or be cancelled first.
 
 ## Run development servers
 
