@@ -82,7 +82,7 @@ After explicit publication authorization, an npm maintainer with access to the
 `@rqzhu-aide` scope can publish the exact reviewed tarball under `next`:
 
 ```sh
-npm publish dist/rqzhu-aide-model-forge-codex-0.9.2.tgz --access public --tag next
+npm publish ./dist/rqzhu-aide-model-forge-codex-0.9.2.tgz --access public --tag next
 ```
 
 The prerelease launch command then becomes:
