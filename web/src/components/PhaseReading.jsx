@@ -1,6 +1,6 @@
 import React, { useId, useState } from "react";
 import { ResearchDocument, SourceRef, MethodStatusNote } from "./Shared";
-import { ActionButton, ActionIcon } from "./Visuals";
+import { ActionButton, ActionIcon, EmptyState } from "./Visuals";
 import { hasExactRef, humanLabel, sameRef, scoped } from "../research";
 import { researchDocumentContent, researchDocumentTitle, retainedReviewNote } from "../researchContent";
 import TheoryWorkbench from "./TheoryWorkbench";
@@ -29,7 +29,7 @@ export function PhaseOverview({ phase, decision, summaries = [], methodLabel, re
   return <section className="card phase-overview" data-card-role="summary"><div className="card-heading"><h2>{title}</h2></div><div className="body">
     {methodLabel && <p className="note">Model: {methodLabel}</p>}
     {phase === "P3" && decision && account && <p className="note">Research Lead assessment</p>}
-    {account ? <ResearchDocument text={account} /> : <p className="note">{phase === "P3" ? "No theoretical account has been completed for this model yet." : "No technical report account has been completed for this model yet."}</p>}
+    {account ? <ResearchDocument text={account} /> : <EmptyState><p className="note">{phase === "P3" ? "No theoretical account has been completed for this model yet." : "No technical report account has been completed for this model yet."}</p></EmptyState>}
     {decision?.fundamental_contribution && <section><h3>Contribution</h3><ResearchDocument text={decision.fundamental_contribution} /></section>}
     {decision?.principal_uncertainty && <section><h3>Main uncertainty</h3><ResearchDocument text={decision.principal_uncertainty} /></section>}
     {decision?.principal_risk && <section><h3>Main risk or limitation</h3><ResearchDocument text={decision.principal_risk} /></section>}
@@ -42,8 +42,30 @@ export function PhaseOverview({ phase, decision, summaries = [], methodLabel, re
   </div></section>;
 }
 
+function scientificDocumentLink(document, onSource) {
+  if ((document.phase || document.generation_ref?.phase) !== "P3") return undefined;
+  return (source, label) => {
+    if (/^(?:https?:\/\/|\/api\/|#)/i.test(source)) return null;
+    const separator = source.indexOf("#");
+    const uri = separator < 0 ? source : source.slice(0, separator);
+    const fragment = separator < 0 ? "" : source.slice(separator + 1);
+    const matches = (document.inline_sources || []).filter((item) => item.uri === uri);
+    const target = matches.length === 1 ? matches[0] : null;
+    if (target?.source_verified === true && !target.source_error) {
+      if (hasExactRef(target.generation_ref) && (!fragment || fragment.startsWith("/"))) {
+        const reference = { ...target.generation_ref, ...(fragment ? { entry_pointer: fragment } : {}) };
+        return <SourceRef reference={reference} onOpen={onSource} label={label} />;
+      }
+      if (/^\/api\//.test(target.artifact_url || "")) return <a className="source-link ui-action" data-action="source" data-ui-role="system" href={target.artifact_url + (fragment ? `#${fragment}` : "")} target="_blank" rel="noreferrer"><ActionIcon name="source" />{label}</a>;
+    }
+    return <span className="note">{label} (source unavailable)</span>;
+  };
+}
+
 export function ScientificDocuments({ documents = [], onSource, showRecordSource = true, empty = "No account has been recorded for this topic yet." }) {
-  return documents.length ? documents.map((doc, index) => <article className="scientific-block" key={`${doc.kind}:${doc.generation_ref?.generation_id || index}`}>
+  return documents.length ? documents.map((doc, index) => {
+    const link = scientificDocumentLink(doc, onSource);
+    return <article className="scientific-block" key={`${doc.kind}:${doc.generation_ref?.generation_id || index}`}>
     <h3>{researchDocumentTitle(doc) || humanLabel(doc.kind || "Research account")}</h3>
     {doc.method_status && <MethodStatusNote status={doc.method_status} onOpen={onSource} />}
     {doc.kind === "review_issue_ledger" && <p className="note">{retainedReviewNote}</p>}
@@ -51,11 +73,12 @@ export function ScientificDocuments({ documents = [], onSource, showRecordSource
     {doc.review_focus_error && <p className="note warn">{doc.review_focus_error}</p>}
     {doc.document_error && <p className="note warn">The full document could not be loaded. {doc.document_error}</p>}
     {["manuscript", "manuscript_candidate"].includes(doc.kind) && <ManuscriptMetadata document={doc} />}
-    {doc.primary_artifact_kind === "tex_source" ? <><p className="note">A rendered preview is unavailable for this saved TeX manuscript. Open the source to inspect the exact document.</p>{doc.source_text && <details className="research-details manuscript-tex-source"><summary>Inspect TeX source</summary><pre className="record">{doc.source_text}</pre></details>}</> : doc.primary_artifact_kind === "pdf" && doc.primary_artifact_url ? <iframe className="manuscript-pdf-preview" title={`${researchDocumentTitle(doc) || "Manuscript"} PDF preview`} src={doc.primary_artifact_url} loading="lazy" /> : <ResearchDocument text={researchDocumentContent(doc)} />}
-    {doc.kind === "analyst_audit" && ["pdf", "tex_source"].includes(doc.primary_artifact_kind) && <ResearchDocument text={researchDocumentContent(doc)} />}
+    {doc.primary_artifact_kind === "tex_source" ? <><p className="note">A rendered preview is unavailable for this saved TeX manuscript. Open the source to inspect the exact document.</p>{doc.source_text && <details className="research-details manuscript-tex-source"><summary>Inspect TeX source</summary><pre className="record">{doc.source_text}</pre></details>}</> : doc.primary_artifact_kind === "pdf" && doc.primary_artifact_url ? <iframe className="manuscript-pdf-preview" title={`${researchDocumentTitle(doc) || "Manuscript"} PDF preview`} src={doc.primary_artifact_url} loading="lazy" /> : <ResearchDocument text={researchDocumentContent(doc)} renderSourceLink={link} renderFileLink={link} />}
+    {doc.kind === "analyst_audit" && ["pdf", "tex_source"].includes(doc.primary_artifact_kind) && <ResearchDocument text={researchDocumentContent(doc)} renderSourceLink={link} renderFileLink={link} />}
     <div className="btnrow">{showRecordSource && <SourceRef reference={doc.generation_ref} onOpen={onSource} />}{doc.primary_artifact_url && <a className="source-link ui-action" href={doc.primary_artifact_url} target="_blank" rel="noreferrer"><ActionIcon name="source" />{doc.primary_artifact_kind === "tex_source" ? "Open TeX source" : doc.primary_artifact_media_type === "application/pdf" || doc.primary_artifact_kind === "pdf" ? "Open manuscript PDF" : "Open original document"}</a>}</div>
     {doc.supplementary_artifacts?.length > 0 && <details className="research-details manuscript-supplements"><summary>Sources and supplements</summary>{doc.supplementary_artifacts.map((artifact, index) => <div key={index}>{artifact.artifact_url ? <a className="source-link ui-action" href={artifact.artifact_url} target="_blank" rel="noreferrer"><ActionIcon name="source" />{artifact.label || artifact.title || artifact.path || artifact.artifact_id || "Open supplement"}</a> : <p className="note warn">{artifact.label || artifact.title || artifact.path || artifact.artifact_id || "Supplement"}: {artifact.source_error || "This retained supplement is unavailable."}</p>}</div>)}</details>}
-  </article>) : <p className="note">{empty}</p>;
+  </article>;
+  }) : <p className="note">{empty}</p>;
 }
 
 export function ManuscriptMetadata({ document }) {

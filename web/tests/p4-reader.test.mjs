@@ -29,6 +29,16 @@ const request = { request_id: "direction.one", revision: 1, question: "Which tra
 const saved = { request_id: request.request_id, request_revision: request.revision, revision: 2, note: "Preserve the estimand and compare both methods.", applied_to: [] };
 const pauseProps = { projectId: "p", run: { run_id: "r", state: "awaiting_user", p4_progress: progress }, request };
 
+test("question source control names the declared full Analyst account while preserving authored shorthand", () => {
+  const value = { ...question, result: { ...question.result, has_full_analyst_account: true, comparison_markdown: "Full Q4." } };
+  const before = structuredClone(value);
+  const html = render.render({ ...props, questions: [value] });
+  assert.match(html, /Open full Analyst account/);
+  assert.match(html, /Full Q4\./);
+  assert.deepEqual(value, before);
+  assert.doesNotMatch(render.render(props), /Open full Analyst account/);
+});
+
 test("P4 owns three evidence cards and a single scientific tab layer with complete result blocks", () => {
   const html = render.render(props);
   for (const text of ["Summary", "Experiments and Results", "Error decreases by 0.2", "Mean error", "Proposed", "Baseline", "Matched seeds", "difference interval", "One numerical failure", "Recorded case outcomes: 10 completed, 1 failed and 0 not run, from 11 planned.", "accuracy gain needs a larger cost study", "Open original table", "Lead: the intended tradeoff", "Theorist: finite sample checks"]) assert.ok(html.includes(text), text);
@@ -147,6 +157,20 @@ test("P4 narrative sources require a unique declared digest and exact run and br
   assert.deepEqual(render.empiricalSource(uri, { ...sources, records: [], files: [relocated] }), { artifact_url: relocated.artifact_url });
   assert.deepEqual(render.empiricalSource(uri, { ...sources, records: [], files: [file, relocated] }), { artifact_url: file.artifact_url });
   assert.equal(render.empiricalSource(uri, { ...sources, records: [], files: [{ ...relocated, producing_run_id: "run.other" }] }), null);
+});
+
+test("P4 narrative run locators consume verified retained-source bindings without source_artifacts", () => {
+  const uri = `run://${ref.run_id}/outputs/p4.analyst/working/data_analyst/analyst_text.json`;
+  const file = { uri, sha256: "e".repeat(64), branch: ref.branch, producing_run_id: ref.run_id, source_verified: true, artifact_url: "/api/v1/exact-primary?sha256=" + "e".repeat(64) };
+  const summary = { branch: ref.branch, generation_ref: { ...ref, family: "empirical_synthesis" }, run_sources: [file], decision_summary: { implementation_markdown: `[Analyst's full account](${uri}) and [unbound](run://${ref.run_id}/outputs/p4.analyst/private.json).` } };
+  const input = { ...props, summaries: [summary] }, before = JSON.stringify(input);
+  const html = render.render(input);
+  assert.match(html, /href="\/api\/v1\/exact-primary\?sha256=e{64}"[^>]*>[\s\S]*?Analyst&#x27;s full account/);
+  assert.doesNotMatch(html, /full account \(source unavailable\)/);
+  assert.match(html, /unbound \(source unavailable\)/);
+  assert.equal(JSON.stringify(input), before);
+  assert.equal(render.empiricalSource(uri, { branch: "method.other", files: [file] }), null);
+  assert.equal(render.empiricalSource(uri, { branch: ref.branch, files: [{ ...file, source_verified: false }] }), null);
 });
 
 test("Setup preserves the scientific protocol, including exact numerical and boolean settings", () => {

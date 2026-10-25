@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
+import re
 from pathlib import Path
 from urllib.parse import quote, urlencode
 
@@ -89,6 +90,248 @@ def artifact_link(project_dir: Path, ref: dict, pointer: dict) -> dict:
             except ArtifactError:
                 pass
         return {"source_error": "The exact retained file is missing or its bytes no longer match the recorded digest."}
+
+
+def empirical_run_sources(project_dir: Path, document: dict, meta: dict, records: dict) -> list[dict]:
+    """Bind narrative run locators only to this publication's declared bytes."""
+    from .records import _segment
+    from .research import _same_evaluation
+
+    requested = set(re.findall(r"run://[A-Za-z0-9._-]+/[^\s)\"<>\\#]+", json.dumps(document)))
+    ref = meta["generation_ref"]
+    if not requested or not ref.get("run_id"):
+        return []
+    run_dir = project_dir / "runs" / _segment(ref["run_id"])
+    run = read_json(run_dir / "run.json") or {}
+    if (run.get("state") != "published" or run.get("branch_id") != ref.get("branch")
+            or run.get("phase") != "P4" or ref.get("phase") != "P4"):
+        return []
+    outputs = (run_dir / "outputs").resolve()
+    links, seals = {}, {}
+
+    def bind(target, digest, declared_uri=None):
+        target = target.resolve()
+        if not target.is_relative_to(outputs) or not target.is_file():
+            return
+        relative = target.relative_to(outputs)
+        if len(relative.parts) < 2:
+            return
+        uris = {f"run://{ref['run_id']}/outputs/{relative.as_posix()}",
+                f"run://{ref['run_id']}/{relative.as_posix()}"}
+        # A declared working-file alias may omit its retained working/role
+        # directories, but cannot select a different run or producing stage.
+        if isinstance(declared_uri, str):
+            alias = re.fullmatch(r"run://([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+)/(.+)", declared_uri)
+            if (alias and alias[1] == ref["run_id"] and alias[2] == relative.parts[0]
+                    and "\\" not in alias[3] and all(part not in ("", ".", "..") for part in alias[3].split("/"))):
+                uris.add(declared_uri)
+        selected = uris & requested
+        if not selected or sha256_file(target) != digest:
+            return
+        query = urlencode({"path": Path(*relative.parts[1:]).as_posix(), "sha256": digest})
+        for uri in sorted(selected):
+            links[uri] = {"uri": uri, "sha256": digest, "branch": ref["branch"], "producing_run_id": ref["run_id"],
+                          "source_verified": True, "media_type": file_media(target),
+                          "artifact_url": f"/api/v1/projects/{quote(project_dir.name)}/runs/{quote(ref['run_id'])}/outputs/{quote(relative.parts[0])}/artifact?{query}"}
+
+    for source, source_meta in records.values():
+        if not _same_evaluation(meta, source_meta):
+            continue
+        source_ref = source_meta["generation_ref"]
+        stage_id = source_ref.get("stage_id")
+        if stage_id:
+            stage = outputs / _segment(stage_id)
+            if stage_id not in seals:
+                seals[stage_id] = (read_json(stage / "seal.json") or {}).get("outputs", {})
+            for name, sealed in seals[stage_id].items():
+                if not isinstance(sealed, dict) or sealed.get("sha256") != source_ref.get("sha256"):
+                    continue
+                target = (stage / name).resolve()
+                if target.is_relative_to(stage):
+                    bind(target, source_ref["sha256"])
+        if not isinstance(source, dict):
+            continue
+        declared = {key: source.get(key) for key in ("representations", "source_registry", "source_artifacts", "reproduction")}
+        for pointer in walk_objects(declared):
+            digest = pointer.get("sha256") or pointer.get("artifact_sha256")
+            if not digest:
+                continue
+            # Audit registries declare exact run locators with a filename and
+            # digest, rather than an artifact-relative path. Keep that locator
+            # authoritative instead of searching other roles for its filename.
+            uri = pointer.get("uri")
+            locator = re.fullmatch(r"run://([A-Za-z0-9._-]+)/outputs/(.+)", uri) if isinstance(uri, str) else None
+            if pointer.get("filename") and locator and locator[1] == ref["run_id"]:
+                parts = locator[2].split("/")
+                if "\\" not in locator[2] and all(part not in ("", ".", "..") for part in parts):
+                    bind(outputs.joinpath(*parts), digest)
+            if not (pointer.get("path") or pointer.get("artifact_path")):
+                continue
+            try:
+                target = source_artifact_path(project_dir, source_ref, pointer)
+                bind(target, digest, pointer.get("uri"))
+            except (ArtifactError, OSError, ValueError):
+                continue
+    # Upstream links are eligible only when their exact generation was frozen
+    # into this evaluation. A later publication never supplies a substitute.
+    from .research import source_ref
+    from .technical_reports import resolve_report_source
+    basis = read_json(run_dir / "basis.json") or {}
+    for uri in sorted(requested - links.keys()):
+        locator = re.fullmatch(r"run://([A-Za-z0-9._-]+)/(?:outputs/)?([A-Za-z0-9._-]+)/([^/]+)", uri)
+        family_locator = re.fullmatch(r"run://([A-Za-z0-9._-]+)/(p[1-5])\.([A-Za-z0-9._-]+)", uri)
+        if not locator and not family_locator:
+            continue
+        candidates = []
+        for source in basis.get("records", []):
+            if not isinstance(source, dict) or source.get("run_id") != (locator or family_locator)[1]:
+                continue
+            if locator:
+                if source.get("stage_id") != locator[2]:
+                    continue
+                stage = project_dir / "runs" / source["run_id"] / "outputs" / locator[2]
+                sealed = (read_json(stage / "seal.json") or {}).get("outputs", {}).get(locator[3]) or {}
+                if sealed.get("sha256") != source.get("content_sha256"):
+                    continue
+            elif source.get("phase", "").lower() != family_locator[2] or source.get("family") != family_locator[3]:
+                continue
+            candidates.append(source)
+        if locator:
+            # Publication can retain both complete_theory and its promoted
+            # theory_record alias with identical bytes. The explicit filename
+            # selects the original family, not whichever alias is current.
+            named = [source for source in candidates
+                     if locator[3] == source.get("family", "") + (".jsonl" if source.get("format") == "jsonl" else ".json")]
+            if named:
+                candidates = named
+        if len(candidates) != 1:
+            continue
+        source = candidates[0]
+        try:
+            snapshot = Path(source.get("snapshot_path") or "").resolve()
+            if not snapshot.is_relative_to((run_dir / "inputs").resolve()):
+                continue
+            source_run = read_json(project_dir / "runs" / _segment(source["run_id"]) / "run.json") or {}
+            if (source_run.get("state") != "published" or source_run.get("branch_id") != source.get("branch")
+                    or source_run.get("phase") != source.get("phase")):
+                continue
+            resolve_report_source(source, basis)
+            phase_dir = project_dir / "branches" / _segment(source["branch"]) / "phases" / _segment(source["phase"]).lower()
+            read_generation(phase_dir, source["family"], source)
+            reference = source_ref(source["branch"], source["phase"], source["family"], source)
+            links[uri] = {"uri": uri, "sha256": reference["sha256"], "branch": ref["branch"],
+                          "producing_run_id": source["run_id"], "source_verified": True,
+                          "generation_ref": reference}
+        except (ArtifactError, OSError, ValueError, KeyError):
+            continue
+    declared_digests = {}
+    for source, source_meta in records.values():
+        if not _same_evaluation(meta, source_meta) or not isinstance(source, dict):
+            continue
+        for pointer in walk_objects(source):
+            uri, digest = pointer.get("uri"), pointer.get("sha256") or pointer.get("artifact_sha256")
+            if isinstance(uri, str) and digest:
+                declared_digests.setdefault(uri, set()).add(digest)
+    return [link for uri, link in links.items()
+            if not declared_digests.get(uri) or declared_digests[uri] == {link["sha256"]}]
+
+
+def scientific_document_sources(project_dir: Path, document: dict, meta: dict, text: str) -> list[dict]:
+    """Bind P3 narrative links to this publication's sealed or frozen bytes."""
+    from .records import _segment
+    from .research import source_ref
+    from .technical_reports import resolve_report_source
+
+    ref = meta["generation_ref"]
+    if ref.get("phase") != "P3" or not ref.get("run_id"):
+        return []
+    run_id = _segment(ref["run_id"])
+    run_dir = project_dir / "runs" / run_id
+    run = read_json(run_dir / "run.json") or {}
+    if (run.get("state") != "published" or run.get("branch_id") != ref.get("branch")
+            or run.get("phase") != ref["phase"]):
+        return []
+    requested = {source.split("#", 1)[0] for source in re.findall(
+        r"(?<!!)\[[^\]\n]+\]\(([^\s)]+)\)", text + "\n" + json.dumps(document))}
+    if not requested:
+        return []
+    basis = read_json(run_dir / "basis.json") or {}
+
+    def relative_path(value):
+        if not isinstance(value, str) or not value or re.match(r"(?:[a-z][a-z\d+.-]*:|[/\\])", value, re.I) or "\\" in value:
+            return None
+        parts = value.split("/")
+        if ".." in parts or "" in parts:
+            return None
+        return "/".join(part for part in parts if part != ".") or None
+
+    # Repeated declarations of the same bytes are harmless. Conflicting aliases
+    # remain ambiguous even if one of their declared files is now unavailable.
+    aliases = {}
+    for pointer in walk_objects(document):
+        path = pointer.get("path") or pointer.get("artifact_path")
+        digest = pointer.get("sha256") or pointer.get("artifact_sha256")
+        if not relative_path(path) or not re.fullmatch(r"[a-f0-9]{64}", digest or ""):
+            continue
+        authored = authored_pointer(pointer)
+        for alias in {pointer.get("uri"), relative_path(path)} - {None}:
+            aliases.setdefault(alias, {})[(path, digest)] = authored
+
+    links = []
+    for uri in sorted(requested):
+        match = re.fullmatch(r"run://([A-Za-z0-9][A-Za-z0-9._-]*)/outputs/([A-Za-z0-9][A-Za-z0-9._-]*)/(.+)", uri)
+        if match:
+            source_run, stage_id, name = match.groups()
+            if source_run != run_id or relative_path(name) != name:
+                continue
+            stage = (run_dir / "outputs" / stage_id).resolve()
+            if not stage.is_relative_to((run_dir / "outputs").resolve()):
+                continue
+            seal = read_json(stage / "seal.json") or {}
+            sealed = seal.get("outputs", {}).get(name) or {}
+            digest = sealed.get("sha256")
+            target = (stage / name).resolve()
+            if (seal.get("stage_id") != stage_id or not re.fullmatch(r"[a-f0-9]{64}", digest or "")
+                    or not target.is_relative_to(stage.resolve()) or not target.is_file() or sha256_file(target) != digest):
+                continue
+            query = urlencode({"path": name, "sha256": digest})
+            links.append({"uri": uri, "sha256": digest, "source_verified": True, "media_type": file_media(target),
+                          "artifact_url": f"/api/v1/projects/{quote(project_dir.name)}/runs/{quote(run_id)}/outputs/{quote(stage_id)}/artifact?{query}"})
+        elif uri.startswith("generation://"):
+            generation = uri[len("generation://"):]
+            candidates = [row for row in basis.get("records", []) if row.get("generation_id") == generation]
+            if len(candidates) != 1:
+                continue
+            source = candidates[0]
+            try:
+                snapshot = Path(source.get("snapshot_path") or "").resolve()
+                if not snapshot.is_relative_to((run_dir / "inputs").resolve()):
+                    continue
+                resolve_report_source(source, basis)
+                phase_dir = project_dir / "branches" / _segment(source["branch"]) / "phases" / _segment(source["phase"]).lower()
+                read_generation(phase_dir, source["family"], source)
+                links.append({"uri": uri, "source_verified": True,
+                              "generation_ref": source_ref(source["branch"], source["phase"], source["family"], source)})
+            except (ArtifactError, OSError, ValueError, KeyError):
+                continue
+        else:
+            alias = uri if uri.startswith("artifact://") else relative_path(uri)
+            if uri.startswith("run://"):
+                # Stage-form run URIs need an exact declared alias, not a
+                # guessed filename or a source from another producing run.
+                declared = re.fullmatch(r"run://([A-Za-z0-9][A-Za-z0-9._-]*)/([A-Za-z0-9][A-Za-z0-9._-]*)/(.+)", uri)
+                if (not declared or declared[1] != run_id or declared[2] == "outputs"
+                        or relative_path(declared[3]) != declared[3]):
+                    continue
+                alias = uri
+            candidates = aliases.get(alias, {})
+            if len(candidates) != 1:
+                continue
+            pointer = next(iter(candidates.values()))
+            action = artifact_link(project_dir, ref, pointer)
+            if action.get("source_verified"):
+                links.append({**pointer, **action, "uri": uri})
+    return links
 
 
 def theory_statement_projection(project_dir: Path, ref: dict, statement: dict) -> dict:

@@ -17,6 +17,7 @@ import re
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
+from time import monotonic
 from typing import Any, Awaitable, Callable, Protocol
 
 from .domain import ThreadKey
@@ -87,6 +88,58 @@ class BridgeUnavailable(RuntimeError):
     pass
 
 
+async def check_p4_windows_runtime(workspace: Path) -> dict:
+    """Read the numerical child's selected setup without a model or setup call.
+
+    A fresh app-server is deliberate: native readiness belongs to its startup
+    config, whereas a cached member client can precede a researcher config edit.
+    The numerical child uses the same shared CLI, CODEX_HOME and working tree.
+    """
+    if os.name != "nt":
+        return {"status": "not_required"}
+    from openai_codex import AsyncCodex, CodexConfig
+    from openai_codex.generated.v2_all import ConfigReadResponse, WindowsSandboxReadinessResponse
+    from .accounts import find_codex
+    from .windows_runtime import P4WindowsSetupError, require_p4_windows_setup
+
+    runtime_home, overrides = runtime_settings(Path(workspace))
+    # Reuse the installed runtime's index, as the disposable connection probe
+    # does. No isolated member database or native sandbox identity is created.
+    overrides = tuple(value for value in overrides if not value.startswith("sqlite_home="))
+    process_cwd = Path(workspace).resolve()
+    if not process_cwd.is_dir():
+        raise P4WindowsSetupError("The empty managed P4 workspace must exist before its selected Windows sandbox setup can be checked.")
+    executable = find_codex()
+    if not executable:
+        raise P4WindowsSetupError("Managed P4 experiments require the shared Codex CLI; repair its shared installation before continuing P4.")
+    client = AsyncCodex(CodexConfig(codex_bin=executable,
+        env={**os.environ, "CODEX_HOME": str(runtime_home)},
+        config_overrides=overrides, cwd=str(process_cwd)))
+    try:
+        async with asyncio.timeout(20):
+            await client._ensure_initialized()
+            response = await client._client.request("config/read",
+                {"cwd": str(process_cwd), "includeLayers": False}, response_model=ConfigReadResponse)
+            readiness = await client._client.request("windowsSandbox/readiness", None,
+                response_model=WindowsSandboxReadinessResponse)
+            return require_p4_windows_setup(response.config.model_dump(mode="json", exclude_none=True),
+                                            readiness.status.value)
+    except P4WindowsSetupError:
+        raise
+    except TimeoutError as exc:
+        raise P4WindowsSetupError("The Windows sandbox setup check timed out before managed P4 work. Repair the shared Codex runtime before continuing P4.") from exc
+    except Exception as exc:
+        raise P4WindowsSetupError(
+            "The selected Windows sandbox setup could not be checked for managed P4 experiments. "
+            f"Restore the shared Codex runtime before continuing P4: {exc}"
+        ) from exc
+    finally:
+        try:
+            await asyncio.wait_for(client.close(), timeout=5)
+        except Exception as exc:
+            raise P4WindowsSetupError("The Windows P4 setup-check client could not close. Repair the shared Codex runtime before continuing P4.") from exc
+
+
 CAPACITY_FAILURE = "Selected model is at capacity. Please try a different model."
 
 
@@ -95,12 +148,33 @@ def is_capacity_failure(message: str | None) -> bool:
     return message in (CAPACITY_FAILURE, "Error running remote compact task: " + CAPACITY_FAILURE)
 
 
+def rejected_input_limit(message: str | None) -> int | None:
+    """A specific JSON-RPC validation rejection, before a turn is accepted."""
+    match = re.fullmatch(r"JSON-RPC error -32602: Input exceeds the maximum length of ([1-9][0-9]*) characters\.", message or "")
+    return int(match[1]) if match else None
+
+
+def is_activity_log_failure(message: str | None, events_path: Path) -> bool:
+    """Recognize only denied appends to this run's local activity log."""
+    return message == str(PermissionError(13, "Permission denied", str(events_path)))
+
+
 class TerminalTurnFailure(RuntimeError):
     """A failed member turn whose terminal event was actually received."""
 
     def __init__(self, message):
         super().__init__(message)
         self.code = "provider.capacity" if is_capacity_failure(message) else "provider.turn_failed"
+
+
+def _resume_response_model():
+    """Validate the acknowledgement without decoding unused historical items."""
+    from pydantic import Field, StrictStr, create_model
+    from openai_codex.generated.v2_all import ThreadResumeResponse
+
+    identity = create_model("ResumedThreadIdentity", id=(StrictStr, Field(min_length=1)))
+    return create_model("ThreadResumeAcknowledgement", __base__=ThreadResumeResponse,
+                        thread=(identity, ...))
 
 
 def _progress_command(command: str) -> str:
@@ -258,6 +332,10 @@ class SdkCodexBridge:
         self._stop_timeout = 15
         self._probe_cleanup_timeout = 5
         self._native_launches: dict[int, dict] = {}
+        self._native_preflight_lock = asyncio.Lock()
+
+    async def check_p4_runtime(self, workspace: Path) -> dict:
+        return await check_p4_windows_runtime(workspace)
 
     async def _client(self, member_home: Path, *, execution: dict | None = None, workspace_root=None):
         cache_key = (member_home, provider_fingerprint(execution)) if execution else member_home
@@ -284,6 +362,13 @@ class SdkCodexBridge:
         from openai_codex import AsyncCodex, CodexConfig
 
         runtime_home, runtime_overrides = runtime_settings(member_home)
+        if runtime_home != member_home and workspace_root is not None and len(str(member_home / "state")) > 228:
+            # SQLite still has Windows MAX_PATH limits. Leave 32 characters
+            # for database/journal names; the existing member scratch root is
+            # short, stable and separate for each isolated conversation.
+            state_home = json.dumps(str((workspace_root / "state").resolve()), ensure_ascii=False)
+            runtime_overrides = tuple(f"sqlite_home={state_home}" if value.startswith("sqlite_home=") else value
+                                      for value in runtime_overrides)
         if probe:
             if runtime_home != member_home:
                 # Fresh sqlite_home databases backfill every shared rollout at
@@ -360,8 +445,8 @@ class SdkCodexBridge:
 
         The high-level SDK convenience methods discard this response. This
         typed adapter uses the same transport, then returns its normal thread.
-        It is covered against the installed openai-codex 0.147 typed parameters;
-        those tests do not substitute for live provider acceptance.
+        Resume validates the settings and thread identity, not unused historical
+        item variants added by a newer shared CLI. Stored history is unchanged.
         """
         from openai_codex import AsyncThread, ApprovalMode, __version__
         from openai_codex._approval_mode import _approval_mode_override_settings
@@ -406,7 +491,12 @@ class SdkCodexBridge:
                                    else [validation_tool_spec(), *([p4_checkpoint_tool_spec()] if execution and execution.get("p4_managed_execution") else []), *(tool_specs() if kimi_web else [])])
             response = await client._client.request("thread/start", raw, response_model=ThreadStartResponse)
         else:
-            response = await client._client.thread_resume(thread_id, ThreadResumeParams(thread_id=thread_id, **settings))
+            parameters = ThreadResumeParams(thread_id=thread_id, **settings)
+            response = await client._client.request(
+                "thread/resume", parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
+                response_model=_resume_response_model())
+            if response.thread.id != thread_id:
+                raise BridgeUnavailable("Codex acknowledged a different member thread when resuming.")
         thread = AsyncThread(client, response.thread.id)
         self._thread_tools[thread.id] = self._client_tools[id(client)]
         if record:
@@ -475,31 +565,56 @@ class SdkCodexBridge:
         except Exception as exc:
             if execution:
                 from openai_codex import CodexRpcError
+                from pydantic import ValidationError
                 text = str(exc).lower()
                 if isinstance(exc, CodexRpcError) and ("thread" in text or "rollout" in text) and any(term in text for term in ("not found", "unknown", "does not exist", "no rollout found")):
                     return False
-                raise BridgeUnavailable("Codex could not apply this member's execution settings or resume its thread.") from None
+                if isinstance(exc, BridgeUnavailable):
+                    raise
+                if isinstance(exc, ValidationError):
+                    reason = "The thread-resume acknowledgement did not match the supported SDK schema (ValidationError)."
+                elif isinstance(exc, CodexRpcError) and "already has an active writer" in text:
+                    reason = "The member thread already has an active writer; its existing owner must release it before resume."
+                else:
+                    reason = f"Codex could not apply this member's execution settings or resume its thread ({type(exc).__name__})."
+                raise BridgeUnavailable(reason) from None
             return False  # optional legacy bridge call, unknown/purged thread
         self._threads[str(thread_id)] = thread
         self._thread_homes[str(thread_id)] = member_home
         self._thread_work_roots[str(thread_id)] = work_root
         return True
 
-    async def confirm_capacity_failure(self, thread_id, turn_id, *, member_home, execution, workspace_root):
-        """Read an old receipt's exact terminal state without starting a turn."""
+    async def _read_retry_turn(self, thread_id, turn_id, *, member_home, execution, workspace_root):
+        """Read the receipt's exact latest turn without starting any work."""
         from openai_codex import AsyncThread
-        from openai_codex.generated.v2_all import TurnStatus
-        if not turn_id or thread_id in self._handles or thread_id in self._starting:
+        if not thread_id or not turn_id or thread_id in self._handles or thread_id in self._starting:
             raise BridgeUnavailable("The previous member turn is still active or unidentified.")
         client = await self._client(member_home, execution=execution, workspace_root=workspace_root)
         response = await asyncio.wait_for(AsyncThread(client, thread_id).read(include_turns=True), timeout=20)
         turns = response.thread.turns
         latest = turns[-1] if turns else None
-        if (not latest or latest.id != turn_id or latest.status != TurnStatus.failed
+        if not latest or latest.id != turn_id:
+            raise BridgeUnavailable("The exact previous member turn is no longer the latest turn.")
+        return latest
+
+    async def confirm_capacity_failure(self, thread_id, turn_id, *, member_home, execution, workspace_root):
+        """Read an old receipt's exact terminal state without starting a turn."""
+        from openai_codex.generated.v2_all import TurnStatus
+        latest = await self._read_retry_turn(thread_id, turn_id, member_home=member_home, execution=execution, workspace_root=workspace_root)
+        if (latest.status != TurnStatus.failed
                 or not latest.error or not is_capacity_failure(latest.error.message)):
             raise BridgeUnavailable("The exact interrupted turn could not be confirmed as a stopped capacity failure.")
         self._quarantined.discard(thread_id)
         return {"turn_id": turn_id, "status": "failed", "failure_code": "provider.capacity", "confirmation": "app_server_read"}
+
+    async def confirm_activity_log_interruption(self, thread_id, turn_id, *, member_home, execution, workspace_root):
+        """A local log error is retryable only after the accepted turn stopped."""
+        from openai_codex.generated.v2_all import TurnStatus
+        latest = await self._read_retry_turn(thread_id, turn_id, member_home=member_home, execution=execution, workspace_root=workspace_root)
+        if latest.status != TurnStatus.interrupted:
+            raise BridgeUnavailable("The exact member turn could not be confirmed as interrupted after the local activity-log failure.")
+        self._quarantined.discard(thread_id)
+        return {"turn_id": turn_id, "status": "interrupted", "failure_code": "harness.activity_log", "confirmation": "app_server_read"}
 
     async def _stop_turn(self, thread_id, handle, collecting):
         """Confirm a terminal result before the engine releases thread ownership."""
@@ -551,6 +666,15 @@ class SdkCodexBridge:
             self._handles.pop(thread_id, None)
 
     async def check_native_tools(self, thread_id, workspace):
+        # Windows checks can concurrently refresh the same runtime's ACLs.
+        # Hold ownership through command completion and cleanup, while thread
+        # initialization and the subsequent research turns remain parallel.
+        if os.name == "nt":
+            async with self._native_preflight_lock:
+                return await self._check_native_tools(thread_id, workspace)
+        return await self._check_native_tools(thread_id, workspace)
+
+    async def _check_native_tools(self, thread_id, workspace):
         """No model turn: bounded command/write coverage on the initialized member client."""
         import time
         import uuid
@@ -790,12 +914,14 @@ class SdkCodexBridge:
         """Consume the turn stream, surfacing useful progress lines
         (commands run, files written, plans, searches) as heartbeats."""
         from openai_codex._run import _collect_async_turn_result
-        from openai_codex.generated.v2_all import TurnCompletedNotification, TurnStatus
+        from openai_codex.generated.v2_all import ThreadTokenUsageUpdatedNotification, TurnCompletedNotification, TurnStatus
 
         terminal_failure = None
+        usage_high_water = None
+        last_visible_activity = monotonic()
 
         async def tapped():
-            nonlocal terminal_failure
+            nonlocal terminal_failure, usage_high_water, last_visible_activity
             async for event in handle.stream():
                 payload = getattr(event, "payload", None)
                 if (isinstance(payload, TurnCompletedNotification) and payload.turn.id == handle.id
@@ -817,6 +943,18 @@ class SdkCodexBridge:
                 line = _summarize_notification(event)
                 if line:
                     heartbeat(line)
+                    last_visible_activity = monotonic()
+                elif (isinstance(payload, ThreadTokenUsageUpdatedNotification) and payload.turn_id == handle.id
+                      and payload.thread_id == getattr(handle, "thread_id", None)):
+                    total = payload.token_usage.total.total_tokens
+                    now = monotonic()
+                    # Native exec work can advance usage without an item event.
+                    # A first snapshot can include older turns; only a fresh
+                    # increase establishes activity, never tool completion.
+                    if usage_high_water is not None and total > usage_high_water and now - last_visible_activity >= 30:
+                        heartbeat("Member activity continued")
+                        last_visible_activity = now
+                    usage_high_water = max(usage_high_water, total) if usage_high_water is not None else total
                 yield event
 
         try:

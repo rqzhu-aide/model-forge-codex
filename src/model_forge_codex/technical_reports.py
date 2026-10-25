@@ -19,9 +19,11 @@ from pathlib import Path
 from .alignment import method_identity
 from .domain import Finding
 from .records import ArtifactError, committed_packages, read_generation
+from .report_boundaries import reference_boundary
 from .storage import read_json, sha256_bytes, sha256_file
 
 TECHNICAL_REPORT_CAPABILITY = "p5.technical_report.v1"
+READER_REPORT_CAPABILITY = "p5.reader_report.v1"
 REPORT_FAMILIES = ("technical_report", "technical_report_candidate")
 CONTENT_SECTIONS = ("problem", "model", "existing_approaches", "justification", "numerical_analysis", "limitations", "reproducibility")
 
@@ -30,6 +32,15 @@ def technical_report_enabled(catalog) -> bool:
     try:
         contract = read_json(catalog.root / "contracts/phases/P5.json") or {}
         return TECHNICAL_REPORT_CAPABILITY in contract.get("capabilities", [])
+    except (OSError, ValueError, TypeError, AttributeError):
+        return False
+
+
+def reader_report_enabled(catalog) -> bool:
+    """Read the capability from the run's captured catalog, including retries."""
+    try:
+        contract = read_json(catalog.root / "contracts/phases/P5.json") or {}
+        return READER_REPORT_CAPABILITY in contract.get("capabilities", [])
     except (OSError, ValueError, TypeError, AttributeError):
         return False
 
@@ -477,14 +488,20 @@ def derive_report_completion(document: dict, basis: dict, *, artifact_roots: dic
             "basis_scope": "Declared support and exact retained source integrity; scientific adequacy remains an expert judgment."}
 
 
-def validate_technical_report(outputs: dict, basis: dict, *, artifact_roots: dict | None = None, run_dir: Path | None = None) -> list[Finding]:
+def validate_technical_report(outputs: dict, basis: dict, *, artifact_roots: dict | None = None,
+                              run_dir: Path | None = None, reader_report: bool = False) -> list[Finding]:
     document = outputs.get("p5.technical_report_candidate")
     if not isinstance(document, dict):
         return []
     findings = []
     family = "p5.technical_report_candidate"
-    def issue(code, message, pointer=""):
-        findings.append(Finding(code, message, family, pointer))
+    def issue(code, message, pointer="", *, details=None):
+        findings.append(Finding(code, message, family, pointer, details=details or {}))
+    anchors = document.get("section_anchors")
+    declares_references = isinstance(anchors, dict) and "references" in anchors
+    if reader_report and not declares_references:
+        issue("report.references_boundary", "This captured report format requires section_anchors.references after all seven scientific sections",
+              "/section_anchors/references")
     for reason in report_assembly_readiness(basis):
         issue("report.assembly_basis", reason)
     if method_identity(document) != method_identity(basis.get("method")):
@@ -548,6 +565,11 @@ def validate_technical_report(outputs: dict, basis: dict, *, artifact_roots: dic
         try:
             primary = resolve_report_artifact(document.get("report_artifact") or {}, basis, roots=roots)
             text = primary.read_text(encoding="utf-8")
+            if declares_references:
+                try:
+                    reference_boundary(text, anchors, CONTENT_SECTIONS)
+                except ValueError as exc:
+                    issue("report.references_boundary", str(exc), "/section_anchors/references")
             for name in ("claims", "prose_values"):
                 for index, row in enumerate(_rows(document.get(name))):
                     if row.get("text") not in text or not row.get("anchor") or f'id="{row["anchor"]}"' not in text:
@@ -564,7 +586,25 @@ def validate_technical_report(outputs: dict, basis: dict, *, artifact_roots: dic
         if claim.get("support_route") == "established_result" and any(f"applicability check for {identifier}" in item for item in derived["missing_work"]):
             issue("report.cited_result_unchecked", "An established result needs its retained Theorist applicability check; unchecked conditions must remain qualified", f"/claims/{index}")
     if document.get("completion") and document["completion"] != derived:
-        issue("report.completion_mismatch", "Completion must equal the harness-derived support disposition; retain an interim report when work is missing", "/completion")
+        missing_work = "; ".join(derived["missing_work"]) or "None"
+        issue("report.completion_mismatch",
+              "Completion must equal the harness-derived support disposition. "
+              f"Expected status: {derived['status']}. Missing work: {missing_work}. "
+              "See details.expected_completion for the exact metadata; preserve unresolved scientific work honestly.",
+              "/completion", details={"expected_completion": derived})
+    if reader_report and roots and not findings:
+        # Validate the same linked documents and offline assets the researcher
+        # receives. A declared file's digest alone does not make its links work.
+        try:
+            export_roots = dict(artifact_roots or {})
+            if run_dir:
+                export_roots["retained_run"] = run_dir
+            export_technical_report(document, basis, generation_ref={}, artifact_roots=export_roots,
+                                    exported_at="", validate_materials=True)
+        except (ArtifactError, OSError, ValueError, UnicodeError, subprocess.TimeoutExpired) as exc:
+            issue("report.portable_unresolved",
+                  f"{exc}. Repair the owned report or declare its exact retained linked dependencies, refresh their digests, "
+                  "and call validate_artifacts again.", "/report_artifact")
     return findings
 
 
@@ -610,12 +650,17 @@ def completed_report_review_packets(project_dir: Path) -> list[dict]:
 
 
 def export_technical_report(document: dict, basis: dict, *, generation_ref: dict, artifact_roots: dict,
-                            exported_at: str, review_packets: list[dict] | None = None, node_executable: str | None = None) -> bytes:
+                            exported_at: str, review_packets: list[dict] | None = None, node_executable: str | None = None,
+                            print_material_id: str | None = None, validate_materials: bool = False) -> bytes:
     """Return standalone HTML from immutable bytes, with inline math and figures."""
     basis = report_context_basis(basis, document)
     roots = list(artifact_roots.values())
     primary = resolve_report_artifact(document.get("report_artifact") or {}, basis, roots=roots)
-    markdown = primary.read_text(encoding="utf-8")
+    markdown = primary.read_bytes().decode("utf-8") if validate_materials else primary.read_text(encoding="utf-8")
+    try:
+        reference_boundary(markdown, document.get("section_anchors") or {}, CONTENT_SECTIONS)
+    except ValueError as exc:
+        raise ArtifactError(str(exc)) from exc
     completion = derive_report_completion(document, basis, artifact_roots=artifact_roots)
     digest = sha256_file(primary)
     review_status = exact_report_review_status(document, generation_ref, review_packets)
@@ -625,7 +670,19 @@ def export_technical_report(document: dict, basis: dict, *, generation_ref: dict
     if not script.is_file():
         script = app_root / "web/scripts/export-report.mjs"
     report_pointer = document.get("report_artifact") or {}
+    materials = report_required_artifacts(document, basis)
+    if print_material_id is not None:
+        selected = [pointer for pointer in materials if pointer.get("artifact_id") == print_material_id]
+        if (not isinstance(print_material_id, str) or not print_material_id or len(selected) != 1
+                or print_material_id == report_pointer.get("artifact_id")):
+            raise ArtifactError("Choose one declared supplementary Markdown material for printing")
+        selected_path = resolve_report_artifact(selected[0], basis, roots=roots)
+        selected_media = selected[0].get("media_type") or mimetypes.guess_type(selected_path.name)[0]
+        if selected_media != "text/markdown":
+            raise ArtifactError("Only a declared Markdown material can be printed separately")
     request = {"markdown": markdown, "title": document.get("title", "Technical report"), "asset_files": {},
+               "validate_materials": validate_materials,
+               "section_anchors": document.get("section_anchors") or {}, "print_material_id": print_material_id,
                "primary_path": (document.get("artifact_authored_paths") or {}).get(report_pointer.get("artifact_id"))
                                or report_pointer.get("authored_path") or primary.name,
                "primary_paths": list(dict.fromkeys(value for value in
@@ -633,11 +690,12 @@ def export_technical_report(document: dict, basis: dict, *, generation_ref: dict
                     report_pointer.get("authored_path"), report_pointer.get("path"),
                     report_pointer.get("artifact_path"), report_pointer.get("uri"),
                     report_pointer.get("artifact_id"), primary.name) if isinstance(value, str) and value))}
-    for pointer in report_required_artifacts(document, basis):
+    for pointer in materials:
         path = resolve_report_artifact(pointer, basis, roots=roots)
         media = pointer.get("media_type") or mimetypes.guess_type(path.name)[0] or "application/octet-stream"
-        source = {"path": str(path.resolve()), "media_type": media,
-                  "sha256": pointer.get("sha256") or pointer.get("artifact_sha256")}
+        source = {"path": str(path.resolve()), "media_type": media, "artifact_id": pointer.get("artifact_id"),
+                  "sha256": pointer.get("sha256") or pointer.get("artifact_sha256"),
+                  "authored_path": pointer.get("authored_path") or pointer.get("path")}
         for key in (pointer.get("authored_path"), pointer.get("path"), pointer.get("artifact_path"), pointer.get("uri"), pointer.get("artifact_id")):
             if key:
                 if not isinstance(key, str):
@@ -649,11 +707,14 @@ def export_technical_report(document: dict, basis: dict, *, generation_ref: dict
     process = subprocess.run([str(node_executable), str(script)], input=json.dumps(request), capture_output=True,
                              text=True, encoding="utf-8", timeout=60, check=False)
     if process.returncode:
-        raise ArtifactError("Portable report rendering failed: " + process.stderr.strip()[:500])
+        stderr = process.stderr.strip()
+        error = re.search(r"^[A-Za-z]*Error: (.+)$", stderr, re.MULTILINE)
+        raise ArtifactError("Portable report rendering failed: " + (error[1] if error else stderr[:1000]))
     rendered = json.loads(process.stdout)
     metadata = {"generation_id": generation_ref.get("generation_id"), "content_sha256": generation_ref.get("content_sha256") or generation_ref.get("sha256"),
                 "report_artifact_sha256": digest, "method_identity": document.get("method_identity"), "completion": completion,
-                "review_status": review_status, "exported_at": exported_at}
+                "review_status": review_status, "exported_at": exported_at,
+                "print_material_id": print_material_id, "print_scopes": rendered.get("print_scopes")}
     identity = method_identity(document)
     banner = (f"<aside><strong>{html.escape(completion['status'].capitalize())} technical report</strong>"
               f"<p>This version {'has' if reviewed else 'has not'} been independently reviewed.</p>"
@@ -666,7 +727,8 @@ def export_technical_report(document: dict, basis: dict, *, generation_ref: dict
             + "<title>" + html.escape(request["title"]) + "</title><style>" + rendered["css"]
             + "body{box-sizing:border-box;max-width:54rem;margin:2rem auto;padding:0 1.4rem;color:#20242c;font:17px/1.65 Georgia,serif;overflow-wrap:anywhere}img,svg{max-width:100%}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccd0d6;padding:.5rem}aside{background:#eef2f5;padding:1rem;font:14px/1.5 sans-serif}pre{overflow:auto}h1,h2,h3{line-height:1.25}"
             + ".report-table,.report-equation{display:block;max-width:100%;overflow-x:auto}.report-table{overflow-wrap:normal}.report-equation{overflow-y:hidden;padding:.2rem 0}.report-equation .katex-display>.katex{min-width:max-content}.report-table:focus-visible,.report-equation:focus-visible{outline:2px solid #2c5c87;outline-offset:3px}"
-            + "@media print{body{max-width:none;margin:0;font-size:11pt}aside{background:white;border:1px solid #999}h1,h2,h3{break-after:avoid}figure,table,.katex-display{break-inside:avoid}.report-table,.report-equation{overflow:visible;max-width:none}.report-equation .katex-display>.katex{min-width:0}a{color:inherit}img{max-height:24cm}}"
+            + "@media print{body{max-width:none;margin:0;font-size:11pt}aside{background:white;border:1px solid #999}h1,h2,h3,p:has(+.report-table){break-after:avoid}figure,table,.katex-display{break-inside:avoid}.report-table,.report-equation{overflow:visible;max-width:none}.report-equation .katex-display>.katex{min-width:0}a{color:inherit}img{max-height:24cm}}"
+            + rendered.get("print_css", "")
             + "</style><body>" + banner + rendered["html"]
-            + '<details><summary>Exact scientific sources and expectation revisions</summary><pre>' + support + "</pre></details>"
+            + '<details class="report-provenance"><summary>Exact scientific sources and expectation revisions</summary><pre>' + support + "</pre></details>"
             + '<script type="application/json" id="report-provenance">' + metadata_json + "</script></body></html>").encode("utf-8")

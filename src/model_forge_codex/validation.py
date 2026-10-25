@@ -214,8 +214,16 @@ def _check_theory(outputs: dict, findings: list[Finding], *, conservative: bool 
             if "scientific_status" in claim and claim["scientific_status"] != statement.get("status"):
                 findings.append(Finding("theory.graph_status_mismatch", f"Graph assessment for {sid} disagrees with the submitted theorist account.", "p3.claim_map", f"/claims/{sid}/scientific_status"))
             justification = statement.get("justification") or {}
-            if claim.get("proof_status") == "full" and justification.get("kind") in {"open_obligation", "counterexample"}:
-                findings.append(Finding("theory.graph_proof_mismatch", f"{sid} has an obligation or counterexample, not a complete proof.", "p3.claim_map", f"/claims/{sid}/proof_status"))
+            # A counterexample can completely establish a limitation as written;
+            # it cannot prove the positive statement that it contradicts.
+            complete_counterexample = (statement.get("statement_type") == "limitation"
+                                       and statement.get("status") == "established"
+                                       and bool(_objects(justification.get("artifacts"))))
+            if claim.get("proof_status") == "full":
+                if justification.get("kind") == "open_obligation":
+                    findings.append(Finding("theory.graph_proof_mismatch", f"{sid} has an open obligation, not a complete proof.", "p3.claim_map", f"/claims/{sid}/proof_status"))
+                elif justification.get("kind") == "counterexample" and not complete_counterexample:
+                    findings.append(Finding("theory.graph_proof_mismatch", f"{sid} can mark a counterexample complete only for an established limitation with retained support.", "p3.claim_map", f"/claims/{sid}/proof_status"))
     probes = outputs.get("p3.falsification_log")
     if isinstance(probes, dict):
         probe_map = _check_ids(_objects(probes.get("probes")), "probe_id", "p3.falsification_log", findings)
@@ -415,7 +423,7 @@ def _check_empirical(outputs: dict, findings: list[Finding]) -> None:
             findings.append(Finding("empirical.undeclared_attempt", "Every retained attempt must name a declared case and replicate.", "p4.metrics_long", f"/{index}"))
         case = cases.get(row.get("case_id"), {})
         planned = expected.get((row.get("case_id"), row.get("replicate_id")), {})
-        if "seed" in planned and row.get("seed") != planned["seed"]:
+        if row.get("eligibility") != "invalidated" and "seed" in planned and row.get("seed") != planned["seed"]:
             findings.append(Finding("empirical.seed_mismatch", "The recorded seed differs from the prespecified replicate.", "p4.metrics_long", f"/{index}/seed"))
         values = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
         if ("runtime_ms" in row and not _number(row["runtime_ms"])) or any(value is not None and not _number(value) for value in values.values()):
@@ -796,9 +804,10 @@ def validate_scientific_outputs(
                     workflow_templates="p4.workflow_templates.v1" in contract.get("capabilities", []),
                     frozen_inputs=(frozen_basis or {}).get("p4_inputs"))
         if phase.upper() == "P5":
-            from .technical_reports import technical_report_enabled, validate_technical_report
+            from .technical_reports import reader_report_enabled, technical_report_enabled, validate_technical_report
             if technical_report_enabled(catalog):
-                findings.extend(validate_technical_report(outputs, frozen_basis or {}, artifact_roots=artifact_roots))
+                findings.extend(validate_technical_report(outputs, frozen_basis or {}, artifact_roots=artifact_roots,
+                                                          reader_report=reader_report_enabled(catalog)))
             else:
                 _check_manuscript(outputs, frozen_basis, findings)
         if artifact_roots:

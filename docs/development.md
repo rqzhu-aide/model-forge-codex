@@ -1,6 +1,6 @@
 # Development and verification
 
-Use existing shared Python 3.11+ and Node.js 22+ installations. Install packages user-wide or machine-wide. Do not create a `.venv`, `.Rlib`, project-local `node_modules`, or a private copy of a runtime or development tool. The [README](../README.md#install-and-use) covers the recommended npm installation.
+Use existing shared Python 3.11+ and Node.js 22+ installations. Follow [OS-specific setup](installation.md) to select `MF_PYTHON` and install the backend dependencies. Install packages user-wide or machine-wide. Do not create a `.venv`, `.Rlib`, project-local `node_modules`, or a private copy of a runtime or development tool. The [README](../README.md#install-and-use) covers the recommended npm installation.
 
 If a restricted terminal cannot access an existing shared installation, verify it through a normal-access check before treating it as missing. Set `MF_SHARED_NODE_MODULES` to the intended global package directory when automatic discovery selects the wrong installation.
 
@@ -11,23 +11,43 @@ Install Git and the shared runtimes above, then run:
 ```text
 git clone https://github.com/rqzhu-aide/model-forge-codex.git
 cd model-forge-codex
-python -m pip install --user "setuptools>=68" wheel
-python -m pip install --user --no-build-isolation ".[dev]"
-npm install --global react@18.3.1 react-dom@18.3.1 katex@0.18.7 vite@5.4.11 @vitejs/plugin-react@4.3.4
-node web/scripts/vite.mjs build
-python -B scripts/run_from_source.py
 ```
 
-This checks out the development branch. To use the original 0.9.0 release source instead, add `--branch v0.9.0` to the clone command. Python installation includes the backend and development dependencies. Use `python3` or `py -3` consistently if that selects your shared Python. On systems that prohibit `--user`, use the supported shared installation method.
+This checks out the development branch. To use the original 0.9.0 release source instead, add `--branch v0.9.0` to the clone command. Use the exact selected Python executable. In PowerShell:
+
+```powershell
+& $env:MF_PYTHON -m pip install --user "setuptools>=68" wheel
+& $env:MF_PYTHON -m pip install --user --no-build-isolation ".[dev]"
+```
+
+Or in a POSIX shell:
+
+```sh
+"$MF_PYTHON" -m pip install --user "setuptools>=68" wheel
+"$MF_PYTHON" -m pip install --user --no-build-isolation ".[dev]"
+```
+
+Install the frontend packages globally, then build:
+
+```text
+npm install --global react@18.3.1 react-dom@18.3.1 katex@0.18.7 vite@5.4.11 @vitejs/plugin-react@4.3.4 @fontsource-variable/ibm-plex-sans@5.3.0 @fontsource/ibm-plex-mono@5.3.0 @fontsource/marcellus@5.3.0
+node web/scripts/vite.mjs build
+```
+
+Before building, set `MF_SHARED_NODE_MODULES` to `npm root --global` if automatic discovery does not find that installation: `$env:MF_SHARED_NODE_MODULES = npm root --global` in PowerShell, or `export MF_SHARED_NODE_MODULES="$(npm root --global)"` in a POSIX shell. If the global prefix is not writable, see [shared developer packages](#shared-developer-packages).
+
+Start the source app with `& $env:MF_PYTHON -B scripts/run_from_source.py` in PowerShell, or `"$MF_PYTHON" -B scripts/run_from_source.py` in a POSIX shell. Python source installation includes the backend and development dependencies.
 
 The launcher opens `http://127.0.0.1:8766` and uses `~/.model-forge-codex` by default. For development, choose a separate research folder outside the repository with `--data-root PATH`. Keep the terminal open; finish or cancel research before using Ctrl+C. Stop the source service before updating its checkout, then rebuild and restart.
 
 Use the same data folder and port with these commands:
 
-```text
-python -B scripts/run_from_source.py status
-python -B scripts/run_from_source.py stop
+```sh
+"$MF_PYTHON" -B scripts/run_from_source.py status
+"$MF_PYTHON" -B scripts/run_from_source.py stop
 ```
+
+For the remaining POSIX Python examples, use `& $env:MF_PYTHON` in place of `"$MF_PYTHON"` in PowerShell.
 
 Both launchers accept `--port NUMBER` and `--no-open`. The source launcher uses the Python that invokes it; the packaged launcher accepts `--python PATH` or `MF_PYTHON`.
 
@@ -36,11 +56,21 @@ Both launchers accept `--port NUMBER` and `--no-open`. The source launcher uses 
 Download `rqzhu-aide-model-forge-codex-0.9.0.tgz` and `SHA256SUMS.txt` from the [GitHub prerelease](https://github.com/rqzhu-aide/model-forge-codex/releases/tag/v0.9.0), verify the tarball checksum, then run from the download folder:
 
 ```text
-python -m pip install --user "fastapi>=0.115" "uvicorn>=0.30" "jsonschema>=4.20" "httpx>=0.27" "openai-codex>=0.147,<0.148"
 npm exec --yes --package ./rqzhu-aide-model-forge-codex-0.9.0.tgz -- model-forge-codex web
 ```
 
-The tarball includes the built interface and mathematics tools. It needs no frontend build packages. Application snapshots live in `~/.model-forge-codex-app/releases`, separately from research and settings. They contain application code, not private runtime installations. Starting the same release reuses its running service. Switching releases stops an idle earlier service; active research must finish or be cancelled first.
+First complete [shared Python setup](installation.md) in this terminal, including `MF_PYTHON`. The tarball includes the built interface and mathematics tools. It needs no frontend build packages. Application snapshots live in `~/.model-forge-codex-app/releases`, separately from research and settings. They contain application code, not private runtime installations. Starting the same release reuses its running service. Switching releases stops an idle earlier service; active research must finish or be cancelled first. [Recovery instructions](installation.md#recover-a-damaged-application-release) distinguish a damaged download from a damaged retained snapshot.
+
+## Shared developer packages
+
+Reuse an existing writable npm global prefix. On a POSIX system where the prefix is not writable and a Node version manager does not already manage it, npm supports a user-wide prefix:
+
+```sh
+npm config set prefix "$HOME/.local"
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Then run the global frontend installation above and set `export MF_SHARED_NODE_MODULES="$(npm root --global)"`. This changes the user's npm prefix, so do it only when needed; it is not required for npm end users. Use the equivalent environment setting in each new development terminal. See [npm's permissions guidance](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally/). Do not use `sudo npm install` or fall back to project-local packages.
 
 ## Run development servers
 
@@ -50,13 +80,13 @@ From the repository root in PowerShell:
 
 ```powershell
 $env:PYTHONPATH = Join-Path (Get-Location) 'src'
-python -m uvicorn model_forge_codex.service:app --host 127.0.0.1 --port 8766
+& $env:MF_PYTHON -m uvicorn model_forge_codex.service:app --host 127.0.0.1 --port 8766
 ```
 
 In a POSIX shell:
 
 ```sh
-PYTHONPATH=src python -m uvicorn model_forge_codex.service:app --host 127.0.0.1 --port 8766
+PYTHONPATH=src "$MF_PYTHON" -m uvicorn model_forge_codex.service:app --host 127.0.0.1 --port 8766
 ```
 
 In a second terminal, from the repository root:
@@ -74,7 +104,7 @@ Use a separate research folder for development. Set `MF_CODEX_HOME` before start
 Run the tests that cover the changed behavior. Backend tests need the source import path shown above. Typical commands from the repository root are:
 
 ```text
-python -m pytest -q tests/test_npm_launcher.py
+"$MF_PYTHON" -m pytest -q tests/test_npm_launcher.py
 node --test web/tests/provider-editor.test.mjs
 node web/scripts/vite.mjs build
 ```
@@ -82,17 +112,17 @@ node web/scripts/vite.mjs build
 For a broader regression run when the scope warrants it:
 
 ```text
-python -m pytest -q
+"$MF_PYTHON" -m pytest -q
 node --test web/tests/*.test.mjs
 npm run test:npm
 ```
 
-The build writes `web/dist` and prepares the portable mathematics and report-export runtimes. These generated files are not source changes. A passing test or build does not certify model-authored scientific correctness.
+The build writes `web/dist`, including the self-hosted font licenses, and prepares the portable mathematics and report-export runtimes. These generated files are not source changes. A passing test or build does not certify model-authored scientific correctness.
 
 For workflow catalog edits, verify integrity and declared examples with the existing catalog checks, including:
 
 ```text
-python -m pytest -q tests/test_catalog_scientific.py
+"$MF_PYTHON" -m pytest -q tests/test_catalog_scientific.py
 ```
 
 Read the applicable contract before changing catalog contents or their manifest. Check the generated member instructions and the fields consumed by the UI together. A documentation-only description does not establish executable behavior.
@@ -117,5 +147,7 @@ The [model access guide](model-access.md) covers sign-in, provider configuration
 ## Prepare a package
 
 Follow the [repository npm release guide](https://github.com/rqzhu-aide/model-forge-codex/blob/main/architecture/npm-release.md) to prepare and smoke-test the release tarball. `npm pack` runs the prepack build and verifies the final file inventory. Use shared frontend build dependencies; a prepared tarball does not require those packages on the user's machine.
+
+The smoke script accepts `--node PATH` and `--npm-cli PATH` for existing shared installations. The latter selects npm's JavaScript CLI file, not a shell wrapper. Automatic discovery supports normal Node-adjacent layouts and the installed POSIX npm symlink. An explicit choice is not silently replaced.
 
 Rebuild after source or README changes so the reviewed package contains the final bytes. Test with a disposable research folder and avoid real model calls unless separately intended. Package preparation and local testing do not publish a release.

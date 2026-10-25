@@ -20,6 +20,7 @@ shim.env
 !.env.example
 /.model-forge-codex/
 /.model-forge-codex-app/
+/.claude/
 
 # Disposable previews, experiment runs, and generated local reports.
 /.p4-acceptance/

@@ -24,7 +24,7 @@ from .runs import RunEngine, RunError
 from .p4_execution import P4ExecutionError
 from .storage import read_json, write_json_atomic
 from .records import ArtifactError, current_records, read_generation
-from .research import artifacts_view
+from .research import artifacts_view, current_decisions_view
 from .accounts import AccountError, AccountService
 from .project_brief import normalize_project
 from .problem_context import (supports_problem_context, load_problem_context,
@@ -832,7 +832,7 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
         return {"branches": browse.list_branches(engine.project_dir(project_id))}
 
     @app.get("/api/v1/projects/{project_id}/branches/{branch_id}/phases/{phase}/readiness")
-    async def readiness(project_id: str, branch_id: str, phase: str, mode: str | None = None) -> dict:
+    def readiness(project_id: str, branch_id: str, phase: str, mode: str | None = None) -> dict:
         """Gate state + the current basis digest. The UI stamps this digest
         onto the Run command (design/07 §2): if anything publishes in
         between, the service refuses with a stale-basis re-open message."""
@@ -852,8 +852,8 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
         from .p4_lifecycle import default_experiment_budget
         for item in declared:
             value = item["mode_id"]
-            reasons = engine.check_readiness(project_id, phase, branch_id, value)
             basis = engine.compute_basis(project_id, phase, branch_id, value)
+            reasons = engine.check_readiness(project_id, phase, branch_id, value, _basis=basis)
             modes.append({"mode": value, "mode_id": value, "label": labels.get(value, item.get("label", value)),
                           "purpose": item.get("purpose", ""), "ready": not reasons, "reasons": reasons, "basis": basis,
                           **({"progressive_evaluation": True, "budget_seconds": default_experiment_budget(),
@@ -888,7 +888,7 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
     )
     async def record_body(
         project_id: str, branch_id: str, phase: str, family: str, generation_id: str,
-        view: str | None = None, download: bool = False,
+        view: str | None = None, download: bool = False, material_id: str | None = None,
     ):
         from . import browse
 
@@ -918,9 +918,10 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
                     generation_ref={"phase": phase, "branch": branch_id, "family": family,
                         "generation_id": generation_id, "content_sha256": sha256_file(source)},
                     artifact_roots={family: run_dir / "outputs" / str(meta.get("stage_id", "p5.assembly"))},
-                    exported_at=datetime.now(timezone.utc).isoformat(), review_packets=review_packets)
+                    exported_at=datetime.now(timezone.utc).isoformat(), review_packets=review_packets,
+                    print_material_id=material_id)
                 return Response(payload, media_type="text/html", headers={
-                    "Content-Disposition": ('attachment' if download else 'inline') + '; filename="technical-report.html"',
+                    "Content-Disposition": ('attachment' if download else 'inline') + ('; filename="report-appendix.html"' if material_id else '; filename="technical-report.html"'),
                     "X-Content-Type-Options": "nosniff",
                     "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'"})
             elif view == "document":
@@ -939,7 +940,7 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
         return doc
 
     @app.get("/api/v1/projects/{project_id}/artifacts")
-    async def artifacts(project_id: str, branch: str | None = None) -> dict:
+    def artifacts(project_id: str, branch: str | None = None) -> dict:
         """One exact, source-linked research view per requested branch."""
         from .browse import _check_ident
         if branch is not None:
@@ -950,12 +951,11 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
         return artifacts_view(engine.project_dir(project_id), branch)
 
     @app.get("/api/v1/projects/{project_id}/decisions-pending")
-    async def decisions_pending(project_id: str) -> dict:
+    def decisions_pending(project_id: str) -> dict:
         """The global 'needs your decision' aggregate (design/14 §3): open
         attention items, failed runs with correction budget left, and phases
         published whose next phase hasn't started (your call)."""
         from . import browse
-        from .cumulative_attention import current_researcher_answers
         from .phase_interactions import answers_with_usage
 
         project_dir = engine.project_dir(project_id)
@@ -968,7 +968,7 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
                     and run.get("correction_attempts", 0) < 1 and details.get("findings_history")):
                 needs_correction.append(run)
         calls: list[dict] = []
-        for decision in artifacts_view(project_dir)["decisions"]:
+        for decision in current_decisions_view(project_dir):
             for action in decision.get("available_actions", []):
                 if isinstance(action, dict):
                     calls.append({**action, "branch": decision["branch"], "phase": decision["phase"],

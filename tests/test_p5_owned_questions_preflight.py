@@ -71,15 +71,17 @@ def frozen_run(engine, project, branch, report_case, mode='p5.review_revision', 
     producer_basis['records'] = []
     write_json_atomic(project / 'runs/run.report/basis.json', producer_basis)
     if mode == 'p5.review_revision':
-        prepare_review_packet(directory, basis=basis, instructions=FOCUS, run_id=current.run_id, project_dir=project)
+        prepare_review_packet(directory, basis=basis, instructions=FOCUS, run_id=current.run_id,
+                              project_dir=project, catalog=catalog)
     return current, stages, directory, basis
 
 
 def test_p5_update_keeps_review_scope_and_writers_exact():
     current = read_json(REPO / 'contracts/contracts/phases/P5.json')
     previous = read_json(OLD_PHASE)
-    assert current['contract_version'] == '3.2.0'
-    assert current['capabilities'] == [*previous['capabilities'], NATIVE, 'consequential_researcher_decisions_v1']
+    assert current['contract_version'] == '3.3.0'
+    assert current['capabilities'] == [*previous['capabilities'], NATIVE,
+                                      'consequential_researcher_decisions_v1', 'p5.reader_report.v1']
     for stage, old in zip(current['role_stages'], previous['role_stages']):
         assert {key: value for key, value in stage.items() if key != 'objective'} == {
             key: value for key, value in old.items() if key != 'objective'}
@@ -89,8 +91,13 @@ def test_p5_update_keeps_review_scope_and_writers_exact():
     attention = next(output for output in prior_compatible['run_local_outputs']
                      if output['output_id'] == 'p5.attention_items')
     attention['purpose'] = prior_purpose
-    assert {key: value for key, value in prior_compatible.items() if key not in ('role_stages','capabilities','contract_version')} == {
-        key: value for key, value in previous.items() if key not in ('role_stages','capabilities','contract_version')}
+    assert {key: value for key, value in prior_compatible.items()
+            if key not in ('role_stages','capabilities','contract_version','prepared_contexts')} == {
+        key: value for key, value in previous.items()
+        if key not in ('role_stages','capabilities','contract_version','prepared_contexts')}
+    current_context = copy.deepcopy(current['prepared_contexts'])
+    current_context[0]['content_requirements'][1] = previous['prepared_contexts'][0]['content_requirements'][1]
+    assert current_context == previous['prepared_contexts']
     for output in ('p5.theory_audit','p5.empirical_audit'):
         assert Catalog(REPO / 'contracts').output_schema(output)['type'] == 'array'
     assert 'prioritized_issues' in Catalog(REPO / 'contracts').output_schema('p5.outside_review')['properties']
@@ -125,6 +132,9 @@ def test_actual_review_briefs_route_questions_without_leaking_private_context(wo
         assert 'Author researcher-decision attention' not in brief
         assert '## Consequential researcher input' not in brief
         assert 'p5.attention_items' not in owned_writes(review, role)
+        assert '## Report and proof exposition' in brief
+        assert 'Parallel reviewers remain read-only' in brief
+        assert 'Substantive missing arguments, changed assumptions, new results and stronger claims remain P3 work' in brief
         if role is MemberRole.OUTSIDE_REVIEWER:
             assert 'fresh first-time reader' in brief
             assert 'only project-specific context' in brief
@@ -141,6 +151,8 @@ def test_actual_review_briefs_route_questions_without_leaking_private_context(wo
     assert '## Consequential researcher input' in delivered
     assert 'Use the existing researcher-question.json only if' in delivered
     assert 'p5.attention_items' in owned_writes(lead, MemberRole.RESEARCH_LEAD)
+    assert 'All proofs and proof sketches belong in a separate declared appendix' in delivered
+    assert 'review run does not inherit an assembly run' in delivered
     assert snapshots == {path.name: path.read_bytes() for path in (directory / 'review-packet').iterdir()}
     assert engine.bridge.turns == []
 
@@ -189,8 +201,27 @@ def test_frozen_report_lead_briefs_deliver_concise_statistical_authoring(workben
     assert 'indispensable editorial choice' in brief
     assert 'author an informational attention question' not in brief
     assert 'section_anchors mapping the seven content IDs' in brief
+    assert 'section_anchors.references as a distinct trailing bibliography boundary' in brief
+    assert 'Put all proofs, proof sketches, proof-only derivations and auxiliary lemmas in a separate declared appendix' in brief
+    assert 'Checked local expansions of supplied algebra or conditional reasoning are allowed' in brief
+    assert "Follow this run's exact p5.instructions for page budget" in brief
     assert frozen_phase == read_json(directory / 'contracts/contracts/phases/P5.json')
     assert len(stages) == (1 if mode == 'p5.assembly' else 2)
+    assert engine.bridge.turns == []
+
+
+def test_older_frozen_lead_retry_keeps_original_report_policy(workbench, report_case):
+    engine, project, branch = workbench
+    current, stages, directory, _ = frozen_run(engine, project, branch, report_case, old=True)
+    lead = stages[-1]
+    before = {path.name: path.read_bytes() for path in (directory / 'review-packet').iterdir()}
+    assert 'p5.reader_report.v1' in read_json(project / 'contracts/contracts/phases/P5.json')['capabilities']
+    brief = engine._render_brief(current, lead, MemberRole.RESEARCH_LEAD,
+                                 engine.member_workspace(current, lead.stage_id, MemberRole.RESEARCH_LEAD))
+    assert lead.objective in brief
+    assert '## Report and proof exposition' not in brief
+    assert 'section_anchors.references as a distinct trailing bibliography boundary' not in brief
+    assert before == {path.name: path.read_bytes() for path in (directory / 'review-packet').iterdir()}
     assert engine.bridge.turns == []
 
 
@@ -288,6 +319,13 @@ async def test_frozen_p5_3_0_keeps_original_brief_and_skips_new_preflight(workbe
                                  engine.member_workspace(current, stage.stage_id, MemberRole.OUTSIDE_REVIEWER))
     assert 'Author researcher-decision attention' in brief
     assert 'open_question findings in your owned review output' not in brief
+    assert '## Report and proof exposition' not in brief
+    assert 'section_anchors.references' not in brief
+    lead = stages[-1]
+    lead_brief = engine._render_brief(current, lead, MemberRole.RESEARCH_LEAD,
+                                     engine.member_workspace(current, lead.stage_id, MemberRole.RESEARCH_LEAD))
+    assert '## Report and proof exposition' not in lead_brief
+    assert 'section_anchors.references as a distinct trailing bibliography boundary' not in lead_brief
     engine.bridge = bridge = NativeReviewBridge('raised')
     await engine._execute_stage(current,stage)
     assert bridge.checked == [] and len(bridge.turns) == 3

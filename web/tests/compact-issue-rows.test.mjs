@@ -145,7 +145,7 @@ test("scientific findings retain saved instructions read-only and ignore cached 
   const key = `issue-response:${JSON.stringify([props.projectId, issueVersionKey(finding)])}`;
   ui.saveConversationDraft(key, { text: "An older unfinished answer draft.", origin: "researcher_reported" });
   const explanations = []; const preparations = [];
-  const input = { ...props, phase: "P3", branch: findingSource.branch, issue: { ...finding, researcher_answer: answer }, onExplain: target => explanations.push(target), onPrepare: issue => preparations.push(issue) };
+  const input = { ...props, phase: "P3", branch: findingSource.branch, issue: { ...finding, researcher_answer: answer }, onExplain: target => explanations.push(target), onPrepare: (issue, origin) => preparations.push([issue, origin]) };
   const html = ui.entry(input);
   assert.match(html, /Saved researcher instruction/);
   assert.match(html, /Keep the actual allocation unknown\./);
@@ -155,8 +155,10 @@ test("scientific findings retain saved instructions read-only and ignore cached 
   button(tree, "Discuss").props.onClick();
   assert.deepEqual(explanations[0].researcherNote, { note: answer.note, revision: 2 });
   assert.equal(explanations[0].researcherNoteDraft, undefined);
-  button(tree, "Prepare further work").props.onClick();
-  assert.equal(preparations[0], input.issue);
+  const origin = {};
+  button(tree, "Prepare further work").props.onClick({ currentTarget: origin });
+  assert.equal(preparations[0][0], input.issue);
+  assert.equal(preparations[0][1], origin);
   assert.equal(answer.note, "Keep the actual allocation unknown.");
 }));
 

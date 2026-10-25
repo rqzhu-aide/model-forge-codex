@@ -1,7 +1,53 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assessmentKey, buildFrameworkGraph, entryMatches, landscapeRecords, paperReviewFindings, resolveLandscapeEntry, selectLandscapeRecord } from "../src/literatureLandscape.js";
+import { assessmentKey, buildFrameworkGraph, entryIdentity, entryMatches, groupPaperSources, landscapeRecords, paperReviewFindings, resolveLandscapeEntry, selectLandscapeRecord } from "../src/literatureLandscape.js";
 import { frameworkBasis, frameworkSources } from "./fixtures/framework-landscape.mjs";
+import { neuripsSources } from "./fixtures/neurips-paper-aliases.mjs";
+
+test("official NeurIPS URL aliases share a paper view while exact assessments and provenance remain intact", () => {
+  const before = JSON.stringify(neuripsSources);
+  const [paper] = groupPaperSources(neuripsSources);
+  assert.equal(groupPaperSources(neuripsSources).length, 1);
+  assert.equal(paper.source_id, neuripsSources[0].source_id);
+  assert.deepEqual(paper.source_aliases, neuripsSources.map((source) => source.source_id));
+  for (const [index, source] of neuripsSources.entries()) {
+    const card = source.cards[0];
+    assert.equal(paper.cards[index], card);
+    assert.equal(paper.identifiers[index], source.identifiers[0]);
+    assert.equal(paper.search_provenance[index], source.search_provenance[0]);
+    assert.equal(resolveLandscapeEntry([paper], entryIdentity(card)).card, card);
+    assert.equal(card.canonical_source_id, source.source_id);
+    assert.equal(resolveLandscapeEntry([paper], { ...entryIdentity(card), entry_sha256: "unknown" }), null);
+  }
+  assert.equal(JSON.stringify(neuripsSources), before);
+  assert.deepEqual(groupPaperSources([]), []);
+});
+
+test("paper views do not merge titles, unverified URL forms, ambiguous hashes, or conflicting dispositions", () => {
+  const [first, second] = neuripsSources;
+  const url = second.identifiers[0].value;
+  const cases = [
+    { identifiers: [{ kind: "url", value: url.replace("d89a66c7", "a89a66c7") }] },
+    { identifiers: [{ kind: "url", value: url.replace("proceedings.neurips.cc", "example.org") }] },
+    { identifiers: [{ kind: "url", value: `${url}?version=other` }] },
+    { identifiers: [{ kind: "url", value: url.replace("https:", "http:") }] },
+    { identifiers: [{ kind: "url", value: url.replace("-Abstract.html", "-Paper.pdf") }] },
+    { identifiers: [{ kind: "url", value: "not a URL" }] },
+    { identifiers: [second.identifiers[0], { kind: "url", value: url.replace("d89a66c7", "a89a66c7") }] },
+    { year: 2019 },
+    { source_status: "retracted", status_reason: "Synthetic retraction notice." },
+    { status_reason: "Synthetic status qualification." },
+    { landscape_status: "exclude", landscape_reason: "Synthetic scope exclusion." },
+    { landscape_reason: "Synthetic disposition qualification." },
+  ];
+  for (const change of cases) {
+    const candidate = { ...second, ...change };
+    const grouped = groupPaperSources([first, candidate]);
+    assert.equal(grouped.length, 2, JSON.stringify(change));
+    assert.equal(grouped[0], first);
+    assert.equal(grouped[1], candidate);
+  }
+});
 
 test("framework selection keeps authored records and relationships, including cycles, without inferring links", () => {
   const landscape = structuredClone(frameworkBasis.landscape);

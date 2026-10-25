@@ -8,6 +8,8 @@ const command = process.argv[2] || "dev";
 const configFile = path.join(webRoot, "vite.config.js");
 if (command === "build") {
   await vite.build({ root: webRoot, configFile });
+  const { buildFontNotices } = await import("./build-font-notices.mjs");
+  await buildFontNotices(path.join(webRoot, "dist"));
   const { buildMathRuntime } = await import("./build-math-runtime.mjs");
   await buildMathRuntime();
 } else if (command === "preview") {

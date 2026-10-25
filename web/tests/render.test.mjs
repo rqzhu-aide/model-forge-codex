@@ -7,6 +7,8 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { sharedPackage } from "../scripts/shared-deps.mjs";
 import { clarificationDraftKey } from "../src/contextualRequests.js";
+import { assessmentKey, entryIdentity } from "../src/literatureLandscape.js";
+import { neuripsSources } from "./fixtures/neurips-paper-aliases.mjs";
 
 const require = createRequire(import.meta.url);
 const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.js"));
@@ -69,7 +71,7 @@ test("P1 displays retained literature with status, assessments and current searc
     { source_id: "citation.earlier", title: "Earlier useful reference", authors: ["Ada Example"], year: 2022, source_status: "active", identifiers: [{ kind: "doi", value: "10.12345/paper" }], cards: [{ card_id: "card.old", assessment_predates_source_revision: true, innovation: "Retained convergence guarantee.", definition: "The invariant law is $\\pi$.", evaluation: "Equal cost remains untested.", generation_ref: p1.generation_ref }] },
     { source_id: "citation.retracted", title: "Retracted comparison", source_status: "retracted", status_reason: "The reference was withdrawn by its authors." },
   ] }], coverage: [{ ...p1, scientific_outcome: { conclusion: "The search does not cover non-English literature.", scope: "English-language publications." } }] });
-  assert.match(html, /Unique records identified<\/dt><dd class="literature-count-value">2<\/dd>/);
+  assert.match(html, /Accepted source records<\/dt><dd class="literature-count-value">2<\/dd>/);
   assert.match(html, /1 new · 1 updated · 0 found again/);
   assert.match(html, /Earlier useful reference/);
   assert.doesNotMatch(html, /Retained convergence guarantee|Equal cost remains untested|selected-paper/);
@@ -78,6 +80,57 @@ test("P1 displays retained literature with status, assessments and current searc
   assert.doesNotMatch(html, /withdrawn by its authors/); // Only the selected paper is expanded.
   assert.match(html, /does not cover non-English/);
   assert.doesNotMatch(html, /"source_id"/);
+});
+
+test("P1 counts one paper for verified URL aliases and restores either original source's exact assessment", () => {
+  const before = JSON.stringify(neuripsSources);
+  const library = { branch: "trunk", phase: "P1", total_sources: 2, sources: neuripsSources };
+  for (const source of neuripsSources) {
+    const card = source.cards[0];
+    const html = render.literature({ libraries: [library], onSource: noop, reading: {
+      paperId: source.source_id, entrySelection: { sourceId: source.source_id, reference: entryIdentity(card) },
+    } });
+    assert.match(html, /Paper \(1\)/);
+    assert.match(html, /Accepted source records<\/dt><dd class="literature-count-value">2<\/dd>/);
+    assert.match(html, /Current linked member assessments<\/dt><dd class="literature-count-value">2<\/dd>/);
+    assert.equal((html.match(/<option[^>]*>Occam/g) || []).length, 1);
+    assert.match(html, /<option[^>]*>Research Lead<\/option>/);
+    assert.match(html, /<option[^>]*>Theorist<\/option>/);
+    assert.ok(html.includes(card.explanation_markdown));
+    assert.ok(html.includes(`data-reading-anchor="paper:${source.source_id}"`), "Saved reading anchors retain the original source identity.");
+    assert.ok(html.includes(`href="${source.identifiers[0].value}"`));
+    assert.ok(html.includes(`Synthetic ${card.role} search`));
+    assert.doesNotMatch(html, /exact referenced assessment is unavailable/);
+  }
+  const second = neuripsSources[1]; const card = second.cards[0];
+  const citationBasis = { generation_ref: { generation_id: "basis.aliases" }, citations: [{
+    source_id: second.source_id, canonical_source_id: second.source_id, entry_ref: entryIdentity(card),
+    status: "available", bibliography: card.source, card,
+  }] };
+  const cited = render.literature({ libraries: [library], basis: citationBasis, reading: {
+    paperId: second.source_id, entrySelection: { sourceId: second.source_id, reference: entryIdentity(card), citationBasisId: "basis.aliases" },
+  } });
+  assert.match(cited, /Showing Theorist&#x27;s exact assessment/);
+  assert.ok(cited.includes(card.explanation_markdown));
+  assert.doesNotMatch(cited, /Synthetic research_lead assessment|exact referenced assessment is unavailable/);
+  const filtered = render.literature({ libraries: [library], basis: { landscape: { topics: [{ topic_id: "topic.alias", title: "Synthetic topic", source_ids: [second.source_id] }] } }, reading: { topicId: "topic.alias", query: "Synthetic theorist assessment", paperId: second.source_id } });
+  assert.match(filtered, /Paper \(1\)/);
+  assert.equal((filtered.match(/<option[^>]*>Occam/g) || []).length, 1);
+  assert.equal(JSON.stringify(neuripsSources), before);
+});
+
+test("a citation to grouped sources selects its exact member record even when both sources share a role", () => {
+  const sources = neuripsSources.map((source) => ({ ...source, cards: source.cards.map((card) => ({ ...card, role: "research_lead", family: "lead_literature" })) }));
+  const source = sources[1]; const card = source.cards[0];
+  const citationBasis = { generation_ref: { generation_id: "basis.same-role" }, citations: [{
+    source_id: source.source_id, canonical_source_id: source.source_id, entry_ref: entryIdentity(card),
+    status: "available", bibliography: card.source, card,
+  }] };
+  const html = render.literature({ libraries: [{ branch: "trunk", phase: "P1", sources }], basis: citationBasis, reading: {
+    paperId: source.source_id, entrySelection: { sourceId: source.source_id, reference: entryIdentity(card), citationBasisId: "basis.same-role" },
+  } });
+  assert.ok(html.includes(`value="${assessmentKey(card)}" selected=""`));
+  assert.ok(html.includes(card.explanation_markdown));
 });
 
 test("P1 presents the lead summary before distinct retained-record and member-assessment counts", () => {
@@ -92,9 +145,9 @@ test("P1 presents the lead summary before distinct retained-record and member-as
     ] }],
     cards: [{ card_id: "card.unlinked", subject_ref: "paper.unresolved", title: "Unlinked earlier assessment" }],
   });
-  assert.match(html, /Unique records identified<\/dt><dd class="literature-count-value">2<\/dd>/);
+  assert.match(html, /Accepted source records<\/dt><dd class="literature-count-value">2<\/dd>/);
   assert.match(html, /Current linked member assessments<\/dt><dd class="literature-count-value">3<\/dd>/);
-  assert.match(html, /duplicate references count once/);
+  assert.match(html, /paper selector groups verified equivalent publication links/);
   assert.match(html, /latest linked account by each member for each source/);
   assert.match(html, /<details[^>]*data-reading-anchor="earlier-synthesis"><summary>Read the earlier literature synthesis<\/summary>/);
   assert.ok(html.indexOf("The lead&#x27;s original landscape synthesis") < html.indexOf("literature-statistics"));
@@ -106,13 +159,13 @@ test("P1 presents the lead summary before distinct retained-record and member-as
 
 test("P1 counts legacy sources without inventing unavailable totals or conflating an empty library with no library", () => {
   const legacy = render.literature({ libraries: [{ branch: "trunk", phase: "P1", sources: [{ source_id: "paper.old", title: "Older paper", card: { card_id: "card.old" } }] }] });
-  assert.match(legacy, /Unique record identified<\/dt><dd class="literature-count-value">1<\/dd>/);
+  assert.match(legacy, /Accepted source record<\/dt><dd class="literature-count-value">1<\/dd>/);
   assert.match(legacy, /Current linked member assessment<\/dt><dd class="literature-count-value">1<\/dd>/);
   const noAssessments = render.literature({ libraries: [{ branch: "trunk", phase: "P1", sources: [{ source_id: "paper.old", title: "Bibliography only" }] }] });
-  assert.match(noAssessments, /Unique record identified<\/dt><dd class="literature-count-value">1<\/dd>/);
+  assert.match(noAssessments, /Accepted source record<\/dt><dd class="literature-count-value">1<\/dd>/);
   assert.doesNotMatch(noAssessments, /Current linked member/);
   const empty = render.literature({ libraries: [{ branch: "trunk", phase: "P1", total_sources: 0, sources: [], changes: {} }] });
-  assert.match(empty, /Unique records identified<\/dt><dd class="literature-count-value">0<\/dd>/);
+  assert.match(empty, /Accepted source records<\/dt><dd class="literature-count-value">0<\/dd>/);
   assert.doesNotMatch(empty, /Latest update:/);
   const unavailable = render.literature({ cards: [{ card_id: "card.legacy", title: "Earlier source assessment" }] });
   assert.match(unavailable, /A record count is not available until a published literature library can be loaded/);
@@ -207,6 +260,22 @@ test("structured reviews expose findings while metadata stays out of the narrati
   assert.doesNotMatch(unknown, /secret machinery|<pre/);
 });
 
+test("typed question scope does not create an empty section and genuine empty records keep their fallback", () => {
+  const issue = { attention_id: "attention.p2.reference-identification", scope: { kind: "project" },
+    context_markdown: "Reference regret depends on the joint law of the informed preference and actual choice $D$.",
+    question: "What reference-regret quantities are identified under the declared anchor laws?",
+    likely_consequence: "Distinguishes identified decision quality from supplied-model sensitivity." };
+  const html = render.document(issue);
+  for (const text of ["Mathematical context", issue.question, issue.likely_consequence]) assert.ok(html.includes(text), text);
+  assert.match(html, /class="katex/);
+  assert.doesNotMatch(html, /Scope<\/h\d>|no readable research account/);
+  const authored = render.document({ scope: "Finite supplied-model scope." });
+  assert.match(authored, /Scope<\/h\d>/);
+  assert.match(authored, /Finite supplied-model scope/);
+  assert.doesNotMatch(authored, /no readable research account/);
+  assert.match(render.document({ scope: { kind: "project" } }), /no readable research account/);
+});
+
 test("historical theory inspection renders the recorded component and its dependencies", () => {
   const html = render.testedTheory({ componentId: "statement.main", onCurrentTheory: noop, document: {
     statements: [{ statement_id: "statement.main", label: "Original bound", text: "This is the tested argument.", latex: "E_n = O(n^{-1/2})", assumption_ids: ["assumption.iid"] }, { statement_id: "statement.other", text: "Unrelated full theory passage" }],
@@ -228,7 +297,7 @@ test("rendered theory keeps equations, keyboard controls, exact-source assessmen
   assert.match(html, /class="katex/);
   assert.match(html, /role="button" tabindex="0"/);
   assert.match(html, /Request an assessment/);
-  assert.match(html, /Request a theory revision/);
+  assert.match(html, /Prepare theory revision/);
   assert.match(html, /Boundary case/);
   assert.match(html, /Open source/);
   assert.doesNotMatch(html, /Other method theorem/);
@@ -260,7 +329,7 @@ test("focused assessment preserves limits, proposed next steps, exact sources, a
   assert.match(html, /Assessed component and evidence sources/);
   assert.equal((html.match(/Open source/g) || []).length, 3);
   assert.match(html, /Diagnostics/);
-  assert.match(html, /Request a theory revision/);
+  assert.match(html, /Prepare theory revision/);
   const request = render.repairRequest(assessment);
   assert.equal(request.assessment_id, assessment.assessment_id);
   assert.equal(request.assessment, assessment);
@@ -273,7 +342,7 @@ test("P1 retains setting and literature while method preparation moves to P2", (
   const p1ref = { ...ref, branch: "trunk", phase: "P1", family: "research_basis" };
   const basis = { generation_ref: p1ref, research_setting: { statement_markdown: "Requested constraint:\n\\[\\mathbb E_\\pi[(C-B)_+]\\leq\\epsilon\\]", clarification_questions: ["Specify the admissible policy class."] }, phase2_preparation: { instructions_markdown: "Develop methods for the declared constrained objective.", supplied_method: { title: "Researcher's operator", specification_markdown: "\\[T_\\pi Q=Q\\]", source_reference: "Manuscript, equation 4" } }, landscape: { summary_markdown: "The literature treats distinct risk criteria.", topics: [] }, coverage_limits: [] };
   const html = render.phaseOne({ project: { project_id: "project.test", research_instructions: "Original instructions", setting_amendments: [{ text: "Allow randomized policies.", created_at: "2026-09-10T20:00:00Z" }] }, basis, artifacts: {}, cards: [], onSource: noop, onSaved: noop, onLaunch: noop });
-  for (const text of ["Research Setting", "Main Findings", "Decisions to Discuss", "Explore Individual Papers", "Additional Runs and History", "Specify the admissible policy class"]) assert.ok(html.includes(text), text);
+  for (const text of ["Research Setting", "Main Findings", "Decisions to Discuss", "Explore Individual Papers", "Instructions and run settings", "Specify the admissible policy class"]) assert.ok(html.includes(text), text);
   assert.match(html, /class="katex/);
   assert.equal((html.match(/<(?:section|details)\b[^>]*class="card(?: |")/g) || []).length, 5);
   assert.doesNotMatch(html, /<h2>Issues and decisions<\/h2>/);
@@ -526,7 +595,7 @@ test("P1 clarification follows the two scientific cards before papers with exact
   assert.equal((html.match(/<(?:section|details)\b[^>]*class="card(?: |")/g) || []).length, 5);
   assert.ok(html.indexOf("Decisions to Discuss") > html.indexOf("Main Findings"));
   assert.ok(html.indexOf("Decisions to Discuss") < html.indexOf("Explore Individual Papers"));
-  assert.ok(html.indexOf("Explore Individual Papers") < html.indexOf("Additional Runs and History"));
+  assert.ok(html.indexOf("Explore Individual Papers") < html.indexOf("Instructions and run settings"));
   assert.match(html, /<details[^>]*data-reading-anchor="issue-context:[^"]+"><summary>Context and sources<\/summary>/);
   assert.match(html, /Practical consequence/);
   assert.match(html, /\\sum_\{t=0\}\^\{\\infty\}\\gamma\^t/);
@@ -534,7 +603,7 @@ test("P1 clarification follows the two scientific cards before papers with exact
   assert.doesNotMatch(html, /<details class="phase-issue issue-row"[^>]*\sopen(?:=|\s|>)/);
   assert.ok(buttonNamed(html, "Save instruction"));
   assert.equal((renderedText(html).match(/May a policy depend/g) || []).length, 1); // The compact row summary names the question once.
-  assert.ok(html.indexOf("Earlier open questions") > html.indexOf("Additional Runs and History"));
+  assert.ok(html.indexOf("Earlier open questions") > html.indexOf("Instructions and run settings"));
   assert.match(html, /Earlier unresolved wording/);
   assert.doesNotMatch(html, /different phase&#x27;s decision|Outstanding researcher requests|Mark addressed|Points to clarify|Is there anything you want to modify|Save setting changes/);
 });
@@ -591,7 +660,7 @@ test("saved clarification remains in collapsed Decisions to Discuss after the op
   assert.match(html, /data-issue-state="saved"/);
   assert.match(html, /<details class="phase-issue issue-row answered"[^>]*><summary class="issue-row-summary"/);
   assert.doesNotMatch(html, /<details class="phase-issue issue-row answered"[^>]*\sopen(?:=|\s|>)/);
-  assert.ok(html.indexOf("Your instruction</h4>") > html.indexOf("Decisions to Discuss"));
+  assert.ok(html.indexOf("Your instruction</h3>") > html.indexOf("Decisions to Discuss"));
   assert.match(html, /Edit instruction/);
   assert.doesNotMatch(html, /We need your clarifications on:|Needs your input/);
   assert.match(html, /Use the augmented policy class/);
@@ -938,10 +1007,10 @@ test("P1 scientific cards read directly without a primary tab level", () => {
   const html = render.phaseOne({ project: { project_id: "p1", research_instructions: "Brief" }, basis: { research_setting: { statement_markdown: "The authored setting is $X_i$." }, landscape: { summary_markdown: "The authored synthesis." } }, artifacts: {} });
   assert.equal((html.match(/role="tablist"/g) || []).length, 0);
   assert.match(html, /The authored setting/); assert.match(html, /class="katex/);
-  const cards = ["Research Setting", "Main Findings", "Decisions to Discuss", "Explore Individual Papers", "Additional Runs and History"];
+  const cards = ["Research Setting", "Main Findings", "Decisions to Discuss", "Explore Individual Papers", "Instructions and run settings"];
   assert.equal((html.match(/<(?:section|details)\b[^>]*class="card(?: |")/g) || []).length, cards.length);
   for (let i = 1; i < cards.length; i++) assert.ok(html.indexOf(cards[i - 1]) < html.indexOf(cards[i]));
-  assert.ok(html.indexOf("Phase run history") > html.indexOf("Additional Runs and History"));
+  assert.ok(html.indexOf("Phase run history") > html.indexOf("Instructions and run settings"));
 });
 
 test("P1 legacy disclosures retain whole authored fields and notation stays on demand", () => {
@@ -1108,7 +1177,7 @@ test("P2 legacy publication history keeps unavailable counts distinct from zero"
   assert.doesNotMatch(html, /rounds: 0|attempts: 0|Open producing run/);
   const empty = render.methods({});
   assert.doesNotMatch(empty, /No lead comparison has been published yet/);
-  assert.match(empty, /No method proposal has been published yet/);
+  assert.match(empty, /Published proposals will appear here after the team completes its review/);
   assert.equal((empty.match(/<section\b[^>]*class="card(?: |")/g) || []).length, 2);
   assert.doesNotMatch(empty, /Issues and decisions/);
 });

@@ -48,11 +48,41 @@ def test_later_cross_phase_disposition_wins_without_duplicate_inbox_entries(tmp_
 
 
 @pytest.mark.parametrize("disposition", ["resolved", "deferred", "accepted_limitation", "rejected",
-                                          "addressed", "fixed", "partially_fixed", "wont_fix"])
+                                          "addressed", "fixed", "wont_fix"])
 def test_explicit_disposition_is_not_reopened_by_empty_rerun(tmp_path, disposition):
     publish(tmp_path, [issue("dependence")])
     publish(tmp_path, [issue("dependence", disposition)])
     publish(tmp_path, [])
+    assert open_attention_items(tmp_path, {}) == []
+
+
+def test_partial_team_progress_keeps_latest_shared_task_pending_without_reopening_earlier_source(tmp_path):
+    identifier = "reference-identification"
+    first = publish(tmp_path, [issue(identifier, kind="research_task", scope={"kind": "project"})], phase="P2")
+    partial = issue(identifier, "partially_fixed", kind="research_task", scope={"kind": "project"},
+                    target_phase="P3", question="Other models still need the reference-value check.",
+                    disposition_reason="Only the selected model has been checked.")
+    latest = publish(tmp_path, [partial], phase="P3", branch="method.a")
+    publish(tmp_path, [], phase="P3", branch="method.a")
+    before = {path: path.read_bytes() for path in (tmp_path / "branches").rglob("*") if path.is_file()}
+
+    pending = open_attention_items(tmp_path, {})
+
+    assert len(pending) == 1
+    item = pending[0]
+    assert item["attention_id"] == identifier and item["disposition"] == "partially_fixed"
+    assert item["question"] == partial["question"] and item["scope"] == {"kind": "project"}
+    assert item["generation_ref"]["generation_id"] == latest["records"]["attention_items"]["generation_id"]
+    assert item["generation_ref"]["generation_id"] != first["records"]["attention_items"]["generation_id"]
+    assert item["generation_ref"]["entry_pointer"] == "/0"
+    assert before == {path: path.read_bytes() for path in (tmp_path / "branches").rglob("*") if path.is_file()}
+    publish(tmp_path, [issue(identifier, "resolved", kind="research_task", scope={"kind": "project"})],
+            phase="P3", branch="method.a")
+    assert open_attention_items(tmp_path, {}) == []
+
+
+def test_partial_disposition_does_not_turn_a_recorded_decision_into_new_input(tmp_path):
+    publish(tmp_path, [issue("choice", "partially_fixed", kind="researcher_decision")])
     assert open_attention_items(tmp_path, {}) == []
 
 

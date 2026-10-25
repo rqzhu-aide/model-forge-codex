@@ -25,7 +25,7 @@ test("composable readers preserve the overview before an optional activity slot"
     const html = render.methods(props);
     assert.equal((html.match(/data-card-role="research"/g) || []).length, props.proposals ? 2 : 1);
     assert.ok(html.indexOf("Proposed Methods</h2>") < html.indexOf("WORK_STATUS_FIXTURE"));
-    assert.ok(html.indexOf("WORK_STATUS_FIXTURE") < html.indexOf(props.proposals ? "Choose a method</label>" : "No method proposal has been published"));
+    assert.ok(html.indexOf("WORK_STATUS_FIXTURE") < html.indexOf(props.proposals ? "Choose a method</label>" : "Published proposals will appear here"));
   }
   order(render.empirical({ progress, branch: "method.a" }));
 });
@@ -58,18 +58,36 @@ test("run history can show activity details immediately without expanding projec
   assert.match(html, /RECORDED_EXECUTION_HISTORY/);
 });
 
-test("further work starts collapsed while keeping recommendations and draft controls mounted", () => {
-  const html = render.furtherWork({ projectId: "compact.fixture", phase: "P3", branch: "method.a", recommendations: "A uniform remainder bound remains open." });
-  assert.match(html, /^<details[^>]*data-reading-anchor="further-work"/);
-  assert.doesNotMatch(html.split(">", 1)[0], /\bopen=/);
-  assert.match(html, /<summary[\s\S]*Further theory development/);
+test("rerun summary and collapsed instructions share one card with mounted recommendations and draft controls", () => {
+  const html = render.furtherWork({ projectId: "compact.fixture", phase: "P3", branch: "method.a", hasRun: true, recommendations: "A uniform remainder bound remains open." });
+  assert.match(html, /^<section[^>]*data-reading-anchor="rerun-summary"/);
+  const settings = html.match(/<details[^>]*data-reading-anchor="further-work"[^>]*>/)?.[0];
+  assert.ok(settings); assert.doesNotMatch(settings, /\bopen=/);
+  assert.match(html, /<h2>Revise and rerun<\/h2>/);
+  assert.match(html, /<summary>Edit instructions and settings<\/summary>/);
+  assert.equal((html.match(/class="card(?:\s|")/g) || []).length, 1);
+  assert.equal((html.match(/<h2>/g) || []).length, 1);
   assert.match(html, /A uniform remainder bound remains open/);
   assert.match(html, /Loading your saved instructions/);
 });
 
-test("P5 Next revision keeps its native disclosure and addressable recovery target", () => {
-  const html = render.furtherWork({ projectId: "compact.fixture", phase: "P5", branch: "method.a" });
-  assert.match(html, /^<details[^>]*id="p5-additional-work"[^>]*data-reading-anchor="further-work"/);
-  assert.doesNotMatch(html.split(">", 1)[0], /\bopen=/);
-  assert.match(html, /<summary class="card-heading"><h2>Next revision<\/h2><\/summary>/);
+test("P5 report revision keeps its native settings disclosure and addressable recovery target", () => {
+  const html = render.furtherWork({ projectId: "compact.fixture", phase: "P5", branch: "method.a", hasRun: true });
+  assert.match(html, /^<section[^>]*data-reading-anchor="rerun-summary"/);
+  const settings = html.match(/<details[^>]*id="p5-additional-work"[^>]*data-reading-anchor="further-work"[^>]*>/)?.[0];
+  assert.ok(settings); assert.doesNotMatch(settings, /\bopen=/);
+  assert.match(html, /<h2>Revise report<\/h2>/);
+  assert.match(html, /<summary>Edit instructions and settings<\/summary>/);
+  assert.doesNotMatch(html, /Research questions|Study understanding|Discuss your problem/);
+});
+
+test("a first run has one instructions card and an immediately available form in every phase", () => {
+  for (const phase of ["P1", "P2", "P3", "P4", "P5"]) {
+    const html = render.furtherWork({ projectId: "first.fixture", phase, branch: "method.a", hasRun: false });
+    assert.equal((html.match(/class="card(?:\s|")/g) || []).length, 1);
+    assert.match(html, /<h2>Instructions and run settings<\/h2>/);
+    assert.match(html.match(/<details[^>]*data-reading-anchor="further-work"[^>]*>/)?.[0] || "", /\bopen=/);
+    assert.match(html, /<summary hidden="">Edit instructions and settings<\/summary>/);
+    assert.doesNotMatch(html, /Revise and rerun|Revise report|Research questions|Study understanding/);
+  }
 });

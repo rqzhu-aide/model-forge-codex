@@ -66,7 +66,7 @@ function ProposedUnderstanding({ projectId, proposal, revision, onSaved }) {
     catch (failure) { setError(failure.message); }
     finally { lock.current = false; setBusy(false); }
   };
-  return <form className="dialogue-proposal" onSubmit={confirm}>
+  return <form className="dialogue-proposal" data-reading-anchor={`proposed-understanding:${proposal.amendment_id}`} onSubmit={confirm}>
     <div className="team-context-band">
       <h3>Proposed understanding</h3><p className="note">Research team</p><ResearchDocument text={proposal.reason} />
       {proposal.conflicts_with?.length > 0 && <p className="note warn">This proposal identifies a conflict with saved context. The accounts remain separate until you confirm or edit the change.</p>}
@@ -92,6 +92,7 @@ export default function ResearcherDialogue({ problemContext, project, catalogPre
   const history = conversations.filter((item) => item.assessment_purpose === "project_context");
   const earlierDrafts = conversationDrafts("problem-response:").filter(({ draft }) => draft.projectId === issueProps.projectId && draft.text?.trim() && draft.target?.sha256 !== target?.sha256 && conversationDraftKey(issueProps.projectId, draft.target) !== (editor && conversationDraftKey(issueProps.projectId, editor.target)));
   const content = <div className="researcher-dialogue" data-reading-anchor="researcher-dialogue">
+    <h3>Study understanding</h3>
     {items.length ? <><h3>Saved understanding</h3>{items.slice(0, 2).map((item) => <ContextStatement goalReference={goalReference} key={`${item.item_id}:${item.revision}`} item={item} onSource={onSource} projectId={issueProps.projectId} context={context} target={target} onSaved={saved} onDiscuss={onDiscuss} activeWork={activeWork} />)}{items.length > 2 && <details className="research-details"><summary>More saved context ({items.length - 2})</summary>{items.slice(2).map((item) => <ContextStatement goalReference={goalReference} key={`${item.item_id}:${item.revision}`} item={item} onSource={onSource} projectId={issueProps.projectId} context={context} target={target} onSaved={saved} onDiscuss={onDiscuss} activeWork={activeWork} />)}</details>}</> : <p className="note">Your project brief is the starting account. Describe how observations arise, what you want the model to do, and what would make it useful. Data are optional; unknown information can stay unknown.</p>}
     {changedWhileWriting && <p className="note" role="status">Saved understanding changed while you were writing. Your draft remains attached to context revision {editor.target.context_revision}. <ActionButton action="edit" uiRole="system" onClick={() => { editorBasis.current = { target, context }; refreshEditor((value) => value + 1); }}>Use current understanding</ActionButton> keeps this draft under earlier responses.</p>}
     {target && editor && <ContextResponse key={conversationDraftKey(issueProps.projectId, editor.target)} projectId={issueProps.projectId} context={editor.context} target={editor.target} onSaved={saved} onDiscuss={onDiscuss} activeWork={activeWork} />}

@@ -15,7 +15,7 @@ from test_researcher_workbench_api import api
 from test_researcher_workbench_engine import workbench, publish, seed_theory
 
 
-def retained_report(engine, project, branch, *, markdown=None, run_id="run.report"):
+def retained_report(engine, project, branch, *, markdown=None, run_id="run.report", section_anchors=None):
     seed_theory(project, branch)
     basis = engine.compute_basis("project.test", "P5", branch, "p5.assembly")
     directory = project / "runs" / run_id
@@ -38,7 +38,7 @@ def retained_report(engine, project, branch, *, markdown=None, run_id="run.repor
     primary.write_text(markdown, encoding="utf-8")
     theory = next(ref for ref in basis["records"] if ref["family"] == "theory_record")
     report = {"record_type": "technical_report", "title": "Exact technical report", "sections_present": list(CONTENT_SECTIONS),
-              "section_anchors": {key: key for key in CONTENT_SECTIONS},
+              "section_anchors": section_anchors or {key: key for key in CONTENT_SECTIONS},
               "report_artifact": {"artifact_id": "artifact.report", "path": "report.md", "sha256": sha256_file(primary)},
               "claims": [{"claim_id": "claim.math", "text": "The exact retained argument.", "anchor": "justification",
                           "source_refs": [{key: theory[key] for key in ("branch", "phase", "family", "generation_id", "content_sha256")}]}]}
@@ -69,6 +69,20 @@ def test_exact_section_contains_children_and_excludes_other_main_sections(workbe
     for changed in ({"sha256": "0" * 64}, {"package_id": "package.missing"}, {"object_id": "unknown"}, {"family": "manuscript"}):
         with pytest.raises(ValueError):
             resolve_report_section(project, {**target, **changed})
+
+
+def test_retained_reproduction_discussion_excludes_declared_references(workbench):
+    engine, project, branch = workbench
+    anchors = {key: key for key in CONTENT_SECTIONS} | {"references": "report-references"}
+    markdown = "\n\n".join(f'<a id="{key}"></a>\n## {key}\n\nSECTION_{key.upper()}' for key in CONTENT_SECTIONS)
+    markdown += '\n\n<a id="report-references"></a>\n## Bibliography\n\nREFERENCE_ONLY_CONTEXT'
+    target, primary = retained_report(engine, project, branch, markdown=markdown, section_anchors=anchors)
+    issue = resolve_report_section(project, {**target, "object_id": "reproducibility"})
+    assert "SECTION_REPRODUCIBILITY" in issue["summary_markdown"]
+    assert "Bibliography" not in issue["summary_markdown"] and "REFERENCE_ONLY_CONTEXT" not in issue["summary_markdown"]
+    assert primary.read_text(encoding="utf-8") == markdown
+    with pytest.raises(ValueError, match="section"):
+        resolve_report_section(project, {**target, "object_id": "references"})
 
 
 @pytest.mark.parametrize("markdown", [

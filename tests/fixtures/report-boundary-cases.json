@@ -1,0 +1,737 @@
+[
+  {
+    "name": "trailing bibliography",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "anchor on heading",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n### Bibliography <a id=\"report-references\"></a>\n\nRetained source.",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "anchor after heading",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n## Sources\n\n<a id=\"report-references\"></a>\n\nRetained source.",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "ignore fenced code",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n```md\n<a id=\"report-references\"></a>\n## Fake\n```\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only fenced code",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n```md\n<a id=\"report-references\"></a>\n## Fake\n```",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore fence text is not closing",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n   ```md\n   ```not-closing\n<a id=\"report-references\"></a>\n## Fake\n   ```\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only fence text is not closing",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n   ```md\n   ```not-closing\n<a id=\"report-references\"></a>\n## Fake\n   ```",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore tilde code",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n~~~md\n<a id=\"report-references\"></a>\n## Fake\n~~~\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only tilde code",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n~~~md\n<a id=\"report-references\"></a>\n## Fake\n~~~",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore indented code",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n    <a id=\"report-references\"></a>\n    ## Fake\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only indented code",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n    <a id=\"report-references\"></a>\n    ## Fake",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore tab code",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n\t<a id=\"report-references\"></a>\n\t## Fake\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only tab code",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n\t<a id=\"report-references\"></a>\n\t## Fake",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore quote",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n> <a id=\"report-references\"></a>\n> ## Fake\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only quote",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n> <a id=\"report-references\"></a>\n> ## Fake",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore list",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n- note\n  <a id=\"report-references\"></a>\n  ## Fake\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only list",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n- note\n  <a id=\"report-references\"></a>\n  ## Fake",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore ordered list",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n1. note\n   <a id=\"report-references\"></a>\n   ## Fake\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only ordered list",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n1. note\n   <a id=\"report-references\"></a>\n   ## Fake",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore dollar display",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n$$\n<a id=\"report-references\"></a>\n## Fake\n$$\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only dollar display",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n$$\n<a id=\"report-references\"></a>\n## Fake\n$$",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore bracket display",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n\\[\n<a id=\"report-references\"></a>\n## Fake\n\\]\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only bracket display",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n\\[\n<a id=\"report-references\"></a>\n## Fake\n\\]",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore single dollar display",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n$\n<a id=\"report-references\"></a>\n## Fake\n$\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only single dollar display",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n$\n<a id=\"report-references\"></a>\n## Fake\n$",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore inline dollar",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\nEquation $<a id=\"report-references\"></a>$ is opaque.\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only inline dollar",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\nEquation $<a id=\"report-references\"></a>$ is opaque.",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore inline parentheses",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\nEquation \\(<a id=\"report-references\"></a>\\) is opaque.\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only inline parentheses",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\nEquation \\(<a id=\"report-references\"></a>\\) is opaque.",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore inline code",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\nCode `<a id=\"report-references\"></a>` is opaque.\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only inline code",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\nCode `<a id=\"report-references\"></a>` is opaque.",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore backtick run code",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\nCode ``foo ` <a id=\"report-references\"></a> bar`` is opaque.\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only backtick run code",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\nCode ``foo ` <a id=\"report-references\"></a> bar`` is opaque.",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "ignore table",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n| Item | Value |\n| --- | --- |\n| <a id=\"report-references\"></a> | Fake |\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "reject only table",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n| Item | Value |\n| --- | --- |\n| <a id=\"report-references\"></a> | Fake |",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "missing boundary",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n## Sources\n\nNo explicit anchor.",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "duplicate boundary",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "misplaced boundary",
+    "markdown": "# Report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "shared declared anchor",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "reproducibility"
+    },
+    "valid": false
+  },
+  {
+    "name": "shared heading",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n<a id=\"report-references\"></a>\n## reproducibility\n\nMain reproducibility.\n\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "prose anchor",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\nAn inline source <a id=\"report-references\"></a> is prose.\n\n## Sources",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "missing main heading",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\nThe model is not a heading.\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "duplicate main anchor",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n<a id=\"model\"></a>\n## Repeated model\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "fake main heading",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n```md\n<a id=\"model\"></a>\n## model\n```\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "indented code immediately before reference anchor",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n    code example\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "indented code with separating blank",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n    code example\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": true
+  },
+  {
+    "name": "paragraph then indented anchor line",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\nText.\n    <a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "heading immediately after indented line",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\n    <a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  },
+  {
+    "name": "indented fake anchor in continued paragraph",
+    "markdown": "# Research report\n\n<a id=\"problem\"></a>\n## problem\n\nMain problem.\n\n<a id=\"model\"></a>\n## model\n\nMain model.\n\n<a id=\"existing_approaches\"></a>\n## existing_approaches\n\nMain existing_approaches.\n\n<a id=\"justification\"></a>\n## justification\n\nMain justification.\n\n<a id=\"numerical_analysis\"></a>\n## numerical_analysis\n\nMain numerical_analysis.\n\n<a id=\"limitations\"></a>\n## limitations\n\nMain limitations.\n\n<a id=\"reproducibility\"></a>\n## reproducibility\n\nMain reproducibility.\n\nExample:\n    <a id=\"report-references\"></a>\n\n<a id=\"report-references\"></a>\n## Sources\n\n[1] Retained source.\n",
+    "anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "valid": false
+  }
+]

@@ -118,6 +118,8 @@ function namedMathematicalObjectForDisplay(value) {
 }
 
 function readableResearchBody(key, body) {
+  // Typed scope objects describe applicability, not an authored research account.
+  if (key === "scope" && ["project", "model"].includes(body?.kind)) return null;
   if (["target_or_estimand", "input_information", "feature_definition", "objective_or_estimating_equation", "derivatives", "constraints_and_normalization"].includes(key)) return namedMathematicalObjectForDisplay(body);
   if (researchObjectFields[key] && body && typeof body === "object" && !Array.isArray(body)) {
     return labeledResearchFields(body, researchObjectFields[key]);
@@ -196,7 +198,32 @@ export function selectResearchDocuments(documents) {
 
 export const researchDocumentTitle = (document) => document.kind === "review_issue_ledger" ? "Review findings and resolution status" : document.title || document.structured?.title;
 
+// Present the whole declared Analyst account in its authored order. These
+// labels never join its informal question keys to structured question IDs.
+function analystAccountContent(account) {
+  const sections = (value, fields) => labeledResearchFields(value, fields).map(({ title, text }) => ({ title, body: text }));
+  const questions = Array.isArray(account.questions) ? account.questions : account.question_results;
+  return { title: account.title, body: [
+    ...sections(account, [["summary_markdown", "Summary"], ["conclusion", "Conclusion"], ["scope", "Scope"], ["conditions", "Conditions"], ["design", "Study design"]]),
+    ...(Array.isArray(questions) ? [{ title: "Empirical questions", body: questions.map((question) => typeof question === "object" && question ? {
+      title: question.title, state: question.outcome,
+      body: sections(question, [["answer_markdown", "Finding"], ["relevance_markdown", "Relevance"],
+        ["design_markdown", "Study design"], ["conditions_markdown", "Conditions"], ["comparison_markdown", "Model comparison"],
+        ["reliability_markdown", "Reliability"], ["uncertainty_markdown", "Uncertainty"],
+        ["limitations_markdown", "Limitations"], ["decision_implication_markdown", "Implication for the model"],
+        ["next_steps_markdown", "Next steps"]]),
+    } : question) }] : []),
+    ...(account.implementation_summary && typeof account.implementation_summary === "object" ? [{ title: "Implementation summary", body: sections(account.implementation_summary,
+      [["rule", "Implemented calculation"], ["correspondence", "Correspondence to the model"], ["environment", "Environment"],
+        ["verification", "Verification"], ["limitations", "Limitations"], ["configuration", "Configuration"],
+        ["choices", "Implementation choices"], ["departures", "Departures from the model"]]) }] : []),
+  ] };
+}
+
 export function researchDocumentContent(document) {
+  if (document.kind === "analyst_synthesis" && document.primary_source_verified && document.primary_artifact_kind === "json" && document.primary_content) {
+    return analystAccountContent(document.primary_content);
+  }
   if (document.kind === "analyst_audit" && document.structured) {
     return { ...document.structured, body_md: document.body_md || document.body || document.structured.body_md };
   }

@@ -28,6 +28,7 @@ from functools import lru_cache
 
 from .accounts import find_codex
 from .storage import read_json, write_json_atomic
+from .windows_runtime import P4WindowsSetupError, runtime_settings
 
 _LOCKS: dict[str, threading.RLock] = {}
 _LOCKS_GUARD = threading.Lock()
@@ -114,6 +115,20 @@ class P4RequestRejected(P4ExecutionError):
 
 class P4CleanupError(P4ExecutionError):
     """Stopping was not confirmed; the host must not present an idle pause."""
+
+
+class P4InfrastructureError(P4ExecutionError):
+    """Preparing host access failed without evidence of damaged inputs."""
+
+
+async def _prepare_owned_read_access(directory: Path, *, owned_root: Path):
+    try:
+        await asyncio.to_thread(_ensure_owned_read_access, directory, owned_root=owned_root)
+    except Exception as exc:
+        raise P4InfrastructureError(
+            f"Windows sandbox access to retained experiment files could not be prepared: {exc}. "
+            "Repair the shared sandbox setup and host file access before continuing P4."
+        ) from exc
 
 
 def _now():
@@ -310,8 +325,11 @@ def setup_attention(progress, request=None):
         return None
     language = attempt.get("language", "python")
     configuration = "MF_P4_RSCRIPT" if language == "r" else "MF_P4_PYTHON"
+    guidance = ("Complete or repair the selected elevated Windows sandbox setup in Codex and restore host access to the retained experiment files, then explicitly continue P4. Keep the managed read, denied-read and write boundaries enabled."
+                if attempt.get("setup_kind") == "windows_sandbox" else
+                f"Check the saved technical log, required packages and shared runtime access. Set {configuration} to an accessible user-wide or machine-wide installation when needed, then explicitly continue. Keep the managed sandbox enabled.")
     return {"message": "The managed computation could not run. This is a setup failure and supplies no finding about the method.",
-            "guidance": f"Check the saved technical log, required packages and shared runtime access. Set {configuration} to an accessible user-wide or machine-wide installation when needed, then explicitly continue. Keep the managed sandbox enabled.",
+            "guidance": guidance,
             **{key: attempt[key] for key in ("attempt_id", "batch_id", "output_dir", "diagnostic") if key in attempt}}
 
 
@@ -636,10 +654,14 @@ class P4Controller:
         started = time.monotonic()
         cancelled = False
         cleanup_error = None
-        execution_step = "inputs"
+        execution_step = "setup"
         result = None
         execution_workspace = None
         try:
+            check_setup = getattr(self.runner, "check_setup", None)
+            if callable(check_setup):
+                await check_setup(self.workspace)
+            execution_step = "inputs"
             execution_workspace = Path(batch["workspace"])
             execution_options = {}
             if batch.get("source_directory"):
@@ -659,12 +681,12 @@ class P4Controller:
                 path = execution_workspace / Path(batch["code_path"]).relative_to(source)
                 batch["executed_path"] = str(path)
                 inputs = read_json(Path(batch["input_manifest_path"]))
-                await asyncio.to_thread(_ensure_owned_read_access, output, owned_root=self.directory)
+                await _prepare_owned_read_access(output, owned_root=self.directory)
                 for item in inputs["inputs"]:
                     if _digest(Path(item["snapshot_path"])) != item["sha256"]:
                         raise P4ExecutionError("A frozen run input changed before execution")
-                    await asyncio.to_thread(_ensure_owned_read_access, Path(item["snapshot_path"]).parent,
-                                            owned_root=self.run_dir / "inputs/researcher")
+                    await _prepare_owned_read_access(Path(item["snapshot_path"]).parent,
+                                                     owned_root=self.run_dir / "inputs/researcher")
                 execution_options = {"language": batch["language"], "dependencies": batch.get("dependencies", []),
                                      "read_paths": [Path(batch["input_manifest_path"]), *[Path(item["snapshot_path"]) for item in inputs["inputs"]]]}
             else:
@@ -711,11 +733,16 @@ class P4Controller:
             if execution_step == "outputs":
                 result = {**result, "status": "output_error",
                           "diagnostic": f"The computation finished successfully, but its declared output {relative!r} could not be retained: {exc}. Check the script's output path and the saved logs before explicitly continuing."}
-            elif execution_step == "inputs":
+            elif execution_step == "inputs" and not isinstance(exc, P4InfrastructureError):
                 result = {"status": "input_error",
                           "diagnostic": f"The experiment inputs could not be prepared, so computation did not start: {exc}. Check the queued script and retained input paths before explicitly continuing."}
             else:
                 result = {"status": "infrastructure_error", "diagnostic": str(exc)}
+                if execution_step in {"setup", "inputs"}:
+                    result["computation_started"] = False
+                if isinstance(exc, (P4WindowsSetupError, P4InfrastructureError)):
+                    result["setup_kind"] = "windows_sandbox"
+                (output / "stderr.log").write_text(str(exc) + "\n", encoding="utf-8")
         if (batch.get("source_directory") and execution_workspace is not None and execution_workspace.exists()
                 and result["status"] != "cleanup_unconfirmed"):
             # The runner has stopped its process tree before reaching here.
@@ -900,6 +927,11 @@ class ManagedPythonRunner:
         self.command_builder = command_builder or self.sandbox_command
         self.managed = command_builder is None
 
+    async def check_setup(self, workspace):
+        if self.managed and os.name == "nt":
+            from .bridge import check_p4_windows_runtime
+            return await check_p4_windows_runtime(workspace)
+
     @staticmethod
     def sandbox_command(script, args, workspace, *, language="python", read_paths=()):
         executable = find_codex()
@@ -958,19 +990,25 @@ class ManagedPythonRunner:
         for filename in ("stdout.log", "stderr.log"):
             (output_dir / filename).touch()
         try:
+            await self.check_setup(workspace)
             await asyncio.to_thread(ensure_workspace_owner_access, workspace, owned_root=workspace.parent)
             command = (self.sandbox_command(script, args, workspace, language=language, read_paths=read_paths)
                        if self.managed else self.command_builder(script, args, workspace))
         except Exception as exc:
             (output_dir / "stderr.log").write_text(str(exc) + "\n", encoding="utf-8")
             write_json_atomic(output_dir / "launch.json", {"language": language, "created_at": _now(), "diagnostic": str(exc), "computation_started": False})
-            return {"status": "infrastructure_error", "language": language, "diagnostic": str(exc), "computation_started": False}
+            return {"status": "infrastructure_error", "language": language, "diagnostic": str(exc), "computation_started": False,
+                    **({"setup_kind": "windows_sandbox"} if isinstance(exc, P4WindowsSetupError) else {})}
         # Persist the launch context even when cancellation prevents a normal
         # return value. The owning attempt already retains this output folder.
         write_json_atomic(output_dir / "launch.json", {"command": command, "created_at": _now(),
             "host_python_executable": sys.executable, "host_python_version": sys.version})
         allowed = {"PATH", "SYSTEMROOT", "WINDIR", "COMSPEC", "TEMP", "TMP", "USERPROFILE", "HOME", "APPDATA", "LOCALAPPDATA", "CODEX_HOME", "PATHEXT", "LANG", "LC_ALL", "PYTHONUTF8", "R_LIBS", "R_LIBS_USER", "R_LIBS_SITE"}
         environment = {key: value for key, value in os.environ.items() if key.upper() in allowed}
+        if self.managed and os.name == "nt":
+            # Keep the same resolved runtime home used by the setup check even
+            # when the user's CODEX_HOME was relative to the app's launch cwd.
+            environment["CODEX_HOME"] = str(runtime_settings(Path(workspace))[0])
         # Shared installed packages remain available; arbitrary provider credentials do not.
         environment["PYTHONUNBUFFERED"] = "1"
         environment.update({key: str(value) for key, value in (context or {}).items()

@@ -152,3 +152,114 @@ def test_simultaneous_launches_publish_one_complete_snapshot_and_can_reuse_it(tm
     assert list(releases.iterdir()) == [targets[0]]
     snapshot.verify_files(targets[0], manifest["files"])
     assert snapshot.snapshot_release(source, releases) == targets[0]
+
+
+@pytest.mark.parametrize("contents", [None, "{broken", "null", "[]", "{}", '{"release_id": "different"}'])
+def test_missing_or_malformed_retained_metadata_has_targeted_manual_recovery_guidance(tmp_path, contents):
+    source, _ = source_release(tmp_path)
+    releases = tmp_path / "persistent app/releases"
+    target = snapshot.snapshot_release(source, releases)
+    metadata = target / "local-release.json"
+    if contents is None:
+        metadata.unlink()
+    else:
+        metadata.write_text(contents, encoding="utf-8")
+    before = {str(item.relative_to(target)): item.read_bytes() for item in target.rglob("*") if item.is_file()}
+    errors = []
+    for _ in range(2):
+        with pytest.raises(ValueError) as caught:
+            snapshot.snapshot_release(source, releases)
+        errors.append(str(caught.value))
+    assert errors[0] == errors[1]
+    assert f'retained application release could not be verified: "{target}"' in errors[0]
+    assert "Downloading the same release will not replace this directory" in errors[0]
+    assert "Stop every Model Forge instance" in errors[0]
+    assert "different research directories or ports" in errors[0]
+    assert "unused sibling quarantine name" in errors[0]
+    assert "If you cannot confirm they have all stopped, leave the directory in place" in errors[0]
+    assert {str(item.relative_to(target)): item.read_bytes() for item in target.rglob("*") if item.is_file()} == before
+    assert list(releases.iterdir()) == [target]
+
+
+@pytest.mark.parametrize("manifest_text", [None, "{broken", "[]"])
+def test_invalid_download_manifest_identifies_source_without_retained_release_repair(tmp_path, manifest_text):
+    source, _ = source_release(tmp_path)
+    if manifest_text is None:
+        (source / snapshot.MANIFEST).unlink()
+    else:
+        (source / snapshot.MANIFEST).write_text(manifest_text, encoding="utf-8")
+    releases = tmp_path / "persistent app/releases"
+    with pytest.raises(ValueError) as caught:
+        snapshot.snapshot_release(source, releases)
+    message = str(caught.value)
+    assert f'downloaded npm release could not be verified: "{source.resolve()}"' in message
+    assert "Download the release again before retrying" in message
+    assert "quarantine" not in message
+    assert not releases.exists()
+
+
+def test_manual_quarantine_after_both_shared_release_instances_stop_preserves_data(tmp_path, monkeypatch):
+    from model_forge_codex import local_app
+
+    source, manifest = source_release(tmp_path)
+    releases = tmp_path / "persistent app/releases"
+    target = snapshot.snapshot_release(source, releases)
+    other_source, other_manifest = source_release(tmp_path / "other source")
+    seal_manifest(other_source, other_manifest["files"], version="1.2.4")
+    other = snapshot.snapshot_release(other_source, releases)
+    other_bytes = {str(item.relative_to(other)): item.read_bytes() for item in other.rglob("*") if item.is_file()}
+    roots = [tmp_path / "researcher's first study", tmp_path / "another study"]
+    instances = {}
+    preserved = {}
+    for number, data in enumerate(roots):
+        data.mkdir()
+        for name in ["providers.toml", "project.json"]:
+            path = data / name
+            path.write_text(f"Synthetic existing {number} {name}", encoding="utf-8")
+            preserved[path] = path.read_bytes()
+        port = 18766 + number
+        instance = f"synthetic-{number}"
+        (data / ".local-server.json").write_text(json.dumps({"instance_id": instance, "port": port, "token": "synthetic"}), encoding="utf-8")
+        instances[port] = {"application": local_app.APPLICATION, "data_root": str(data), "app_root": str(target),
+                           "instance_id": instance, "active_runs": ["synthetic-run"] if number else []}
+
+    def request(port, route, *, body=None, token=None):
+        current = instances[port]
+        if current is None:
+            raise ConnectionRefusedError
+        if body is not None:
+            assert route == "/api/v1/local/stop"
+            assert body == {"cancel_active": False} and token == "synthetic"
+            (Path(current["data_root"]) / ".local-server.json").unlink()
+            instances[port] = None
+            return {"stopping": True}
+        return current
+
+    monkeypatch.setattr(local_app, "_request", request)
+    payload = target / "web/dist/assets/app.js"
+    payload.write_text("Damaged retained payload", encoding="utf-8")
+    damaged = payload.read_bytes()
+    messages = []
+    for _ in range(2):
+        with pytest.raises(ValueError) as caught:
+            snapshot.snapshot_release(source, releases)
+        messages.append(str(caught.value))
+        assert payload.read_bytes() == damaged
+    assert messages[0] == messages[1] and str(target) in messages[0]
+    assert local_app.stop(roots[0], 18766)["running"] is False
+    with pytest.raises(local_app.LocalAppError, match="Research is running"):
+        local_app.stop(roots[1], 18767)
+    # Stopping one root/port is not global idleness. No repair has happened.
+    assert instances[18767]["active_runs"] == ["synthetic-run"]
+    assert payload.read_bytes() == damaged
+    instances[18767]["active_runs"] = []
+    assert local_app.stop(roots[1], 18767)["running"] is False
+    assert all(current is None for current in instances.values())
+    quarantine = target.with_name(target.name + ".quarantine")
+    target.rename(quarantine)  # The operator's manual, targeted step.
+    assert snapshot.snapshot_release(source, releases) == target
+    snapshot.verify_files(target, manifest["files"])
+    assert (quarantine / "web/dist/assets/app.js").read_bytes() == damaged
+    assert {str(item.relative_to(other)): item.read_bytes() for item in other.rglob("*") if item.is_file()} == other_bytes
+    assert all(path.read_bytes() == original for path, original in preserved.items())
+    assert not list(releases.glob(".staging-*"))

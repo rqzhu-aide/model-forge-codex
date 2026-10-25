@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from "react";
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { phaseLabel, humanLabel } from "../research";
 import { MethodStatusNote, ResearchDocument, SourceRef } from "./Shared";
 import { perspective } from "./LiteratureWorkspace";
@@ -6,7 +6,8 @@ import { citationLinks, collectionFields, narrativeFields } from "../researchCon
 import { inlineTokens } from "../researchMath";
 import { catalogMethodForProposal, catalogOnlyMethods, catalogSelectionKey, comparisonCandidates, comparisonForProposal, hasConciseP2Account, methodAnswers, methodIdOf, methodRequests, modificationOptionsFor, orderedProposals, proposalKey, proposalSectionSource, recordedSelections, sameMethodIdentity, successorMethodForProposal, summaryForDisplay } from "../methodWorkspace";
 import { methodStartingPointSource } from "../methodSeed";
-import { ActionButton, ActionIcon } from "./Visuals";
+import { ActionButton, ActionIcon, EmptyState } from "./Visuals";
+import { phaseInputStickyOffset } from "../phaseInputNavigation";
 
 export function proposalReviews(proposal, reviews) {
   const runId = proposal.generation_ref?.run_id;
@@ -176,7 +177,7 @@ function CompleteFormulation({ definition }) {
 
 // One exact selection is shared with both follow-up cards. Publication refreshes
 // retain that selection and its drafts until the researcher chooses another model.
-function ExploreMethod({ methods = [], proposals = [], reviews = [], comparisons = [], comparison, literatureSources = [], projectId, attentionItems = [], researcherAnswers = [], busy, onContinue, onResolved, onSource, initialPick, onPick, modelHistory, issues, furtherWork, progress, reading = {}, onReadingChange }) {
+function ExploreMethod({ methods = [], cards = [], proposals = [], reviews = [], comparisons = [], comparison, literatureSources = [], projectId, attentionItems = [], researcherAnswers = [], busy, onContinue, onResolved, onSource, initialPick, initialSharedPreparation, onPreparationScopeChange, onPick, modelHistory, issues, furtherWork, progress, reading = {}, onReadingChange }) {
   const id = useId(); const [pick, setPick] = useState(initialPick || "");
   const [disclosures, setDisclosures] = useState(reading.modelDisclosures || {});
   const [savedAnswers, setSavedAnswers] = useState({});
@@ -190,6 +191,30 @@ function ExploreMethod({ methods = [], proposals = [], reviews = [], comparisons
   const selected = pickedProposal || (!pickedCatalog && (current[0] || earlier[0])) || null;
   const catalogMethod = selected ? catalogMethodForProposal(selected, methods) : pickedCatalog || catalogOnly[0] || null;
   const selectedKey = selected ? proposalKey(selected) : catalogMethod ? catalogSelectionKey(catalogMethod) : "";
+  // Next can name another exact proposal while P2 stays mounted. Accept that
+  // context change without discarding model drafts or the prepared run scope.
+  useLayoutEffect(() => {
+    if (initialPick && (proposals.some((proposal) => proposalKey(proposal) === initialPick)
+      || catalogOnly.some((method) => catalogSelectionKey(method) === initialPick))) setPick(initialPick);
+  }, [initialPick]);
+  // Publishing the first model updates the reader without replacing the shared
+  // instructions already being prepared. Only an explicit choice changes them.
+  const [sharedPreparation, setSharedPreparation] = useState(initialSharedPreparation ?? !selectedKey);
+  const focusPreparation = useRef(false);
+  useLayoutEffect(() => {
+    if (!focusPreparation.current) return;
+    focusPreparation.current = false;
+    const root = document.getElementById?.(`${id}-models`)?.closest('[data-reader-ready="true"]');
+    const settings = root?.querySelector('[data-reading-anchor="further-work"]');
+    if (!settings) return;
+    settings.open = true;
+    const target = settings.querySelector(":scope > summary:not([hidden])") || settings;
+    if (target === settings) settings.setAttribute("tabindex", "-1");
+    window.scrollTo({ top: Math.max(0, window.scrollY + target.getBoundingClientRect().top - phaseInputStickyOffset(root)), behavior: "instant" });
+    target.focus({ preventScroll: true });
+  }, [sharedPreparation]);
+  const preparationChange = useRef(onPreparationScopeChange); preparationChange.current = onPreparationScopeChange;
+  useEffect(() => { preparationChange.current?.(sharedPreparation); }, [sharedPreparation]);
   const selectionChange = useRef(onPick); selectionChange.current = onPick;
   useEffect(() => {
     if (!selectedKey || selectedKey === pick) return;
@@ -202,7 +227,19 @@ function ExploreMethod({ methods = [], proposals = [], reviews = [], comparisons
   useEffect(() => {
     if (selectedKey) readingChange.current?.({ modelDisclosures: { ...disclosures, [selectedKey]: openSections } });
   }, [disclosures, selectedKey]);
-  if (!selected && !catalogMethod) return null;
+  if (!selected && !catalogMethod) {
+    const context = { proposal: null, method: null, methodId: null, methodBranch: "trunk", catalogMethod: null, reviewed: null,
+      requests: attentionItems, answers: researcherAnswers, phases: methodPhases, emptyState: !cards.length, sharedPreparation: true, modelHistory };
+    // Keep the same sibling slots as the populated reader so first publication
+    // preserves the mounted preparation form, its disclosure and its focus.
+    return <><section className="card p2-landscape p2-models-card" data-card-role="research"><div className="card-heading"><h2>Proposed Methods</h2></div><div className="body">
+      <MethodComparison comparison={comparison} proposals={[]} reviews={reviews} onSource={onSource} />{progress}
+      {!cards.length && <EmptyState><p>Published proposals will appear here after the team completes its review.</p></EmptyState>}
+    </div></section>
+      {cards.length > 0 && <section className="card p2-models-card" data-card-role="research"><div className="card-heading"><h2>Select a Method to Explore</h2></div><div className="body"><CatalogRecords cards={cards} onSource={onSource} /></div></section>}
+      {renderSlot(issues, context)}{renderSlot(furtherWork, context)}
+    </>;
+  }
   const definition = catalogMethod?.definition || {};
   const method = selected?.method || { ...definition, title: catalogMethod.title || catalogMethod.name || definition.title || catalogMethod.method_id, identity: catalogMethod.identity || catalogMethod.current_identity || definition.identity };
   const source = selected?.generation_ref || catalogMethod?.source_ref;
@@ -226,7 +263,7 @@ function ExploreMethod({ methods = [], proposals = [], reviews = [], comparisons
   const audits = selected ? proposalReviews(selected, reviews) : [];
   const specialists = audits.filter((audit) => ["theorist", "data_analyst"].includes(audit.role) && audit.applicability_markdown);
   const staleOutputs = (catalogMethod?.dependent_outputs || []).filter((output) => output.status && output.status !== "current");
-  const choose = (key) => { if (proposals.some((proposal) => proposalKey(proposal) === key) || catalogOnly.some((method) => catalogSelectionKey(method) === key)) { setPick(key); onPick?.(key); } };
+  const choose = (key) => { if (proposals.some((proposal) => proposalKey(proposal) === key) || catalogOnly.some((method) => catalogSelectionKey(method) === key)) { setPick(key); setSharedPreparation(false); onPick?.(key); } };
   const viewCurrent = successor ? () => choose(currentProposal ? proposalKey(currentProposal) : catalogSelectionKey(successor)) : null;
   const statusNote = reviewed?.disposition.status === "retain" ? "Retained candidate" : reviewed?.disposition.status === "exclude" ? "Excluded from this catalog update" : selected ? "Proposed model" : humanLabel(catalogMethod.status || "Recorded model");
   const proposedWork = selected && <ReaderSection title="Proposed theory and experiment work" author={author}><p className="note">These are proposed steps, not completed proofs or simulations.</p><ResearchDocument text={selected.proposed_evaluation_markdown} /><div className="p2-reader-sources"><SourceRef reference={source} onOpen={onSource} label="Proposed work source" /></div></ReaderSection>;
@@ -241,7 +278,7 @@ function ExploreMethod({ methods = [], proposals = [], reviews = [], comparisons
       </div>)}<div className="p2-reader-sources"><SourceRef reference={reviewed.comparison.generation_ref} onOpen={onSource} label="Lead assessment source" /></div></>
       : <p className="note">The lead recorded no modification options for this proposal.</p>}
   </ReaderSection>;
-  const context = { proposal: selected, method, methodId, methodBranch, catalogMethod, reviewed, requests, answers, projectId, phases: methodPhases, emptyState: false,
+  const context = { proposal: selected, method, methodId, methodBranch, catalogMethod, reviewed, requests, answers, projectId, phases: methodPhases, emptyState: false, sharedPreparation,
     draftStore: clarificationDrafts.current, onResolved, onAnswerSaved: (answer) => setSavedAnswers((currentAnswers) => ({ ...currentAnswers, [answer.attention_id || answer.attention.attention_id]: answer })), proposedWork, modificationOptions, modelHistory };
   const disclosure = (name, title, children) => <MethodReaderDisclosure name={name} title={title} modelKey={selectedKey} open={Boolean(openSections[name])} onToggle={(open) => toggleSection(name, open)}>{children}</MethodReaderDisclosure>;
   return <><section className="card p2-landscape p2-models-card" data-card-role="research" aria-labelledby={`${id}-landscape`}>
@@ -252,8 +289,9 @@ function ExploreMethod({ methods = [], proposals = [], reviews = [], comparisons
     <div className="card-heading"><h2 id={`${id}-models`}>Select a Method to Explore</h2></div><div className="body">
       <MethodPicker id={`${id}-method`} describedBy={`${id}-branch-note`} controls={`${id}-explore`} proposals={proposals} methods={methods} comparisons={comparisons} value={selectedKey} onSelect={choose} />
       <p className="note" id={`${id}-branch-note`}>Choose a method to read its exact version. Its questions and further work follow below.</p>
+      {sharedPreparation && catalogMethod && <div className="btnrow"><ActionButton action="edit" uiRole="research" onClick={() => { focusPreparation.current = true; choose(selectedKey); }}>Prepare work on this method</ActionButton><span className="note">Shared proposal instructions remain below until you choose a method for this work.</span></div>}
       <div className="p2-deep-dive" id={`${id}-explore`} key={selectedKey} data-reading-anchor="p2-selected-model" tabIndex={-1}>
-        <header className="p2-method-heading"><div><h3 className="serif">{method.title}</h3>
+        <header className="p2-method-heading"><div><h3>{method.title}</h3>
           <p className="note">{selected ? `Proposed by ${author}` : author}{selected?.researcher_origin && (startingPoint ? " · From a selected model starting point" : " · From your idea")}{catalogMethod?.registered && " · Selected"}</p>
           <p className="note">{statusNote}{method.identity?.version != null && ` · Version ${method.identity.version}`}{selected?.is_current_package === false && (catalogMethod ? " · Retained from an earlier run" : successor ? " · Superseded version" : " · Earlier proposal")}</p>
         </div><div className="p2-model-continuation"><ExploreActions catalogMethod={catalogMethod} busy={busy} onContinue={onContinue} /></div></header>
@@ -371,7 +409,7 @@ function MethodHistory({ methods = [], cards = [], proposals = [], leadResponses
 function DirectProposals({ methods, cards, proposals, leadResponses, reviews, comparisons, literatureSources, diagnostics, legacyScores, publicationHistory, onSource, onOpenRun, ...workspace }) {
   const comparison = comparisons.find((item) => item.is_current_package !== false) || comparisons[0];
   return <div className="phase-two-workspace">
-    <ExploreMethod methods={methods} proposals={proposals} reviews={reviews} comparisons={comparisons} comparison={comparison} literatureSources={literatureSources} onSource={onSource} {...workspace}
+    <ExploreMethod methods={methods} cards={cards} proposals={proposals} reviews={reviews} comparisons={comparisons} comparison={comparison} literatureSources={literatureSources} onSource={onSource} {...workspace}
       modelHistory={<MethodHistory methods={methods} cards={cards} proposals={proposals} leadResponses={leadResponses} comparisons={comparisons} comparison={comparison} diagnostics={diagnostics} legacyScores={legacyScores} publicationHistory={publicationHistory} onSource={onSource} onOpenRun={onOpenRun} />} />
   </div>;
 }
@@ -379,16 +417,5 @@ function DirectProposals({ methods, cards, proposals, leadResponses, reviews, co
 export default function MethodProposals({ methods = [], cards = [], proposals = [], reviews = [], comparisons = [], literatureSources = [], diagnostics = [], legacyScores = [], publicationHistory = [], onSource, onOpenRun, ...workspace }) {
   const direct = proposals.filter((proposal) => proposal.method && !proposal.no_method_proposed);
   const leadResponses = proposals.filter((proposal) => proposal.no_method_proposed === true);
-  if (direct.length || methods.length) return <DirectProposals methods={methods} cards={cards} proposals={direct} leadResponses={leadResponses} reviews={reviews} comparisons={comparisons} literatureSources={literatureSources} diagnostics={diagnostics} legacyScores={legacyScores} publicationHistory={publicationHistory} onSource={onSource} onOpenRun={onOpenRun} {...workspace} />;
-  const comparison = comparisons.find((item) => item.is_current_package !== false) || comparisons[0];
-  const context = { proposal: null, method: null, methodId: null, methodBranch: "trunk", catalogMethod: null, reviewed: null, requests: workspace.attentionItems || [], answers: workspace.researcherAnswers || [], phases: methodPhases, emptyState: !cards.length,
-    modelHistory: <MethodHistory cards={cards} proposals={proposals} leadResponses={leadResponses} comparisons={comparisons} comparison={comparison} diagnostics={diagnostics} legacyScores={legacyScores} publicationHistory={publicationHistory} onSource={onSource} onOpenRun={onOpenRun} /> };
-  return <div className="phase-two-workspace">
-    <section className="card p2-landscape p2-models-card" data-card-role="research"><div className="card-heading"><h2>Proposed Methods</h2></div><div className="body">
-      <MethodComparison comparison={comparison} proposals={[]} reviews={reviews} onSource={onSource} />{workspace.progress}
-      {!cards.length && <p>No method proposal has been published yet. Use Additional Runs and History below to propose methods for your research goal.</p>}
-    </div></section>
-    {cards.length > 0 && <section className="card p2-models-card" data-card-role="research"><div className="card-heading"><h2>Select a Method to Explore</h2></div><div className="body"><CatalogRecords cards={cards} onSource={onSource} /></div></section>}
-    {renderSlot(workspace.issues, context)}{renderSlot(workspace.furtherWork, context)}
-  </div>;
+  return <DirectProposals methods={methods} cards={cards} proposals={direct} leadResponses={leadResponses} reviews={reviews} comparisons={comparisons} literatureSources={literatureSources} diagnostics={diagnostics} legacyScores={legacyScores} publicationHistory={publicationHistory} onSource={onSource} onOpenRun={onOpenRun} {...workspace} />;
 }

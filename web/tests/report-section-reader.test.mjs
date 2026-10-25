@@ -89,3 +89,29 @@ test("unknown report versions, historical candidates and document errors do not 
   const structured = { ...document, section_anchors: undefined, structured: { section_anchors: anchors } };
   assert.equal((ui.document({ document: structured, onDiscussSection: () => {} }).match(/report-section-discuss/g) || []).length, 7);
 });
+
+test("nested examples cannot shadow reserved section or References citation targets", () => {
+  const examples = '> <a id="references"></a>\n> A quoted example.\n\n- <a id="problem"></a> A listed example.\n\n';
+  const body_md = examples + markdown + '\n\n<a id="references"></a>\n## References\n\n1. <a id="entry-in-list"></a> An ordinary bibliography entry.';
+  const html = ui.document({ document: { ...document, body_md, section_anchors: { ...anchors, references: "references" } }, onDiscussSection: () => {} });
+  assert.equal((html.match(/id="report-report.current-references"/g) || []).length, 1);
+  assert.equal((html.match(/id="report-report.current-problem"/g) || []).length, 1);
+  assert.equal((html.match(/report-section-discuss/g) || []).length, 7);
+  assert.match(html, /id="report-report.current-entry-in-list"/);
+});
+
+test("references have their own visual boundary and exact appendix HTML adds no eighth discussion", () => {
+  const value = { ...document, body_md: markdown + '\n\n<a id="references"></a>\n## References\n\nA retained reference.',
+    section_anchors: { ...anchors, references: "references" }, report_artifact: { artifact_id: "primary" },
+    report_materials: [{ artifact_id: "primary", path: "report.md", source_verified: true, media_type: "text/markdown", artifact_url: "/api/main" },
+      { artifact_id: "proofs exact", path: "appendix.md", source_verified: true, media_type: "text/markdown", artifact_url: "/api/proof" }] };
+  const html = ui.document({ document: value, onDiscussSection() {} });
+  assert.equal((html.match(/report-section-discuss/g) || []).length, 7);
+  assert.match(html, /class="report-reference-heading"/);
+  assert.match(html, /href="\/api\/v1\/portable\?material_id=proofs%20exact"/);
+  assert.doesNotMatch(html, /material_id=primary/);
+  assert.match(html, /The proof appendix stays separate from the main account/);
+  const malformed = ui.document({ document: { ...value, section_anchors: { ...anchors, references: "absent" } } });
+  assert.match(malformed, /References boundary could not be verified/);
+  assert.match(malformed, /A retained reference/);
+});

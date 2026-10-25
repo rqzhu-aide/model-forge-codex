@@ -23,6 +23,15 @@ export function empiricalSource(source, { branch, artifacts = [], records = [], 
       references.set([ref.branch, ref.phase, ref.family, ref.generation_id, ref.sha256, ref.run_id, ref.package_id].join("|"), ref);
     }
   }
+  // The backend may bind an upstream run locator to the exact generation
+  // frozen for this evaluation, including a shared P2 source on trunk.
+  for (const file of files) {
+    const ref = file.generation_ref;
+    if (file.uri === uri && file.source_verified === true && !file.source_error && file.branch === branch
+      && hasExactRef(ref) && ref.run_id === runId && ref.sha256 === digest && file.sha256 === digest) {
+      references.set([ref.branch, ref.phase, ref.family, ref.generation_id, ref.sha256, ref.run_id, ref.package_id].join("|"), ref);
+    }
+  }
   if (references.size > 1) return null;
   if (references.size === 1) return { reference: { ...[...references.values()][0], ...(fragment.startsWith("/") ? { entry_pointer: fragment } : {}) } };
   const verifiedFiles = files.filter((file) => file.source_verified === true && !file.source_error

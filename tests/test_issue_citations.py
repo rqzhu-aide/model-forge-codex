@@ -2,10 +2,13 @@
 from copy import deepcopy
 
 import pytest
+from httpx import ASGITransport, AsyncClient
 
 from model_forge_codex.literature import _digest
 from model_forge_codex.research import artifacts_view
+from model_forge_codex.service import create_app
 from test_direct_artifacts import collection, paper
+from test_direct_workflow import PID, direct_engine
 from test_literature import source
 from test_literature_projection import publish
 from test_p1_science import library_for
@@ -116,3 +119,39 @@ def test_question_citation_does_not_guess_past_invalid_or_ambiguous_snapshot(tmp
     citation = artifacts_view(tmp_path, "method.a")["issues"][0]["citations"][0]
 
     assert citation["status"] == "unavailable" and "card" not in citation
+
+
+@pytest.mark.parametrize("with_binding", [False, True])
+async def test_p3_text_source_refs_keep_artifacts_and_decision_inbox_readable(direct_engine, with_binding):
+    engine, project = direct_engine
+    _, entry, binding = publication(project, "run.old", "Original cited paper")
+    # P3 audits also retain authored record IDs and manuscript locations.
+    # Put a structured citation first to exercise the per-issue scan as well
+    # as the early no-citations path when only text references are present.
+    references = ([binding] if with_binding else []) + [
+        "review.empirical.burden", "theory_manuscript.md:Section 3",
+    ]
+    item = {"issue_id": "issue.protocol", "statement": "Declare the burden comparison protocol.",
+            "severity": "major", "source_refs": references}
+    publish(project, {"analyst_audit": {"issues": [item]}}, "run.p3", "P3", "method.a")
+    before = {path: path.read_bytes() for path in (project / "branches").rglob("*") if path.is_file()}
+    app = create_app(engine.data_root, engine.bridge)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        artifacts = await client.get(f"/api/v1/projects/{PID}/artifacts")
+        assert artifacts.status_code == 200
+        pending = await client.get(f"/api/v1/projects/{PID}/decisions-pending")
+        assert pending.status_code == 200
+
+    issue = next(row for row in artifacts.json()["issues"] if row["object_id"] == item["issue_id"])
+    assert issue["source_refs"] == references
+    if with_binding:
+        assert len(issue["citations"]) == 1
+        citation = issue["citations"][0]
+        assert citation["status"] == "available"
+        assert citation["entry_ref"] == binding["entry_ref"]
+        assert citation["bibliography"] == entry["source"]
+        assert citation["card"]["generation_ref"]["run_id"] == "run.old"
+    else:
+        assert "citations" not in issue
+    assert before == {path: path.read_bytes() for path in (project / "branches").rglob("*") if path.is_file()}

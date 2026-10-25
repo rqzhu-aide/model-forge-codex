@@ -6,6 +6,7 @@ import re
 from datetime import datetime, timezone
 
 from .phase_interactions import digest
+from .report_boundaries import reference_boundary, report_anchor_headings
 from .records import ArtifactError, committed_packages, read_generation, source_artifact_path
 from .storage import read_json, write_json_atomic
 from .technical_reports import CONTENT_SECTIONS, resolve_report_source
@@ -35,6 +36,17 @@ def _section(markdown, anchors, key):
     """Use explicit authored anchors beside headings, never guessed prose."""
     if not isinstance(anchors, dict) or not isinstance(anchors.get(key), str) or not anchors[key]:
         raise ValueError("This report section has no authored anchor")
+    boundary = reference_boundary(markdown, anchors, CONTENT_SECTIONS)
+    if boundary is not None:
+        # Explicit retained metadata selects the reader format independently of
+        # the current catalog. Historical reports without it use the old path.
+        found = report_anchor_headings(markdown, {name: anchors.get(name) for name in CONTENT_SECTIONS})
+        if key not in found:
+            raise ValueError("This report section is unavailable in its exact source")
+        lines = markdown.splitlines(keepends=True)
+        start = found[key]["start_line"]
+        end = min([boundary["start_line"], *[row["start_line"] for row in found.values() if row["start_line"] > start]])
+        return "".join(lines[start:end]).strip(), re.sub(r"<[^>]+>", "", found[key]["label"]).strip(), anchors[key]
     declared = {name: value for name, value in anchors.items() if name in CONTENT_SECTIONS and isinstance(value, str) and value}
     if len(set(declared.values())) != len(declared):
         raise ValueError("The report section anchors are ambiguous")

@@ -537,16 +537,27 @@ Saved responses do not start work, revise a model or establish a guarantee.
 
 ### Consequential input under the revised catalog
 
-Present a researcher item only when plausible answers materially change the target
-or interpretation, validity of the intended claim, data applicability or a meaningful
+Invite researcher input when plausible answers materially change the target or
+interpretation, validity of the intended claim, data applicability or a meaningful
 resource compromise, and the missing input is an unresolved researcher preference
-or study fact the team cannot establish from available material. Different mathematical
-definitions or defensible alternatives alone are insufficient. The Lead uses the
-stated goal and scientific judgment to select routine details within the authorized
-scope and budget, briefly recording consequential choices and reasons in the existing
-phase summary. Counting all attempted developments and reporting declared failures
-is Lead-owned evaluation work. Proofs, implementation defects, scientific justification
-and uncertainty procedures remain team work.
+or study fact the team cannot establish from available material. When that input is
+useful now, the Lead consolidates and invites it through the existing owned attention
+output at its designated stage even if conditional work can proceed; members propose
+it in their existing owned outputs for consolidation. Explain the proposed
+conditional direction, plausible alternatives and what the answer would change,
+keeping any proposed default provisional until adopted. An intended use, claim to
+support first or reference standard for judging success can warrant this
+nonblocking invitation. Do not omit such an invitation merely because it is not a
+blocker. In an eligible stage, use the existing phase mechanism to pause only when
+missing input makes the next authorized action unjustified; otherwise continue
+justified work with explicit conditions.
+
+Different mathematical definitions or defensible alternatives alone are insufficient.
+The Lead uses the stated goal and scientific judgment to select routine details
+within the authorized scope and budget, briefly recording consequential choices and
+reasons in the existing phase summary. Counting all attempted developments and
+reporting declared failures is Lead-owned evaluation work. Proofs, implementation
+defects, scientific justification and uncertainty procedures remain team work.
 
 Preserve saved preferences and the requested inferential claim. A prediction goal
 does not waive valid uncertainty claims or appropriate censoring assumptions.
@@ -569,10 +580,12 @@ can proceed while unknown, without options or recommendation.
 
 Inspect supplied material before asking. Unknown patient/event counts, encoded
 feature dimension, collection and ascertainment facts remain unknown; synthetic
-settings never establish them. Keep nonblocking unknowns in a compact disclosure,
-and revisit only when needed or new evidence changes the question. Consolidate
-duplicates without merging independently answerable premises, exact question IDs,
-model versions, audiences or saved answers. Carry forward only materially new
+settings never establish them. Retain unknown facts with their applicability limits.
+Defer questions without a useful current consequence; do not repeatedly request
+unavailable facts. Reuse exact applicable saved answers, and reopen an answered
+question only when its premise materially changes. There is no question quota.
+Consolidate duplicates without merging independently answerable premises, exact
+question IDs, model versions, audiences or saved answers. Carry forward only materially new
 consequences in the brief; preserve full derivations and prior context through
 exact sources. Legacy rationale fields need no separate repetition, and no rigid
 word cap applies. Specialists propose only qualifying items in their existing

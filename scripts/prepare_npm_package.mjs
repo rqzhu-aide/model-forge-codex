@@ -53,11 +53,12 @@ export function verifyPackageContents(paths, catalogPaths, { requireReleaseManif
   const names = new Set(paths);
   const exact = new Set([
     "package.json", "README.md", "LICENSE", "pyproject.toml", "bin/model-forge-codex.mjs", "npm-release-manifest.json",
-    "docs/model-access.md", "docs/development.md",
+    "docs/model-access.md", "docs/development.md", "docs/installation.md",
     "scripts/npm_launcher.py", "scripts/npm_snapshot.py", "scripts/validate_local_install.py", "web/package.json",
     "web/scripts/validate-math.mjs", "web/scripts/math-checker.mjs", "web/scripts/shared-deps.mjs", "web/src/researchMath.js",
     "web/runtime/validate-math.mjs", "web/runtime/export-report.mjs", "web/runtime/KATEX-LICENSE.txt", "web/runtime/NOTICE.txt",
     "web/runtime/REACT-LICENSE.txt", "web/runtime/REACT-DOM-LICENSE.txt",
+    "web/dist/FONT-NOTICE.txt", "web/dist/IBM-PLEX-SANS-LICENSE.txt", "web/dist/IBM-PLEX-MONO-LICENSE.txt", "web/dist/MARCELLUS-LICENSE.txt",
     ...catalogPaths,
   ]);
   for (const name of names) {

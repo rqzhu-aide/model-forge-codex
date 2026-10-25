@@ -54,7 +54,8 @@ test("all-row diagnostics expose instability hidden beyond the first five rows",
   assert.equal(summary.unstable, 1);
   assert.equal(summary.stabilityRows, 8);
   assert.equal(summary.underRepeated, 1);
-  assert.equal(summary.failed, 3);
+  assert.equal(summary.incompleteOrNonconverged, 3);
+  assert.equal(summary.recordedChecks, 40);
 });
 test("target identity detects method and version changes while preserving an exact request", () => {
   const ref = { branch: "method.a", phase: "P3", family: "theory_record", generation_id: "gen.1", sha256: "a".repeat(64), run_id: "run.1" };

@@ -16,6 +16,43 @@ import os
 from pathlib import Path
 
 
+class P4WindowsSetupError(RuntimeError):
+    """The selected native setup cannot enforce the managed P4 contract."""
+
+
+def require_p4_windows_setup(config: dict, readiness: str) -> dict:
+    """Validate native config/read output, never infer mode from OS groups.
+
+    Codex 0.147 resolves explicit windows.sandbox before its legacy feature
+    flags. config/read supplies selected layers and exact managed requirements;
+    reading just the user's config.toml would miss those settings.
+    """
+    windows = config.get("windows") or {}
+    features = config.get("features") or {}
+    mode = windows.get("sandbox")
+    if mode is None:
+        if features.get("elevated_windows_sandbox") is True:
+            mode = "elevated"
+        elif any(features.get(name) is True for name in
+                 ("experimental_windows_sandbox", "enable_experimental_windows_sandbox")):
+            mode = "unelevated"
+    if mode != "elevated":
+        raise P4WindowsSetupError(
+            "Managed P4 experiments on Windows require Codex's elevated sandbox mode "
+            "to preserve the required read, denied-read and write boundaries. "
+            f"The selected mode is {mode or 'not configured'}. Select elevated sandbox "
+            "mode and complete its setup in Codex, then continue P4. "
+            "No computation was started."
+        )
+    if readiness != "ready":
+        raise P4WindowsSetupError(
+            "Managed P4 experiments on Windows require completed elevated sandbox setup. "
+            f"Codex reports {readiness}. Complete or repair elevated sandbox setup in "
+            "Codex, then continue P4. No computation was started."
+        )
+    return {"status": "passed", "windows_sandbox_mode": mode, "readiness": readiness}
+
+
 def runtime_settings(member_home: Path) -> tuple[Path, tuple[str, ...]]:
     """Return SDK home and process config arguments without changing any files.
 

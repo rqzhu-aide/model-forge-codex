@@ -1,4 +1,4 @@
-import { explanationRun, issueSourceIdentity } from "./phaseWorkflow.js";
+import { explanationRun, issueSourceIdentity, issueIsOpen } from "./phaseWorkflow.js";
 import { compareDecisionPriority, decisionPriorityLabel } from "./researcherDecisions.js";
 
 // Responsibility and destination come from the author, never from question wording.
@@ -16,12 +16,12 @@ export function clarificationDraftKey(projectId, item) {
 }
 const branchOf = (item) => item.branch || item.branch_id;
 const matchesContext = (item, branch, phase) => item.target_phase === phase &&
-  (branchOf(item) === branch || (branchOf(item) === "trunk" && branch !== "trunk"));
+  (item.scope?.kind === "project" || branchOf(item) === branch || (branchOf(item) === "trunk" && branch !== "trunk"));
 
 export function requestsForScope(items, branch, phase) {
   const result = { decisions: [], tasks: [], earlier: [] };
   for (const item of Array.isArray(items) ? items : []) {
-    if (!item || (item.disposition && item.disposition !== "open")) continue;
+    if (!item || !issueIsOpen(item)) continue;
     const itemBranch = branchOf(item);
     if (isContextualRequest(item)) {
       // A trunk request is shared project work in this phase, including when

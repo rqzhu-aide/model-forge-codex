@@ -1,0 +1,13 @@
+{
+  "files": {
+    "/api/__p5-fixture__/materials/appendix.md": "materials/appendix.md",
+    "/api/__p5-fixture__/materials/notes.md": "materials/notes.md",
+    "/api/__p5-fixture__/materials/fractions.svg": "materials/fractions.svg",
+    "/api/__p5-fixture__/materials/fractions.csv": "materials/fractions.csv",
+    "/api/__p5-fixture__/materials/report.md": "materials/report.md"
+  },
+  "portable": {
+    "default": "portable/report.html",
+    "artifact.appendix": "portable/appendix.html"
+  }
+}

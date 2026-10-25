@@ -29,6 +29,21 @@ function disclosuresAt(html, passage) {
 }
 const bodyDocument = (body_md, report_materials = [material]) => ({ ...document, body_md, report_materials });
 
+test("Analyst source reader renders complete primary prose and math with an exact original link", () => {
+  const account = { title: "Complete Analyst account", conclusion: "Qualified result.", questions: [{ key: "unmatched.key", title: "Authored question title", outcome: "mixed", answer_markdown: "The full answer uses $x=1$.", comparison_markdown: "Complete comparison.", reliability_markdown: "Complete reliability.", uncertainty_markdown: "Complete uncertainty.", limitations_markdown: "Full limits.", decision_implication_markdown: "Full implication.", next_steps_markdown: "Full next step." }], implementation_summary: { verification: "Exact implementation verification." } };
+  const source = { kind: "analyst_synthesis", generation_ref: { ...ref, phase: "P4", family: "analyst_synthesis" }, primary_source_verified: true, primary_artifact_kind: "json", primary_content: account, primary_artifact_url: "/api/v1/exact/analyst.json?sha256=retained", structured: { question_results: [{ answer_markdown: "Full Q4." }] } };
+  const before = structuredClone(source);
+  const html = ui.scientific({ documents: [source], showRecordSource: false });
+  for (const text of ["Complete Analyst account", "Qualified result.", "Authored question title", "Complete comparison.", "Complete reliability.", "Complete uncertainty.", "Full limits.", "Full implication.", "Full next step.", "Exact implementation verification.", "Open original document"]) assert.ok(html.includes(text), text);
+  assert.match(html, /class="katex"/);
+  assert.match(html, /href="\/api\/v1\/exact\/analyst.json\?sha256=retained"/);
+  assert.doesNotMatch(html, /Full Q4\.|unmatched.key/);
+  const unavailable = ui.scientific({ documents: [{ ...source, primary_content: undefined, primary_source_verified: undefined, primary_artifact_url: undefined, document_error: "The readable Analyst account is missing or its bytes no longer match the published digest." }], showRecordSource: false });
+  assert.match(unavailable, /Analyst account is missing/);
+  assert.doesNotMatch(unavailable, /Qualified result\.|Complete comparison\.|href=/);
+  assert.deepEqual(source, before);
+});
+
 test("P5 compact header keeps completion, exact review, gaps and stale notices open while identities are in a native disclosure", () => {
   const value = { ...document, method_status: { status: "needs_update", recorded_version: 2, current_version: 3 }, context_change_notices: [{ status: "reassessment_required", message: "The study context needs reassessment." }], report_materials_error: "One exact report material is unavailable." };
   const before = structuredClone(value), opened = [];
@@ -38,7 +53,7 @@ test("P5 compact header keeps completion, exact review, gaps and stale notices o
   assert.match(html, /<details class="research-details report-source-details" data-reading-anchor="technical-report:report.current:source-details"><summary>Source details<\/summary>/);
   assert.match(html, /<dt>Model version<\/dt><dd>2<\/dd>/);
   assert.equal((html.match(/Download offline HTML/g) || []).length, 1);
-  assert.equal((html.match(/Open printable report/g) || []).length, 1);
+  assert.equal((html.match(/Open HTML report/g) || []).length, 1);
   assert.ok(html.indexOf("One exact report material is unavailable") < html.indexOf("Download offline HTML"));
   assert.ok(html.indexOf("Download offline HTML") < html.indexOf("Scientific conclusion"));
   assert.match(html, /view=portable&amp;download=1/);
@@ -55,7 +70,7 @@ test("source drawers omit self-source actions while keeping revision sources, re
   const manuscript = { kind: "manuscript", generation_ref: { ...ref, family: "manuscript", generation_id: "manuscript.exact" }, body_md: "Original manuscript account.", method_status, primary_artifact_url: "/api/v1/manuscript.md", review_focus: "Frozen reviewer directions.", review_focus_url: "/api/v1/review-focus", supplementary_artifacts: [{ artifact_url: material.artifact_url, label: "Retained values" }] };
   const before = structuredClone({ report, manuscript });
   const cases = [
-    { render: ui.document, tree: ui.documentTree, props: { document: report }, selfLabel: "Inspect exact report source", links: ["Download offline HTML", "Open printable report", "Open retained Markdown source"], paths: ["/api/v1/report?view=portable", "/api/v1/report.md", material.artifact_url] },
+    { render: ui.document, tree: ui.documentTree, props: { document: report }, selfLabel: "Inspect exact report source", links: ["Download offline HTML", "Open HTML report", "Open retained Markdown source"], paths: ["/api/v1/report?view=portable", "/api/v1/report.md", material.artifact_url] },
     { render: ui.scientific, tree: ui.scientificTree, props: { documents: [manuscript] }, selfLabel: "Open source", links: ["Open original document", "Open frozen review directions", "Retained values"], paths: ["/api/v1/manuscript.md", "/api/v1/review-focus", material.artifact_url] },
   ];
   for (const item of cases) {

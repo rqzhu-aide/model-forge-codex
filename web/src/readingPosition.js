@@ -47,7 +47,7 @@ export function normalizeNavigation(value) {
     if (object(saved.readers)) for (const [scope, reader] of Object.entries(saved.readers)) if (Object.hasOwn(tabs, scope.split(":")[0])) readers[scope] = normalizeReader(reader, scope.split(":")[0]);
     // Older navigation stored the graph selection at project scope.
     if (typeof saved.selectedNode === "string" && !readers[readerScope("P3", branch)]) readers[readerScope("P3", branch)] = { selectedNode: saved.selectedNode };
-    result.contexts[id] = { phase, branch, readers, ...(text(saved.p2ProposalKey) ? { p2ProposalKey: saved.p2ProposalKey } : {}) };
+    result.contexts[id] = { phase, branch, readers, ...(text(saved.p2ProposalKey) ? { p2ProposalKey: saved.p2ProposalKey } : {}), ...(typeof saved.p2SharedPreparation === "boolean" ? { p2SharedPreparation: saved.p2SharedPreparation } : {}) };
   }
   return result;
 }
@@ -65,6 +65,64 @@ export function captureReadingPosition(root) {
     disclosures.push({ index, summary: detail.querySelector(":scope > summary")?.textContent || "", ...(detail.getAttribute("data-reading-anchor") ? { anchor: detail.getAttribute("data-reading-anchor") } : {}) });
   }
   return { y: window.scrollY, offset: target?.getBoundingClientRect().top || 0, ...(target ? { anchor: { kind, value: target.getAttribute(kind), ...(matching.length > 1 ? { index: matching.indexOf(target) } : {}) } } : {}), disclosures };
+}
+
+// Capture when a response is ready to commit, after any reading during fetch.
+// Keep the current screen position through the commit and its delayed tables.
+// Any reader action ends this short preservation window. A remounted disclosure
+// can retain its focused summary, but removed editor controls never gain a substitute.
+export function preserveReadingUpdate(root) {
+  if (!root) return null;
+  const active = document.activeElement;
+  const visible = (element) => isVisibleElement(element) && element.getBoundingClientRect().bottom > 0 && element.getBoundingClientRect().top < window.innerHeight;
+  let focused = root.contains(active) && !active.closest(".project-toolbar") && visible(active) ? active : null;
+  const disclosure = focused?.tagName === "SUMMARY" && focused.parentElement?.tagName === "DETAILS" ? focused.parentElement : null;
+  const matchingSummaries = (anchor, label) => [...root.querySelectorAll("details[data-reading-anchor]")]
+    .filter((element) => element.getAttribute("data-reading-anchor") === anchor)
+    .map((element) => element.querySelector(":scope > summary"))
+    .filter((element) => element?.textContent === label && isVisibleElement(element));
+  const summary = disclosure?.getAttribute("data-reading-anchor") && disclosure.querySelector(":scope > summary") === focused
+    && matchingSummaries(disclosure.getAttribute("data-reading-anchor"), focused.textContent).length === 1
+    ? { anchor: disclosure.getAttribute("data-reading-anchor"), text: focused.textContent } : null;
+  const position = focused ? null : captureReadingPosition(root);
+  if (!focused && !position?.anchor) return null;
+  const offset = focused ? focused.getBoundingClientRect().top : position.offset;
+  let disposed = false; let observer; let timer;
+  const events = ["wheel", "touchstart", "pointerdown", "keydown", "focusin"];
+  const dispose = () => {
+    disposed = true; observer?.disconnect(); clearTimeout(timer);
+    for (const event of events) window.removeEventListener(event, dispose, true);
+  };
+  for (const event of events) window.addEventListener(event, dispose, { capture: true, passive: true });
+  timer = setTimeout(dispose, 2500);
+  const restore = () => {
+    if (disposed) return;
+    if (!root.isConnected) { dispose(); return; }
+    if (focused && !focused.isConnected) {
+      if (!summary || document.activeElement !== document.body) { dispose(); return; }
+      const matches = matchingSummaries(summary.anchor, summary.text);
+      if (matches.length !== 1) { dispose(); return; }
+      // A keyed preparation form can change scope at publication while this
+      // logical disclosure survives. Its own focusin is not a reader action.
+      focused = matches[0];
+      window.removeEventListener("focusin", dispose, true);
+      focused.focus({ preventScroll: true });
+      window.addEventListener("focusin", dispose, { capture: true, passive: true });
+    }
+    const target = focused || [...root.querySelectorAll(`[${position.anchor.kind}]`)].filter((element) => element.getAttribute(position.anchor.kind) === position.anchor.value && isVisibleElement(element))[position.anchor.index || 0];
+    if (!target?.isConnected || !root.contains(target) || focused && document.activeElement !== focused) { dispose(); return; }
+    const delta = target.getBoundingClientRect().top - offset;
+    if (Math.abs(delta) > 0.5) window.scrollTo({ top: Math.max(0, window.scrollY + delta), behavior: "instant" });
+  };
+  return {
+    restore() {
+      if (disposed) return;
+      restore();
+      if (disposed) return;
+      if (!observer && typeof ResizeObserver !== "undefined") { observer = new ResizeObserver(restore); observer.observe(root); }
+    },
+    dispose,
+  };
 }
 
 // One restoration per real navigation, after the selected reader and any saved

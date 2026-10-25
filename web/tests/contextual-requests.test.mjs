@@ -20,6 +20,21 @@ test("shared team tasks reach the relevant method phase while another method's t
   assert.deepEqual(requestsForScope(items, "trunk", "P1").tasks, []);
 });
 
+test("partial project work published on a method remains a team task across methods in its target phase", () => {
+  const shared = { ...request("reference-check", "research_task", "P3", "method.a"), phase: "P3",
+    scope: { kind: "project" }, disposition: "partially_fixed" };
+  const closed = { ...shared, attention_id: "closed", disposition: "resolved" };
+  const recordedDecision = { ...shared, attention_id: "decision", kind: "researcher_decision" };
+  const before = JSON.stringify([shared, closed, recordedDecision]);
+  for (const branch of ["method.a", "method.b", "method.c"]) {
+    const selected = requestsForScope([shared, closed, recordedDecision], branch, "P3");
+    assert.deepEqual(selected.tasks, [shared]);
+    assert.deepEqual(selected.decisions, []);
+    assert.deepEqual(requestsForScope([shared], branch, "P4").tasks, []);
+  }
+  assert.equal(JSON.stringify([shared, closed, recordedDecision]), before);
+});
+
 test("legacy questions are preserved by recorded phase and branch without inferred responsibility", () => {
   const legacy = { attention_id: "legacy", branch: "trunk", phase: "P1", question: "The researcher must choose a method." };
   const unknown = { ...legacy, attention_id: "future", kind: "future_kind", target_phase: "P2" };

@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shlex
 import shutil
+import sys
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -47,6 +49,7 @@ from .p5_review_packet import (frozen_review_packet_enabled, prepare_review_pack
                                validate_review_packet_outputs, validate_manuscript_scope)
 from .records import ArtifactError, current_records, current_package_token, generation_path, read_generation, publish_package, source_artifact_path
 from .threads import ThreadRegistry
+from .validation_feedback import member_validation_feedback
 from .storage import (
     append_jsonl,
     read_json,
@@ -393,8 +396,12 @@ class RunEngine(P4LifecycleMixin):
     # Readiness gates (design/02 §7)
     # ------------------------------------------------------------------ #
 
-    def check_readiness(self, project_id: str, phase: str, branch_id: str, mode: str | None = None) -> list[str]:
-        """Check scientific prerequisites, not the previous numbered phase."""
+    def check_readiness(self, project_id: str, phase: str, branch_id: str, mode: str | None = None,
+                        *, _basis: dict | None = None) -> list[str]:
+        """Check scientific prerequisites, not the previous numbered phase.
+
+        _basis reuses the request's exact mode-specific input snapshot.
+        """
         project_dir = self.project_dir(project_id)
         reasons: list[str] = []
         from .providers import ProviderConfigError, load_provider_config
@@ -470,7 +477,7 @@ class RunEngine(P4LifecycleMixin):
                 reasons.append("A current technical report is required for review" if report_workflow else "A current manuscript is required for review")
         if phase in ("P3", "P4", "P5") and catalog.scientific_validation_enabled:
             try:
-                basis = self.compute_basis(project_id, phase, branch_id, mode)
+                basis = _basis if _basis is not None else self.compute_basis(project_id, phase, branch_id, mode)
                 reasons.extend(basis.get("alignment_reasons", []))
                 if report_workflow:
                     reasons.extend(report_assembly_readiness(basis))
@@ -1178,6 +1185,15 @@ class RunEngine(P4LifecycleMixin):
 
     @staticmethod
     def _record_artifact_pointers(ref: dict, document):
+        def declared_origin(origin, artifact):
+            # An index may cite an earlier phase's retained source. Its run URI
+            # names the producer; the index's own run only produced the index.
+            match = _re.fullmatch(r"run://([A-Za-z0-9][A-Za-z0-9._-]*)/(?:outputs/)?([A-Za-z0-9][A-Za-z0-9._-]*)/(.+)",
+                                 str(artifact.get("uri") or ""))
+            if match:
+                origin = {**origin, "run_id": match[1], "stage_id": match[2]}
+            return origin, artifact
+
         # A cumulative source's full text still belongs to the run that saved
         # that source revision, not the run that rebuilt the library index.
         if ref.get("family") == "method_catalog" and isinstance(document, dict) and "method_sources" in document:
@@ -1187,16 +1203,16 @@ class RunEngine(P4LifecycleMixin):
                 source = document["method_sources"].get(identity.get("stable_id"), {})
                 origin = {**ref, "run_id": source.get("run_id") or "unknown", "stage_id": source.get("stage_id")}
                 for artifact in RunEngine._artifact_pointers(method):
-                    yield origin, artifact
+                    yield declared_origin(origin, artifact)
         elif ref.get("family") == "literature_library":
             for source in document.get("sources", []):
                 for revision in source.get("revisions", []):
                     origin = {**ref, "run_id": revision["run_id"], "stage_id": None}
                     for artifact in RunEngine._artifact_pointers(revision["document"]):
-                        yield origin, artifact
+                        yield declared_origin(origin, artifact)
         else:
             for artifact in RunEngine._artifact_pointers(document):
-                yield ref, artifact
+                yield declared_origin(ref, artifact)
 
     @staticmethod
     def _artifact_pointers(document):
@@ -1444,19 +1460,21 @@ class RunEngine(P4LifecycleMixin):
         await self._transition(current, RunState.FAILED, f"Run failed: {reason}")
 
     def _provider_retry_stage(self, record):
-        """Recognize a stopped capacity failure, not a scientific correction."""
-        from .bridge import is_capacity_failure
+        """Recognize a stopped or rejected request, not a scientific correction."""
+        from .bridge import is_activity_log_failure, is_capacity_failure, rejected_input_limit
         from .p4_execution import P4Controller
         from .providers import load_provider_config
         from .execution import capture_execution, public_execution
 
+        directory = self.run_dir(record.project_id, record.run_id)
+        input_limit = rejected_input_limit(record.terminal_reason)
+        activity_log = is_activity_log_failure(record.terminal_reason, directory / "events.jsonl")
         if (record.state != RunState.FAILED or not self._progressive_p4(record)
-                or not is_capacity_failure(record.terminal_reason)):
-            raise RunError("Retry is available for a capacity-interrupted evaluation step.")
+                or not (is_capacity_failure(record.terminal_reason) or input_limit or activity_log)):
+            raise RunError("Retry is available for a capacity-interrupted, input-size-rejected or local activity-log-interrupted evaluation step.")
         task = self._tasks.get(record.run_id)
         if (task and not task.done()) or self._active_turns.get(record.run_id):
             raise RunError("The interrupted work has not finished stopping.")
-        directory = self.run_dir(record.project_id, record.run_id)
         progress = P4Controller.load_snapshot(directory) or {}
         feedback = read_json(directory / "p4-control-feedback.json") or {}
         if (not progress or progress.get("pending_batch") or progress.get("pause_request")
@@ -1474,10 +1492,21 @@ class RunEngine(P4LifecycleMixin):
             raise RunError("The interrupted member step cannot be identified for retry.")
         # Older receipts classified the compaction wrapper as a generic failure.
         # Like untyped receipts, they need the exact stopped turn read below.
-        if entry.get("failure_code") != "provider.capacity" and (not (entry.get("acknowledgement") or {}).get("turn_id")
+        if input_limit:
+            brief = directory / "briefs" / f"{stage.stage_id}.{stage.roles[0].value}.md"
+            if ((entry.get("acknowledgement") or {}).get("turn_id") or entry.get("failure_code") is not None
+                    or not brief.is_file() or sha256_file(brief) != entry.get("brief_sha256")
+                    or len(brief.read_text(encoding="utf-8")) <= input_limit):
+                raise RunError("The oversized request cannot be verified as rejected before a member turn started.")
+        elif activity_log:
+            if (entry.get("failure_code") is not None or not entry.get("thread_id")
+                    or not (entry.get("acknowledgement") or {}).get("turn_id")
+                    or not callable(getattr(self.bridge, "confirm_activity_log_interruption", None))):
+                raise RunError("The local activity-log failure needs an exact terminal interruption check before retrying.")
+        elif entry.get("failure_code") != "provider.capacity" and (not (entry.get("acknowledgement") or {}).get("turn_id")
                 or not callable(getattr(self.bridge, "confirm_capacity_failure", None))):
             raise RunError("The previous member turn needs an exact terminal-state check before retrying.")
-        if entry.get("failure_code") == "provider.capacity" and entry.get("thread_id") in getattr(self.bridge, "_quarantined", set()):
+        if (entry.get("failure_code") == "provider.capacity" or input_limit) and entry.get("thread_id") in getattr(self.bridge, "_quarantined", set()):
             raise RunError("The previous member turn has not been confirmed stopped. Restart the local service before retrying.")
         if not (directory / "contracts").is_dir() or not (directory / "stage-plan.json").is_file():
             raise RunError("This run did not retain its frozen inputs; start a new evaluation.")
@@ -1511,8 +1540,11 @@ class RunEngine(P4LifecycleMixin):
         return stage, entry
 
     def provider_retry_preview(self, record):
-        from .bridge import is_capacity_failure
-        kind = "provider.capacity" if record.phase == "P4" and is_capacity_failure(record.terminal_reason) else None
+        from .bridge import is_activity_log_failure, is_capacity_failure, rejected_input_limit
+        kind = ("provider.input_too_large" if rejected_input_limit(record.terminal_reason) else
+                "provider.capacity" if is_capacity_failure(record.terminal_reason) else
+                "harness.activity_log" if is_activity_log_failure(record.terminal_reason,
+                    self.run_dir(record.project_id, record.run_id) / "events.jsonl") else None) if record.phase == "P4" else None
         try:
             self._provider_retry_stage(record)
         except (RunError, CatalogError, ArtifactError, ValueError, OSError) as exc:
@@ -1526,7 +1558,9 @@ class RunEngine(P4LifecycleMixin):
             record = self.load_run(project_id, run_id)
             stage, entry = self._provider_retry_stage(record)
             confirmation = None
-            if entry.get("failure_code") != "provider.capacity":
+            from .bridge import is_activity_log_failure, rejected_input_limit
+            activity_log = is_activity_log_failure(record.terminal_reason, self.run_dir(project_id, run_id) / "events.jsonl")
+            if activity_log or entry.get("failure_code") != "provider.capacity" and not rejected_input_limit(record.terminal_reason):
                 from .providers import load_provider_config
                 from .execution import capture_execution
                 role = stage.roles[0]
@@ -1534,14 +1568,18 @@ class RunEngine(P4LifecycleMixin):
                 config = read_json(self.project_dir(project_id) / "members" / role.value / "config.json") or {}
                 resolved = load_provider_config(self.data_root).resolve_member(config, role.value, home)
                 execution = capture_execution(resolved.config, home, resolved.environment, resolved.strip_keys)
+                previous = (record.terminal_reason, entry["execution_id"], entry["thread_id"], entry["acknowledgement"]["turn_id"])
                 try:
-                    confirmation = await self.bridge.confirm_capacity_failure(entry["thread_id"], entry["acknowledgement"]["turn_id"],
+                    confirm = self.bridge.confirm_activity_log_interruption if activity_log else self.bridge.confirm_capacity_failure
+                    confirmation = await confirm(entry["thread_id"], entry["acknowledgement"]["turn_id"],
                         member_home=home, execution=execution, workspace_root=self.workspace_root(home))
                 except Exception as exc:
                     raise RunError("Retry did not start: " + str(exc)) from exc
                 # A source or another run can change while the read awaits.
                 record = self.load_run(project_id, run_id)
                 stage, entry = self._provider_retry_stage(record)
+                if previous != (record.terminal_reason, entry["execution_id"], entry["thread_id"], (entry.get("acknowledgement") or {}).get("turn_id")):
+                    raise RunError("The failed member receipt changed during the terminal-state check; retry did not start.")
             self._event(record, "run.provider_retry", "Retrying the interrupted member step with saved work and remaining budget.",
                         stage=stage.stage_id, previous_reason=record.terminal_reason,
                         previous_execution_id=entry["execution_id"], terminal_confirmation=confirmation)
@@ -1630,7 +1668,7 @@ class RunEngine(P4LifecycleMixin):
                 and frozen_review_packet_enabled(self._catalog(record))):
             prepare_review_packet(run_dir, basis=read_json(run_dir / "basis.json") or {},
                                   instructions=record.instructions, run_id=record.run_id,
-                                  project_dir=self.project_dir(record.project_id))
+                                  project_dir=self.project_dir(record.project_id), catalog=self._catalog(record))
         results = await asyncio.gather(
             *[
                 self._drive_member_turn(record, stage, role, run_dir)
@@ -1912,9 +1950,10 @@ class RunEngine(P4LifecycleMixin):
         """App-server tool declarations persist for the lifetime of a thread."""
         from .kimi_web import uses_kimi_web
         from .member_tools import member_tools_marker
-        if registration is not None and registration.thread_id == thread_id:
-            previous = registration.execution
-        else:
+        previous = registration.execution if registration is not None and registration.thread_id == thread_id else {}
+        # Native preflight can register a thread before any scientific turn
+        # saves its receipt. Its bridge acknowledgement still establishes tools.
+        if not previous:
             getter = getattr(self.bridge, "execution_configuration", None)
             previous = getter(thread_id) if getter else {}
             # Corrections can refer to an older thread than the current registry.
@@ -1959,9 +1998,20 @@ class RunEngine(P4LifecycleMixin):
         workspace_root = self.workspace_root(member_home)
         workspace = self.member_workspace(record, stage.stage_id, role)
         workspace.mkdir(parents=True, exist_ok=True)
+        if execution.get("p4_managed_execution") and role == MemberRole.DATA_ANALYST:
+            check_p4_runtime = getattr(self.bridge, "check_p4_runtime", None)
+            if callable(check_p4_runtime):
+                # This is specific to the numerical operation, including old
+                # frozen progressive contracts, before staging or model work.
+                await check_p4_runtime(workspace)
         if self._progressive_p4(record):
-            from .p4_execution import ensure_workspace_owner_access
-            ensure_workspace_owner_access(workspace, owned_root=workspace_root)
+            from .p4_execution import P4InfrastructureError, ensure_workspace_owner_access
+            try:
+                ensure_workspace_owner_access(workspace, owned_root=workspace_root)
+            except Exception as exc:
+                raise P4InfrastructureError(
+                    f"Managed P4 workspace access could not be prepared: {exc}. Repair the shared sandbox setup and host file access before continuing P4."
+                ) from exc
         thread_id = record.thread_ids.get(key.as_string())
         if thread_id is not None:
             # A correction reuses its run's thread, but settings still apply to
@@ -2086,6 +2136,10 @@ class RunEngine(P4LifecycleMixin):
                                 recovery=report.get("recovery"))
                     return report
 
+                def validate_for_member():
+                    return member_validation_feedback(validate_artifacts(), workspace=turn_workspace,
+                                                      report_dir=entry_dir, execution=turn_execution)
+
                 control = {}
                 if self._progressive_p4(record) and purpose != "handoff":
                     from .p4_execution import P4ExecutionError, P4RequestRejected
@@ -2175,7 +2229,7 @@ class RunEngine(P4LifecycleMixin):
                     control["tool_feedback"] = tool_feedback
                 result = await self.bridge.run_turn(thread_id, brief_path=brief_path, workspace=turn_workspace,
                                                     heartbeat=heartbeat, execution=turn_execution,
-                                                    validate_artifacts=validate_artifacts if purpose != "handoff" else None,
+                                                    validate_artifacts=validate_for_member if purpose != "handoff" else None,
                                                     **control)
                 entry["state"] = "completed" if result.succeeded else "failed"
                 return result
@@ -2261,7 +2315,7 @@ class RunEngine(P4LifecycleMixin):
             handoff_brief = handoff_dir / "handoff-brief.md"
             handoff_brief.write_text(
                 "# Context rotation (auto-compact)\n\n"
-                + self._workspace_mechanics(handoff_workspace)
+                + self._workspace_mechanics(handoff_workspace, managed_execution=self._progressive_p4(record))
                 + "This thread's context is being rotated to control token cost. "
                 "Write `handoff.md` capturing what a fresh continuation of your "
                 "work needs: current task, decisions made, files produced (with "
@@ -2657,14 +2711,19 @@ class RunEngine(P4LifecycleMixin):
                 elif mode == "mention":
                     sections["mentions"].append(self._mention_line(rec, meta, size, path))
                 continue
+            large_empirical_record = (phase == "P4" and suffix in {"diagnostics", "protocol", "case_manifest", "metrics_long"}
+                                      and size is not None and size > self._SIZE_CAPS["t2p_packet"][0])
+            if large_empirical_record and delivery == "inline":
+                delivery = "instructed_open"
             if delivery == "inline" and addressed and doc:
                 sections["packets"].append(
                     f"### `{family}` ({phase}, `{rec['branch']}`)\n\n{doc[0]}\n"
                 )
             elif delivery == "instructed_open" and addressed and doc:
+                source_hash = f", sha256 {sha256_file(path)}" if large_empirical_record else ""
                 sections["instructed"].append(
                     f"- **{family}** ({phase}, `{rec['branch']}`) — your stage's work depends on "
-                    f"its exact content. Open and read fully: `{path}` ({size:,} B)"
+                    f"its exact content. Open and read fully: `{path}` ({size:,} B{source_hash})"
                 )
             else:
                 sections["mentions"].append(self._mention_line(rec, meta, size, path))
@@ -2724,9 +2783,9 @@ class RunEngine(P4LifecycleMixin):
                     required_read = False
                 if delivery == "never":
                     continue
-                large_diagnostics = (fam == "p4.diagnostics"
-                                     and len(text.encode("utf-8")) > self._SIZE_CAPS["t2p_packet"][0])
-                if large_diagnostics and delivery == "inline":
+                large_empirical_record = (record.phase == "P4" and suffix in {"diagnostics", "protocol", "case_manifest", "metrics_long"}
+                                          and len(text.encode("utf-8")) > self._SIZE_CAPS["t2p_packet"][0])
+                if large_empirical_record and delivery == "inline":
                     delivery = "instructed_open"
                 delivered = False
                 if delivery == "inline" and (addressed or required_read):
@@ -2736,7 +2795,7 @@ class RunEngine(P4LifecycleMixin):
                     )
                 elif (delivery == "instructed_open" and addressed) or required_read:
                     delivered = True
-                    source_hash = f", sha256 {sha256_file(path)}" if large_diagnostics else ""
+                    source_hash = f", sha256 {sha256_file(path)}" if large_empirical_record else ""
                     sections["instructed"].append(
                         f"- **{fam}** (this run, stage {st['stage_id']}) — open and read fully: "
                         f"`{path}` ({len(text.encode('utf-8')):,} B{source_hash})"
@@ -2835,7 +2894,32 @@ class RunEngine(P4LifecycleMixin):
         )
 
     @staticmethod
-    def _workspace_mechanics(workspace: Path) -> str:
+    def _workspace_mechanics(workspace: Path, *, managed_execution: bool = False) -> str:
+        runtime_hint = ""
+        if not managed_execution:
+            from .p4_execution import shared_python_executable
+            # A host-working interpreter may be denied to the Windows sandbox.
+            # Reuse the configured or existing shared runtime for helper commands.
+            executable = str(shared_python_executable())
+            if sys.platform == "win32":
+                command = "& '" + executable.replace("'", "''") + "' -c 'print(1)'"
+                shell = "PowerShell"
+                access_hint = (
+                    "If the sandbox denies access to this shared executable, use PowerShell's built-in JSON and text commands for simple file work. "
+                    "If Python is essential, report the interpreter access issue rather than a missing installation. "
+                )
+            else:
+                command = shlex.quote(executable) + " -c 'print(1)'"
+                shell = "a POSIX shell"
+                access_hint = ""
+            runtime_hint = (
+                f"Shared Python for helper commands: `{executable}`. "
+                f"Use this absolute executable when `python` or `py` is absent from PATH; in {shell}, "
+                f"for example: `{command}`. Use only user-wide or machine-wide runtimes and packages. "
+                "Do not create a virtual environment or install project-local packages. "
+                + access_hint
+                + "If a required dependency is unavailable, report the shared installation needed.\n\n"
+            )
         return (
             "## Workspace mechanics\n\n"
             f"Keep every shell command's working directory set to `{workspace}`. "
@@ -2844,6 +2928,7 @@ class RunEngine(P4LifecycleMixin):
             "with small chunks. On Windows, keep shell commands short; do not embed a "
             "large JSON document in one process command line. "
             "JSON outputs must be complete valid JSON files.\n\n"
+            + runtime_hint
         )
 
     def _render_brief(
@@ -2890,7 +2975,11 @@ class RunEngine(P4LifecycleMixin):
                 + "Use only the applicable statements and exact answers needed for this stage, with their sources. "
                   "Preserve the researcher's intended claim, including requested inferential evidence; a prediction goal does not waive valid uncertainty or censoring justification. "
                   "A researcher preference cannot establish a statistical assumption. Unknown and no-data answers remain legitimate; "
-                  "synthetic settings do not become study facts. Keep interpretations proposed until adopted.\n\n")
+                  "synthetic settings do not become study facts. Keep interpretations proposed until adopted. "
+                + ("In P1-P4, an unresolved consequential preference remains eligible for a useful nonblocking invitation even when conditional work can proceed. "
+                   "Use exact applicable saved answers, and keep a team-proposed conditional direction distinct from an adopted researcher choice. "
+                   if record.phase in {"P1", "P2", "P3", "P4"} and record.intent != "assessment" else "")
+                + "\n\n")
         project_instruction_section = f"## Project instructions (verbatim)\n\n{instructions}\n\n" if instructions else ""
         if record.phase == "P4" and "p4_inputs" in basis:
             from .researcher_inputs import input_brief
@@ -3232,7 +3321,7 @@ class RunEngine(P4LifecycleMixin):
         )
         return (
             f"# Situation brief — {stage.stage_id} ({role.value})\n\n"
-            f"{self._workspace_mechanics(workspace)}{mechanics_notebook}\n\n"
+            f"{self._workspace_mechanics(workspace, managed_execution=self._progressive_p4(record))}{mechanics_notebook}\n\n"
             + artifact_check
             + self._p4_brief(record, stage, role)
             + project_instruction_section
@@ -3299,7 +3388,7 @@ class RunEngine(P4LifecycleMixin):
         previous = repair.get("previous_attempt")
         return (
             f"# Mechanical repair before handoff ({stage.stage_id}, {role.value})\n\n"
-            + self._workspace_mechanics(workspace)
+            + self._workspace_mechanics(workspace, managed_execution=self._progressive_p4(record))
             + f"Attempt {repair['attempt']} of {self._MAX_MECHANICAL_REPAIRS}. Correct only the listed findings in the affected outputs. "
             "Keep the research setting, scientific scope and unrelated content unchanged. "
             "Change only these declared outputs and their necessary supporting files. Preserve every other declared output byte-for-byte. "

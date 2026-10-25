@@ -88,6 +88,37 @@ def test_invalidated_attempt_remains_visible_without_biasing_estimate():
     assert catalog.validate_output("p4.metrics_long", outputs["p4.metrics_long"])
 
 
+@pytest.mark.parametrize("retained_seed", [None, 999])
+def test_invalidated_seed_errors_retain_original_rows_and_require_eligible_replacements(retained_seed):
+    catalog, outputs, _ = documents()
+    expected = recompute_diagnostics(outputs["p4.protocol"], outputs["p4.metrics_long"])
+    old = {**copy.deepcopy(outputs["p4.metrics_long"][0]), "attempt_id": "attempt.old", "eligibility": "invalidated",
+           "invalidation_reason": "The original verification row did not record its declared seed."}
+    if retained_seed is None:
+        old.pop("seed")
+    else:
+        old["seed"] = retained_seed
+    retained = copy.deepcopy(old)
+    outputs["p4.metrics_long"].append(old)
+    outputs["p4.analyst_synthesis"]["question_results"][0]["observed_counts"]["invalidated"] = 1
+    assert not catalog.validate_output("p4.metrics_long", outputs["p4.metrics_long"])
+    assert not validate_scientific_outputs(catalog, "P4", outputs)
+    assert recompute_diagnostics(outputs["p4.protocol"], outputs["p4.metrics_long"]) == expected
+    assert old == retained
+
+    # Keeping the rejected original cannot substitute for its eligible replacement.
+    outputs["p4.metrics_long"].pop(0)
+    findings = {finding.code for finding in validate_scientific_outputs(catalog, "P4", outputs)}
+    assert "empirical.replicate_grid" in findings
+    assert "empirical.seed_mismatch" not in findings
+
+    # The same missing or incorrect seed still blocks an eligible observation.
+    old["eligibility"] = "eligible"
+    findings = {finding.code for finding in validate_scientific_outputs(catalog, "P4", outputs)}
+    assert "empirical.seed_mismatch" in findings
+    assert "empirical.replicate_grid" not in findings
+
+
 @pytest.mark.parametrize("bad_metrics", [{"error": 1000}, {"metric.error": None}, {}])
 def test_invalidated_serialization_errors_remain_auditable_without_blocking_corrected_results(bad_metrics):
     catalog, outputs, _ = documents()

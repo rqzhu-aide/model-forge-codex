@@ -14,6 +14,43 @@ export function selectLandscapeRecord(landscape, id) {
   return records.find((item) => item.id === id) || records[0] || null;
 }
 
+function neuripsPaperKey(source) {
+  const keys = new Set();
+  for (const identifier of source.identifiers || []) {
+    if (identifier.kind !== "url") continue;
+    try {
+      const url = new URL(identifier.value);
+      if (url.origin !== "https://proceedings.neurips.cc" || url.username || url.password || url.search) continue;
+      const match = /^\/(?:paper_files\/)?paper\/(\d{4})\/hash\/([a-f0-9]{32})-Abstract\.html$/.exec(url.pathname);
+      if (match && String(source.year) === match[1]) keys.add(`${match[1]}:${match[2]}`);
+    } catch { /* Unrecognized locators remain separate source records. */ }
+  }
+  return keys.size === 1 ? [...keys][0] : null;
+}
+
+// Group only verified publication URL aliases for reading. Accepted source
+// identities, exact member cards, and their producing versions remain intact.
+export function groupPaperSources(sources = []) {
+  const groups = []; const byKey = new Map();
+  for (const source of sources) {
+    const paper = neuripsPaperKey(source);
+    const state = ["source_status", "status_reason", "landscape_status", "landscape_reason"].map((field) => source[field] ?? null);
+    const key = paper && JSON.stringify([paper, ...state]);
+    if (key && byKey.has(key)) byKey.get(key).push(source);
+    else {
+      const group = [source]; groups.push(group);
+      if (key) byKey.set(key, group);
+    }
+  }
+  return groups.map((group) => group.length === 1 ? group[0] : {
+    ...group[0],
+    source_aliases: [...new Set(group.flatMap((source) => [source.source_id, ...(source.source_ids || []), ...(source.source_aliases || [])]))],
+    identifiers: group.flatMap((source) => source.identifiers || []),
+    search_provenance: group.flatMap((source) => source.search_provenance || []),
+    cards: group.flatMap((source) => source.cards || (source.card ? [source.card] : [])),
+  });
+}
+
 // Positions only organize the view. They do not infer a scientific hierarchy or relationship.
 export function buildFrameworkGraph(landscape = {}) {
   const endpoints = new Set((landscape.relationships || []).flatMap((record) => [record.from_id, record.to_id]));

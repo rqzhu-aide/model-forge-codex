@@ -657,6 +657,7 @@ async def test_new_report_assembly_publishes_interim_without_p3_or_p4(workbench)
         + ("No numerical analysis is available. This report is interim." if key == "numerical_analysis" else
            "The selected exact model and unknown collection conditions remain explicit. $x^2$.")
         for key in CONTENT_SECTIONS)
+    source += f'\n\n<a id="{report["section_anchors"]["references"]}"></a>\n## References\n\nNo external sources are cited in this synthetic interim report.\n'
     pointer = report["report_artifact"]
     files[pointer["path"]] = source
     pointer["sha256"] = hashlib.sha256(source.encode()).hexdigest()
@@ -866,7 +867,11 @@ async def test_sdk_resume_after_restart_reapplies_scoped_write_settings(tmp_path
     calls = []
     class Transport:
         _sync = SimpleNamespace(_approval_handler=lambda *_: {"decision": "decline"})
-        async def thread_resume(self, thread_id, params):
+        async def request(self, method, params, **kwargs):
+            from openai_codex.generated.v2_all import ThreadResumeParams
+            assert method == "thread/resume"
+            params = ThreadResumeParams.model_validate(params)
+            thread_id = params.thread_id
             calls.append((thread_id, params.model_dump(mode="json")))
             return SimpleNamespace(thread=SimpleNamespace(id=thread_id), model="retained-model",
                                    model_provider="openai", reasoning_effort="medium")

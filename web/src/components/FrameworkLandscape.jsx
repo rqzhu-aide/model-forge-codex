@@ -55,7 +55,7 @@ export function LandscapeRecord({ selection, landscape, sources = [], review, ba
   const field = { framework: "frameworks", variant: "variants", relationship: "relationships", algorithm: "algorithm_families" }[kind];
   const index = (landscape[field] || []).indexOf(record);
   return <article className="framework-inspector" ref={focusRef} tabIndex={-1} aria-label={`Selected ${kind === "algorithm" ? "algorithm family" : kind}`}>
-    <p className="section-kicker">{kind === "algorithm" ? "Existing algorithm family" : humanLabel(kind)} · Research Lead</p><h3>{record.title}</h3>
+    <h3>{record.title}</h3><p className="note framework-inspector-meta">{kind === "algorithm" ? "Existing algorithm family" : humanLabel(kind)} · Research Lead</p>
     {kind === "relationship" && <p className="framework-connection"><ActionButton action="details" variant="link" onClick={() => onSelect?.(record.from_id)}>{title(record.from_id)}</ActionButton><span aria-hidden="true"> → </span><span className="visually-hidden"> to </span><ActionButton action="details" variant="link" onClick={() => onSelect?.(record.to_id)}>{title(record.to_id)}</ActionButton><span className="note">{humanLabel(record.relationship_type)}</span></p>}
     {kind === "variant" && <p className="note">Variant of <ActionButton action="details" variant="link" onClick={() => onSelect?.(record.framework_id)}>{title(record.framework_id)}</ActionButton></p>}
     {kind === "algorithm" && record.framework_ids?.length > 0 && <p className="framework-connection"><span className="note">Addresses</span>{record.framework_ids.map((frameworkId) => <ActionButton action="details" variant="link" key={frameworkId} onClick={() => onSelect?.(frameworkId)}>{title(frameworkId)}</ActionButton>)}</p>}

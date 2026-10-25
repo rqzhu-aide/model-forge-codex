@@ -187,6 +187,86 @@ def test_graph_cannot_inflate_status_or_change_audited_math(catalog):
     assert {"theory.graph_proof_mismatch", "theory.graph_status_mismatch", "theory.unaudited_math_change"} <= result
 
 
+def counterexample_theory_outputs(tmp_path):
+    outputs = theory_outputs()
+    support = b"A complete finite counterexample establishes the stated limitation."
+    (tmp_path / "counterexample.md").write_bytes(support)
+    pointer = {"artifact_id": "artifact.counterexample", "uri": "artifact://artifact.counterexample",
+               "path": "counterexample.md", "sha256": hashlib.sha256(support).hexdigest()}
+    for family in ("p3.theory_candidate", "p3.complete_theory"):
+        outputs[family]["statements"][0].update(
+            statement_type="limitation", status="established", text="The proposed equality can fail.",
+            justification={"kind": "counterexample", "summary": "The proposed equality can fail.", "artifacts": [pointer]})
+    outputs["p3.claim_map"]["claims"][0].update(proof_status="full", scientific_status="established")
+    return outputs
+
+
+@pytest.mark.parametrize("candidate_only", [False, True])
+def test_established_limitation_can_have_complete_counterexample(catalog, tmp_path, candidate_only):
+    outputs = counterexample_theory_outputs(tmp_path)
+    if candidate_only:
+        outputs.pop("p3.complete_theory")
+    roots = {family: tmp_path for family in outputs}
+    before = copy.deepcopy(outputs)
+    assert not codes(catalog, "P3", outputs, artifact_roots=roots)
+    assert outputs == before  # Validation permits the authored label; it never upgrades a sketch.
+    outputs["p3.claim_map"]["claims"][0]["proof_status"] = "sketch"
+    assert not codes(catalog, "P3", outputs, artifact_roots=roots)
+    assert outputs["p3.claim_map"]["claims"][0]["proof_status"] == "sketch"
+
+
+def test_established_limitation_counterexample_uses_existing_contract(catalog):
+    theory = read("examples/theory-record.example.json")
+    limitation = next(statement for statement in theory["statements"] if statement["justification"]["kind"] == "counterexample")
+    limitation.update(statement_type="limitation", status="established",
+                      text="The naive variance formula can fail in the retained counterexample.")
+    assert not catalog.validate_output("p3.theory_candidate", theory)
+
+
+def test_complete_positive_proof_remains_allowed(catalog, tmp_path):
+    outputs = counterexample_theory_outputs(tmp_path)
+    for family in ("p3.theory_candidate", "p3.complete_theory"):
+        statement = outputs[family]["statements"][0]
+        statement["statement_type"] = "theorem"
+        statement["justification"]["kind"] = "proof"
+    assert not codes(catalog, "P3", outputs, artifact_roots={family: tmp_path for family in outputs})
+
+
+@pytest.mark.parametrize("mutation", ["positive_claim", "contradicted", "conditional", "missing_support", "open_obligation", "stale_graph_status"])
+def test_complete_counterexample_does_not_inflate_other_claims(catalog, tmp_path, mutation):
+    outputs = counterexample_theory_outputs(tmp_path)
+    for family in ("p3.theory_candidate", "p3.complete_theory"):
+        statement = outputs[family]["statements"][0]
+        if mutation == "positive_claim":
+            statement["statement_type"] = "theorem"
+        elif mutation == "contradicted":
+            statement.update(statement_type="proposition", status="contradicted")
+        elif mutation in {"conditional", "stale_graph_status"}:
+            statement["status"] = "conditional" if mutation == "conditional" else "incomplete"
+        elif mutation == "missing_support":
+            statement["justification"]["artifacts"] = []
+        else:
+            statement["justification"].update(kind="open_obligation", open_obligation="The argument remains open.")
+    if mutation != "stale_graph_status":
+        outputs["p3.claim_map"]["claims"][0]["scientific_status"] = outputs["p3.theory_candidate"]["statements"][0]["status"]
+    result = codes(catalog, "P3", outputs, artifact_roots={family: tmp_path for family in outputs})
+    assert "theory.graph_proof_mismatch" in result
+    if mutation == "stale_graph_status":
+        assert "theory.graph_status_mismatch" in result
+
+
+@pytest.mark.parametrize("mutation, expected", [("missing", "artifact.source_missing"), ("changed", "artifact.digest_mismatch")])
+def test_complete_counterexample_keeps_source_byte_checks(catalog, tmp_path, mutation, expected):
+    outputs = counterexample_theory_outputs(tmp_path)
+    support = tmp_path / "counterexample.md"
+    if mutation == "missing":
+        support.unlink()
+    else:
+        support.write_bytes(b"Changed support")
+    result = codes(catalog, "P3", outputs, artifact_roots={family: tmp_path for family in outputs})
+    assert expected in result
+
+
 def test_lead_cannot_silently_strengthen_an_assumption(catalog):
     outputs = theory_outputs()
     outputs["p3.complete_theory"]["assumptions"][0]["text"] = "Uniformly bounded in every regime"

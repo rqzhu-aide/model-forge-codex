@@ -12,6 +12,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 from urllib.request import urlopen
@@ -32,17 +33,74 @@ def switching_status(data, port):
         raise
 
 
-def main():
+def resolve_node(selected: Path | None = None) -> Path:
+    candidate = selected if selected is not None else shutil.which("node")
+    if candidate is None:
+        raise ValueError("A shared Node.js 22+ executable was not found. Install or reuse a shared Node installation, then pass --node PATH.")
+    node = Path(candidate).expanduser().resolve()
+    if not node.is_file():
+        raise ValueError(f'The selected Node executable does not exist: "{node}". Pass --node PATH to an existing shared Node.js 22+ executable.')
+    return node
+
+
+def resolve_npm_cli(node: Path, selected: Path | None = None) -> Path:
+    if selected is not None:
+        npm = selected.expanduser().resolve()
+        if not npm.is_file() or npm.suffix not in {".js", ".mjs", ".cjs"}:
+            raise ValueError(f'The selected npm JavaScript CLI is unavailable: "{npm}". Pass --npm-cli PATH to the installed npm-cli.js, rather than a shell or .cmd wrapper.')
+        return npm
+    candidates = [node.parent / "node_modules/npm/bin/npm-cli.js",
+                  node.parent.parent / "lib/node_modules/npm/bin/npm-cli.js"]
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate.resolve()
+    # POSIX npm is commonly a symlink to npm-cli.js, including Debian's
+    # /usr/bin/npm -> /usr/share/nodejs/npm/bin/npm-cli.js layout.
+    commands = [node.parent / "npm"]
+    on_path = shutil.which("npm")
+    if on_path:
+        commands.append(Path(on_path))
+    for command in commands:
+        resolved = command.resolve()
+        if resolved.name == "npm-cli.js" and resolved.is_file():
+            return resolved
+    raise ValueError(
+        f'Could not locate the installed npm JavaScript CLI for Node "{node}". '
+        "Install or reuse a shared npm installation, or pass --npm-cli PATH to its npm-cli.js. "
+        "Shell and .cmd wrappers are not interpreted."
+    )
+
+
+def tarball_release_id(tarball: Path) -> str:
+    try:
+        with tarfile.open(tarball, "r:*") as archive:
+            member = archive.getmember("package/npm-release-manifest.json")
+            if not member.isfile():
+                raise ValueError("The release manifest must be a regular file.")
+            with archive.extractfile(member) as stream:
+                manifest = json.load(stream)
+        if not isinstance(manifest, dict) or not isinstance(manifest.get("release_id"), str) or not manifest["release_id"]:
+            raise ValueError("The release manifest has no release_id.")
+        return manifest["release_id"]
+    except (OSError, tarfile.TarError, KeyError, ValueError) as exc:
+        raise ValueError(f'Could not read the npm release identity from "{tarball}": {exc}') from exc
+
+
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("tarball", type=Path)
-    parser.add_argument("--node", type=Path, default=shutil.which("node"))
-    args = parser.parse_args()
-    node = args.node.resolve()
+    parser.add_argument("--node", type=Path, help="Existing shared Node.js 22+ executable (default: node on PATH)")
+    parser.add_argument("--npm-cli", type=Path, help="Installed npm JavaScript CLI, such as /usr/share/nodejs/npm/bin/npm-cli.js")
+    args = parser.parse_args(argv)
     tarball = args.tarball.resolve()
+    try:
+        node = resolve_node(args.node)
+        npm = resolve_npm_cli(node, args.npm_cli)
+        expected_release = tarball_release_id(tarball)
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
     expected_catalog = json.loads((ROOT / "contracts/catalog-pin.json").read_text(encoding="utf-8"))["catalog_version"]
     expected_package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))["version"]
-    candidates = [node.parent / "node_modules/npm/bin/npm-cli.js", node.parent.parent / "lib/node_modules/npm/bin/npm-cli.js"]
-    npm = next(candidate for candidate in candidates if candidate.is_file())
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
@@ -56,6 +114,7 @@ def main():
         original = sentinel.read_bytes()
         env = dict(os.environ, PYTHONPATH=str(ROOT / "src"), PYTHONDONTWRITEBYTECODE="1",
                    MF_PYTHON=sys.executable, MF_CODEX_HOME=str(data),
+                   PATH=str(node.parent) + os.pathsep + os.environ.get("PATH", ""),
                    MF_SHARED_NODE_MODULES=str(work / "no-global-frontend-packages"))
         command = [str(node), str(npm), "exec", "--offline", "--yes", "--package", str(tarball), "--", "model-forge-codex"]
         common = ["--data-root", "./researcher's data", "--port", str(port)]
@@ -83,6 +142,7 @@ def main():
                 else:
                     raise RuntimeError("Packaged launcher startup timed out:\n" + log_path.read_text(encoding="utf-8"))
                 assert state["release_id"].startswith(f"npm-{expected_package}-")
+                assert state["release_id"] == expected_release, f'Expected tarball release {expected_release}; running {state["release_id"]}.'
                 assert state["catalog_version"] == expected_catalog and state["simulated"] is False
                 assert Path(state["data_root"]).resolve() == data.resolve()
                 assert Path(state["app_root"]).parent == Path.home() / ".model-forge-codex-app/releases"
@@ -113,7 +173,7 @@ def main():
                 assert not (data / ".local-server.json").exists()
                 report = {"tarball": str(tarball), "sha256": hashlib.sha256(tarball.read_bytes()).hexdigest(),
                           "release_id": state["release_id"], "catalog": state["catalog_version"],
-                          "checks": ["offline npm executable launch", "older idle release replaced", "relative research path preserved",
+                          "checks": ["offline npm executable launch", "exact tarball release identity", "older idle release replaced", "relative research path preserved",
                                      "no global frontend dependencies", "built UI and assets served", "empty project API",
                                      "same release reused", "clean shutdown", "provider file unchanged"]}
         finally:

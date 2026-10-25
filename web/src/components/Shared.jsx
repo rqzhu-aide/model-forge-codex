@@ -2,7 +2,7 @@ import React, { useEffect, useId, useRef } from "react";
 import katex from "katex";
 import "katex/dist/katex.min.css";
 import "../researchMath.css";
-import { inlineTokens, mathBody, renderMath } from "../researchMath";
+import { inlineTokens, inlineStrongParts, mathBody, renderMath } from "../researchMath";
 import { humanLabel, OUTCOMES, methodUpdateMessage, methodStatusBadge } from "../research";
 import { readableSections } from "../researchContent";
 import { researchBlocks } from "../researchMarkdown";
@@ -90,14 +90,41 @@ const safeUrl = (url) => /^(https?:\/\/|\/api\/)/i.test(url) ? url : undefined;
 // Display delimiters may appear between sentences, not just on their own lines.
 // Code spans are consumed as one token before their contents can become math.
 function inline(text, renderInternalLink, renderImage, renderAnchor, path = "document", renderFileLink, renderSourceLink) {
-  if (renderImage || renderAnchor) return String(text).split(/(!\[[^\]]*\]\([^\s)]+\)|<a id="[A-Za-z0-9_.:-]+"><\/a>)/g).map((part, index) => {
+  const emphasis = inlineStrongParts(text);
+  if (emphasis.some((part) => part.strong)) return emphasis.map((part, index) => {
+    const children = inline(part.text, renderInternalLink, renderImage, renderAnchor, `${path}.emphasis${index}`, renderFileLink, renderSourceLink);
+    return part.strong ? <strong key={index}>{children}</strong> : <React.Fragment key={index}>{children}</React.Fragment>;
+  });
+  if (renderImage || renderAnchor) {
+    const source = String(text);
+    // An authored anchor or image is markup only in prose. Keep examples in
+    // code and mathematics intact before resolving exact report targets.
+    const opaque = [...source.matchAll(/(?<!`)(`+)(?!`)([\s\S]*?)(?<!`)\1(?!`)/g),
+      ...[...source.matchAll(inlineTokens)].filter((match) => mathBody(match[0]))]
+      .map((match) => [match.index, match.index + match[0].length]);
+    const parts = []; let at = 0;
+    for (const match of source.matchAll(/(!\[[^\]]*\]\([^\s)]+\)|<a id="[A-Za-z0-9_.:-]+"><\/a>)/g)) {
+      if (opaque.some(([start, end]) => match.index >= start && match.index < end)) continue;
+      parts.push(source.slice(at, match.index), match[0]); at = match.index + match[0].length;
+    }
+    parts.push(source.slice(at));
+    return parts.map((part, index) => {
     if (!(index % 2)) return <React.Fragment key={index}>{inline(part, renderInternalLink, undefined, undefined, `${path}.part${index}`, renderFileLink, renderSourceLink)}</React.Fragment>;
-    if (part.startsWith("<a ")) return <React.Fragment key={index}>{renderAnchor?.(part.match(/id="([^"]+)"/)[1]) ?? part}</React.Fragment>;
+    if (part.startsWith("<a ")) return <React.Fragment key={index}>{renderAnchor?.(part.match(/id="([^"]+)"/)[1], path) ?? part}</React.Fragment>;
     const match = part.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
     return <React.Fragment key={index}>{renderImage?.(match[2], match[1]) ?? part}</React.Fragment>;
-  });
-  return String(text).split(inlineTokens).map((part, i) => {
-    if (i % 2 === 0) return part;
+    });
+  }
+  const parts = String(text).split(inlineTokens);
+  return parts.map((part, i) => {
+    if (i % 2 === 0) {
+      // Display math supplies its own block separation. A preserved separator
+      // newline would add an empty line box in the surrounding pre-line prose.
+      const before = mathBody(parts[i - 1] || ""), after = mathBody(parts[i + 1] || "");
+      if (before?.display && before.latex) part = part.replace(/^[ \t]*\r?\n/, "");
+      if (after?.display && after.latex) part = part.replace(/\r?\n[ \t]*$/, "");
+      return part;
+    }
     const math = mathBody(part);
     if (math) return math.latex ? <MathText key={i} {...math} /> : part;
     if (part.startsWith("**")) return <strong key={i}>{part.slice(2, -2)}</strong>;

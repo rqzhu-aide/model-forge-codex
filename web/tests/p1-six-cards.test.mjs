@@ -39,6 +39,33 @@ test("compact setting keeps notation on demand and interpreted goal before cited
   assert.equal(JSON.stringify(basis), before);
 });
 
+test("compact approaches retain exact accounts, visible source qualifications and stable basis-scoped anchors", () => {
+  const current = structuredClone(basis);
+  current.catalog_pin = { catalog_version: "1.23.0", catalog_manifest_sha256: "a".repeat(64) };
+  const approach = current.landscape.frameworks[0];
+  approach.explanation_markdown = "The original mechanism uses $m(W,\\theta)$. [Author, 2020](#cite:source.first).";
+  approach.assumptions_markdown = "The original sampling assumption.";
+  approach.support_status = "partially_supported";
+  const before = JSON.stringify(current);
+  const props = { basis: current };
+  const html = render.literature(props);
+  assert.ok(html.includes('<details class="overview-approach" data-reading-anchor="approach-account:basis.first:framework.first"><summary><h4>Moment estimation<span class="relevance-label">Closely related</span></h4></summary>'));
+  assert.match(html, /The original mechanism uses/);
+  assert.match(html, /Closely matches the requested quantity/);
+  assert.match(html, /The original sampling assumption/);
+  assert.match(html, /Collection mechanism remains unknown/);
+  const visible = outsideClosedDetails(html);
+  assert.match(visible, /The literature defines an estimation problem/);
+  assert.match(visible, /class="inline-citation"/);
+  assert.match(visible, /Source support: Partially supported/);
+  assert.doesNotMatch(visible, /The original mechanism uses|Closely matches the requested quantity|The original sampling assumption/);
+  const anchors = text => [...text.matchAll(/data-reading-anchor="(approach[^\"]+)"/g)].map(match => match[1]);
+  assert.deepEqual(anchors(render.literature({ basis: structuredClone(current) })), anchors(html), "Polling retains the same native disclosure identity.");
+  const earlier = { ...current, generation_ref: { generation_id: "basis.earlier" } };
+  assert.equal(new Set([...anchors(html), ...anchors(render.literature({ basis: earlier }))]).size, anchors(html).length * 2, "Earlier findings with the same approach IDs have distinct anchors.");
+  assert.equal(JSON.stringify(current), before);
+});
+
 // Remove closed disclosures, including nested ones, before checking first-view math.
 function outsideClosedDetails(html) {
   const opened = []; let result = "", start = 0;
@@ -59,18 +86,28 @@ function passageBetween(html, start, end) {
   return html.slice(from, to);
 }
 
-test("current catalog examples keep authored mathematics visible without changing authored content", () => {
+test("browser mathematics fixture retains its producing pin and exact source examples", () => {
   const load = (name) => JSON.parse(fs.readFileSync(new URL(`../../contracts/${name}`, import.meta.url), "utf8"));
   const examples = { basis: load("examples/research-basis.example.json"), literature: load("examples/literature-findings.example.json"), pin: load("catalog-pin.json") };
   const snapshot = JSON.parse(fs.readFileSync(new URL("./fixtures/p1-visible-math-preview.json", import.meta.url), "utf8"));
   assert.deepEqual(snapshot.research_basis, examples.basis, "browser fixture preserves the current basis example");
   assert.deepEqual(snapshot.literature_findings, examples.literature, "browser fixture preserves the current literature example");
-  assert.deepEqual(snapshot.catalog_pin, examples.pin, "browser fixture uses the current catalog pin");
-  for (const [source, digest] of Object.entries(snapshot.source_sha256)) assert.equal(createHash("sha256").update(fs.readFileSync(new URL(`../../${source}`, import.meta.url))).digest("hex"), digest, `browser snapshot provenance: ${source}`);
+  // The preview renders a frozen snapshot under its producing pin. An installed
+  // catalog upgrade must not silently relabel that historical scientific text.
+  for (const [source, digest] of Object.entries(snapshot.source_sha256)) {
+    const bytes = source === "contracts/catalog-pin.json" ? `${JSON.stringify(snapshot.catalog_pin, null, 2)}\n` : fs.readFileSync(new URL(`../../${source}`, import.meta.url));
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), digest, `browser snapshot provenance: ${source}`);
+  }
+});
+
+test("current catalog examples preserve authored mathematics with compact approach accounts", () => {
+  const load = (name) => JSON.parse(fs.readFileSync(new URL(`../../contracts/${name}`, import.meta.url), "utf8"));
+  const examples = { basis: load("examples/research-basis.example.json"), literature: load("examples/literature-findings.example.json"), pin: load("catalog-pin.json") };
   const before = JSON.stringify(examples);
   const currentBasis = { ...examples.basis, catalog_pin: examples.pin };
   const phaseProps = { project: { name: "Illustrative catalog example", research_instructions: "Local rendering validation." }, basis: currentBasis, artifacts: {} };
   const phaseHtml = render.phase(phaseProps), visible = outsideClosedDetails(phaseHtml);
+  const expandedApproaches = outsideClosedDetails(phaseHtml.replace(/(<details class="overview-approach"[^>]*)>/g, '$1 open="">'));
   const assertAuthoredMath = (text, html, label) => {
     assert.deepEqual(validateMathText(katex, text), [], `${label}: valid authored math`);
     for (const { latex, display } of mathSegments(text)) {
@@ -86,7 +123,13 @@ test("current catalog examples keep authored mathematics visible without changin
   for (const [index, id] of selected.entries()) {
     const record = records.find((item) => Object.entries(item).some(([key, value]) => key.endsWith("_id") && value === id));
     assert.ok(record, `selected catalog approach ${id}`);
-    assertAuthoredMath(record.explanation_markdown, passageBetween(visible, `data-reading-anchor="approach:${id}"`, selected[index + 1] ? `data-reading-anchor="approach:${selected[index + 1]}"` : papers), `selected approach ${id}`);
+    const start = `data-reading-anchor="approach:unpublished:${id}"`;
+    const end = selected[index + 1] ? `data-reading-anchor="approach:unpublished:${selected[index + 1]}"` : papers;
+    const collapsed = passageBetween(visible, start, end), expanded = passageBetween(expandedApproaches, start, end);
+    assert.doesNotMatch(collapsed, /class="katex/, `selected approach ${id}: mathematics is on demand`);
+    assertAuthoredMath(record.explanation_markdown, expanded, `selected approach ${id}`);
+    assert.ok(phaseHtml.includes(`data-reading-anchor="approach-account:unpublished:${id}"><summary><h4>${record.title}`), `selected approach ${id}: native disclosure starts with its title`);
+    assert.ok(expanded.includes(record.relevance_reason_markdown), `selected approach ${id}: exact authored fit remains available`);
   }
   for (const paper of examples.literature.papers) {
     const card = { ...paper, catalog_pin: examples.pin };

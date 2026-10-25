@@ -94,6 +94,28 @@ test("complete diagnostics preserve rare failures and missing uncertainty contex
   assert.equal(source.solver_health[0].failure_rate, 0.00001);
 });
 
+test("recorded noncompletion is not presented as solver failure", () => {
+  // Older records expose only the aggregate fields, not separate status counts.
+  const source = { ...diagnostic, solver_health: [{ regime: "all", n_runs: 335, n_failures: 19, failure_rate: 19 / 335 }] };
+  const before = JSON.stringify(source);
+  const html = render({ branch: "method.a", diagnostics: [source], onSource: noop });
+  assert.match(html, /19 incomplete or nonconverged \/ 335 recorded checks/);
+  assert.match(html, /<h3>Completion and convergence<\/h3>/);
+  assert.match(html, /<th>Recorded checks<\/th><th>Incomplete or nonconverged<\/th><th>Share<\/th>/);
+  assert.match(html, /Includes unrun cases, failed attempts and reported nonconvergence; this is not a count of solver failures\./);
+  assert.match(html, /Sum of recorded case times:/);
+  assert.match(html, /<b>Sum of case times<\/b>/);
+  assert.doesNotMatch(html, /19 failures|<h3>Solver health<\/h3>|<th>Failures<\/th>|class="danger"/);
+  assert.doesNotMatch(html, /Recorded experiment time|<b>Total<\/b>/);
+  assert.equal(JSON.stringify(source), before);
+});
+
+test("missing legacy completion totals remain unrecorded", () => {
+  const html = render({ branch: "method.a", diagnostics: [{ ...diagnostic, solver_health: [] }], onSource: noop });
+  assert.match(html, /Completion totals not recorded/);
+  assert.doesNotMatch(html, /<h3>Completion and convergence<\/h3>|0 incomplete or nonconverged/);
+});
+
 test("question view retains interpretation while numerical results have their own experiment disclosure", () => {
   const html = render({ branch: "method.a", questions: [{ ...question, branch: "method.a", phase: "P4", followup_target: target, theory_context: { state: "affected", tested_ref: testedRef, affected_statement_ids: ["statement.error"], message: "A dependency changed after these experiments." } }], cases, protocols, diagnostics: [diagnostic], onSource: noop, onRequest: noop, onTheory: noop });
   const start = html.indexOf('<details class="question-detail empirical-question-row"');

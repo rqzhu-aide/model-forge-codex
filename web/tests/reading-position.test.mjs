@@ -30,6 +30,13 @@ test("P2 disclosure state retains exact selected records and normalizes only nat
   assert.equal(saved.contexts.project.p2ProposalKey, "run.a:proposal.a");
   assert.equal(saved.contexts.project.readers.P2.modelDisclosures["run.a:proposal.a"].assumptions, true);
 });
+test("P2 shared preparation remains explicit through saved navigation", () => {
+  for (const value of [true, false, "true", null, 1]) {
+    const saved = normalizeNavigation({ contexts: { project: { phase: "P3", p2ProposalKey: "run.first:proposal.first", p2SharedPreparation: value } } }).contexts.project;
+    assert.equal(saved.p2SharedPreparation, typeof value === "boolean" ? value : undefined);
+    assert.equal(saved.p2ProposalKey, "run.first:proposal.first");
+  }
+});
 test("exact assessment identity and a bounded disclosure path survive normalization", () => {
   const reference = { role: "theorist", family: "theory_literature", run_id: "run.1", entry_id: "entry.1", entry_sha256: "a".repeat(64), arbitrary: "discard" };
   const reader = normalizeReader({ tab: "papers", query: "mean", entrySelection: { sourceId: "paper.1", reference }, position: { y: 240, offset: -32, anchor: { kind: "data-question-id", value: "question.1" }, disclosures: [{ index: 1, summary: "Saved values" }, null, { index: -1, summary: "invalid" }] } }, "P1");

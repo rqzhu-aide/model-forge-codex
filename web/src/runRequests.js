@@ -1,4 +1,5 @@
 import { hasExactRef, humanLabel, sameRef } from "./research.js";
+import { sameMethodIdentity } from "./methodWorkspace.js";
 
 export const isEmpiricalTarget = (target) => target?.kind === "empirical_question" && target?.phase === "P4";
 
@@ -39,10 +40,24 @@ export function modesForRequest(request, modes) {
   return modes.filter((m) => m.mode === (request.mode === "p3.assessment" ? "p3.assessment" : "p3.theory_revision"));
 }
 
-export function targetIsStale(request, currentTargetRef) {
+export function defaultTheoryMode(modes) {
+  return modes.find(item => item.mode === "p3.theory_revision" && item.ready)?.mode
+    || modes.find(item => item.mode === "p3.theory_establishment")?.mode || "";
+}
+
+export function targetIsStale(request, currentTargetRef, currentMethodRef, currentTheoryAligned) {
   // P4 follow-ups deliberately retain the inspected historical generation.
   // The server verifies that generation and its selected objects at launch.
-  return Boolean(request.target && !isEmpiricalTarget(request.target) && currentTargetRef && !sameRef(request.target, currentTargetRef));
+  if (!request.target || isEmpiricalTarget(request.target)) return false;
+  if (!hasExactRef(currentTargetRef) || !sameRef(request.target, currentTargetRef)
+    || request.branch && request.target.branch !== request.branch || currentTheoryAligned === false) return true;
+  // Prepared component work belongs to both the inspected theory and the exact
+  // method. A retained theory reference alone cannot establish applicability.
+  if (request.methodRef !== undefined || currentMethodRef !== undefined) {
+    const exactMethod = ref => Boolean(ref?.stable_id && Number.isInteger(ref.version) && ref.definition_sha256);
+    return !exactMethod(request.methodRef) || !exactMethod(currentMethodRef) || !sameMethodIdentity(request.methodRef, currentMethodRef);
+  }
+  return false;
 }
 
 export function theoryLinkDestination(reference, currentReference) {

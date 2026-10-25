@@ -4,7 +4,7 @@ import { latestScientificAttempt } from "../phaseUiState";
 import { ActionButton } from "./Visuals";
 
 const stageLabel = (state) => ({ succeeded: "Delivery accepted", running: "Working", correcting: "Correcting delivery",
-  failed: "Delivery not accepted", cancelled: "Cancelled", awaiting_user: "Waiting for your direction", pending: "Not started" }[state] || humanLabel(state));
+  failed: "Work failed", cancelled: "Cancelled", awaiting_user: "Waiting for your direction", pending: "Not started" }[state] || humanLabel(state));
 const memberLabel = (state) => ({ accepted: "Accepted", received: "Report received", collecting: "Collecting the report",
   running: "Working", correcting: "Correcting delivery", completed: "Turn completed", failed: "Work failed", cancelled: "Work cancelled",
   awaiting_user: "Waiting for your direction", pending: "Not started" }[state] || humanLabel(state));

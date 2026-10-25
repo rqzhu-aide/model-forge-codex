@@ -22,10 +22,15 @@
 .technical-report :is(.report-tools,.report-materials) .source-link[data-ui-role="system"]:not(:disabled):hover { color:var(--system-ink); }
 .technical-report .report-tools > .note { color:var(--system-muted); max-width:75ch; margin:6px 0; }
 .technical-report .report-section-heading { display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 12px; margin:22px 0 7px; }
-.technical-report .report-section-heading > :is(h1,h2,h3,h4,h5,h6) { flex:0 1 auto; min-width:0; margin:0; color:var(--team-ink); font:650 18px/1.4 var(--font-ui); }
+.technical-report .report-section-heading > :is(h1,h2,h3,h4,h5,h6) { flex:0 1 auto; min-width:0; margin:0; color:var(--team-ink); font:600 18px/1.4 var(--font-ui); }
 .technical-report .report-section-discuss { flex:0 0 auto; align-self:center; }
 .technical-report .report-section-discuss .ui-action-icon { width:16px; height:16px; flex-basis:16px; }
 .technical-report .report-section-heading:target { scroll-margin-top:18px; }
+.technical-report .report-reference-heading { margin:26px 0 10px; padding-top:14px; border-top:1px solid var(--team-line); }
+.technical-report .report-reference-heading > :is(h1,h2,h3,h4,h5,h6) { margin:0; color:var(--team-ink); font:600 18px/1.4 var(--font-ui); }
+.technical-report .report-anchor { scroll-margin-top:22px; }
+.technical-report .report-anchor:focus-visible { outline:2px solid var(--system-focus); outline-offset:3px; }
+.technical-report .report-material-actions { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; margin:5px 0; }
 @media (max-width:600px) {
   .technical-report .report-section-heading { align-items:flex-start; gap:5px 8px; }
   .technical-report .report-section-heading .report-section-discuss { --control-height:44px; min-height:44px; }

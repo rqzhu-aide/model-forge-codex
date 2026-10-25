@@ -6,7 +6,8 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { sharedPackage } from "../scripts/shared-deps.mjs";
-import { issueCardEntries, issueCardState, issueDisplayState, phaseNavigationState } from "../src/phaseUiState.js";
+import { issueCardEntries, issueCardState, issueDisplayState, issueUrgency, phaseNavigationState } from "../src/phaseUiState.js";
+import { issueSourceIdentity, issueVersionKey } from "../src/phaseWorkflow.js";
 
 const require = createRequire(import.meta.url);
 const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.js"));
@@ -53,6 +54,54 @@ test("saved responses do not resolve scientific work or claim the researcher owe
   assert.equal(JSON.stringify(finding), before);
 });
 
+test("partial shared team work reaches other models in the same phase with its exact source and authored assessment", () => {
+  const shared = { ...question, issue_id: "shared-reference-check", kind: "research_task", target_phase: "P3", disposition: "partially_fixed",
+    scope: { kind: "project" }, disposition_reason: "Only Method A has been checked. The shared task is not closed.",
+    generation_ref: { branch: "method.a", phase: "P3", family: "attention_items", generation_id: "generation.partial", sha256: "a".repeat(64), entry_pointer: "/1" } };
+  const before = JSON.stringify(shared);
+  for (const branch of ["method.a", "method.b", "method.c"]) {
+    // A branch-specific artifacts response can omit shared work published on
+    // another branch; the cumulative pending projection still supplies it.
+    const input = { ...props, branch, issues: [], attention: [shared] };
+    const { entries, related } = issueCardEntries(input);
+    assert.equal(entries.length, 1);
+    assert.deepEqual(related, []);
+    assert.equal(entries[0].generation_ref, shared.generation_ref);
+    assert.equal(entries[0].disposition, "partially_fixed");
+    assert.equal(issueDisplayState(entries[0]).state, "science");
+    assert.equal(issueUrgency(entries[0]).state, "attention");
+    assert.equal(issueCardState({ entries }).state, "science");
+    const html = render.issues(input);
+    assert.match(html, /data-attention-state="science"/);
+    assert.match(html, /Team assessment: Partially fixed/);
+    assert.match(html, /Applies across models/);
+    assert.doesNotMatch(html, /data-issue-state="response"|<textarea|Save instruction|Save choice|Your input needed/);
+    assert.equal(render.issues({ ...input, questionsOnly: true }), "");
+  }
+  assert.equal(JSON.stringify(shared), before);
+  assert.equal(issueDisplayState({ ...shared, disposition: "resolved" }).state, "recorded");
+  assert.equal(issueDisplayState({ ...shared, kind: "researcher_decision" }).state, "recorded");
+});
+
+test("partial model tasks remain limited to the exact branch, version and definition", () => {
+  const modelRef = { stable_id: "method.a", version: 1, definition_sha256: "b".repeat(64) };
+  const scoped = { ...question, kind: "research_task", target_phase: "P3", disposition: "partially_fixed",
+    scope: { kind: "model", branch: "method.a", model_ref: modelRef } };
+  const input = { ...props, modelRef, attention: [scoped] };
+  assert.equal(issueCardEntries(input).entries.length, 1);
+  for (const context of [
+    { branch: "method.b" },
+    { modelRef: { ...modelRef, stable_id: "method.b" } },
+    { modelRef: { ...modelRef, version: 2 } },
+    { modelRef: { ...modelRef, definition_sha256: "c".repeat(64) } },
+    { modelRef: undefined },
+  ]) assert.deepEqual(issueCardEntries({ ...input, ...context }).entries, []);
+  const carried = { ...input, phase: "P4", attention: [{ ...scoped, target_phase: "P4" }] };
+  assert.equal(issueCardEntries(carried).related.length, 1);
+  assert.deepEqual(issueCardEntries({ ...carried, branch: "method.b" }).related, []);
+  assert.deepEqual(issueCardEntries({ ...carried, modelRef: { ...modelRef, version: 2 } }).related, []);
+});
+
 test("empty, saved, scientific, waiting and correction accounts remain distinct", () => {
   const states = [
     [{}, "empty"],
@@ -94,6 +143,77 @@ test("applicable carried questions join the response rows while retaining exact 
   assert.match(html, /data-issue-state="saved"/);
   assert.match(html, /Raised during Phase 3 - Theory/);
   assert.doesNotMatch(html, /No decision is currently requested/);
+});
+
+test("project questions raised on a model branch reach their named shared phase with the original source", () => {
+  const generation_ref = { branch: "method.a", phase: "P5", family: "attention_items", generation_id: "generation.report",
+    sha256: "a".repeat(64), run_id: "run.report", package_id: "package.report", entry_pointer: "/0" };
+  const shared = { attention_id: "attention.follow-up", phase: "P5", branch: "method.a", target_phase: "P1",
+    kind: "researcher_decision", scope: { kind: "project" }, question: "Which survival horizon matters?", generation_ref };
+  const before = JSON.stringify(shared);
+  for (const phase of ["P1", "P2"]) {
+    const issue = { ...shared, target_phase: phase };
+    const input = { projectId: "test", phase, branch: "trunk", attention: [issue] };
+    const { entries, related } = issueCardEntries(input);
+    assert.equal(entries.length, 1); assert.deepEqual(related, []);
+    assert.equal(entries[0].generation_ref, generation_ref);
+    assert.equal(entries[0].scope, shared.scope);
+    assert.equal(entries[0].phase, "P5"); assert.equal(entries[0].branch, "method.a");
+    assert.equal(issueVersionKey(entries[0]), issueVersionKey(issue));
+    assert.deepEqual(issueSourceIdentity(entries[0]), issueSourceIdentity(issue));
+    assert.equal(issueDisplayState(entries[0]).state, "response");
+    const html = render.issues(input);
+    assert.match(html, /Which survival horizon matters\?/);
+    assert.match(html, /Raised during Phase 5 - Report/);
+    assert.match(html, /<textarea/); assert.match(html, /Save instruction/);
+    assert.deepEqual(issueCardEntries({ ...input, phase: "P3" }).entries, []);
+  }
+  assert.equal(JSON.stringify(shared), before);
+});
+
+test("carried model questions cannot enter a shared phase even when authored on trunk", () => {
+  const modelRef = { stable_id: "method.a", version: 2, definition_sha256: "b".repeat(64) };
+  for (const branch of ["method.a", "trunk"]) {
+    for (const phase of ["P1", "P2", "P5"]) {
+      const scoped = { ...question, phase, branch, target_phase: "P1",
+        scope: { kind: "model", branch, model_ref: modelRef } };
+      assert.deepEqual(issueCardEntries({ phase: "P1", branch: "trunk", methodId: modelRef.stable_id, modelRef, attention: [scoped] }).entries, []);
+    }
+    const scoped = { ...question, phase: "P5", branch, target_phase: "P1",
+      scope: { kind: "model", branch, model_ref: modelRef } };
+    assert.deepEqual(issueCardEntries({ phase: "P1", branch: "trunk", attention: [scoped] }).entries, []);
+    assert.deepEqual(issueCardEntries({ phase: "P1", branch: "trunk", methodId: modelRef.stable_id, modelRef, attention: [scoped] }).entries, []);
+    for (const phase of ["P3", "P4"]) {
+      const targeted = { ...scoped, target_phase: phase };
+      const context = { phase, branch, methodId: modelRef.stable_id, modelRef, attention: [targeted] };
+      assert.equal(issueCardEntries(context).entries.length, 1);
+      assert.deepEqual(issueCardEntries({ ...context, modelRef: { ...modelRef, version: 3 } }).entries, []);
+      assert.deepEqual(issueCardEntries({ ...context, branch: "method.b" }).entries, []);
+    }
+  }
+});
+
+test("carried project answers remain editable at their destination without reusing another source version", () => {
+  const source = { kind: "phase_issue", branch: "method.a", phase: "P5", family: "attention_items",
+    generation_id: "generation.report", sha256: "a".repeat(64), object_id: "attention.follow-up", entry_pointer: "/0" };
+  const issue = { attention_id: source.object_id, phase: "P5", branch: "method.a", target_phase: "P1",
+    kind: "researcher_decision", scope: { kind: "project" }, question: "Which horizon matters?", explanation_target: source };
+  const earlier = { attention_id: issue.attention_id, revision: 1, note: "An earlier question's response.",
+    attention: { ...issue, explanation_target: { ...source, generation_id: "generation.earlier" } } };
+  for (const origin of ["researcher_reported", "unknown"]) {
+    const saved = { attention_id: issue.attention_id, revision: 2, note: "The clinical horizon remains unknown.",
+      origin, question_ref: source, attention: issue, scope: issue.scope };
+    const input = { projectId: "test", phase: "P1", branch: "trunk", attention: [issue], answers: [earlier, saved] };
+    const { entries, earlierAnswers } = issueCardEntries(input);
+    assert.equal(entries[0].researcher_answer, saved); assert.deepEqual(earlierAnswers, [earlier]);
+    assert.equal(issueDisplayState(entries[0]).state, "saved");
+    const html = render.issues(input);
+    assert.match(html, /Edit instruction/); assert.match(html, /Responses to earlier question versions/);
+    if (origin === "unknown") assert.match(html, /Still unknown\. This response does not settle the question/);
+    const stale = issueCardEntries({ ...input, answers: [earlier] });
+    assert.equal(stale.entries[0].researcher_answer, undefined);
+    assert.equal(issueDisplayState(stale.entries[0]).state, "response");
+  }
 });
 
 test("shared P2 questions and method-specific questions stay with the intended method", () => {

@@ -1,4 +1,6 @@
+import json
 from types import SimpleNamespace
+import tomllib
 
 import pytest
 
@@ -57,3 +59,34 @@ async def test_windows_runtime_checks_readiness_without_initializing_sandbox(tmp
         with pytest.raises(BridgeUnavailable, match="no model work has been started"):
             await bridge._client(member, execution={"provider": "openai"})
         assert not bridge._clients and calls[0].closed
+
+
+@pytest.mark.parametrize("long_home", [False, True])
+async def test_long_member_home_keeps_sqlite_under_short_member_workspace(tmp_path, monkeypatch, long_home):
+    import openai_codex
+    member = tmp_path / ("isolated-" + "x" * 180 if long_home else "member") / "codex-home"
+    runtime, work = tmp_path / "shared-runtime", tmp_path / "short-member-work"
+    original_state = member / "state"
+    monkeypatch.setattr("model_forge_codex.bridge.runtime_settings", lambda home: (runtime,
+        ("sqlite_home=" + json.dumps(str(original_state)), "memories.use_memories=false")))
+    monkeypatch.setattr("model_forge_codex.accounts._cache", lambda home: (b"not exposed", "same-account"))
+
+    class Client:
+        def __init__(self, config):
+            self.config, self._client = config, self
+
+        async def _ensure_initialized(self):
+            pass
+
+        async def request(self, method, params, **kwargs):
+            assert method == "windowsSandbox/readiness"
+            return SimpleNamespace(status=SimpleNamespace(value="ready"))
+
+    monkeypatch.setattr(openai_codex, "AsyncCodex", Client)
+    client = await SdkCodexBridge()._build_client(member, {"provider": "openai"}, workspace_root=work)
+    config = tomllib.loads("\n".join(client.config.config_overrides))
+    assert config["sqlite_home"] == str((work / "state").resolve() if long_home else original_state)
+    assert config["memories"]["use_memories"] is False
+    assert config["cli_auth_credentials_store"] == "file"
+    assert client.config.env["CODEX_HOME"] == str(runtime)
+    assert not member.exists()

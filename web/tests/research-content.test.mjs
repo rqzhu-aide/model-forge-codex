@@ -37,6 +37,18 @@ test("readable sections select authored findings without reinterpreting internal
   assert.deepEqual(sections.map((section) => section.key), ["overall_assessment", "prioritized_issues"]);
 });
 
+test("typed scope metadata stays out of readable sections while authored scope remains", () => {
+  for (const scope of [{ kind: "project" }, { kind: "model", model_ref: { stable_id: "method.fixture", version: 2 } }]) {
+    const issue = { scope, context_markdown: "The joint endpoint law is supplied.", question: "What reference regret is identified?", likely_consequence: "The interpretation depends on the measurement law." };
+    const before = structuredClone(issue);
+    assert.deepEqual(readableSections(issue).map(section => section.key), ["context_markdown", "question", "likely_consequence"]);
+    assert.deepEqual(issue, before);
+  }
+  for (const scope of ["Finite supplied-model scope.", { text: "Conditional on the joint endpoint law." }]) {
+    assert.deepEqual(readableSections({ scope }), [{ key: "scope", label: "Scope", body: scope }]);
+  }
+});
+
 test("bare math recovery is confined to symbolic definitions in named mathematical fields", () => {
   const formula = { symbol: "\\theta", definition: "\\theta = E[Y]", domain: "Observed outcomes." };
   const source = { target_or_estimand: formula };
@@ -75,4 +87,50 @@ test("retained review findings are distinct from a new manuscript review verdict
   const structured = { issues: [{ issue: "Assumption missing", severity: "major", disposition: "needs_theory", status: "open" }] };
   assert.equal(researchDocumentContent({ ...ledger, body_md: "Partial plain-text projection", structured }), structured);
   assert.equal(researchDocumentContent({ kind: "manuscript", body_md: "Authored manuscript", structured }), "Authored manuscript");
+});
+
+test("declared Analyst JSON presents the whole account without joining informal keys to question IDs", () => {
+  const account = { title: "Complete Analyst account", conclusion: "Conditional conclusion.", scope: "Finite law.", conditions: "Synthetic only.", design: "Paired cases.",
+    questions: [{ key: "unrelated.informal.key", title: "A complete question", outcome: "mixed", answer_markdown: "$x=1$.", comparison_markdown: "Full comparison.", reliability_markdown: "Reliability.", uncertainty_markdown: "Uncertainty.", limitations_markdown: "Limits.", decision_implication_markdown: "Implication.", next_steps_markdown: "Next check." }],
+    implementation_summary: Object.fromEntries(["rule", "correspondence", "environment", "verification", "limitations", "configuration", "choices", "departures"].map(key => [key, `Recorded ${key}.`])) };
+  const compact = { question_results: [{ question_id: "exact.structured.question", answer_markdown: "Full Q4." }] };
+  const document = { kind: "analyst_synthesis", structured: compact, primary_content: account, primary_source_verified: true, primary_artifact_kind: "json" };
+  const before = structuredClone(document);
+  const content = researchDocumentContent(document);
+  const text = JSON.stringify(content);
+  for (const value of [account.conclusion, account.scope, account.conditions, account.design, ...Object.values(account.questions[0]).filter(value => value !== "unrelated.informal.key"), ...Object.values(account.implementation_summary)]) assert.ok(text.includes(value), value);
+  assert.doesNotMatch(text, /exact\.structured\.question|unrelated\.informal\.key|Full Q4/);
+  assert.deepEqual(document, before);
+  assert.equal(researchDocumentContent({ ...document, primary_source_verified: false }), compact);
+  assert.equal(researchDocumentContent({ kind: "analyst_synthesis", body_md: "Original Markdown account.", structured: compact }), "Original Markdown account.");
+});
+
+test("declared Analyst JSON also presents summary_markdown and question_results accounts", () => {
+  const account = { title: "Bounded design account", summary_markdown: "No informative comparison qualified; held-out work remains unassessed.",
+    question_results: Array.from({ length: 10 }, (_, index) => ({ question_id: `test.exact.${index}`, title: `Question ${index + 1}`,
+      category: "performance", outcome: "not_evaluated", answer_markdown: `Authored answer ${index + 1}: $J(\\pi)$ is conditional.`,
+      relevance_markdown: "Why this question matters.", design_markdown: "The declared design.", conditions_markdown: "Synthetic conditions.",
+      comparison_markdown: "Separate control comparison.", reliability_markdown: "Recorded reliability.", uncertainty_markdown: "No held-out interval.",
+      limitations_markdown: "No human inference.", decision_implication_markdown: "Retain the bounded result.",
+      next_steps_markdown: "See [retained source](artifact://artifact.exact).", observed_counts: { planned: 1, completed: 0, failed: 0, not_run: 1 } })) };
+  const compact = { question_results: [{ answer_markdown: "Compact answer." }] };
+  const document = { kind: "analyst_synthesis", structured: compact, primary_content: account, primary_source_verified: true, primary_artifact_kind: "json" };
+  const before = structuredClone(document);
+  const content = researchDocumentContent(document);
+  assert.equal(content.title, account.title);
+  assert.ok(content.body.some(section => section.body === account.summary_markdown));
+  const questions = content.body.find(section => section.title === "Empirical questions").body;
+  assert.equal(questions.length, 10);
+  for (const [index, question] of account.question_results.entries()) {
+    assert.equal(questions[index].title, question.title);
+    assert.equal(questions[index].state, question.outcome);
+    for (const [field, value] of Object.entries(question).filter(([field]) => field.endsWith("_markdown"))) {
+      assert.ok(questions[index].body.some(section => section.body === value), field);
+    }
+  }
+  assert.doesNotMatch(JSON.stringify(content), /test\.exact|Compact answer/);
+  assert.deepEqual(document, before);
+  assert.equal(researchDocumentContent({ ...document, primary_source_verified: false }), compact);
+  const dual = { ...document, primary_content: { ...account, questions: [{ title: "Original questions shape", answer_markdown: "Preserve existing precedence." }] } };
+  assert.deepEqual(researchDocumentContent(dual).body.find(section => section.title === "Empirical questions").body.map(question => question.title), ["Original questions shape"]);
 });

@@ -6,16 +6,17 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { sharedPackage } from "../scripts/shared-deps.mjs";
-import { restoreReadingPosition } from "../src/readingPosition.js";
+import { normalizeNavigation, restoreReadingPosition } from "../src/readingPosition.js";
 import { beginRunReturn, captureRunOrigin } from "../src/runReturnFocus.js";
 import { methodStartingPoint, methodStartingPointSource } from "../src/methodSeed.js";
+import { furtherWorkKey } from "../src/phaseWorkflow.js";
 
 const require = createRequire(import.meta.url);
 const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.js"));
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-launch-refresh-"));
 const bundle = path.join(directory, "test.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; export {default as LaunchRun} from '${src}/components/LaunchRun.jsx'; export {default as ProjectView} from '${src}/components/ProjectView.jsx'; export {default as FurtherWorkCard} from '${src}/components/FurtherWorkCard.jsx'; export {default as MethodProposals} from '${src}/components/MethodProposals.jsx'; export {api} from '${src}/api.js'; export const dispatcher=React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; export {default as App} from '${src}/App.jsx'; export {default as LaunchRun} from '${src}/components/LaunchRun.jsx'; export {default as ProjectView} from '${src}/components/ProjectView.jsx'; export {default as FurtherWorkCard} from '${src}/components/FurtherWorkCard.jsx'; export {default as MethodProposals} from '${src}/components/MethodProposals.jsx'; export {api} from '${src}/api.js'; export const dispatcher=React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const ui = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
 const noop = () => {};
 
@@ -38,6 +39,11 @@ function mount(Component, initialProps) {
     }
   };
   const hooks = { useState: state, useEffect: effect, useLayoutEffect: effect,
+    useCallback: (callback, dependencies) => {
+      const index = cursor++; const old = slots[index];
+      if (!old || !dependencies || dependencies.some((value, offset) => !Object.is(value, old.dependencies?.[offset]))) slots[index] = { value: callback, dependencies };
+      return slots[index].value;
+    },
     useRef: (initial) => { const index = cursor++; return (slots[index] ||= { value: { current: initial } }).value; },
     useId: () => { const index = cursor++; return (slots[index] ||= { value: `fixture-${index}` }).value; } };
   const draw = () => {
@@ -70,11 +76,124 @@ const defer = () => { let resolve; let reject; const promise = new Promise((done
 const readiness = (mode, sha256, progressive = false) => ({ modes: [{ mode, ready: true, progressive_evaluation: progressive, basis: { sha256 }, budget_seconds: 600 }] });
 const event = { preventDefault: noop };
 
+test("project refresh cancels abandoned scopes and pauses hidden polling without losing the next visible refresh", async () => {
+  const originals = { window: globalThis.window, document: globalThis.document, setInterval: globalThis.setInterval, clearInterval: globalThis.clearInterval };
+  const timers = new Set(); const listeners = new Map(); const requests = [];
+  const listen = (type, callback) => listeners.set(type, callback);
+  const unlisten = (type, callback) => { if (listeners.get(type) === callback) listeners.delete(type); };
+  globalThis.window = { addEventListener: listen, removeEventListener: unlisten };
+  globalThis.document = { hidden: false, addEventListener: listen, removeEventListener: unlisten };
+  globalThis.setInterval = (callback) => { timers.add(callback); return callback; };
+  globalThis.clearInterval = (callback) => timers.delete(callback);
+  const record = (name, result) => async (...args) => { requests.push({ name, signal: args.at(-1).signal }); return result; };
+  let delayed = true;
+  try {
+    await withApi({
+      project: async (...args) => {
+        const signal = args.at(-1).signal; requests.push({ name: "project", signal });
+        if (!delayed) return { project: {} };
+        return new Promise((resolve, reject) => signal.addEventListener("abort", () => reject(new DOMException("Abandoned reader", "AbortError")), { once: true }));
+      },
+      branches: record("branches", { branches: [] }), listRuns: record("runs", { runs: [] }),
+      artifacts: record("artifacts", { research_bases: [{ branch: "trunk", phase: "P1", research_setting: { research_goal_markdown: "Existing study goal." } }] }), decisionsPending: record("questions", {}),
+      readiness: record("readiness", {}), records: record("records", { records: [] }),
+      assessments: record("assessments", { assessments: [] }), methods: record("methods", { methods: [] }),
+    }, async () => {
+      const project = mount(ui.ProjectView, { projectId: "project.polling", context: { phase: "P1", branch: "trunk" }, onContextChange: noop });
+      try {
+        await project.settle();
+        assert.equal(requests.length, 9);
+        const abandoned = requests[0].signal;
+        assert.ok(requests.every(request => request.signal === abandoned));
+        for (const poll of timers) poll(); await project.settle();
+        assert.equal(requests.length, 9, "An unfinished refresh cannot overlap its own poll.");
+        delayed = false;
+        project.update({ context: { phase: "P2", branch: "trunk" } }); await project.settle();
+        assert.equal(abandoned.aborted, true);
+        assert.equal(requests.length, 18);
+        assert.equal(requests.at(-1).signal.aborted, false);
+        globalThis.document.hidden = true;
+        for (const poll of timers) poll(); listeners.get("visibilitychange")(); await project.settle();
+        assert.equal(requests.length, 18, "Hidden tabs do not keep rebuilding the research view.");
+        globalThis.document.hidden = false;
+        listeners.get("visibilitychange")(); await project.settle();
+        assert.equal(requests.length, 27, "Returning to the tab refreshes its current scope.");
+        assert.ok(!nodes(project.tree).some(node => node.props.role === "alert" && String(node.props.children).includes("Abandoned reader")));
+        const lastSignal = requests.at(-1).signal;
+        project.unmount();
+        assert.equal(lastSignal.aborted, true);
+        assert.equal(timers.size, 0);
+        assert.equal(listeners.size, 0);
+      } finally { project.unmount(); }
+    });
+  } finally { Object.assign(globalThis, originals); }
+});
+
 async function withApi(overrides, run) {
   const previous = Object.fromEntries(Object.keys(overrides).map((key) => [key, ui.api[key]]));
   Object.assign(ui.api, overrides);
   try { await run(); } finally { Object.assign(ui.api, previous); }
 }
+
+test("P4 issue preparation reuses the unified editor and keeps the draft, settings and exact source", async () => {
+  const previousWindow = globalThis.window; const previousDocument = globalThis.document;
+  globalThis.window = { addEventListener: noop, removeEventListener: noop };
+  globalThis.document = { addEventListener: noop, removeEventListener: noop };
+  const identity = { stable_id: "method.p4-prepare", version: 1, definition_sha256: "a".repeat(64) };
+  const source = { branch: identity.stable_id, phase: "P3", family: "attention_items", generation_id: "attention.p4-prepare", sha256: "b".repeat(64), run_id: "run.theory", package_id: "package.theory", kind: "phase_issue", object_id: "task.design", entry_pointer: "/items/2" };
+  const issue = { title: "Check the question design", explanation_target: source };
+  const issueBefore = JSON.stringify(issue);
+  const origin = { fixture: "P4 prepare issue control" }; let starts = 0;
+  try {
+    await withApi({ project: async () => ({ project: {} }), branches: async () => ({ branches: [] }), listRuns: async () => ({ runs: [] }), artifacts: async () => ({}), decisionsPending: async () => ({}), readiness: async () => ({}), records: async () => ({ records: [] }), assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [{ method_id: identity.stable_id, branch_id: identity.stable_id, identity }] }), phasePreparation: async () => ({ instructions: "Saved directions.", input_ids: ["input.saved"] }), startRun: async () => { starts++; throw new Error("Preparation must not start work."); } }, async () => {
+      const project = mount(ui.ProjectView, { projectId: "project.p4-prepare", context: { phase: "P4", branch: identity.stable_id }, onContextChange: noop }); let editor;
+      const workspace = () => find(project.tree, node => node.props.furtherWork?.type === ui.FurtherWorkCard);
+      const launch = () => find(editor.tree, node => node.type === ui.LaunchRun);
+      try {
+        await project.settle(); const inner = ui.FurtherWorkCard(workspace().props.furtherWork.props); editor = mount(inner.type, inner.props); await editor.settle();
+        launch().props.onInstructionsChange("My existing diagnostic draft."); launch().props.onModeChange("p4.comprehensive"); launch().props.onExperimentBudgetChange("720"); launch().props.onInputIdsChange(["input.draft"]); await editor.settle();
+        workspace().props.issues.props.onPrepare(issue, origin); await project.settle();
+        assert.equal(find(project.tree, node => node.type === ui.LaunchRun), undefined, "The issue action does not create a launch dialog.");
+        editor.update(workspace().props.furtherWork.props); await editor.settle(); await project.settle();
+        assert.equal(launch().props.instructions, "My existing diagnostic draft.\n\nInvestigate this recorded issue: Check the question design");
+        assert.deepEqual(launch().props.request.context_refs, [source]); assert.equal(launch().props.mode, "p4.comprehensive"); assert.equal(launch().props.experimentBudget, "720"); assert.deepEqual(launch().props.inputIds, ["input.draft"]);
+        const summary = find(editor.tree, node => node.type.name === "PhaseInputSummary");
+        assert.deepEqual(summary.props.navigationRequest, { origin, returnLabel: "Back to research question" }, "The shared navigation session owns reading position and Back focus.");
+        assert.equal(workspace().props.furtherWork.props.preparedIssue, null); assert.equal(starts, 0);
+        assert.equal(JSON.stringify(issue), issueBefore);
+      } finally { editor?.unmount(); project.unmount(); }
+    });
+  } finally { globalThis.window = previousWindow; globalThis.document = previousDocument; }
+});
+
+test("a P4 issue awaiting saved instructions does not cross a phase or method scope", async () => {
+  const previousWindow = globalThis.window; const previousDocument = globalThis.document;
+  globalThis.window = { addEventListener: noop, removeEventListener: noop };
+  globalThis.document = { addEventListener: noop, removeEventListener: noop };
+  const pending = defer(); const issue = { title: "Only the original P4 scope", explanation_target: { branch: "method.original", phase: "P3", family: "attention_items", generation_id: "attention.late", sha256: "c".repeat(64), run_id: "run.late", package_id: "package.late", kind: "phase_issue", object_id: "task.late", entry_pointer: "/items/1" } };
+  try {
+    await withApi({ project: async () => ({ project: {} }), branches: async () => ({ branches: [] }), listRuns: async () => ({ runs: [] }), artifacts: async () => ({}), decisionsPending: async () => ({}), readiness: async () => ({}), records: async () => ({ records: [] }), assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [] }), phasePreparation: async () => pending.promise }, async () => {
+      const project = mount(ui.ProjectView, { projectId: "project.p4-late-prepare", context: { phase: "P4", branch: "method.original" }, onContextChange: noop }); let editor;
+      const workspace = () => find(project.tree, node => node.props.furtherWork?.type === ui.FurtherWorkCard);
+      try {
+        await project.settle(); workspace().props.issues.props.onPrepare(issue, { fixture: "old origin" }); await project.settle();
+        const inner = ui.FurtherWorkCard(workspace().props.furtherWork.props); editor = mount(inner.type, inner.props); await editor.settle();
+        assert.equal(find(editor.tree, node => node.type === ui.LaunchRun), undefined);
+        editor.unmount(); editor = null; project.update({ context: { phase: "P3", branch: "method.original" } }); await project.settle();
+        pending.resolve({ instructions: "Late saved instructions.", input_ids: [] }); await project.settle();
+        for (const branch of ["method.other", "method.original"]) {
+          project.update({ context: { phase: "P4", branch } }); await project.settle();
+          assert.equal(workspace().props.furtherWork.props.preparedIssue, null, branch);
+          const next = ui.FurtherWorkCard(workspace().props.furtherWork.props); editor = mount(next.type, next.props); await editor.settle();
+          const launch = find(editor.tree, node => node.type === ui.LaunchRun);
+          assert.equal(launch.props.instructions, "Late saved instructions."); assert.deepEqual(launch.props.request.context_refs, []);
+          assert.equal(find(editor.tree, node => node.type.name === "PhaseInputSummary").props.navigationRequest, null);
+          editor.unmount(); editor = null;
+        }
+      } finally { editor?.unmount(); project.unmount(); }
+    });
+  } finally { globalThis.window = previousWindow; globalThis.document = previousDocument; }
+});
 
 test("adopted workflow refreshes the mounted form while preserving typed instructions, mode and budget", async () => {
   const checks = []; const starts = []; const started = []; const next = defer(); let adopted = false;
@@ -162,13 +281,14 @@ test("ProjectView sends catalog and changed readiness through both mounted launc
   const previousWindow = globalThis.window; const previousDocument = globalThis.document;
   globalThis.window = { addEventListener: noop, removeEventListener: noop };
   globalThis.document = { addEventListener: noop, removeEventListener: noop };
-  let version = "1.18.0"; let basis = "initial-basis";
-  await withApi({ project: async () => ({ project: { project_id: "project.wiring", name: "Wiring fixture" }, catalog: { version }, catalog_status: { version: "wrong-field" } }), branches: async () => ({ branches: [] }), listRuns: async () => ({ runs: [] }), artifacts: async () => ({}), decisionsPending: async () => ({}), readiness: async () => readiness("p2.full_catalog", basis), records: async () => ({ records: [] }), assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [] }), phasePreparation: async () => ({ instructions: "Saved lead instructions" }) }, async () => {
+  let version = "1.18.0"; let basis = "initial-basis"; let phaseRuns = [];
+  await withApi({ project: async () => ({ project: { project_id: "project.wiring", name: "Wiring fixture" }, catalog: { version }, catalog_status: { version: "wrong-field" } }), branches: async () => ({ branches: [] }), listRuns: async () => ({ runs: phaseRuns }), artifacts: async () => ({}), decisionsPending: async () => ({}), readiness: async () => readiness("p2.full_catalog", basis), records: async () => ({ records: [] }), assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [] }), phasePreparation: async () => ({ instructions: "Saved lead instructions" }) }, async () => {
     const project = mount(ui.ProjectView, { projectId: "project.wiring", context: { phase: "P2", branch: "trunk" }, onContextChange: noop, onOpenRun: noop });
     let further;
     try {
       await project.settle(); let methods = find(project.tree, (node) => node.type === ui.MethodProposals);
       const card = methods.props.furtherWork({}); assert.equal(card.props.workflowRevision, "1.18.0");
+      assert.equal(card.props.hasRun, false);
       const initialRevision = card.props.readinessRevision; assert.ok(initialRevision);
       const inner = ui.FurtherWorkCard(card.props); further = mount(inner.type, inner.props); await further.settle();
       let embedded = find(further.tree, (node) => node.type === ui.LaunchRun); assert.equal(embedded.props.workflowRevision, "1.18.0");
@@ -186,14 +306,18 @@ test("ProjectView sends catalog and changed readiness through both mounted launc
       embedded = find(further.tree, (node) => node.type === ui.LaunchRun);
       assert.equal(embedded.props.workflowRevision, "1.19.0"); assert.equal(embedded.props.instructions, "Unsaved researcher direction");
       assert.equal(find(project.tree, (node) => node.type === ui.LaunchRun).props.workflowRevision, "1.19.0");
-      basis = "published-basis"; methods.props.issues({}).props.onSaved(); await project.settle();
+      basis = "published-basis"; phaseRuns = [{ run_id: "first.proposal", phase: "P2", branch_id: "trunk", state: "published" }];
+      methods.props.issues({}).props.onSaved(); await project.settle();
       methods = find(project.tree, (node) => node.type === ui.MethodProposals);
       const publishedCard = methods.props.furtherWork({}); assert.notEqual(publishedCard.props.readinessRevision, initialRevision);
+      assert.equal(publishedCard.props.hasRun, true, "The first scientific run changes the existing card into revision mode.");
       const publishedInner = ui.FurtherWorkCard(publishedCard.props); assert.equal(publishedInner.key, inner.key, "Publication preserves the draft component's identity.");
       further.update(publishedInner.props); await further.settle();
       embedded = find(further.tree, (node) => node.type === ui.LaunchRun);
       assert.equal(embedded.props.readinessRevision, publishedCard.props.readinessRevision);
       assert.equal(embedded.props.instructions, "Unsaved researcher direction");
+      assert.equal(find(further.tree, node => node.type.name === "PhaseInputSummary").props.showSummary, true);
+      assert.equal(find(further.tree, node => node.type === "details" && node.props["data-reading-anchor"] === "further-work").props.open, true, "The live lifecycle change does not collapse the existing form.");
       assert.equal(find(project.tree, (node) => node.type === ui.LaunchRun).props.readinessRevision, publishedCard.props.readinessRevision);
     } finally { further?.unmount(); project.unmount(); }
   });
@@ -333,6 +457,11 @@ test("failed preparation or readiness releases history restoration without recla
         if (stage === "preparation") {
           preparation.reject(new Error("Saved instructions unavailable")); await further.settle();
           assert.ok(find(further.tree, (node) => node.props.role === "alert"));
+          const summary = find(further.tree, (node) => node.type.name === "PhaseInputSummary");
+          assert.equal(summary.props.preparation.loaded, false);
+          assert.equal(summary.props.preparation.error, true);
+          assert.equal(summary.props.preparationStatus, null, "The launch input check has not mounted after preparation loading failed.");
+          assert.equal(find(further.tree, (node) => node.type === ui.LaunchRun), undefined);
         } else {
           preparation.resolve({ instructions: "Preserved instructions" }); await further.settle();
           const element = find(further.tree, (node) => node.type === ui.LaunchRun);
@@ -418,6 +547,197 @@ function methodExplorer(props) {
   return { tree, element: find(tree, (node) => node.type.name === "ExploreMethod") };
 }
 
+test("first P2 publication preserves shared preparation until an explicit method choice, including phase return", async () => {
+  const previousWindow = globalThis.window; const previousDocument = globalThis.document;
+  globalThis.window = { addEventListener: noop, removeEventListener: noop };
+  globalThis.document = { addEventListener: noop, removeEventListener: noop };
+  const identity = { stable_id: "method.first-publication", version: 1, definition_sha256: "a".repeat(64) };
+  const source = { branch: "trunk", phase: "P2", family: "method_catalog", generation_id: "catalog.first", sha256: "b".repeat(64), run_id: "run.first", package_id: "package.first" };
+  const proposal = { proposal_id: "proposal.first", role: "research_lead", branch: "trunk", phase: "P2", generation_ref: { ...source, family: "lead_proposal", generation_id: "proposal.first" }, method: { title: "First method", identity, mathematical_definition: { canonical_definition: { target_or_estimand: "The first estimand" } } } };
+  const catalog = { method_id: identity.stable_id, branch_id: identity.stable_id, title: proposal.method.title, identity, registered: true, status: "active", source_ref: source };
+  const literatureSeed = { title: "The researcher's original idea", specification_markdown: "Preserve the original shared seed." };
+  const loads = []; let published = false; let starts = 0;
+  try {
+    await withApi({ project: async () => ({ project: { name: "First publication fixture" } }), branches: async () => ({ branches: [] }),
+      listRuns: async () => ({ runs: published ? [{ run_id: "run.first", phase: "P2", branch_id: "trunk", state: "published" }] : [] }),
+      artifacts: async () => ({ method_proposals: published ? [proposal] : [], research_bases: [{ branch: "trunk", phase: "P1", phase2_preparation: { supplied_method: literatureSeed } }] }), decisionsPending: async () => ({}),
+      readiness: async () => readiness("p2.full_catalog", published ? "published" : "initial"), records: async () => ({ records: [] }),
+      assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: published ? [catalog] : [] }),
+      phasePreparation: async (_project, branch, phase) => { loads.push([branch, phase]); return { instructions: branch === "trunk" ? "" : "This method's saved instructions" }; },
+      startRun: async () => { starts++; throw new Error("Publication and selection must not launch research."); },
+    }, async () => {
+      let context = { phase: "P2", branch: "trunk" };
+      let project;
+      const props = { projectId: "project.first-publication", onContextChange: patch => { context = { ...context, ...patch }; project.update({ context }); }, onOpenRun: noop };
+      project = mount(ui.ProjectView, { ...props, context });
+      let reader; let further;
+      const cardFromReader = () => find(reader.tree, node => node.type === ui.FurtherWorkCard);
+      const embedded = () => find(further.tree, node => node.type === ui.LaunchRun);
+      try {
+        await project.settle(); let methods = find(project.tree, node => node.type === ui.MethodProposals);
+        const emptyRoot = ui.MethodProposals(methods.props);
+        let explorer = methodExplorer(methods.props).element; reader = mount(explorer.type, explorer.props); await reader.settle();
+        const firstSlot = reader.tree.props.children[3];
+        const first = ui.FurtherWorkCard(cardFromReader().props); further = mount(first.type, first.props); await further.settle();
+        const draft = "Keep the shared directions I am preparing for the next proposal run.";
+        embedded().props.onInstructionsChange(draft); await further.settle();
+        assert.deepEqual(embedded().props.request.supplied_method, literatureSeed);
+        assert.equal(context.p2SharedPreparation, true, "The empty preparation scope is persisted before publication.");
+        published = true; methods.props.onResolved(); await project.settle();
+        methods = find(project.tree, node => node.type === ui.MethodProposals);
+        assert.equal(ui.MethodProposals(methods.props).type, emptyRoot.type, "Publication retains the complete reader ancestor tree.");
+        explorer = methodExplorer(methods.props).element; reader.update(explorer.props); await reader.settle(); await project.settle();
+        assert.equal(find(reader.tree, node => node.type.name === "MethodPicker").props.value, "run.first:proposal.first");
+        const publishedSlot = reader.tree.props.children[3];
+        assert.equal(publishedSlot.type, firstSlot.type, "Preparation stays at the same sibling slot beside the newly populated reader.");
+        const publishedCard = ui.FurtherWorkCard(publishedSlot.props);
+        assert.equal(publishedCard.key, first.key); assert.equal(publishedCard.props.branch, "trunk");
+        assert.equal(publishedCard.props.summaryContext.methodId, identity.stable_id, "Counts follow the displayed model while instructions stay shared.");
+        further.update(publishedCard.props); await further.settle();
+        assert.equal(embedded().props.instructions, draft); assert.deepEqual(embedded().props.request.supplied_method, literatureSeed, "Automatic display keeps the original shared seed.");
+        assert.equal(embedded().props.request.methodLabel, "New model proposals");
+        assert.equal(find(further.tree, node => node.type.name === "PhaseInputSummary").props.showSummary, true);
+        assert.equal(find(further.tree, node => node.props["data-reading-anchor"] === "further-work").props.open, true);
+        assert.deepEqual(loads, [["trunk", "P2"]]);
+        reader.unmount(); further.unmount(); reader = null; further = null;
+        context = { ...context, phase: "P3", branch: identity.stable_id }; project.update({ context }); await project.settle();
+        context = { ...context, phase: "P2" }; project.update({ context }); await project.settle();
+        methods = find(project.tree, node => node.type === ui.MethodProposals);
+        explorer = methodExplorer(methods.props).element; reader = mount(explorer.type, explorer.props); await reader.settle();
+        const returning = ui.FurtherWorkCard(cardFromReader().props); assert.equal(returning.key, first.key);
+        further = mount(returning.type, returning.props); await further.settle();
+        assert.equal(embedded().props.instructions, draft, "Phase return restores the same shared draft after first publication.");
+        reader.unmount(); further.unmount(); project.unmount(); reader = null; further = null;
+        context = normalizeNavigation({ projectId: props.projectId, contexts: { [props.projectId]: context } }).contexts[props.projectId];
+        project = mount(ui.ProjectView, { ...props, context }); await project.settle();
+        methods = find(project.tree, node => node.type === ui.MethodProposals);
+        explorer = methodExplorer(methods.props).element; reader = mount(explorer.type, explorer.props); await reader.settle();
+        const remounted = ui.FurtherWorkCard(cardFromReader().props); assert.equal(remounted.key, first.key);
+        further = mount(remounted.type, remounted.props); await further.settle();
+        assert.equal(embedded().props.instructions, draft, "Run-detail return and restored navigation retain the shared preparation.");
+        const explicit = find(reader.tree, node => node.props.children === "Prepare work on this method");
+        assert.ok(explicit, "The sole automatically displayed method has an explicit preparation action.");
+        const focusEffects = [];
+        const settings = { open: false, querySelector: () => ({ getBoundingClientRect: () => ({ top: 500 }), focus: options => focusEffects.push(["focus", options]) }) };
+        globalThis.document.getElementById = () => ({ closest: () => ({ querySelector: selector => selector === ".project-toolbar" ? null : settings }) });
+        globalThis.window.scrollY = 80; globalThis.window.scrollTo = options => focusEffects.push(["scroll", options]);
+        explicit.props.onClick(); await reader.settle(); await project.settle();
+        assert.equal(context.p2SharedPreparation, false);
+        assert.equal(settings.open, true);
+        assert.deepEqual(focusEffects, [["scroll", { top: 564, behavior: "instant" }], ["focus", { preventScroll: true }]], "The removed action leaves focus on the new method's opened settings below the toolbar offset.");
+        const methodCard = ui.FurtherWorkCard(cardFromReader().props); assert.notEqual(methodCard.key, first.key);
+        further.unmount(); further = mount(methodCard.type, methodCard.props); await further.settle();
+        assert.equal(embedded().props.instructions, "This method's saved instructions", "The shared draft is not copied into method instructions.");
+        assert.deepEqual(methodStartingPointSource(embedded().props.request.supplied_method).method_identity, identity);
+        assert.equal(starts, 0);
+      } finally { further?.unmount(); reader?.unmount(); project.unmount(); }
+    });
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window; else globalThis.window = previousWindow;
+    if (previousDocument === undefined) delete globalThis.document; else globalThis.document = previousDocument;
+  }
+});
+
+test("P2 persists shared preparation before first publication can arrive while the reader is away", async () => {
+  let context = { phase: "P2", branch: "trunk" }; let preparation;
+  const onPreparationScopeChange = p2SharedPreparation => { context = { ...context, p2SharedPreparation }; };
+  const empty = methodExplorer({ onPreparationScopeChange, furtherWork: selection => { preparation = selection; return null; } });
+  let reader = mount(empty.element.type, empty.element.props);
+  try {
+    await reader.settle(); assert.equal(context.p2SharedPreparation, true);
+    reader.unmount(); reader = null;
+    const proposal = { proposal_id: "first", role: "research_lead", generation_ref: { run_id: "run.away" }, method: { title: "Published while away", identity: { stable_id: "method.away", version: 1, definition_sha256: "a".repeat(64) } } };
+    const restored = normalizeNavigation({ contexts: { project: context } }).contexts.project;
+    const returning = methodExplorer({ proposals: [proposal], methods: [{ method_id: "method.away", identity: proposal.method.identity, registered: true }], initialSharedPreparation: restored.p2SharedPreparation,
+      onPreparationScopeChange, furtherWork: selection => { preparation = selection; return null; } });
+    reader = mount(returning.element.type, returning.element.props); await reader.settle();
+    assert.equal(preparation.proposal, proposal);
+    assert.equal(preparation.sharedPreparation, true, "The first automatically displayed method cannot replace the shared preparation while away.");
+  } finally { reader?.unmount(); }
+});
+
+test("superseding the selected exact P2 version changes preparation scope while preserving both drafts", async () => {
+  const names = ["window", "document", "sessionStorage"];
+  const previous = Object.fromEntries(names.map(name => [name, globalThis[name]]));
+  const storage = new Map(); const projectId = "project.superseded-preparation";
+  globalThis.window = { addEventListener: noop, removeEventListener: noop };
+  globalThis.document = { addEventListener: noop, removeEventListener: noop };
+  globalThis.sessionStorage = { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) };
+  const identity = { stable_id: "method.superseded", version: 1, definition_sha256: "a".repeat(64) };
+  const proposal = version => ({ proposal_id: `proposal.v${version}`, role: "research_lead", branch: "trunk", phase: "P2",
+    generation_ref: { run_id: `run.v${version}`, generation_id: `proposal.v${version}` },
+    method: { title: `Selected model version ${version}`, identity: { ...identity, version, definition_sha256: (version === 1 ? "a" : "b").repeat(64) } } });
+  const original = proposal(1), successor = proposal(2);
+  const catalog = item => ({ method_id: identity.stable_id, branch_id: identity.stable_id, title: item.method.title, identity: item.method.identity, registered: true, status: "active" });
+  const sharedDraft = "Keep these separate shared proposal directions.";
+  const methodDraft = "Keep this unsaved direction for the exact earlier model.";
+  storage.set(furtherWorkKey(projectId, "trunk", "P2"), JSON.stringify({ text: sharedDraft }));
+  let published = false; let starts = 0;
+  try {
+    await withApi({ project: async () => ({ project: { name: "Supersession fixture" } }), branches: async () => ({ branches: [] }),
+      listRuns: async () => ({ runs: [{ run_id: published ? "run.v2" : "run.v1", phase: "P2", branch_id: "trunk", state: "published" }] }),
+      artifacts: async () => ({ method_proposals: published ? [successor, { ...original, is_current_package: false }] : [original] }),
+      decisionsPending: async () => ({}), readiness: async () => readiness("p2.full_catalog", published ? "v2" : "v1"),
+      records: async () => ({ records: [] }), assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [catalog(published ? successor : original)] }),
+      phasePreparation: async () => ({ instructions: "Saved instructions" }),
+      startRun: async () => { starts++; throw new Error("Publication must not launch research."); },
+    }, async () => {
+      let context = { phase: "P2", branch: "trunk", p2ProposalKey: "run.v1:proposal.v1", p2SharedPreparation: false };
+      let project;
+      project = mount(ui.ProjectView, { projectId, context, onOpenRun: noop, onContextChange: patch => { context = { ...context, ...patch }; project.update({ context }); } });
+      let reader; let further; let returned;
+      const preparation = () => ui.FurtherWorkCard(find(reader.tree, node => node.type === ui.FurtherWorkCard).props);
+      const instructions = fixture => find(fixture.tree, node => node.type === ui.LaunchRun).props.instructions;
+      try {
+        await project.settle(); let methods = find(project.tree, node => node.type === ui.MethodProposals);
+        let explorer = methodExplorer(methods.props).element; reader = mount(explorer.type, explorer.props); await reader.settle();
+        const before = preparation(); assert.equal(before.props.methodId, identity.stable_id);
+        further = mount(before.type, before.props); await further.settle();
+        find(further.tree, node => node.type === ui.LaunchRun).props.onInstructionsChange(methodDraft); await further.settle();
+        published = true; methods.props.onResolved(); await project.settle();
+        methods = find(project.tree, node => node.type === ui.MethodProposals);
+        explorer = methodExplorer(methods.props).element; reader.update(explorer.props); await reader.settle(); await project.settle();
+        assert.equal(find(reader.tree, node => node.type.name === "MethodPicker").props.value, "run.v1:proposal.v1");
+        assert.equal(context.p2ProposalKey, "run.v1:proposal.v1", "Publication keeps the exact historical selection.");
+        const after = preparation(); assert.notEqual(after.key, before.key, "Supersession replaces the keyed preparation subtree.");
+        assert.equal(after.props.branch, "trunk"); assert.equal(after.props.methodId, undefined);
+        assert.deepEqual(after.props.summaryContext.modelRef, identity, "The reading summary still follows the exact earlier version.");
+        further.unmount(); further = mount(after.type, after.props); await further.settle();
+        assert.equal(instructions(further), sharedDraft, "Shared preparation retains its own draft.");
+        returned = mount(before.type, before.props); await returned.settle();
+        assert.equal(instructions(returned), methodDraft, "The previous model's draft is retained separately without migration.");
+        assert.equal(starts, 0);
+      } finally { returned?.unmount(); further?.unmount(); reader?.unmount(); project.unmount(); }
+    });
+  } finally {
+    for (const name of names) { if (previous[name] === undefined) delete globalThis[name]; else globalThis[name] = previous[name]; }
+  }
+});
+
+test("P2 proposal navigation scope changes independently of its shared preparation draft", async () => {
+  const context = name => ({ projectId: "project.proposal-summary-scope", phase: "P2", branch: `method.${name}`, methodId: `method.${name}`, modelRef: { stable_id: `method.${name}`, version: 1, definition_sha256: name.repeat(64) } });
+  let loads = 0;
+  await withApi({ phasePreparation: async () => { loads++; return { instructions: "" }; } }, async () => {
+    const props = { projectId: "project.proposal-summary-scope", phase: "P2", branch: "trunk", summaryContext: context("a"), onStarted: noop };
+    const first = ui.FurtherWorkCard(props); const further = mount(first.type, first.props);
+    const summary = () => find(further.tree, node => node.type.name === "PhaseInputSummary");
+    try {
+      await further.settle(); const initialScope = summary().props.scope;
+      find(further.tree, node => node.type === ui.LaunchRun).props.onInstructionsChange("Keep this shared proposal instruction."); await further.settle();
+      const unchanged = { ...context("a"), modelRef: Object.fromEntries(Object.entries(context("a").modelRef).reverse()) };
+      further.update({ summaryContext: unchanged }); await further.settle();
+      assert.equal(summary().props.scope, initialScope, "Equal polling data with reordered properties retains the return session.");
+      const next = ui.FurtherWorkCard({ ...props, summaryContext: context("b") });
+      assert.equal(next.key, first.key, "Noncatalog proposals use the existing shared trunk preparation draft.");
+      further.update(next.props); await further.settle();
+      assert.notEqual(summary().props.scope, initialScope, "Switching the viewed proposal invalidates the previous question navigation session.");
+      assert.equal(summary().props.context.methodId, "method.b");
+      assert.equal(find(further.tree, node => node.type === ui.LaunchRun).props.instructions, "Keep this shared proposal instruction.");
+      assert.equal(loads, 1, "Changing the viewed proposal does not reload or replace shared instructions.");
+    } finally { further.unmount(); }
+  });
+});
+
 test("a published model update preserves the initially resolved selection and its mounted draft until an explicit choice", async () => {
   const proposal = (run, id, title) => ({ proposal_id: `proposal.${id}`, role: "research_lead", generation_ref: { run_id: run, generation_id: `generation.${id}` }, method: { title, identity: { stable_id: `method.${id}`, version: 1, definition_sha256: id === "original" ? "a".repeat(64) : "b".repeat(64) }, mathematical_definition: { canonical_definition: { target_or_estimand: `${title} target` } } } });
   const original = proposal("run.original", "original", "Original QLC");
@@ -474,7 +794,7 @@ test("selection persistence ignores transient empty data but resolves a genuinel
   const reader = mount(first.element.type, first.element.props);
   try {
     await reader.settle(); reader.update({ proposals: [] }); await reader.settle();
-    assert.equal(reader.tree, null); assert.deepEqual(picks, ["run.old:old"]);
+    assert.equal(find(reader.tree, node => node.type.name === "MethodPicker"), undefined); assert.deepEqual(picks, ["run.old:old"]);
     reader.update({ proposals: [old] }); await reader.settle(); assert.deepEqual(picks, ["run.old:old"]);
     reader.update({ proposals: [replacement] }); await reader.settle();
     assert.deepEqual(picks, ["run.old:old", "run.replacement:replacement"]);
@@ -504,4 +824,97 @@ test("P2 native disclosure state and drafts remain independent across explicit e
     try { await returned.settle(); assert.equal(find(returned.tree, node => node.type.name === "MethodReaderDisclosure" && node.props.name === "review").props.open, true); }
     finally { returned.unmount(); }
   } finally { reader.unmount(); }
+});
+
+test("credential guidance stays advisory and does not probe or start work when settings are opened", async () => {
+  let starts = 0; let probes = 0; let accountReads = 0; let settings = 0; let accounts = 0;
+  await withApi({
+    readiness: async () => readiness("p1.literature_update", "a".repeat(64)),
+    startRun: async () => { starts++; return { run_id: "run.explicit" }; },
+    probeProvider: async () => { probes++; throw new Error("Unexpected paid probe"); },
+    account: async () => { accountReads++; throw new Error("Unexpected global account check"); },
+  }, async () => {
+    const launch = mount(ui.LaunchRun, {
+      projectId: "project.setup", request: { phase: "P1", branch: "trunk", mode: "p1.literature_update" },
+      setupProject: { members: { research_lead: { provider: "openai", credential_source: "account", credential_configured: false } } },
+      onTeamSettings: () => settings++, onOpenAIAccount: () => accounts++, onStarted: noop,
+    });
+    try {
+      await launch.settle();
+      assert.equal(submit(launch).props.disabled, false, "Configuration hints do not add a launch gate.");
+      const guidance = find(launch.tree, node => node.type.name === "RunSetupGuidance");
+      const guidanceTree = guidance.type(guidance.props);
+      const settingControl = find(guidanceTree, node => node.props.children === "Team Settings");
+      const accountControl = find(guidanceTree, node => node.props.children === "OpenAI Account");
+      settingControl.props.onClick(); accountControl.props.onClick();
+      assert.equal(settings, 1); assert.equal(accounts, 1);
+      assert.deepEqual([starts, probes, accountReads], [0, 0, 0]);
+      await form(launch).props.onSubmit(event); await launch.settle();
+      assert.equal(starts, 1, "Research starts only after the existing submit action.");
+      assert.deepEqual([probes, accountReads], [0, 0]);
+    } finally { launch.unmount(); }
+  });
+});
+
+test("settings shortcuts keep the project editor mounted and request a refresh on return", async () => {
+  const originals = { window: globalThis.window, document: globalThis.document, history: globalThis.history, localStorage: globalThis.localStorage, sessionStorage: globalThis.sessionStorage };
+  globalThis.window = { addEventListener: noop, removeEventListener: noop };
+  globalThis.document = { documentElement: { dataset: {} } };
+  globalThis.history = { scrollRestoration: "auto" };
+  globalThis.localStorage = { getItem: () => null, setItem: noop };
+  globalThis.sessionStorage = { getItem: () => null, setItem: noop };
+  try {
+    await withApi({ projects: async () => ({ projects: [{ project_id: "project.setup", name: "Existing research" }] }) }, async () => {
+      const app = mount(ui.App, {});
+      const project = () => find(app.tree, node => node.type === ui.ProjectView);
+      try {
+        await app.settle();
+        const original = project();
+        original.props.onTeamSettings(); await app.settle();
+        assert.equal(project().key, original.key);
+        assert.strictEqual(project().type, original.type);
+        assert.deepEqual(project().props.context, original.props.context);
+        const team = find(app.tree, node => node.props.title === "Team Settings");
+        assert.ok(team, "The settings shortcut opens the actual team editor.");
+        assert.equal(team.props.children.props.embedded, true);
+        team.props.onClose(); await app.settle();
+        assert.equal(project().props.settingsRevision, 1);
+        project().props.onOpenAIAccount(); await app.settle();
+        assert.equal(project().key, original.key);
+        find(app.tree, node => node.type.name === "AccountDialog").props.onClose(); await app.settle();
+        assert.equal(project().props.settingsRevision, 2);
+      } finally { app.unmount(); }
+    });
+  } finally { Object.assign(globalThis, originals); }
+});
+
+test("returning from settings refreshes effective team credentials in the existing project scope", async () => {
+  const originals = { window: globalThis.window, document: globalThis.document, setInterval: globalThis.setInterval, clearInterval: globalThis.clearInterval };
+  globalThis.window = { addEventListener: noop, removeEventListener: noop };
+  globalThis.document = { hidden: false, addEventListener: noop, removeEventListener: noop };
+  globalThis.setInterval = () => 1; globalThis.clearInterval = noop;
+  let configured = false; let reads = 0;
+  const snapshot = () => ({ project: {}, members: { research_lead: { provider: "custom", credential_source: "environment", credential_configured: configured } }, provider_config: {} });
+  try {
+    await withApi({
+      project: async () => { reads++; return snapshot(); }, branches: async () => ({ branches: [] }),
+      listRuns: async () => ({ runs: [] }), artifacts: async () => ({ research_bases: [{ branch: "trunk", phase: "P1", research_setting: { research_goal_markdown: "Existing study goal." } }] }),
+      decisionsPending: async () => ({}), readiness: async () => ({}), records: async () => ({ records: [] }),
+      assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [] }),
+    }, async () => {
+      const context = { phase: "P1", branch: "trunk" };
+      const project = mount(ui.ProjectView, { projectId: "project.setup", context, onContextChange: noop, onTeamSettings: noop, onOpenAIAccount: noop });
+      const editor = () => find(project.tree, node => node.type.name === "PhaseOneWorkspace").props.furtherWork;
+      try {
+        await project.settle();
+        assert.equal(editor().props.setupProject.members.research_lead.credential_configured, false);
+        assert.equal(typeof editor().props.onTeamSettings, "function");
+        const key = editor().key;
+        configured = true; project.update({ settingsRevision: 1 }); await project.settle();
+        assert.equal(reads, 2);
+        assert.equal(editor().key, key);
+        assert.equal(editor().props.setupProject.members.research_lead.credential_configured, true);
+      } finally { project.unmount(); }
+    });
+  } finally { Object.assign(globalThis, originals); }
 });

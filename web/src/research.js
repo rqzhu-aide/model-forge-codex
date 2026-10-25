@@ -122,8 +122,9 @@ export function diagnosticOverview(diagnostics = []) {
     unstable: stability.filter((row) => row.seed_flip === true).length,
     stabilityRows: stability.length,
     underRepeated: stability.filter((row) => row.assessment !== "not_applicable" && (!Number.isFinite(row.n_seeds) || row.n_seeds < 2)).length,
-    failed: health.reduce((sum, row) => sum + (Number(row.n_failures) || 0), 0),
-    runs: health.reduce((sum, row) => sum + (Number(row.n_runs) || 0), 0),
+    // The recorded count includes unrun cases and reported nonconvergence.
+    incompleteOrNonconverged: health.reduce((sum, row) => sum + (Number(row.n_failures) || 0), 0),
+    recordedChecks: health.reduce((sum, row) => sum + (Number(row.n_runs) || 0), 0),
   };
 }
 

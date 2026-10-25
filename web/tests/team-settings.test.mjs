@@ -86,12 +86,23 @@ const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-team-render
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
 await build({
-  stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import {ProviderConfigNotice,EffectiveProviderSettings} from '${src}/components/ProviderSettings.jsx'; export const notice = props => renderToStaticMarkup(React.createElement(ProviderConfigNotice, props)); export const effective = props => renderToStaticMarkup(React.createElement(EffectiveProviderSettings, props));`, resolveDir: src },
+  stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import {ProviderConfigNotice,EffectiveProviderSettings} from '${src}/components/ProviderSettings.jsx'; import TeamView from '${src}/components/TeamView.jsx'; import {Dialog} from '${src}/components/Shared.jsx'; export const notice = props => renderToStaticMarkup(React.createElement(ProviderConfigNotice, props)); export const effective = props => renderToStaticMarkup(React.createElement(EffectiveProviderSettings, props)); export const team = props => renderToStaticMarkup(React.createElement(TeamView, props)); export const teamDialog = () => renderToStaticMarkup(React.createElement(Dialog, {title: 'Team Settings', onClose: () => {}}, React.createElement(TeamView, {projectId: 'project.test', embedded: true})));`, resolveDir: src },
   outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic",
+  loader: { ".css": "empty" },
   alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom") }, logLevel: "silent",
 });
 const render = require(bundle);
 fs.unlinkSync(bundle); fs.rmdirSync(directory);
+
+test("embedded team settings reuse the dialog heading and preserve the description", () => {
+  const page = render.team({ projectId: "project.test" });
+  assert.match(page, /<h1>Team Settings<\/h1>/);
+  const overlay = render.teamDialog();
+  assert.equal((overlay.match(/<h[12]\b[^>]*>Team Settings<\/h[12]>/g) || []).length, 1);
+  assert.doesNotMatch(overlay, /<h1\b/);
+  assert.match(overlay, /Agent models, providers, instructions, and context settings/);
+  assert.match(overlay, /Changes apply to the next turn/);
+});
 
 test("file-managed summary renders effective values and credential status without controls or secrets", () => {
   const html = render.effective({ member: { ...effective, api_key: "never-display-this-secret" } });

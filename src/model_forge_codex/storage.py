@@ -11,8 +11,13 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import time
 from pathlib import Path
 from typing import Any
+
+
+_JSONL_OPEN_RETRY_DELAYS = (0.05, 0.1, 0.2, 0.4) if os.name == "nt" else ()
+_JSON_REPLACE_RETRY_DELAYS = (0.01, 0.02, 0.04, 0.08, 0.16, 0.32) if os.name == "nt" else ()
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -31,7 +36,16 @@ def write_json_atomic(path: Path, document: Any) -> None:
         encoding="utf-8",
         newline="\n",
     )
-    os.replace(tmp, path)
+    # Windows readers can briefly deny replacement of an otherwise writable
+    # target. Retry only the commit; keep the prepared bytes and prior target.
+    for attempt in range(len(_JSON_REPLACE_RETRY_DELAYS) + 1):
+        try:
+            os.replace(tmp, path)
+            break
+        except PermissionError:
+            if attempt == len(_JSON_REPLACE_RETRY_DELAYS):
+                raise
+            time.sleep(_JSON_REPLACE_RETRY_DELAYS[attempt])
 
 
 def read_json(path: Path) -> Any | None:
@@ -45,7 +59,17 @@ def read_json(path: Path) -> Any | None:
 def append_jsonl(path: Path, record: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     line = json.dumps(record, ensure_ascii=False) + "\n"
-    with path.open("a", encoding="utf-8", newline="\n") as handle:
+    # Windows sharing violations surface as PermissionError without winerror.
+    # Retry only opening: retrying a write or close could duplicate a record.
+    for attempt in range(len(_JSONL_OPEN_RETRY_DELAYS) + 1):
+        try:
+            handle = path.open("a", encoding="utf-8", newline="\n")
+            break
+        except PermissionError:
+            if attempt == len(_JSONL_OPEN_RETRY_DELAYS):
+                raise
+            time.sleep(_JSONL_OPEN_RETRY_DELAYS[attempt])
+    with handle:
         handle.write(line)
 
 

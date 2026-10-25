@@ -13,7 +13,7 @@ const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.j
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-p4-cards-"));
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; export {default as Workbench,EmpiricalEvaluationHistory as History} from '${src}/components/EmpiricalWorkbench.jsx'; export {default as Question,EmpiricalQuestionTabs as Tabs,EmpiricalDecisionSummary as Summary} from '${src}/components/EmpiricalQuestion.jsx'; export {default as Implementation} from '${src}/components/ImplementationReading.jsx'; export {ActionButton} from '${src}/components/Visuals.jsx'; export {SourceRef} from '${src}/components/Shared.jsx'; export const render=(Component,props)=>renderToStaticMarkup(React.createElement(Component,props)); export const dispatcher=React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; export {default as Workbench,EmpiricalEvaluationHistory as History} from '${src}/components/EmpiricalWorkbench.jsx'; export {default as Question,EmpiricalQuestionTabs as Tabs,EmpiricalDecisionSummary as Summary,EmpiricalQuestionSetup as Setup} from '${src}/components/EmpiricalQuestion.jsx'; export {default as Implementation} from '${src}/components/ImplementationReading.jsx'; export {ActionButton} from '${src}/components/Visuals.jsx'; export {SourceRef} from '${src}/components/Shared.jsx'; export const render=(Component,props)=>renderToStaticMarkup(React.createElement(Component,props)); export const dispatcher=React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const ui = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
 const ref = { branch: "method.a", phase: "P4", family: "empirical_synthesis", generation_id: "generation.saved", sha256: "a".repeat(64), package_id: "package.saved", run_id: "run.saved" };
 const q = (id, category) => ({ id, question_id: id, branch: "method.a", generation_ref: { ...ref, family: "protocol" }, title: `Question ${id}`, test_ids: ["test.shared"], result: { category, outcome: "supported", answer_markdown: `Full answer ${id}.` } });
@@ -40,6 +40,61 @@ test("Summary shows the frozen math recap and developed work, with full formulat
   const authored = ui.render(ui.Summary, { record: { ...record, decision_summary: { ...data, method_formulation_markdown: "The implemented method is $$m(x)=x^2.$$" } } });
   assert.match(outsideDetails(authored), /Implemented method|katex-display/); assert.doesNotMatch(authored, /ridge hazard|Definition recorded at the start/);
   assert.deepEqual(record, before);
+});
+
+test("long authored formulations retain complete math behind a native disclosure and lead with the current finding", () => {
+  const recap = "The supplied objective is\n$$\n\\begin{aligned}\nJ(\\pi)&=E[L],\\\\\n\nL&=Q+\\eta K+\\lambda B.\n\\end{aligned}\n$$";
+  const formulation = `${recap}\n\nThe complete fitting account stays available.\n\n[Exact definition](https://example.test/definition)`;
+  const record = { generation_ref: ref, scientific_outcome: { conclusion: "The fitted policies coincide.", scope: "Two synthetic fits only." }, decision_summary: { ...data, method_formulation_markdown: formulation }, evaluated_method: { summary: "A stale earlier-stage summary." } };
+  const before = structuredClone(record), tree = ui.Summary({ record, onSource() {} });
+  const html = ui.render(ui.Summary, { record, onSource() {} }), visible = outsideDetails(html);
+  assert.match(visible, /The fitted policies coincide/); assert.match(visible, /Two synthetic fits only/);
+  assert.ok(html.indexOf("Current finding and scope") < html.indexOf("Implemented method"));
+  assert.match(visible, /supplied objective/); assert.match(visible, /katex-display/); assert.doesNotMatch(html, /katex-error|stale earlier-stage/);
+  assert.doesNotMatch(visible, /complete fitting account|Exact definition/);
+  const disclosure = nodes(tree).find((node) => node.type === "details" && node.props.className === "research-details empirical-method-definition");
+  assert.ok(disclosure); assert.equal(disclosure.props.open, undefined);
+  assert.equal(disclosure.props["data-reading-anchor"], "evaluation:generation.saved:method-definition");
+  assert.equal(nodes(disclosure).find((node) => node.type === "summary").props.children, "Full mathematical formulation and fitting criterion");
+  assert.ok(nodes(disclosure).some((node) => node.props.text === formulation), "The complete authored string is retained without reconstructing or clipping equations.");
+  assert.ok(nodes(tree).some((node) => node.props.text === recap), "The recap ends at the parsed paragraph boundary after the complete display equation.");
+  const source = nodes(disclosure).find((node) => node.type === ui.SourceRef);
+  assert.equal(source.props.reference.entry_pointer, "/decision_summary/method_formulation_markdown");
+  assert.equal(source.props.reference.sha256, ref.sha256);
+  assert.match(html, /href="https:\/\/example.test\/definition"/);
+  assert.deepEqual(record, before);
+});
+
+test("experiment settings skip empty conditions and preserve nonempty authored accounts", () => {
+  const cases = [
+    { case_id: "nominal", conditions: {}, regime: "nominal learning-plus-influence" },
+    { case_id: "described", conditions: [], regime: " \n ", description: "Saved description." },
+    { case_id: "authored", conditions: "Authored condition.", regime: "Unused regime." },
+    { case_id: "structured", conditions: { body_md: "Structured authored condition." }, regime: "Unused structured regime." },
+    { case_id: "missing", conditions: {}, regime: " ", description: [] },
+  ];
+  const before = structuredClone(cases);
+  const html = ui.render(ui.Setup, { question: { title: "Recorded setup", case_ids: cases.map((item) => item.case_id) }, cases });
+  for (const text of ["nominal learning-plus-influence", "Saved description.", "Authored condition.", "Structured authored condition.", "No separate conditions are recorded."]) assert.ok(html.includes(text), text);
+  assert.doesNotMatch(html, /This record has no readable research account|Unused regime|Unused structured regime/);
+  assert.deepEqual(cases, before);
+});
+
+test("experiment settings render saved structured conditions including scalar and nested values", () => {
+  const cases = [
+    { case_id: "c.nominal.dynamic", conditions: { privilege: "M=1 known true package; no test latent-state access", test_users: 2000 } },
+    { case_id: "c.primary.dynamic", conditions: { calibration_users: 100, test_users: 2000 } },
+    { case_id: "c.primary.nonadaptive", conditions: { calibration_users: 100, schedules: 585, test_users: 2000 } },
+    { case_id: "c.early.uniform", conditions: { reused_calibration_datasets: true } },
+    { case_id: "c.boundaries", conditions: { zero: 0, enabled: false, absent: null, nested: { outcomes: [0, false, null, "$q=1$", { latex: "x^2" }] } } },
+    { case_id: "c.markdown", conditions: "Authored **condition** with $b(m,s)$.", regime: "Unused fallback." },
+  ];
+  const before = structuredClone(cases);
+  const html = ui.render(ui.Setup, { question: { title: "Recorded setup", case_ids: cases.map((item) => item.case_id) }, cases });
+  for (const text of ["Privilege:", "M=1 known true package; no test latent-state access", "Test users:", ">2000</span>", "Calibration users:", ">100</span>", "Schedules:", ">585</span>", "Reused calibration datasets:", ">true</span>", "Zero:", ">0</span>", "Enabled:", ">false</span>", "Absent:", ">Not recorded</span>", "Nested:", "Outcomes:", "<strong>condition</strong>"]) assert.ok(html.includes(text), text);
+  assert.match(html, /class="katex/);
+  assert.doesNotMatch(html, /This record has no readable research account|katex-error|Unused fallback/);
+  assert.deepEqual(cases, before);
 });
 
 test("Code defaults to one assessment and bundle action while complete verification remains available", () => {

@@ -319,7 +319,7 @@ test("paused questions expose authored sources without inventing record linkage"
 test("report reader renders mathematics and real offline exports with completion separate from review", () => {
   const document = { kind: "technical_report", title: "Repeated observation model", generation_ref: ref, body_md: "## Model\n\nUse $Y_{it}=\\mu+b_i+\\epsilon_{it}$.", completion: { status: "interim", missing_work: ["No retained numerical analysis exists for this exact model."] }, method_identity: { stable_id: "method.mean", version: 1 }, review_status: "not_independently_reviewed", portable_artifact_url: "/api/v1/report.1?view=portable" };
   const html = render.document({ document, onSource: noop });
-  for (const text of ["Interim report", "Work still needed", document.completion.missing_work[0], "has not been independently reviewed", "report.1", "Download offline HTML", "Open printable report", "class=\"katex"]) assert.ok(html.includes(text), text);
+  for (const text of ["Interim report", "Work still needed", document.completion.missing_work[0], "has not been independently reviewed", "report.1", "Download offline HTML", "Open HTML report", "class=\"katex"]) assert.ok(html.includes(text), text);
   assert.match(html, /view=portable&amp;download=1/); assert.doesNotMatch(html, /Complete report/);
   const changed = render.document({ document: { ...document, completion: { status: "complete", missing_work: [] }, review_status: "independently_reviewed", reviewed_report_ref: { ...ref, generation_id: "report.earlier" } } });
   assert.match(changed, /Complete report/); assert.match(changed, /Review concerns an earlier version/); assert.doesNotMatch(changed, /This version was independently reviewed/);

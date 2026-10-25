@@ -19,7 +19,7 @@ def file_digest(path: Path) -> str:
 
 def read_manifest(source: Path) -> dict:
     manifest = json.loads((source / MANIFEST).read_text(encoding="utf-8"))
-    if manifest.get("schema_version") != 1 or manifest.get("package") != PACKAGE:
+    if not isinstance(manifest, dict) or manifest.get("schema_version") != 1 or manifest.get("package") != PACKAGE:
         raise ValueError("This is not a recognized Model Forge npm release.")
     version, files = manifest.get("version"), manifest.get("files")
     if not isinstance(version, str) or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?", version):
@@ -49,23 +49,53 @@ def verify_files(directory: Path, files: dict) -> None:
         target = directory / relative
         if (not target.resolve().is_relative_to(directory.resolve()) or target.is_symlink()
                 or not target.is_file() or file_digest(target) != expected):
-            raise ValueError(f"Release file is missing or changed: {relative}. Download the release again.")
+            raise ValueError(f"Release file is missing or changed: {relative}.")
+
+
+def verify_retained_release(target: Path, manifest: dict) -> None:
+    try:
+        verify_files(target, manifest["files"])
+        metadata = json.loads((target / "local-release.json").read_text(encoding="utf-8"))
+        if not isinstance(metadata, dict) or metadata.get("release_id") != manifest["release_id"]:
+            raise ValueError("The saved application release metadata is missing or changed.")
+    except (OSError, ValueError) as exc:
+        raise ValueError(
+            f'The retained application release could not be verified: "{target}".\n{exc}\n'
+            "Downloading the same release will not replace this directory. "
+            "Stop every Model Forge instance using it, including instances with different research directories or ports. "
+            "Finish or cancel active research in the workbench before stopping. "
+            "Only after confirming all dependent instances have stopped, manually rename only this release directory "
+            "to an unused sibling quarantine name, then launch again to recreate it from a verified download. "
+            "If you cannot confirm they have all stopped, leave the directory in place. "
+            "Preserve research, credentials, other releases and the releases root."
+        ) from exc
+
+
+def download_error(source: Path, error: Exception) -> ValueError:
+    return ValueError(f'The downloaded npm release could not be verified: "{source}".\n{error}\nDownload the release again before retrying.')
+
+
+def verify_download(directory: Path, manifest: dict, source: Path) -> None:
+    try:
+        verify_files(directory, manifest["files"])
+    except (OSError, ValueError) as exc:
+        raise download_error(source, exc) from exc
 
 
 def snapshot_release(source: Path, releases: Path | None = None) -> Path:
     source = source.resolve()
-    manifest = read_manifest(source)
+    try:
+        manifest = read_manifest(source)
+    except (OSError, ValueError) as exc:
+        raise download_error(source, exc) from exc
     releases = (releases or Path.home() / ".model-forge-codex-app" / "releases").resolve()
     target = releases / manifest["release_id"]
     if target.resolve().parent != releases:
         raise ValueError("The release destination is outside the app directory.")
     if target.exists():
-        verify_files(target, manifest["files"])
-        metadata = json.loads((target / "local-release.json").read_text(encoding="utf-8"))
-        if metadata.get("release_id") != manifest["release_id"]:
-            raise ValueError("The saved application release has changed. Download the release again.")
+        verify_retained_release(target, manifest)
         return target
-    verify_files(source, manifest["files"])
+    verify_download(source, manifest, source)
     releases.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(prefix=".staging-", dir=releases)).resolve()
     try:
@@ -74,7 +104,7 @@ def snapshot_release(source: Path, releases: Path | None = None) -> Path:
             output.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source / relative, output)
         # Verify the bytes we copied, in case npm updated its cache during copy.
-        verify_files(staging, manifest["files"])
+        verify_download(staging, manifest, source)
         (staging / MANIFEST).write_text(json.dumps(manifest), encoding="utf-8")
         catalog = json.loads((staging / "contracts/catalog-pin.json").read_text(encoding="utf-8"))
         (staging / "local-release.json").write_text(json.dumps({
@@ -88,7 +118,7 @@ def snapshot_release(source: Path, releases: Path | None = None) -> Path:
         except OSError:
             if not target.is_dir():
                 raise
-            verify_files(target, manifest["files"])
+            verify_retained_release(target, manifest)
         return target
     finally:
         if staging.exists() and staging.resolve().parent == releases:

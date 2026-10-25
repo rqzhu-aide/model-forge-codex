@@ -18,7 +18,8 @@ from model_forge_codex.p5_review_packet import (
     validate_review_packet_outputs,
 )
 from model_forge_codex.records import ArtifactError, generation_path
-from model_forge_codex.storage import read_json, sha256_file, write_json_atomic
+from model_forge_codex.storage import read_json, sha256_bytes, sha256_file, write_json_atomic
+from test_technical_reports import report_case
 
 REPO = Path(__file__).resolve().parents[1]
 FOCUS = "P5_FOCUS_EXACT: assess the unsupported asymptotic comparison; preserve negative evidence."
@@ -217,3 +218,61 @@ def test_schema_read_accepts_legacy_scope_and_rejects_unknown_genre(legacy_p5_ca
     assert catalog.validate_output("p5.manuscript_candidate", manuscript) == []
     manuscript["venue_length"] = "workshop"
     assert catalog.validate_output("p5.manuscript_candidate", manuscript)
+
+
+def test_report_packet_reader_directions_follow_captured_catalog_and_stay_frozen(report_case, tmp_path):
+    report, basis, roots, frozen = report_case
+    primary = next(iter(roots.values())) / "report.md"
+    appendix = primary.with_name("appendix.md")
+    appendix.write_text("# Proof appendix\n\nExplicitly incomplete retained proof.\n", encoding="utf-8")
+    report["supplementary_artifacts"] = [{"artifact_id": "artifact.appendix", "path": appendix.name,
+        "sha256": sha256_file(appendix), "media_type": "text/markdown"}]
+    for path in (primary, appendix):
+        basis["artifacts"].append({"path": str(path), "content_sha256": sha256_file(path)})
+    frozen("P5", "technical_report", report)
+    captured = SimpleNamespace(root=tmp_path / "captured-catalog")
+    phase_path = captured.root / "contracts/phases/P5.json"
+    write_json_atomic(phase_path, {"capabilities": ["p5.reader_report.v1"]})
+    focus = ("Keep main scientific content strictly below eight printed pages, targeting seven. "
+             "Exclude References and the separate proof appendix; start References on a new printed page.")
+    packet = prepare_review_packet(tmp_path / "new-review", basis=basis, instructions=focus,
+                                   run_id="run.new-review", project_dir=tmp_path, catalog=captured)
+    assert packet["packet_version"] == "2.0.0"
+    assert packet["instructions"]["focus_sha256"] == sha256_bytes(focus.encode("utf-8"))
+    delivered = review_packet_brief(tmp_path / "new-review/review-packet")
+    assert focus in delivered
+    assert "## Report and proof exposition" in delivered
+    assert "section_anchors.references boundary" in delivered
+    assert "Parallel reviewers remain read-only" in delivered
+    assert "revision Lead authors accepted exposition changes" in delivered
+    assert "Check local expansions of supplied algebra or conditional reasoning" in delivered
+    assert "incomplete proofs stay explicitly incomplete" in delivered
+    assert Path(packet["records"][1]["path"]).read_bytes() == appendix.read_bytes()
+
+    # A previously adopted report contract without the reader capability keeps
+    # its original v2 instruction bytes even while the live code is newer.
+    write_json_atomic(phase_path, {"capabilities": ["p5.technical_report.v1"]})
+    legacy = prepare_review_packet(tmp_path / "old-review", basis=basis, instructions=focus,
+                                   run_id="run.old-review", project_dir=tmp_path, catalog=captured)
+    legacy_focus = Path(legacy["instructions"]["path"]).read_text(encoding="utf-8")
+    assert legacy_focus == (
+        "# Frozen technical report review directions\n\n## Researcher focus (verbatim)\n\n" + focus
+        + "\n\nReview the exact technical report and every declared supporting exhibit, its retained data dependencies and supplements. "
+        "The submitted model version, data or synthetic scope, and completion gaps remain part of the report. "
+        "Mathematical, numerical and first-reader responsibilities remain separate. Missing support is a finding. "
+        "No new model, proof or numerical work is authorized during this review.\n")
+    before = {path.name: path.read_bytes() for path in (tmp_path / "old-review/review-packet").iterdir()}
+    write_json_atomic(phase_path, {"capabilities": ["p5.reader_report.v1"]})
+    assert prepare_review_packet(tmp_path / "old-review", basis={}, instructions="Undelivered later focus",
+                                 run_id="run.old-review", catalog=captured) == legacy
+    assert before == {path.name: path.read_bytes() for path in (tmp_path / "old-review/review-packet").iterdir()}
+
+
+def test_report_schema_keeps_references_optional_and_seven_scientific_sections():
+    catalog = Catalog(REPO / "contracts")
+    example = read_json(REPO / "contracts/examples/technical-report.example.json")
+    assert catalog.validate_output("p5.technical_report_candidate", example) == []
+    assert example["section_anchors"].pop("references") == "report-references"
+    assert catalog.validate_output("p5.technical_report_candidate", example) == []
+    example["sections_present"].append("references")
+    assert catalog.validate_output("p5.technical_report_candidate", example)

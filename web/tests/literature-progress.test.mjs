@@ -80,6 +80,23 @@ test("an explanation cannot replace a failed scientific update in common progres
   assert.doesNotMatch(html, /Theorist: Working|1 of 3/);
 });
 
+test("P3 startup failure reports failed work without inventing a rejected delivery", () => {
+  // Rendering fields from the retained DRBP startup failure on 2026-10-22.
+  const run = { run_id: "run.p3.p3.theory_revision.37d64c2a0327a9b480c1994e375e9023", phase: "P3", mode: "p3.theory_revision",
+    branch_id: "method.dual-reference-belief-planning", state: "failed", thread_ids: {},
+    terminal_reason: "Codex could not apply this member's execution settings or resume its thread.",
+    progress: { stages: [
+      { stage_id: "p3.theorist", label: "Theory development", state: "failed", parallel: false, member_detail_available: false, members: [], received_accounts: null, total_accounts: 1 },
+      { stage_id: "p3.analyst", label: "Analyst audit", state: "pending", parallel: false, member_detail_available: false, members: [], received_accounts: null, total_accounts: 1 },
+      { stage_id: "p3.lead", label: "Lead synthesis", state: "pending", parallel: false, member_detail_available: false, members: [], received_accounts: null, total_accounts: 1 },
+    ], publication: { label: "Theory account published", state: "pending" } } };
+  const html = render.progress({ run, phase: "P3", retained: true });
+  assert.match(html, /<strong>Theory development<\/strong><span class="note">Work failed<\/span>/);
+  assert.match(html, /<strong>Analyst audit<\/strong><span class="note">Not started<\/span>/);
+  assert.match(html, /This attempt did not replace the retained results\./);
+  assert.doesNotMatch(html, /Delivery not accepted|Delivery accepted|Report received|member reports received/);
+});
+
 test("accepted historical stages retain acceptance without implying missing member deliveries", () => {
   const run = { ...active, state: "published", progress: { stages: [{
     stage_id: "p1.discovery", label: "Member literature searches", state: "succeeded", parallel: true,

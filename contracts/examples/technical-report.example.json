@@ -84,7 +84,8 @@
     "justification": "justification",
     "numerical_analysis": "numerical_analysis",
     "limitations": "limitations",
-    "reproducibility": "reproducibility"
+    "reproducibility": "reproducibility",
+    "references": "report-references"
   },
   "completion": {
     "status": "interim",

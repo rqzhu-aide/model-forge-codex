@@ -8,22 +8,21 @@ Model Forge is a local workbench for developing statistical models, machine lear
 
 ## Install and use
 
-Use shared **Node.js 22+ with npm** and **Python 3.11+** installations. Install the Python dependencies once, then launch the prerelease:
+Use shared **Node.js 22+ with npm** and **Python 3.11+** installations. Follow the one-time setup for your system: **[Windows](docs/installation.md#windows)**, **[macOS](docs/installation.md#macos)**, or **[Linux](docs/installation.md#linux)**. Each route installs the backend dependencies and selects the same Python for launch using `MF_PYTHON`.
 
 ```sh
-python -m pip install --user "fastapi>=0.115" "uvicorn>=0.30" "jsonschema>=4.20" "httpx>=0.27" "openai-codex>=0.147,<0.148"
 npx @rqzhu-aide/model-forge-codex@next web
 ```
 
-Use `python3` or `py -3` if that selects your shared Python. Where `--user` is unavailable, use your system's supported shared installation method. No project environment or frontend build is needed. The Codex desktop app is optional.
+Run this in the terminal where you selected Python. In a new terminal, set `MF_PYTHON` again or pass `--python PATH` to that same shared executable. No project environment or frontend build is needed. The Codex desktop app is optional.
 
 The app opens at **[http://127.0.0.1:8766](http://127.0.0.1:8766)**. Keep the terminal open while using it.
 
 1. **Create a project.** Describe your problem, data collection, goal, and constraints. Data are optional.
-2. **Connect the team.** Use **Workspace → OpenAI Account**, or configure an API provider in **Workspace → Team Settings**. Select available models and run **Test saved settings** for each member. Tests use your provider account and may consume tokens.
+2. **Connect the team.** Use **Workspace → OpenAI Account**, or configure an API provider in **Workspace → Team Settings**. The run controls show missing connection settings for team members. Configured credentials do not mean a connection has been tested. Select available models and run **Test saved settings** for each member; tests may consume provider tokens.
 3. **Start Phase 1.** Read the findings, discuss consequential choices, and choose which phase to run next. Saving a comment or instruction does not start a research run.
 
-On native Windows, complete the shared Codex runtime's one-time sandbox setup before research. See [model access and setup](docs/model-access.md) for sign-in, API providers, Windows setup, and experiment dependencies.
+On native Windows, complete the shared Codex runtime's one-time sandbox setup. Managed Phase 4 numerical experiments require its supported **elevated sandbox** setup. See [model access and setup](docs/model-access.md) for sign-in, API providers, Windows setup, and experiment dependencies.
 
 Projects and settings are saved in **`~/.model-forge-codex`**, separately from application files. Use `--data-root PATH` for another folder or `--python PATH` for a specific shared Python. See `--help` for all options.
 
@@ -36,6 +35,8 @@ npx @rqzhu-aide/model-forge-codex@next stop
 
 `@next` tracks prereleases; use `@0.9.1` to pin this version. The development guide also covers [source installation](docs/development.md#source-checkout) and [GitHub tarballs](docs/development.md#prepared-release-tarball).
 
+For example, start a project with: “Develop a model to predict an outcome from baseline and repeated measurements. I do not have data ready yet. Compare feasible approaches and explain which assumptions need my input.” For setup errors, updates, and application-cache recovery, see [installation and troubleshooting](docs/installation.md).
+
 ## Architecture and design
 
 | Phase | Purpose |
@@ -47,7 +48,7 @@ npx @rqzhu-aide/model-forge-codex@next stop
 | **Phase 5 - Report** | Read, discuss, revise, and export the technical report. |
 
 - **Specialized team.** A Research Lead, Theorist, Data Analyst, and Outside Reviewer work through a Codex bridge. Structured outputs feed the interface directly.
-- **Clear interaction.** Blue marks team findings, green marks system controls, and orange marks researcher input. Reports support section-level discussion and self-contained HTML export.
+- **Clear interaction.** Blue marks team findings, navy (Illini Blue) marks system controls, and orange marks researcher input. Reports support section-level discussion and self-contained HTML export.
 - **Traceable work.** Results retain their method, theory, and experiment sources. Application updates preserve research history; each project retains its workflow catalog until explicitly updated.
 - **Local workspace.** React provides the interface and FastAPI manages runs and artifacts. Research is stored locally; model requests go to your configured account or provider.
 

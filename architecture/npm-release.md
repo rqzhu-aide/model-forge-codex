@@ -23,7 +23,7 @@ From the repository root, using the shared runtimes:
 ```sh
 npm pack
 npm run test:npm
-python -B scripts/smoke_npm_release.py rqzhu-aide-model-forge-codex-0.9.1.tgz
+"$MF_PYTHON" -B scripts/smoke_npm_release.py rqzhu-aide-model-forge-codex-0.9.1.tgz
 ```
 
 `npm pack` runs `scripts/prepare_npm_package.mjs`. It verifies catalog hashes,
@@ -33,9 +33,14 @@ with hashes of the shipped files and a release identity derived from their
 content and application version. It does not refresh the catalog manifest or
 install dependencies. Do not bypass the prepack check for a release artifact.
 
+Select `MF_PYTHON` using the [installation guide](../docs/installation.md).
+In PowerShell, replace `"$MF_PYTHON"` with `& $env:MF_PYTHON`. The smoke script
+accepts `--node PATH` and `--npm-cli PATH` for shared executables; the npm override
+is its JavaScript CLI, not a shell wrapper. The chosen Node runs that CLI.
+
 The allowlist includes application Python source, the complete pinned catalog,
 built interface assets, bundled math and report tools, dependency license
-notices, README, model access and development guides, and package metadata.
+notices, README, installation, model access and development guides, and package metadata.
 Saved projects, provider configurations, credentials, architecture evidence,
 tests, caches, and development dependencies are excluded. Inspect the actual
 tarball inventory before publishing; GitHub source and npm have separate file
@@ -56,6 +61,12 @@ copied there. Research remains separate, normally in `~/.model-forge-codex`.
 Browser opening, Ctrl+C, native sandbox use, and actual model research require
 their own checks. Record the operating systems and runtime versions actually
 tested instead of treating the package's version ranges as platform certification.
+
+Integrity diagnostics distinguish downloaded source from the retained snapshot
+and identify the exact affected directory. Repair is manual: every instance
+sharing that release must stop before a targeted sibling quarantine and verified
+recreation. A single default-port stop does not cover other data roots or ports.
+No launch automatically replaces damaged live code or removes research records.
 
 Before publication, record the tarball SHA-256, package version, catalog pin,
 test results, and the exact commit containing its source. Rebuild and recheck

@@ -1,0 +1,225 @@
+{
+  "record_id": "record.report",
+  "record_type": "technical_report",
+  "method_identity": {
+    "stable_id": "method.checked",
+    "version": 1,
+    "definition_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "title": "Synthetic finite-estimator reading fixture",
+  "report_kind": "assembly_candidate",
+  "target_audience": "Researcher",
+  "problem_context_ref": {
+    "revision": 1,
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "sections_present": [
+    "problem",
+    "model",
+    "existing_approaches",
+    "justification",
+    "numerical_analysis",
+    "limitations",
+    "reproducibility"
+  ],
+  "section_anchors": {
+    "problem": "problem",
+    "model": "model",
+    "existing_approaches": "existing_approaches",
+    "justification": "justification",
+    "numerical_analysis": "numerical_analysis",
+    "limitations": "limitations",
+    "reproducibility": "reproducibility",
+    "references": "report-references"
+  },
+  "claims": [],
+  "numerical_analysis": [],
+  "expectation_outcomes": [],
+  "prose_values": [],
+  "supplementary_artifacts": [
+    {
+      "artifact_id": "artifact.appendix",
+      "path": "appendix.md",
+      "sha256": "a93293ec549ed9a63ad71171b092f4d40547aa51dc0a831c47a06413f313d34f",
+      "media_type": "text/markdown"
+    },
+    {
+      "artifact_id": "artifact.notes",
+      "path": "notes.md",
+      "sha256": "e6dda9beac03d53cdc2e1088c7a3156ee6f572cb8fa27504503ecd0404f4348f",
+      "media_type": "text/markdown"
+    },
+    {
+      "artifact_id": "artifact.figure",
+      "path": "fractions.svg",
+      "sha256": "6526664922ecd3431ccee5593bdb846af278275a101b5115777360e34af0946c",
+      "media_type": "image/svg+xml"
+    },
+    {
+      "artifact_id": "artifact.table",
+      "path": "fractions.csv",
+      "sha256": "0b291717a7f039a71cda1db810d9679ed647aeee1d02e9ee3331935e809d653c",
+      "media_type": "text/csv"
+    }
+  ],
+  "report_artifact": {
+    "artifact_id": "artifact.report",
+    "path": "report.md",
+    "sha256": "872d1a551437c8a9a35d45d123aa0911e1944e720c77aad26563b7d91d59ac1a",
+    "media_type": "text/markdown"
+  },
+  "artifact_authored_paths": {
+    "artifact.report": "report/main.md",
+    "artifact.appendix": "details/appendix.md",
+    "artifact.notes": "details/notes.md",
+    "artifact.figure": "figures/fractions.svg",
+    "artifact.table": "tables/fractions.csv"
+  },
+  "kind": "technical_report",
+  "body_md": "# Synthetic finite-estimator reading fixture\n\nThis synthetic report checks report reading, source navigation, and printing. Its numbers and elementary argument are fixtures for interface verification. They provide no evidence about any live research investigation or deployed statistical method.\n\n<a id=\"problem\"></a>\n## A finite estimation question\n\nSuppose a finite sample contains observations with values zero or one. The sample mean describes the fraction of observed ones. We use this familiar construction to inspect how a technical account presents notation, a mathematical statement, exact numerical values, references, and a separately retained proof appendix.\n\nThe report and its supplementary documents are separate immutable source files. A link to the [elementary proof](../details/appendix.md#proof-mean) opens the exact submitted appendix in the portable edition. The [illustrative source entry](#reference-one) can be followed and its return link restores access to this section.\n\n<a id=\"model\"></a>\n## Estimator and scope\n\nLet each observation be \\(x_i\\in\\{0,1\\}\\), and let \\(n\\) be a positive integer. The empirical mean is\n\n$$\n\\begin{aligned}\n\\widehat p_n &= \\frac{1}{n}\\sum_{i=1}^n x_i,\\\\\n0 &\\leq \\widehat p_n \\leq 1.\n\\end{aligned}\n$$\n\nThe first relation defines the estimator. The second follows from the range of the observations. Neither relation assumes random sampling or establishes a population interpretation. If the observations are a selected finite set, the fraction describes that set alone. If they are random observations, additional sampling assumptions would be needed to interpret uncertainty.\n\nThis distinction is useful in the reading fixture because a renderer must retain the mathematical statement and the surrounding scope. Formatting cannot supply a missing assumption. The appendix repeats the same notation and proves only the finite range relation.\n\n<a id=\"existing_approaches\"></a>\n## Relation to elementary summaries\n\nThe empirical mean is a standard summary. Here it supplies a compact example with a genuine defining equation and an easily checked finite statement. The synthetic citation to [Fixture source one](#reference-one) verifies an internal reference target. [Fixture source two](#reference-two) verifies that several entries remain independently addressable.\n\nThe citation labels are test data, not bibliographic claims. They are intentionally recorded in the trailing reference region so that the main scientific content and reference pages can be measured separately.\n\n<a id=\"justification\"></a>\n## A bounded finite mean\n\nFor a positive sample size and observations between zero and one, the empirical mean also lies between zero and one. The essential conditions are the range restriction and a strictly positive denominator. The conclusion is deterministic. It does not establish bias, consistency, confidence coverage, or the adequacy of a sampling mechanism.\n\nAll reasoning steps are retained in the [separate proof appendix](../details/appendix.md#proof-mean). The main account states the result and its limits. This arrangement checks that the appendix remains readable offline while it is excluded from the main report's print selection.\n\n<a id=\"numerical_analysis\"></a>\n## Exact synthetic values\n\nThe two rows below are exact illustrative fractions. They are not estimates from a scientific experiment. They check that printed tables, negative values, decimal precision, figure labels, and downloadable source bytes remain readable.\n\n| Synthetic case | Ones | Observations | Exact fraction |\n| --- | --- | --- | --- |\n| Case A | 1 | 8 | 0.125 |\n| Case B | 2 | 8 | 0.250 |\n\n![Synthetic fractions for two finite sets, each with eight observations](../figures/fractions.svg)\n\nThe figure re-expresses exactly the values in the table. Its horizontal axis names the two synthetic cases, and its vertical scale shows the fraction of ones. The [retained CSV](../tables/fractions.csv) contains the same two rows. No uncertainty interval is shown because no sampling design is asserted.\n\nAn additional exact decimal, -0.0006028432811984, is included solely to inspect line wrapping and digit preservation. It is not connected to the finite mean calculation. A renderer must preserve its sign and all of its supplied digits.\n\n<a id=\"limitations\"></a>\n## Interpretation limits\n\nThis document tests presentation and source identity. It cannot establish scientific validity, infer participant behavior, or certify a proof in another report. The elementary bound does not address causal effects, evolving preferences, or a policy's performance. No such conclusion should be inferred from the fixture's successful rendering.\n\nOpening a reference, a supporting document, or the print controls must preserve access to the authored account. Choosing one supporting document for printing must exclude the primary report and every other supporting document. Opening or closing provenance disclosures must not change that selection.\n\n<a id=\"reproducibility\"></a>\n## Retained materials\n\nThe portable edition embeds all rendered mathematics, fonts, figure bytes, and declared linked Markdown. Read the [proof appendix](../details/appendix.md#proof-mean), [supporting notes](../details/notes.md#notes), or [exact synthetic CSV](../tables/fractions.csv). The appendix links back to this report and to the figure using document-relative paths.\n\n<a id=\"report-references\"></a>\n## References\n\n<a id=\"reference-one\"></a>\n\nFixture source one. Synthetic citation entry for internal-link verification. [Return to the question](#problem).\n\n<a id=\"reference-two\"></a>\n\nFixture source two. Synthetic citation entry for independent anchor verification. [Return to the numerical account](#numerical_analysis).\n",
+  "generation_ref": {
+    "phase": "P5",
+    "branch": "method.checked",
+    "family": "technical_report",
+    "generation_id": "generation.synthetic.reader",
+    "content_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "run_id": "run.synthetic.reader",
+    "package_id": "package.synthetic.reader"
+  },
+  "structured": {
+    "record_id": "record.report",
+    "record_type": "technical_report",
+    "method_identity": {
+      "stable_id": "method.checked",
+      "version": 1,
+      "definition_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "title": "Synthetic finite-estimator reading fixture",
+    "report_kind": "assembly_candidate",
+    "target_audience": "Researcher",
+    "problem_context_ref": {
+      "revision": 1,
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "sections_present": [
+      "problem",
+      "model",
+      "existing_approaches",
+      "justification",
+      "numerical_analysis",
+      "limitations",
+      "reproducibility"
+    ],
+    "section_anchors": {
+      "problem": "problem",
+      "model": "model",
+      "existing_approaches": "existing_approaches",
+      "justification": "justification",
+      "numerical_analysis": "numerical_analysis",
+      "limitations": "limitations",
+      "reproducibility": "reproducibility",
+      "references": "report-references"
+    },
+    "claims": [],
+    "numerical_analysis": [],
+    "expectation_outcomes": [],
+    "prose_values": [],
+    "supplementary_artifacts": [
+      {
+        "artifact_id": "artifact.appendix",
+        "path": "appendix.md",
+        "sha256": "a93293ec549ed9a63ad71171b092f4d40547aa51dc0a831c47a06413f313d34f",
+        "media_type": "text/markdown"
+      },
+      {
+        "artifact_id": "artifact.notes",
+        "path": "notes.md",
+        "sha256": "e6dda9beac03d53cdc2e1088c7a3156ee6f572cb8fa27504503ecd0404f4348f",
+        "media_type": "text/markdown"
+      },
+      {
+        "artifact_id": "artifact.figure",
+        "path": "fractions.svg",
+        "sha256": "6526664922ecd3431ccee5593bdb846af278275a101b5115777360e34af0946c",
+        "media_type": "image/svg+xml"
+      },
+      {
+        "artifact_id": "artifact.table",
+        "path": "fractions.csv",
+        "sha256": "0b291717a7f039a71cda1db810d9679ed647aeee1d02e9ee3331935e809d653c",
+        "media_type": "text/csv"
+      }
+    ],
+    "report_artifact": {
+      "artifact_id": "artifact.report",
+      "path": "report.md",
+      "sha256": "872d1a551437c8a9a35d45d123aa0911e1944e720c77aad26563b7d91d59ac1a",
+      "media_type": "text/markdown"
+    },
+    "artifact_authored_paths": {
+      "artifact.report": "report/main.md",
+      "artifact.appendix": "details/appendix.md",
+      "artifact.notes": "details/notes.md",
+      "artifact.figure": "figures/fractions.svg",
+      "artifact.table": "tables/fractions.csv"
+    }
+  },
+  "report_materials": [
+    {
+      "artifact_id": "artifact.report",
+      "path": "report.md",
+      "sha256": "872d1a551437c8a9a35d45d123aa0911e1944e720c77aad26563b7d91d59ac1a",
+      "media_type": "text/markdown",
+      "authored_path": "report/main.md",
+      "source_verified": true,
+      "artifact_url": "/api/__p5-fixture__/materials/report.md"
+    },
+    {
+      "artifact_id": "artifact.appendix",
+      "path": "appendix.md",
+      "sha256": "a93293ec549ed9a63ad71171b092f4d40547aa51dc0a831c47a06413f313d34f",
+      "media_type": "text/markdown",
+      "authored_path": "details/appendix.md",
+      "source_verified": true,
+      "artifact_url": "/api/__p5-fixture__/materials/appendix.md"
+    },
+    {
+      "artifact_id": "artifact.notes",
+      "path": "notes.md",
+      "sha256": "e6dda9beac03d53cdc2e1088c7a3156ee6f572cb8fa27504503ecd0404f4348f",
+      "media_type": "text/markdown",
+      "authored_path": "details/notes.md",
+      "source_verified": true,
+      "artifact_url": "/api/__p5-fixture__/materials/notes.md"
+    },
+    {
+      "artifact_id": "artifact.figure",
+      "path": "fractions.svg",
+      "sha256": "6526664922ecd3431ccee5593bdb846af278275a101b5115777360e34af0946c",
+      "media_type": "image/svg+xml",
+      "authored_path": "figures/fractions.svg",
+      "source_verified": true,
+      "artifact_url": "/api/__p5-fixture__/materials/fractions.svg"
+    },
+    {
+      "artifact_id": "artifact.table",
+      "path": "fractions.csv",
+      "sha256": "0b291717a7f039a71cda1db810d9679ed647aeee1d02e9ee3331935e809d653c",
+      "media_type": "text/csv",
+      "authored_path": "tables/fractions.csv",
+      "source_verified": true,
+      "artifact_url": "/api/__p5-fixture__/materials/fractions.csv"
+    }
+  ],
+  "completion": {
+    "status": "interim",
+    "missing_work": [
+      "Perform and retain relevant numerical analysis for this exact model"
+    ],
+    "basis_scope": "Declared support and exact retained source integrity; scientific adequacy remains an expert judgment."
+  },
+  "review_status": "not_independently_reviewed",
+  "primary_artifact_url": "/api/__p5-fixture__/materials/report.md",
+  "portable_artifact_url": "/api/__p5-fixture__/report?view=portable"
+}

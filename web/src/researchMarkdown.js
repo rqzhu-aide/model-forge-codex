@@ -10,6 +10,7 @@ const marker = (line) => {
 };
 const heading = (line) => line.match(/^ {0,3}(#{1,6})\s+(.*)$/);
 const fence = (line) => line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+const indentedCode = (line) => line.startsWith("    ") ? line.slice(4) : line.startsWith("\t") ? line.slice(1) : null;
 
 function displayState(line, current = null) {
   if (/^[ \t]*\$(?!\$)[ \t]*$/.test(line)) return current === "$" ? null : current || "$";
@@ -48,6 +49,16 @@ export function researchBlocks(text) {
   while (i < lines.length) {
     const line = lines[i];
     if (!line.trim()) { i++; continue; }
+    // Indented code starts only at a block boundary. It cannot interrupt the
+    // ordinary paragraph continuation handled below.
+    if (indentedCode(line) !== null) {
+      const body = [];
+      while (i < lines.length && (!lines[i].trim() || indentedCode(lines[i]) !== null)) {
+        body.push(lines[i].trim() ? indentedCode(lines[i]) : ""); i++;
+      }
+      while (body.at(-1) === "") body.pop();
+      blocks.push({ kind: "code", text: body.join("\n") }); continue;
+    }
     const code = fence(line);
     if (code) {
       const body = []; const end = new RegExp(`^ {0,3}${code[1][0]}{${code[1].length},}\\s*$`); i++;

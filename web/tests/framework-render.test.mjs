@@ -26,7 +26,7 @@ const noop = () => {};
 test("main findings embeds the detailed map without another primary card", () => {
   const before = JSON.stringify([frameworkBasis, frameworkSources]);
   const html = render.literature({ basis: frameworkBasis, libraries: [{ branch: "trunk", phase: "P1", total_sources: 1, sources: frameworkSources }], onSource: noop });
-  assert.match(html, /Unique record identified<\/dt><dd class="literature-count-value">1<\/dd>/);
+  assert.match(html, /Accepted source record<\/dt><dd class="literature-count-value">1<\/dd>/);
   assert.match(html, /Current linked member assessments<\/dt><dd class="literature-count-value">2<\/dd>/);
   assert.match(html, /<section class="framework-landscape embedded-science" data-card-role="research" aria-labelledby="[^"]+">/);
   assert.match(html, /<h3 id="[^"]+">Frameworks and relationships<\/h3>/);

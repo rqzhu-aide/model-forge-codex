@@ -27,9 +27,14 @@ test("npm release includes its runtime and complete catalog, and excludes local 
   }
   assert.throws(() => verifyPackageContents(packed.filter((name) => name !== "web/runtime/validate-math.mjs"), catalogPaths), /Required npm release file/u);
   assert.throws(() => verifyPackageContents(packed.filter((name) => name !== "web/runtime/export-report.mjs"), catalogPaths), /Required npm release file/u);
-  for (const guide of ["docs/model-access.md", "docs/development.md"]) {
+  for (const guide of ["docs/model-access.md", "docs/development.md", "docs/installation.md"]) {
     assert.ok(packed.includes(guide));
     assert.throws(() => verifyPackageContents(packed.filter((name) => name !== guide), catalogPaths), /Required npm release file/u);
+  }
+  for (const notice of ["FONT-NOTICE.txt", "IBM-PLEX-SANS-LICENSE.txt", "IBM-PLEX-MONO-LICENSE.txt", "MARCELLUS-LICENSE.txt"]) {
+    const name = `web/dist/${notice}`;
+    assert.ok(packed.includes(name));
+    assert.throws(() => verifyPackageContents(packed.filter((entry) => entry !== name), catalogPaths), /Required npm release file/u);
   }
 });
 

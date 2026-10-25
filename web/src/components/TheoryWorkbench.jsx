@@ -66,6 +66,20 @@ export default function TheoryWorkbench({ claimMaps = [], falsificationLogs = []
   const linked = hasExactRef(reference) && ["theory_record", "complete_theory"].includes(reference.family);
   const selectionExists = graph.nodes.some((item) => item.id === selected);
   useEffect(() => { setHover(null); if (selected && !graph.nodes.some((n) => n.id === selected)) onSelect(null); }, [branch, cm?.generation_ref?.generation_id, cm?.theory_generation_ref?.generation_id, cm?.theory_generation_ref?.sha256, selectionExists]);
+  // Wide graphs open centred on the main results; a selection made elsewhere
+  // (search, attention chips, inspector links) scrolls its node into view.
+  const scroller = useRef(null); const centred = useRef(null);
+  const graphKey = `${branch}:${cm?.theory_generation_ref?.generation_id || cm?.generation_ref?.generation_id || ""}:${graph.nodes.length}`;
+  useEffect(() => {
+    const el = scroller.current; if (!el) return;
+    const first = centred.current !== graphKey; centred.current = graphKey;
+    const shape = selected && el.querySelector('.theory-node[aria-pressed="true"] .theory-node-shape');
+    if (!shape) { if (first) { el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2; el.scrollTop = 0; } return; }
+    const box = shape.getBoundingClientRect(), view = el.getBoundingClientRect();
+    if (box.left >= view.left && box.right <= view.left + el.clientWidth && box.top >= view.top && box.bottom <= view.top + el.clientHeight) return;
+    const reduced = first || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    el.scrollTo({ left: el.scrollLeft + box.left - view.left - (el.clientWidth - box.width) / 2, top: el.scrollTop + box.top - view.top - (el.clientHeight - box.height) / 2, behavior: reduced ? "auto" : "smooth" });
+  }, [graphKey, selected, focus]);
   if (!cm?.claims?.length) return <section className={embedded ? "theory-empty" : "card"} data-card-role={embedded ? undefined : "research"}>{!embedded && <h2>Claims, assumptions and proofs</h2>}<div className="body"><p className="note">{branch === "trunk" ? "Select a method to develop and inspect its theory." : "No theoretical claims have been recorded for this model yet."}</p></div></section>;
   const related = selected ? relatedNodes(graph, selected) : new Set(graph.nodes.map((n) => n.id));
   const visible = graph.nodes.filter((n) => (!focus || !selected || related.has(n.id)));
@@ -97,13 +111,12 @@ export default function TheoryWorkbench({ claimMaps = [], falsificationLogs = []
       <div className={`graph-and-inspector ${node ? "has-selection" : ""}`}>
         <div className="graph-column">
           <p className="note graph-help">Hover or focus to preview. Select a component to inspect it and request a closer look. Arrows point from supporting components to the claims that use them.</p>
-          <div className="graph-scroll" tabIndex={0} role="region" aria-label="Theory graph, scroll to explore">
+          <div className="graph-scroll" ref={scroller} tabIndex={0} role="region" aria-label="Theory graph, scroll to explore">
             <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} role="group" aria-label="Theory dependency graph">
-              <defs><marker id={arrow} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L8 4 L0 8z" fill="var(--graph-edge)" /></marker></defs>
-              {graph.edges.filter((e) => positions[e.from] && positions[e.to]).map((e, i) => {
+              <defs><marker id={arrow} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L8 4 L0 8z" fill="var(--graph-edge)" /></marker><marker id={`${arrow}-related`} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L8 4 L0 8z" fill="var(--accent)" /></marker></defs>
+              {graph.edges.filter((e) => positions[e.from] && positions[e.to]).map((e) => ({ ...e, highlighted: Boolean(selected && related.has(e.from) && related.has(e.to)) })).sort((x, y) => x.highlighted - y.highlighted).map((e, i) => {
                 const a = positions[e.from], b = positions[e.to]; const middle = (a.y + b.y + 72) / 2;
-                const highlighted = selected && related.has(e.from) && related.has(e.to);
-                return <path key={i} d={`M${a.x + 100} ${a.y} C${a.x + 100} ${middle},${b.x + 100} ${middle},${b.x + 100} ${b.y + 72}`} fill="none" stroke={highlighted ? "var(--accent)" : "var(--graph-edge)"} strokeWidth={highlighted ? 1.8 : 1.2} markerEnd={`url(#${arrow})`} />;
+                return <path key={`${e.from}>${e.to}:${i}`} className={`theory-edge${e.highlighted ? " related" : selected ? " unrelated" : ""}`} d={`M${a.x + 100} ${a.y} C${a.x + 100} ${middle},${b.x + 100} ${middle},${b.x + 100} ${b.y + 72}`} fill="none" stroke={e.highlighted ? "var(--accent)" : "var(--graph-edge)"} strokeWidth={e.highlighted ? 1.8 : 1.2} markerEnd={`url(#${e.highlighted ? `${arrow}-related` : arrow})`} />;
               })}
               {visible.map((n) => {
                 const p = positions[n.id]; const probes = probesFor(n.id);
@@ -134,7 +147,7 @@ export default function TheoryWorkbench({ claimMaps = [], falsificationLogs = []
           {statement.latex && <MathText latex={statement.latex} />}
           <ResearchDocument text={statement.text || statement.statement || "The full statement is available in its theory source."} />
           <TheoryConditions statement={statement} />
-          {node.kind !== "unresolved" && <div className="inspector-actions"><ActionButton action="check" uiRole="research" disabled={!linked || !onRequest} onClick={() => onRequest("assessment", targetFor(node), node.label)}>Request an assessment</ActionButton><ActionButton action="repair" uiRole="research" disabled={!linked || !onRequest} onClick={() => onRequest("repair", targetFor(node), node.label)}>Request a theory revision</ActionButton><p className="note">{linked ? "An assessment saves a separate check without changing the published theory. A theory revision can publish a changed account after the independent analyst audit and lead assessment." : "This component's exact theory source is unavailable. A linked theory generation is required before component work can be requested."}</p></div>}
+          {node.kind !== "unresolved" && <div className="inspector-actions"><ActionButton action="check" uiRole="research" disabled={!linked || !onRequest} onClick={event => onRequest("assessment", targetFor(node), node.label, event?.currentTarget)}>Request an assessment</ActionButton><ActionButton action="repair" uiRole="research" disabled={!linked || !onRequest} onClick={event => onRequest("repair", targetFor(node), node.label, event?.currentTarget)}>Prepare theory revision</ActionButton><p className="note">{linked ? "An assessment saves a separate check without changing the published theory. Preparing a revision opens instructions and settings. Starting it can publish a changed account after the independent analyst audit and lead assessment." : "This component's exact theory source is unavailable. A linked theory generation is required before component work can be requested."}</p></div>}
           <TheoryAssessmentAccount statement={statement} onSource={onSource} />
           {node.kind === "claim" && graph.edges.some((e) => e.to === node.id) && <div className="inspector-group"><h4>Rests on</h4>{graph.edges.filter((e) => e.to === node.id).map((e) => <button key={e.from} className="chip" onClick={() => onSelect(e.from)}>{graph.nodes.find((n) => n.id === e.from)?.label}</button>)}</div>}
           {relatedNodes(graph, node.id, "downstream").size > 1 && <div className="inspector-group"><h4>Conclusions to reassess if this changes</h4>{graph.nodes.filter((n) => n.id !== node.id && relatedNodes(graph, node.id, "downstream").has(n.id)).map((n) => <button className="chip" key={n.id} onClick={() => onSelect(n.id)}>{n.label}</button>)}</div>}

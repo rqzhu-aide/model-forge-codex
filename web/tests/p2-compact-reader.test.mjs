@@ -122,7 +122,7 @@ test("excluded and superseded selections preserve readable records without curre
 
 test("only a genuinely empty catalog marks the additional-work start state", () => {
   const empty = render.reader({}); assert.equal(empty.issueContext.emptyState, true);
-  assert.equal((empty.html.match(/No method proposal has been published/g) || []).length, 1);
+  assert.equal((empty.html.match(/Published proposals will appear here/g) || []).length, 1);
   assert.doesNotMatch(empty.html, /No lead comparison has been published/);
   const cards = render.reader({ cards: [{ card_id: "legacy.card", title: "Legacy scientific account", definition: "Preserved original definition.", generation_ref: reference("theory_method_cards") }] });
   assert.equal(cards.issueContext.emptyState, false); assert.match(cards.html, /Preserved original definition/);

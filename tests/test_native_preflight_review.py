@@ -19,6 +19,95 @@ def sdk_thread_bridge(transport):
     return bridge
 
 
+@pytest.mark.parametrize("platform", ["nt", "posix"])
+async def test_only_windows_native_preflights_serialize_across_members(tmp_path, monkeypatch, platform):
+    first_started, second_started, release_first = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    calls = []
+    active = maximum_active = 0
+
+    class Transport:
+        async def request(self, method, params, *, response_model):
+            nonlocal active, maximum_active
+            calls.append(method)
+            active += 1
+            maximum_active = max(maximum_active, active)
+            try:
+                if len(calls) == 1:
+                    first_started.set()
+                    await release_first.wait()
+                else:
+                    second_started.set()
+                return response_model.model_validate({"exitCode": 0, "stdout": "model-forge-native-check-ok\n", "stderr": ""})
+            finally:
+                active -= 1
+
+    monkeypatch.setattr("model_forge_codex.bridge.os", SimpleNamespace(name=platform, environ=os.environ))
+    bridge = sdk_thread_bridge(Transport())
+    bridge._threads["thread.other"] = bridge._threads["thread.native"]
+    first = asyncio.create_task(bridge.check_native_tools("thread.native", tmp_path))
+    second = None
+    try:
+        await asyncio.wait_for(first_started.wait(), 1)
+        second = asyncio.create_task(bridge.check_native_tools("thread.other", tmp_path))
+        await asyncio.sleep(0)
+        if platform == "nt":
+            assert not second_started.is_set()
+        else:
+            await asyncio.wait_for(second_started.wait(), 1)
+        release_first.set()
+        results = await asyncio.wait_for(asyncio.gather(first, second), 1)
+        assert all(result["status"] == "passed" for result in results)
+        assert maximum_active == (1 if platform == "nt" else 2)
+    finally:
+        release_first.set()
+        await asyncio.gather(first, *([second] if second else []), return_exceptions=True)
+
+
+async def test_windows_preflight_waiter_cannot_enter_during_cancel_cleanup(tmp_path, monkeypatch):
+    first_started, terminate_started = asyncio.Event(), asyncio.Event()
+    allow_termination, release_first, second_started = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    command_count = 0
+
+    class Transport:
+        async def request(self, method, params, *, response_model):
+            nonlocal command_count
+            if method == "command/exec/terminate":
+                terminate_started.set()
+                await allow_termination.wait()
+                release_first.set()
+                return response_model.model_validate({})
+            command_count += 1
+            if command_count == 1:
+                first_started.set()
+                await release_first.wait()
+                return response_model.model_validate({"exitCode": 1, "stdout": "", "stderr": "terminated"})
+            second_started.set()
+            return response_model.model_validate({"exitCode": 0, "stdout": "model-forge-native-check-ok\n", "stderr": ""})
+
+    monkeypatch.setattr("model_forge_codex.bridge.os", SimpleNamespace(name="nt", environ=os.environ))
+    bridge = sdk_thread_bridge(Transport())
+    bridge._threads["thread.other"] = bridge._threads["thread.native"]
+    first = asyncio.create_task(bridge.check_native_tools("thread.native", tmp_path))
+    second = None
+    try:
+        await asyncio.wait_for(first_started.wait(), 1)
+        first.cancel()
+        await asyncio.wait_for(terminate_started.wait(), 1)
+        second = asyncio.create_task(bridge.check_native_tools("thread.other", tmp_path))
+        await asyncio.sleep(0)
+        assert not second_started.is_set()
+        allow_termination.set()
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(first, 1)
+        assert (await asyncio.wait_for(second, 1))["status"] == "passed"
+        assert second_started.is_set()
+        assert "thread.native" not in bridge._quarantined
+    finally:
+        allow_termination.set()
+        release_first.set()
+        await asyncio.gather(first, *([second] if second else []), return_exceptions=True)
+
+
 async def test_native_check_uses_the_initialized_owner_and_actual_sdk_response(tmp_path):
     from openai_codex.generated.v2_all import CommandExecParams
     calls = []

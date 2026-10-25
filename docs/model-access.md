@@ -2,7 +2,7 @@
 
 Model Forge runs model work through its Codex bridge. You can connect an OpenAI account or configure a custom provider with an API key. Model availability and reasoning efforts depend on the chosen account or provider. Choose values you can access and test every team member's effective settings before research.
 
-The [README](../README.md) covers shared Python and Node.js installation. Do not create a project-local environment or download a private runtime for the app.
+The [installation guide](installation.md) covers shared Python and Node.js setup and selecting the same `MF_PYTHON` for installation and launch. Do not create a project-local environment or download a private runtime for the app.
 
 ## Select the shared Codex runtime
 
@@ -21,13 +21,17 @@ Before using either an OpenAI account or a custom provider on native Windows, op
 If `codex` is not on `PATH`, open the CLI supplied by your existing shared Python package from PowerShell:
 
 ```powershell
-$codexExecutable = python -c "from codex_cli_bin import bundled_codex_path; print(bundled_codex_path())"
+$codexExecutable = & $env:MF_PYTHON -c "from codex_cli_bin import bundled_codex_path; print(bundled_codex_path())"
 & $codexExecutable
 ```
 
 When `MF_CODEX_BIN` is set, open that executable instead. Complete the setup offered by Codex, then return to Model Forge and test the team connections.
 
+Managed **Phase 4 numerical experiments require elevated Windows sandbox mode and completed setup**. Model Forge checks the selected mode and readiness before preparing that numerical work; it does not change the mode, initialize identities or relax experiment access rules. An unelevated sandbox may report ready for other Codex operations but does not support the managed experiment contract. Earlier phases retain their own native-tool checks rather than a new global elevated-mode requirement. A setup or access-preparation error should be resolved as a runtime issue, not by replacing research data.
+
 Numerical experiments need a shared Python or R installation and the required scientific packages accessible inside the sandbox. A successful model connection alone does not check this. Set `MF_P4_PYTHON` or `MF_P4_RSCRIPT` before launch to select a particular shared experiment runtime. On Windows, experiment Python discovery prefers the existing shared Codex desktop Python, then falls back to the service interpreter. The desktop app is optional.
+
+These overrides are executable **paths**. Absolute paths are clearest; relative paths belong to the terminal that launches the packaged app, and `~/...` refers to the user's home. Do not pass arguments or a shell command. Leave `MF_P4_RSCRIPT` unset to discover `Rscript` on PATH.
 
 ## Connect an OpenAI account
 
@@ -106,11 +110,13 @@ Stored API keys are masked in the provider editor until revealed. They can be re
 
 ### Optional Responses shim
 
-For a provider that needs the existing Responses compatibility shim, start it in a separate terminal using your shared Python:
+The optional shim requires the [source installation](development.md#source-checkout) of Model Forge into the selected shared Python. The npm-only quickstart installs dependencies and bundled app files, so its separate terminal cannot import this Python module. After source installation, start the shim from any directory using that same executable.
 
 ```text
-python -m model_forge_codex.shim --port 8780 --auth forward --base-url https://api.example.com/v4
+"$MF_PYTHON" -m model_forge_codex.shim --port 8780 --auth forward --base-url https://api.example.com/v4
 ```
+
+In PowerShell, replace `"$MF_PYTHON"` with `& $env:MF_PYTHON`. Check the installation without contacting a provider using `-m model_forge_codex.shim --help` first.
 
 Set `shim` as the provider ID and `http://127.0.0.1:8780/v1` as its base URL. With `--auth forward`, the shim forwards each member's configured key. The repository's [shim design](https://github.com/rqzhu-aide/model-forge-codex/blob/main/architecture/decisions/ADR-008-responses-shim.md) describes its supported scope and the older `shim.env` arrangement. A shim does not establish compatibility with every provider.
 

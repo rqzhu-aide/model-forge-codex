@@ -3,7 +3,8 @@ import { decisionOptions, decisionPriorityLabel, legacyOptionText } from "../res
 import { CitedRequestDocument } from "./LiteratureCitation";
 import { ResearchLabel } from "./Shared";
 
-export function DecisionBrief({ item, onSource, showOptions = true, showMetadata = true }) {
+export function DecisionBrief({ item, onSource, showOptions = true, showMetadata = true, headingLevel = 4 }) {
+  const Heading = `h${headingLevel}`;
   const options = decisionOptions(item);
   const consequence = item.likely_consequence || item.consequence_markdown || item.why_it_matters || item.why_it_matters_markdown;
   const authoredBrief = ["choice", "study_fact"].includes(item.response_kind);
@@ -13,10 +14,10 @@ export function DecisionBrief({ item, onSource, showOptions = true, showMetadata
   const doc = (text, section) => <CitedRequestDocument item={item} text={text} section={section} onSource={onSource} />;
   return <div className="decision-brief">
     {showMetadata && (item.response_kind || decisionPriorityLabel(item)) && <p className="note decision-kind">{item.response_kind === "study_fact" ? "Study information" : item.response_kind === "choice" ? "Researcher choice" : "Researcher question"}{decisionPriorityLabel(item) && ` · ${decisionPriorityLabel(item)}`}</p>}
-    {context && <section><h4>{item.response_kind === "study_fact" ? "Missing study information" : "Affected point"}</h4>{doc(context, "context")}</section>}
-    {consequence && consequence !== context && <section><h4>{item.response_kind === "study_fact" ? "What depends on it" : "Practical consequence"}</h4>{doc(consequence, "consequence")}</section>}
-    {showOptions && !options.length && item.response_kind !== "study_fact" && legacyOptionText(item.options) && <section><h4>Possible directions</h4>{doc(legacyOptionText(item.options), "options")}</section>}
-    {item.recommendation && item.response_kind !== "study_fact" && <section><h4>{recommendationLabel}</h4>{doc(item.recommendation, "recommendation")}</section>}
+    {context && <section><Heading>{item.response_kind === "study_fact" ? "Missing study information" : "Affected point"}</Heading>{doc(context, "context")}</section>}
+    {consequence && consequence !== context && <section><Heading>{item.response_kind === "study_fact" ? "What depends on it" : "Practical consequence"}</Heading>{doc(consequence, "consequence")}</section>}
+    {showOptions && !options.length && item.response_kind !== "study_fact" && legacyOptionText(item.options) && <section><Heading>Possible directions</Heading>{doc(legacyOptionText(item.options), "options")}</section>}
+    {item.recommendation && item.response_kind !== "study_fact" && <section><Heading>{recommendationLabel}</Heading>{doc(item.recommendation, "recommendation")}</section>}
   </div>;
 }
 

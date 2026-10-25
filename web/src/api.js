@@ -32,24 +32,24 @@ export const api = {
   savePhaseTwoPreparation: (pid, instructions) => req(`/projects/${pid}/phase2-preparation`, { method: "PUT", body: JSON.stringify({ instructions }) }),
   phasePreparation: (pid, branch, phase) => req(`/projects/${pid}/branches/${encodeURIComponent(branch)}/phases/${phase}/preparation`),
   savePhasePreparation: (pid, branch, phase, body) => req(`/projects/${pid}/branches/${encodeURIComponent(branch)}/phases/${phase}/preparation`, { method: "PUT", body: JSON.stringify(body) }),
-  artifacts: (projectId, branch) => req(`/projects/${projectId}/artifacts${branch ? `?branch=${encodeURIComponent(branch)}` : ""}`),
-  methods: (pid) => req(`/projects/${pid}/methods`),
+  artifacts: (projectId, branch, options) => req(`/projects/${projectId}/artifacts${branch ? `?branch=${encodeURIComponent(branch)}` : ""}`, options),
+  methods: (pid, options) => req(`/projects/${pid}/methods`, options),
   createMethod: (pid, body) => req(`/projects/${pid}/methods`, { method: "POST", body: JSON.stringify(body) }),
   activateMethod: (pid, methodId, expectedIdentity) => req(`/projects/${pid}/methods/activate`, { method: "POST", body: JSON.stringify({ method_id: methodId, expected_identity: expectedIdentity }) }),
-  assessments: (pid, branch) => req(`/projects/${pid}/assessments?branch=${encodeURIComponent(branch)}`),
+  assessments: (pid, branch, options) => req(`/projects/${pid}/assessments?branch=${encodeURIComponent(branch)}`, options),
   assessmentMessage: (pid, id, body) => req(`/projects/${pid}/assessments/${encodeURIComponent(id)}/messages`, { method: "POST", body: JSON.stringify(body) }),
   reportSectionComment: (pid, target) => req(`/projects/${pid}/report-section-comment?target=${encodeURIComponent(JSON.stringify(target))}`),
   saveReportSectionComment: (pid, body) => req(`/projects/${pid}/report-section-comment`, { method: "PUT", body: JSON.stringify(body) }),
-  project: (pid) => req(`/projects/${pid}`),
+  project: (pid, options) => req(`/projects/${pid}`, options),
   upgradeCatalog: (pid) => req(`/projects/${pid}/catalog-upgrade`, { method: "POST" }),
-  branches: (pid) => req(`/projects/${pid}/branches`),
-  records: (pid, branch, phase) =>
-    req(`/projects/${pid}/branches/${branch}/phases/${phase}/records`),
+  branches: (pid, options) => req(`/projects/${pid}/branches`, options),
+  records: (pid, branch, phase, options) =>
+    req(`/projects/${pid}/branches/${branch}/phases/${phase}/records`, options),
   recordBody: (pid, branch, phase, family, gen) =>
     req(`/projects/${pid}/branches/${branch}/phases/${phase}/records/${family}/${gen}`),
   recordDocument: (pid, reference) =>
     req(`/projects/${pid}/branches/${reference.branch}/phases/${reference.phase}/records/${reference.family}/${reference.generation_id}?view=document`),
-  listRuns: (pid) => req(`/projects/${pid}/runs`),
+  listRuns: (pid, options) => req(`/projects/${pid}/runs`, options),
   journal: (pid) => req(`/projects/${pid}/journal`),
   updateMember: (pid, role, body) =>
     req(`/projects/${pid}/members/${role}`, { method: "PUT", body: JSON.stringify(body) }),
@@ -63,9 +63,9 @@ export const api = {
     req(`/projects/${pid}/runs`, { method: "POST", body: JSON.stringify(body) }),
   inputs: (pid) => req(`/projects/${pid}/inputs`),
   importInput: (pid, body) => req(`/projects/${pid}/inputs`, { method: "POST", body: JSON.stringify(body) }),
-  readiness: (pid, branch, phase, mode) =>
-    req(`/projects/${pid}/branches/${branch}/phases/${phase}/readiness${mode ? `?mode=${encodeURIComponent(mode)}` : ""}`),
-  run: (pid, rid) => req(`/projects/${pid}/runs/${rid}`),
+  readiness: (pid, branch, phase, mode, options) =>
+    req(`/projects/${pid}/branches/${branch}/phases/${phase}/readiness${mode ? `?mode=${encodeURIComponent(mode)}` : ""}`, options),
+  run: (pid, rid, options) => req(`/projects/${pid}/runs/${rid}`, options),
   correctRun: (pid, rid, note) =>
     req(`/projects/${pid}/runs/${rid}/corrections`, {
       method: "POST", body: JSON.stringify({ note }),
@@ -76,7 +76,7 @@ export const api = {
   continueRun: (pid, rid, body) => req(`/projects/${pid}/runs/${rid}/continue`, { method: "POST", body: JSON.stringify(body) }),
   saveDecisionAnswer: (pid, rid, body) => req(`/projects/${pid}/runs/${rid}/decision-answer`, { method: "PUT", body: JSON.stringify(body) }),
   correctionPreview: (pid, rid) => req(`/projects/${pid}/runs/${rid}/correction-preview`),
-  decisionsPending: (pid) => req(`/projects/${pid}/decisions-pending`),
+  decisionsPending: (pid, options) => req(`/projects/${pid}/decisions-pending`, options),
   resolveAttention: (pid, attentionId, note = "", options = {}) =>
     req(`/projects/${pid}/attention/${encodeURIComponent(attentionId)}/resolve`, {
       method: "POST", body: JSON.stringify({ ...options, note }),

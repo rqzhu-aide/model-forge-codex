@@ -14,6 +14,12 @@ from test_technical_reports import IDENTITY, numerical, report_case
 
 def formal(report_case, *, kind="proof", status="established", family="theory_record", identity=None):
     report, basis, roots, frozen = report_case
+    primary = next(iter(roots.values())) / report["report_artifact"]["path"]
+    primary.write_text(primary.read_text(encoding="utf-8")
+                       + '\n\n<a id="references"></a>\n## References\n\nRetained structural fixture sources.\n',
+                       encoding="utf-8")
+    report["section_anchors"]["references"] = "references"
+    report["report_artifact"]["sha256"] = sha256_file(primary)
     numerical(report, basis, frozen)
     path = next(iter(roots.values())) / "formal_support.md"
     path.write_text("Structural fixture only: retained support bytes; no mathematical truth asserted.\n", encoding="utf-8")

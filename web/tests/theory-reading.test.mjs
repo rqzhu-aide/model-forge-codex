@@ -99,7 +99,7 @@ test("missing sensitivity and proof files are reported without inventing scienti
 test("component actions state explanation, nonpublishing assessment and publishing revision separately", () => {
   const graph = render.graph(graphProps(assumption.assumption_id));
   assert.match(graph, /aria-label="Explain this assumption"/);
-  assert.match(graph, /Request an assessment/); assert.match(graph, /Request a theory revision/);
+  assert.match(graph, /Request an assessment/); assert.match(graph, /Prepare theory revision/);
   assert.match(graph, /separate check without changing the published theory/);
   assert.doesNotMatch(graph, /Challenge this assumption|Request repair of this step|legacy graph/);
   const unlinked = render.graph(graphProps(claim.statement_id, { theory_generation_ref: null }));

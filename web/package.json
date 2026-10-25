@@ -10,6 +10,9 @@
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/marcellus": "^5.3.0",
     "katex": "^0.18.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

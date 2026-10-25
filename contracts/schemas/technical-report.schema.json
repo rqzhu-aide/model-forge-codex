@@ -46,7 +46,7 @@
         },
         "report_artifact": {
           "$ref": "common-definitions.schema.json#/$defs/artifactPointer",
-          "description": "Primary readable technical report in concise, conventional statistical prose. Develop the exact model, defining mathematics and findings once; preserve conditions and scientific scope, use cross-references for repeated material, and keep detailed provenance in structured records or declared supplements. Each body-relative file link or image resolves uniquely to a declared, digest-verified submitted material."
+          "description": "Primary readable technical report in connected statistical prose. Develop the exact model, defining mathematics and findings once, preserving essential conditions and scientific scope. Reader-report instructions place all proofs and proof sketches in a separate declared appendix and identify the trailing bibliography through section_anchors.references. Each body-relative file link or image resolves uniquely to a declared, digest-verified submitted material. Page and layout requirements come from the run's frozen instructions."
         },
         "problem_context_ref": {
           "type": "object",
@@ -653,6 +653,7 @@
         "manuscript_artifact": false,
         "section_anchors": {
           "type": "object",
+          "description": "Seven scientific discussion anchors. Optional references declares a distinct trailing bibliography boundary, not an eighth scientific section or discussion target. New candidates capturing p5.reader_report.v1 require that boundary; historical records remain schema-compatible without it.",
           "required": [
             "problem",
             "model",
@@ -662,6 +663,13 @@
             "limitations",
             "reproducibility"
           ],
+          "properties": {
+            "references": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Explicit anchor immediately beside one genuine top-level References heading after all seven scientific section anchors, distinct from every main anchor. Individual reference entries use separate unique anchors."
+            }
+          },
           "additionalProperties": {
             "type": "string",
             "minLength": 1

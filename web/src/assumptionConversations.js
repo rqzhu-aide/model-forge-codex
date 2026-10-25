@@ -53,6 +53,11 @@ export function conversationDraftKey(projectId, target, conversationId = "new") 
 
 const sessionDrafts = new Map();
 const storageFailures = new Set();
+const draftListeners = new Set();
+export function subscribeConversationDrafts(listener) {
+  draftListeners.add(listener);
+  return () => draftListeners.delete(listener);
+}
 export function conversationDrafts(prefix) {
   try {
     const storage = globalThis.sessionStorage;
@@ -82,6 +87,7 @@ export function saveConversationDraft(key, draft) {
     if (draft) storage.setItem(key, JSON.stringify(draft)); else storage.removeItem(key);
     storageFailures.delete(key);
   } catch { storageFailures.add(key); }
+  finally { for (const listener of draftListeners) listener(key); }
 }
 
 export function assumptionSource(target) {

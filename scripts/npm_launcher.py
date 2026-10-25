@@ -115,6 +115,9 @@ def main(argv=None):
             python_command = ("& " if os.name == "nt" else "") + f'"{sys.executable}"'
             print('Install dependencies in the selected shared Python with:\n'
                   f'  {python_command} -m pip install --user "fastapi>=0.115" "uvicorn>=0.30" "jsonschema>=4.20" "httpx>=0.27" "openai-codex>=0.147,<0.148"', file=sys.stderr)
+            print('If this Python is externally managed, select a supported shared interpreter instead. '
+                  'See https://github.com/rqzhu-aide/model-forge-codex/blob/main/docs/installation.md '
+                  'and use that same executable with --python or MF_PYTHON.', file=sys.stderr)
         return 1
 
 

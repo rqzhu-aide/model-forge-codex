@@ -6,7 +6,8 @@ import RunDetail from "./components/RunDetail";
 import TeamView from "./components/TeamView";
 import { Dialog } from "./components/Shared";
 import AccountDialog from "./components/AccountDialog";
-import { ActionButton } from "./components/Visuals";
+import { ActionButton, Crest } from "./components/Visuals";
+import { ForgingMark } from "./components/ForgingMark";
 import { captureReadingPosition, normalizeNavigation, readerScope } from "./readingPosition";
 
 function savedNavigation() {
@@ -34,6 +35,8 @@ export default function App() {
   const navigationToggle = useRef(null);
   const [theme, setTheme] = useState(savedTheme);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [teamSettingsOpen, setTeamSettingsOpen] = useState(false);
+  const [settingsRevision, setSettingsRevision] = useState(0);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -119,11 +122,11 @@ export default function App() {
   };
   return <div id="app">
     <aside className={`app-sidebar${navigationOpen ? " navigation-open" : ""}`} aria-label="Project navigation">
-      <button className="brand serif plain-button" onClick={() => { changeView({ name: "project" }); closeNavigation(); }}>Model Forge<small>Research workbench</small></button>
+      <button className="brand plain-button" onClick={() => { changeView({ name: "project" }); closeNavigation(); }}><ForgingMark /><span className="brand-text"><span className="brand-word">Model Forge</span><small>Research workbench</small></span></button>
       <button type="button" className="mobile-navigation-toggle" ref={navigationToggle} aria-expanded={navigationOpen} aria-controls="sidebar-projects sidebar-workspace" onClick={() => setNavigationOpen((open) => !open)}><SidebarIcon name="menu" /><span>Projects &amp; settings</span></button>
       <div id="sidebar-projects" className="sidebar-projects">
       <div className="side-label">Projects</div>
-      {projects.map((p) => <button key={p.project_id} className={`side-item ${p.project_id === projectId && view.name !== "team" ? "active" : ""}`} aria-current={p.project_id === projectId && view.name !== "team" ? "page" : undefined} onClick={() => { changeView({ name: "project" }, p.project_id); closeNavigation(); }}>{p.name}</button>)}
+      {projects.map((p) => <button key={p.project_id} className={`side-item ${p.project_id === projectId && view.name !== "team" ? "active" : ""}`} aria-current={p.project_id === projectId && view.name !== "team" ? "page" : undefined} title={p.name} onClick={() => { changeView({ name: "project" }, p.project_id); closeNavigation(); }}><span className="side-item-name">{p.name}</span></button>)}
       <button className="btn ghost new-project" onClick={() => { setCreating(true); setCreateError(null); closeNavigation(); }}>New project</button>
       </div>
       <div id="sidebar-workspace" className="sidebar-workspace">
@@ -131,17 +134,19 @@ export default function App() {
         <button className={`side-item ${view.name === "team" ? "active" : ""}`} aria-current={view.name === "team" ? "page" : undefined} disabled={!projectId} title={!projectId ? "Open a project to configure its team" : undefined} onClick={() => { changeView({ name: "team" }); closeNavigation(); }}><SidebarIcon name="team" /><span>Team Settings</span></button>
         <div className="theme-control"><span id="appearance-label" className="theme-label">Appearance</span><div className="theme-options" role="group" aria-labelledby="appearance-label"><button className="theme-option" aria-label="Light theme" aria-pressed={theme === "light"} onClick={() => setTheme("light")}><SidebarIcon name="sun" />Light</button><button className="theme-option" aria-label="Dark theme" aria-pressed={theme === "dark"} onClick={() => setTheme("dark")}><SidebarIcon name="moon" />Dark</button></div></div>
         <button className="side-item" onClick={() => { setAccountOpen(true); closeNavigation(); }}><SidebarIcon name="account" /><span>OpenAI Account</span></button>
+        <ul className="role-legend" aria-label="Card markers"><li data-role="team">Team findings</li><li data-role="system">System and records</li><li data-role="you">Your input</li></ul>
       </div>
     </aside>
     <main ref={main}>
       {error && <div className="error" role="alert">{error} <ActionButton action="retry" onClick={load}>Retry loading projects</ActionButton></div>}
       {loading && <p className="note" role="status">Loading projects…</p>}
-      {!loading && !projectId && !error && <section className="empty-state"><h1 className="serif">Begin with your problem</h1><p>Develop a statistical model, ML model, or algorithm, inspect its justification and numerical evidence, and retain a technical report.</p><button className="btn" onClick={() => setCreating(true)}>Create project</button></section>}
-      {projectId && view.name === "project" && <ProjectView key={projectId} projectId={projectId} context={context} reading={context.readers?.[readerScope(context.phase, context.branch)] || {}} onReadingChange={updateReader} restorationKey={navigationEpoch} focusReading={focusReading} runReturn={runReturn.current} returnScope={`${projectId}:${context.phase}:${context.branch}`} onReadingRestored={() => { runReturn.current = null; }} onContextChange={updateContext} onOpenRun={openRun} onProjectUpdated={(updated) => setProjects((current) => current.map((project) => project.project_id === updated.project_id ? { ...project, ...updated } : project))} />}
+      {!loading && !projectId && !error && <section className="empty-state"><Crest /><h1>Begin with your problem</h1><p>Develop a statistical model, ML model, or algorithm, inspect its justification and numerical evidence, and retain a technical report.</p><button className="btn" onClick={() => setCreating(true)}>Create project</button></section>}
+      {projectId && view.name === "project" && <ProjectView settingsRevision={settingsRevision} onTeamSettings={() => setTeamSettingsOpen(true)} onOpenAIAccount={() => setAccountOpen(true)} key={projectId} projectId={projectId} context={context} reading={context.readers?.[readerScope(context.phase, context.branch)] || {}} onReadingChange={updateReader} restorationKey={navigationEpoch} focusReading={focusReading} runReturn={runReturn.current} returnScope={`${projectId}:${context.phase}:${context.branch}`} onReadingRestored={() => { runReturn.current = null; }} onContextChange={updateContext} onOpenRun={openRun} onProjectUpdated={(updated) => setProjects((current) => current.map((project) => project.project_id === updated.project_id ? { ...project, ...updated } : project))} />}
       {projectId && view.name === "run" && <RunDetail key={`${projectId}:${view.runId}`} projectId={projectId} runId={view.runId} onBack={returnFromRun} />}
       {projectId && view.name === "team" && <TeamView key={projectId} projectId={projectId} />}
     </main>
-    {accountOpen && <AccountDialog onClose={() => setAccountOpen(false)} />}
+    {teamSettingsOpen && <Dialog title="Team Settings" onClose={() => { setTeamSettingsOpen(false); setSettingsRevision((value) => value + 1); }}><TeamView key={projectId} projectId={projectId} embedded /></Dialog>}
+    {accountOpen && <AccountDialog onClose={() => { setAccountOpen(false); setSettingsRevision((value) => value + 1); }} />}
     {creating && <Dialog title="Create a research project" busy={saving} onClose={() => { if (!saving) setCreating(false); }}><form onSubmit={create}>
       <div className="field"><label htmlFor="project-name">Project name</label><input id="project-name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
       <div className="field contribution-surface"><label htmlFor="project-instructions">Problem brief</label><textarea id="project-instructions" required rows={7} value={form.instructions} onChange={(e) => setForm({ ...form, instructions: e.target.value })} placeholder="Describe the problem, what you want the model to do, how observations arise, and your expectations or constraints." /><p className="hint">Use your own words. Data are optional, and unknown information can remain unknown. You can discuss and refine this account in every phase.</p></div>

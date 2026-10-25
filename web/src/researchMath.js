@@ -17,6 +17,28 @@ export function mathBody(token) {
   return null;
 }
 
+// Bold can contain code, mathematics and links. Their own asterisks cannot
+// close the surrounding emphasis or create emphasis inside an opaque token.
+export function inlineStrongParts(text) {
+  const source = String(text);
+  const code = /(?<!`)(`+)(?!`)[\s\S]*?(?<!`)\1(?!`)/;
+  // The first opening token owns its contents, including literal math/code
+  // delimiters, rather than allowing overlapping opaque spans to hide prose.
+  const opaque = [...source.matchAll(new RegExp(`${code.source}|${mathPattern}|!?\\[[^\\]]*\\]\\([^\\s)]+\\)`, "g"))];
+  const parts = []; let opened = null, at = 0;
+  for (const marker of source.matchAll(/(?<!\\)\*\*/g)) {
+    if (opaque.some((token) => marker.index >= token.index && marker.index < token.index + token[0].length)) continue;
+    if (opened === null) opened = marker.index;
+    else {
+      parts.push({ text: source.slice(at, opened), strong: false },
+        { text: source.slice(opened + 2, marker.index), strong: true });
+      at = marker.index + 2; opened = null;
+    }
+  }
+  parts.push({ text: source.slice(at), strong: false });
+  return parts;
+}
+
 // Presentation recovery for bare definitions in known mathematical objects.
 // Share this exact boundary with the artifact checker: sentences, mixed prose,
 // code, URLs and existing math delimiters keep their normal interpretation.
@@ -124,9 +146,14 @@ export function legacyMathCandidate(katex, latex) {
   } catch { return null; }
 }
 
-export function validateMathText(katex, text, raw = false) {
+export function validateMathText(katex, text, raw = false, checkMathEscapes = false) {
   const findings = raw ? [] : displayDelimiterFindings(text);
   for (const segment of mathSegments(text, raw)) {
+    if (checkMathEscapes && /\r(?!\n)/.test(segment.latex)) {
+      findings.push({ code: "math.corrupt_escape", offset: segment.offset,
+        message: "This equation contains a lone carriage return, which may be a decoded TeX command escape such as \\rm. Restore the intended literal TeX backslash in the owned source; ordinary CRLF line endings are supported." });
+      continue;
+    }
     const candidate = legacyMathCandidate(katex, segment.latex);
     if (candidate !== null) {
       findings.push({ code: "math.overescaped_latex", offset: segment.offset,

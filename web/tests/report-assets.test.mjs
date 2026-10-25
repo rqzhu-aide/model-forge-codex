@@ -120,3 +120,77 @@ test("support math is validated and a missing fragment-bearing file is not inven
   assert.throws(() => renderReport(katex, '', prepared), /report support support.md/);
   assert.throws(() => renderReport(katex, '', { markdown: '[Missing](missing.md#model)', assets: {} }), /no portable target/);
 });
+
+test("exact Markdown print scopes exclude other support while all linked documents remain readable offline", () => {
+  const appendix = Buffer.from('<a id="proof"></a>\n# Proof appendix\n\n$X=1$. [Main](../report.md#problem) [Other](other.md#notes)');
+  const other = Buffer.from('<a id="notes"></a>\n# Supporting notes\n\nRetained notes.');
+  const selected = { ...descriptor("appendix.md", appendix, "text/markdown"), artifact_id: "artifact.appendix" };
+  const notes = { ...descriptor("other.md", other, "text/markdown"), artifact_id: "artifact.notes" };
+  const input = { markdown: '<a id="problem"></a>\n# Main report\n\n[Proof](details/appendix.md#proof)',
+    primary_paths: ["report.md"], print_material_id: "artifact.appendix",
+    asset_files: { "details/appendix.md": selected, "artifact.appendix": selected, "details/other.md": notes } };
+  const original = JSON.stringify(input); const reads = [];
+  const rendered = renderReport(katex, "", reportAssetInput(input, filename => {
+    reads.push(filename); return filename === selected.path ? appendix : other;
+  }));
+  assert.equal(reads.length, 2);
+  assert.match(rendered.html, /id="report-support-1-print" checked/);
+  assert.match(rendered.html, /id="report-print-main"><label/);
+  assert.match(rendered.html, /href="#report-support-1-proof"/);
+  assert.match(rendered.html, /href="#report-support-2-notes"/);
+  assert.match(rendered.html, /href="#problem"/);
+  assert.match(rendered.html, /id="report-support-1-document" data-report-material="artifact.appendix"/);
+  assert.equal((rendered.html.match(/class="report-supplement"/g) || []).length, 2);
+  assert.match(rendered.html, /class="katex"/);
+  assert.match(rendered.print_css, /\.report-supplement\{display:none!important\}/);
+  assert.match(rendered.print_css, /#report-support-1-print:checked~\.report-primary\{display:none!important\}/);
+  assert.match(rendered.print_css, /#report-support-1-print:checked~#report-support-1-document\{display:block!important/);
+  assert.equal(rendered.print_scopes.find(scope => scope.material_id === "artifact.appendix").region_id, "report-support-1-document");
+  assert.equal(JSON.stringify(input), original);
+});
+
+test("a selected declared appendix renders even when the primary report has no appendix link", () => {
+  const bytes = Buffer.from("# Submitted appendix\n\nExact retained proof.");
+  const file = { ...descriptor("appendix.md", bytes, "text/markdown"), artifact_id: "artifact.appendix" };
+  const rendered = renderReport(katex, "", reportAssetInput({ markdown: "# Main report", print_material_id: "artifact.appendix", asset_files: { "appendix.md": file } }, () => bytes));
+  assert.match(rendered.html, /Submitted appendix/);
+  assert.match(rendered.html, /id="report-support-1-print" checked/);
+});
+
+test("print material selection requires one exact submitted Markdown artifact identity", () => {
+  const bytes = Buffer.from("# Appendix");
+  const file = { ...descriptor("appendix.md", bytes, "text/markdown"), artifact_id: "artifact.appendix" };
+  const prepare = (changes) => reportAssetInput({ print_material_id: "artifact.appendix", asset_files: { "appendix.md": file }, ...changes }, () => bytes);
+  assert.throws(() => prepare({ print_material_id: "appendix.md" }), /not a declared report artifact/);
+  assert.throws(() => prepare({ print_material_id: "" }), /exact submitted Markdown artifact/);
+  assert.throws(() => prepare({ primary_paths: ["appendix.md"] }), /rather than the primary report/);
+  assert.throws(() => prepare({ asset_files: { one: file, two: { ...file, path: path.resolve("other.md") } } }), /ambiguous retained source/);
+  assert.throws(() => prepare({ asset_files: { "source.csv": { ...descriptor("source.csv", bytes, "text/csv"), artifact_id: "artifact.appendix" } } }), /not a retained Markdown/);
+});
+
+test("artifact-ID appendix links retain the canonical authored base for nested relative assets", () => {
+  const appendix = Buffer.from('# Proof\n\n![Nested retained figure](figure.svg) [Notes](notes.md#entry)');
+  const notes = Buffer.from('<a id="entry"></a>\n# Notes\n\n[Return](appendix.md)');
+  const image = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><text>Nested exact image</text></svg>');
+  const doc = { ...descriptor("physical-appendix.md", appendix, "text/markdown"), artifact_id: "artifact.appendix", authored_path: "details/proofs/appendix.md" };
+  const next = { ...descriptor("physical-notes.md", notes, "text/markdown"), artifact_id: "artifact.notes", authored_path: "details/proofs/notes.md" };
+  const figure = descriptor("physical-figure.svg", image, "image/svg+xml");
+  const files = { "artifact.appendix": doc, "details/proofs/appendix.md": doc, "details/proofs/notes.md": next, "details/proofs/figure.svg": figure };
+  const bytes = new Map([[doc.path, appendix], [next.path, notes], [figure.path, image]]);
+  const rendered = renderReport(katex, "", reportAssetInput({ markdown: '[Proof](artifact.appendix)', asset_files: files,
+    print_material_id: "artifact.appendix" }, filename => bytes.get(filename)));
+  assert.match(rendered.html, /data:image\/svg\+xml;base64,/);
+  assert.match(rendered.html, /href="#report-support-2-entry"/);
+  assert.match(rendered.html, /href="#report-support-1-document"/);
+  assert.match(rendered.html, /Supporting document: details\/proofs\/appendix.md/);
+});
+
+test("a historical plain-text Markdown path stays readable without advertising an ineligible print scope", () => {
+  const bytes = Buffer.from("# Historical support\n\nRetained readable content.");
+  const file = { ...descriptor("support.md", bytes, "text/plain"), artifact_id: "artifact.support" };
+  const input = { markdown: "[Support](support.md)", asset_files: { "support.md": file } };
+  const rendered = renderReport(katex, "", reportAssetInput(input, () => bytes));
+  assert.match(rendered.html, /Historical support/);
+  assert.ok(!rendered.print_scopes.some(scope => scope.material_id === "artifact.support"));
+  assert.throws(() => reportAssetInput({ ...input, print_material_id: "artifact.support" }, () => bytes), /not a retained Markdown/);
+});

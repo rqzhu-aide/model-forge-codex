@@ -70,14 +70,15 @@ export function DiagnosticsTables({ d }) {
           <div className="duo">
             {d.solver_health?.length > 0 && (
               <div>
-                <h3>Solver health</h3>
+                <h3>Completion and convergence</h3>
+                <p className="note">Includes unrun cases, failed attempts and reported nonconvergence; this is not a count of solver failures.</p>
                 <div className="table-scroll" tabIndex={0} role="region" aria-label="Diagnostic table, scroll to inspect all columns"><table>
-                  <thead><tr><th>Regime</th><th>Runs</th><th>Failures</th><th>Rate</th></tr></thead>
+                  <thead><tr><th>Regime</th><th>Recorded checks</th><th>Incomplete or nonconverged</th><th>Share</th></tr></thead>
                   <tbody>
                     {d.solver_health.map((r, j) => (
                       <tr key={j}>
                         <td>{r.regime}</td><td>{fmt(r.n_runs, { kind: "count" })}</td>
-                        <td className={r.n_failures ? "danger" : ""}>{fmt(r.n_failures, { kind: "count" })}</td>
+                        <td>{fmt(r.n_failures, { kind: "count" })}</td>
                         <td>{typeof r.failure_rate === "number" ? `${fmt(r.failure_rate * 100)}%` : "Not assessed"}</td>
                       </tr>
                     ))}
@@ -94,7 +95,7 @@ export function DiagnosticsTables({ d }) {
                     {(d.runtime.per_case || []).map((r, j) => (
                       <tr key={j}><td className="rid">{r.case_id}</td><td>{fmtMs(r.mean_ms)}</td><td>{fmtMs(r.max_ms)}</td></tr>
                     ))}
-                    <tr><td><b>Total</b></td><td colSpan="2"><b>{fmtMs(d.runtime.total_ms)}</b></td></tr>
+                    <tr><td><b>Sum of case times</b></td><td colSpan="2"><b>{fmtMs(d.runtime.total_ms)}</b></td></tr>
                   </tbody>
                 </table></div>
                 {d.environment && (

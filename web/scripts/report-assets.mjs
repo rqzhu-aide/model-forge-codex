@@ -44,8 +44,26 @@ export function reportAssetInput(input, readFile = fs.readFileSync) {
       if (typeof key !== "string") return undefined;
       const file = retainedFile(key);
       if (!file || !(file.media_type === "text/markdown" || /\.md$/i.test(file.path))) return undefined;
-      return { identity: file.path, markdown: readRetained(key, file).bytes.toString("utf8") };
+      return { identity: file.path, artifact_id: file.artifact_id, media_type: file.media_type, path: file.authored_path || key,
+        markdown: readRetained(key, file).bytes.toString("utf8") };
     },
   });
-  return { ...input, assets, documents };
+  let print_document;
+  if (input.print_material_id !== undefined && input.print_material_id !== null) {
+    const selected = input.print_material_id;
+    if (typeof selected !== "string" || !selected) throw new Error("Select one exact submitted Markdown artifact to print");
+    const matches = Object.entries(files).filter(([, file]) => file?.artifact_id === selected);
+    if (!matches.length) throw new Error("The selected print material is not a declared report artifact");
+    const identities = new Set(matches.map(([, file]) => JSON.stringify([file.path, file.media_type, file.sha256])));
+    if (identities.size !== 1) throw new Error("The selected print material has ambiguous retained source metadata");
+    const identity = matches[0][1].path;
+    if (Object.entries(files).some(([key, file]) => file?.path === identity && (input.primary_paths || []).includes(key))) {
+      throw new Error("Select a supporting Markdown artifact rather than the primary report");
+    }
+    const [key] = matches.find(([alias]) => /\.md$/i.test(alias)) || matches[0];
+    const document = documents[key];
+    if (!document || document.media_type !== "text/markdown") throw new Error("The selected print material is not a retained Markdown document");
+    print_document = document;
+  }
+  return { ...input, assets, documents, print_document };
 }

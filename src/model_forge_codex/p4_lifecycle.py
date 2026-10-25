@@ -213,7 +213,17 @@ class P4LifecycleMixin:
                           if key not in {"plan", "plan_history", "ledger", "checkpoints"}}
         plan = progress.get("plan") or {}
         brief_progress["plan_summary"] = {key: plan[key] for key in
-            ("protocol_id", "plan_revision_id", "decision_context", "work_items", "amendments") if key in plan}
+            ("protocol_id", "plan_revision_id", "decision_context", "work_items") if key in plan}
+        if "amendments" in plan:
+            amendments = plan["amendments"]
+            brief_progress["plan_summary"]["amendments"] = [
+                {**{key: value for key, value in amendment.items() if not key.startswith("added_")},
+                 "added_counts": {key: len(value) for key, value in amendment.items() if key.startswith("added_")}}
+                for amendment in amendments]
+            # Added work remains actionable: retain its limits and dependencies
+            # inline, without repeating each added case's scientific declarations.
+            brief_progress["plan_summary"]["work_items"] = [*plan.get("work_items", []),
+                *(item for amendment in amendments for item in amendment.get("added_work_items", []))]
         brief_progress["ledger"] = [{key: attempt[key] for key in
             ("batch_id", "attempt_id", "work_item_id", "plan_revision_id", "status", "elapsed_seconds",
              "diagnostic", "script_sha256", "output_dir", "runtime", "language", "source_directory", "code_path", "input_ids") if key in attempt}
@@ -277,7 +287,11 @@ class P4LifecycleMixin:
             "Researcher answers below are immutable authorization for this continuation, not permission "
             "to change the frozen method. New context is not incorporated automatically.\n\n"
             + "Current controller state (host facts; saved_state_path contains the exact complete plan, "
-              "sealed artifact paths, earlier checkpoints and history when needed):\n```json\n"
+              "sealed artifact paths, earlier checkpoints and history when needed). "
+              "Amendments below retain their reasons, inferential consequences, ordering and deferrals; added_counts "
+              "reports declaration counts, and work_items includes added work. Before executing or interpreting affected work, "
+              "read the full saved plan at saved_state_path for exact cases, metrics, repetitions, thresholds, baselines "
+              "and data-source declarations; these counts do not replace those definitions.\n```json\n"
             + json.dumps(brief_progress, ensure_ascii=False, indent=1) + "\n```\n\n"
             + ("Latest control-tool feedback:\n```json\n" + json.dumps(feedback, ensure_ascii=False) + "\n```\n\n" if feedback else "")
         )

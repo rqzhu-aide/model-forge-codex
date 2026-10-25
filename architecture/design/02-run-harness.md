@@ -25,6 +25,15 @@ instruction. Edits enter future applicable frozen inputs, without modifying acti
 runs, published records or run state. Nonblocking unknowns do not manufacture pauses
 or new questions. See the [decision interface](07-ui-contract.md).
 
+Catalog 1.27.0's consequential-invitation revision separates scientific importance from a
+blocking dependency. An unresolved preference or study fact can warrant a timely
+invitation even while conditional work continues. The Lead explains the current
+provisional scope and when input would change the next work; it does not defer
+all meaningful steering until execution is impossible. Routine scientific work
+stays with the team, empty attention remains valid, and P5 retains its editorial
+boundary. The [implementation plan](../plans/consequential-invitations-2026-10-24.md)
+connects this rule to the actual brief sources and live interaction checks.
+
 ## 1. Run states
 
 ```
@@ -308,3 +317,20 @@ Portable downloads contain only declared, digest-verified sources from that
 publication or its exact retained inputs. Missing or changed bytes disable the
 bundle with a visible reason. Historical runs remain readable under their
 frozen contracts; local-data intake is enabled only for revised P4 workflows.
+
+### P5 reader-report publication
+
+The captured `p5.reader_report.v1` capability requires new report candidates to
+declare `section_anchors.references` after seven distinct scientific headings.
+References remains a boundary, with no eighth scientific section or discussion
+target. Retained reading and export use the report's explicit metadata, independent
+of the current project catalog. Reports without it keep their original section
+extraction. The final reproduction discussion stops before a declared bibliography.
+
+The versioned assembly and revision objectives deliver the connected report and
+separate proof-appendix rules. The v2 review packet adds the corresponding shared
+directions only under the review run's captured capability, preserving existing
+packet bytes and older frozen Lead briefs. Each run freezes its own exact page,
+layout and appendix instructions. P5 explains retained science; local exposition
+expansions preserve the retained proof route, while substantive new results,
+experiments and uncertainty calculations remain upstream work.

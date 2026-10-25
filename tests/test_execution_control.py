@@ -153,14 +153,15 @@ async def test_sdk_acknowledges_resume_settings_and_provider_switch_keeps_other_
         _sync = SimpleNamespace(_approval_handler=lambda *_: {})
 
         async def request(self, method, params, **kwargs):
-            from openai_codex.generated.v2_all import ThreadStartParams
-            assert method == "thread/start" and params["dynamicTools"][0]["name"] == "validate_artifacts"
-            params = ThreadStartParams.model_validate(params)
-            calls.append(("start", params))
-            return self.response(params)
-
-        async def thread_resume(self, thread_id, params):
-            calls.append(("resume", params))
+            from openai_codex.generated.v2_all import ThreadStartParams, ThreadResumeParams
+            if method == "thread/start":
+                assert params["dynamicTools"][0]["name"] == "validate_artifacts"
+                params = ThreadStartParams.model_validate(params)
+                calls.append(("start", params))
+            else:
+                assert method == "thread/resume" and params["threadId"] == "retained-thread"
+                params = ThreadResumeParams.model_validate(params)
+                calls.append(("resume", params))
             return self.response(params)
 
         def response(self, params):

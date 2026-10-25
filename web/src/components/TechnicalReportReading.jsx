@@ -1,9 +1,9 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { hasExactRef, sameRef } from "../research";
 import { researchDocumentContent, researchDocumentTitle } from "../researchContent";
-import { reportSectionHeadings } from "../reportSections";
+import { REPORT_SECTION_KEYS, reportSectionHeadings, reportReferenceBoundary } from "../reportSections";
 import { Dialog, ResearchDocument, SourceRef, MethodStatusNote } from "./Shared";
-import { ActionButton, ActionIcon } from "./Visuals";
+import { ActionButton, ActionIcon, EmptyState } from "./Visuals";
 import { PhaseTabs, ScientificDocuments, ManuscriptReviewStatus } from "./PhaseReading";
 import ClaimTraceability from "./ClaimTraceability";
 import "../technicalReportReading.css";
@@ -38,6 +38,14 @@ export function retainedReportMaterial(materials, source, basePath = "") {
 
 const materialHref = (material, fragment) => material.artifact_url + (fragment ? `#${encodeURIComponent(fragment)}` : "");
 const materialBase = (material, path) => material.authored_path || path || material.path || material.artifact_path || "";
+
+export function printableReportMaterial(portable, material, materials, primaryId) {
+  const id = material?.artifact_id;
+  return usableArtifactUrl(portable) && verifiedMaterial(material) && material.media_type === "text/markdown"
+    && typeof id === "string" && id && id !== primaryId
+    && materials.filter((item) => item.artifact_id === id).length === 1
+    ? `${portable}${portable.includes("?") ? "&" : "?"}material_id=${encodeURIComponent(id)}` : null;
+}
 
 function retainedFileLink(materials, source, label, basePath = "") {
   const { material, fragment, path } = retainedReportMaterial(materials, source, basePath);
@@ -117,19 +125,27 @@ export function TechnicalReportDocument({ document, onSource, showRecordSource =
   const readingAnchor = `technical-report:${ref?.generation_id || document.report_generation_id || "unavailable"}`;
   const anchorId = (name) => `report-${ref?.generation_id || document.report_generation_id}-${name}`;
   const content = researchDocumentContent(document);
-  const sectionHeadings = reportSectionHeadings(content, document.section_anchors || record.section_anchors);
+  const anchors = document.section_anchors || record.section_anchors;
+  const reservedAnchors = new Set([...REPORT_SECTION_KEYS, "references"].map((key) => anchors?.[key]).filter(Boolean));
+  const sectionHeadings = reportSectionHeadings(content, anchors);
+  let referenceBoundary = null; let boundaryError = "";
+  try { referenceBoundary = reportReferenceBoundary(content, anchors); }
+  catch (error) { boundaryError = error.message; }
+  const primary = record.report_artifact || document.report_artifact || {};
+  const primaryPath = record.artifact_authored_paths?.[primary.artifact_id] || primary.authored_path || primary.path || primary.artifact_path || "";
   const canDiscuss = document.kind === "technical_report" && hasExactRef(ref) && ref.phase === "P5" && ref.family === "technical_report" && onDiscussSection;
   const renderHeading = ({ level, path, children }) => {
+    const Heading = `h${Math.max(1, Math.min(6, level))}`;
+    if (referenceBoundary?.headingPath === path) return <div className="report-reference-heading" data-reading-anchor={`${readingAnchor}:references`}><Heading>{children}</Heading></div>;
     const section = sectionHeadings.get(path);
     if (!section) return null;
-    const Heading = `h${Math.max(1, Math.min(6, level))}`;
     return <div className="report-section-heading" data-report-section={section.key} data-reading-anchor={`${readingAnchor}:section:${section.key}`}>
       <Heading>{children}</Heading>
       {canDiscuss && <ActionButton action="ask" uiRole="research" className="report-section-discuss" title={`Discuss or comment on ${section.label}`} aria-label={`Discuss or comment on ${section.label}`} onClick={() => onDiscussSection({ ...ref, kind: "report_section", object_id: section.key, label: section.label, assessmentPurpose: "model_dialogue", responsible_role: "research_lead" })}>Discuss</ActionButton>}
     </div>;
   };
-  const fileLink = (source, label) => retainedFileLink(materials, source, label);
-  const image = (source, caption) => retainedImage(materials, source, caption);
+  const fileLink = (source, label) => retainedFileLink(materials, source, label, primaryPath);
+  const image = (source, caption) => retainedImage(materials, source, caption, primaryPath);
   return <article className="scientific-block technical-report" data-reading-anchor={readingAnchor}>
     {!(typeof content === "string" && /^\s*#\s+/.test(content)) && <h3>{researchDocumentTitle(document) || "Technical report"}</h3>}
     <dl className="manuscript-metadata report-metadata">
@@ -140,6 +156,7 @@ export function TechnicalReportDocument({ document, onSource, showRecordSource =
     {document.method_status && <MethodStatusNote status={document.method_status} onOpen={onSource} />}
     {(document.context_change_notices || []).map((notice, index) => <p className={`note${notice.status === "reassessment_required" ? " warn" : ""}`} key={index}>{notice.message || (notice.status === "reassessment_required" ? "This report cites context that changed and needs reassessment." : "The saved context changed after this report was produced. Its applicability has not been reassessed.")} {notice.item_id && `${notice.item_id}: revision ${notice.previous_revision ?? "absent"} to ${notice.current_revision ?? "absent"}.`}</p>)}
     {document.report_materials_error && <p className="note warn">{document.report_materials_error}</p>}
+    {boundaryError && <p className="note warn" role="status">The report's References boundary could not be verified. {boundaryError}</p>}
     <div className="report-utility-row">
     {(model || document.problem_context_ref || record.problem_context_ref || document.report_generation_id || ref?.generation_id) && <details className="research-details report-source-details" data-reading-anchor={`${readingAnchor}:source-details`}><summary>Source details</summary><dl className="manuscript-metadata report-metadata">
       {model && <div><dt>Model identity</dt><dd>{model.stable_id || model.method_id || "Selected model"} · {model.version ?? "Version not recorded"}</dd></div>}
@@ -149,14 +166,20 @@ export function TechnicalReportDocument({ document, onSource, showRecordSource =
     </dl></details>}
     <details className="research-details report-tools" data-reading-anchor={`${readingAnchor}:tools`}><summary>Report tools</summary>
       <div className="btnrow report-export-actions">{showRecordSource && <SourceRef reference={ref} onOpen={onSource} label="Inspect exact report source" />}
-        {portable && <><a className="source-link ui-action" data-action="save" data-ui-role="system" href={`${portable}${portable.includes("?") ? "&" : "?"}download=1`} download><ActionIcon name="save" />Download offline HTML</a><a className="source-link ui-action" data-action="source" data-ui-role="system" href={portable} target="_blank" rel="noreferrer"><ActionIcon name="source" />Open printable report</a></>}
+        {portable && <><a className="source-link ui-action" data-action="save" data-ui-role="system" href={`${portable}${portable.includes("?") ? "&" : "?"}download=1`} download><ActionIcon name="save" />Download offline HTML</a><a className="source-link ui-action" data-action="source" data-ui-role="system" href={portable} target="_blank" rel="noreferrer"><ActionIcon name="source" />Open HTML report</a></>}
         {usableArtifactUrl(document.primary_artifact_url) && <a className="source-link ui-action" data-action="source" data-ui-role="system" href={document.primary_artifact_url} target="_blank" rel="noreferrer"><ActionIcon name="source" />Open retained Markdown source</a>}
       </div>
-      <p className="note">{portable ? "The offline report includes mathematics, figures, exact sources, completion gaps, and the review status of this version. Use your browser's Print command to save a PDF." : "Offline export is unavailable for this report version."}</p>
+      <p className="note">{portable ? "Read and share the report as HTML, with rendered mathematics, figures, references and linked supporting documents. The proof appendix stays separate from the main account." : "Offline export is unavailable for this report version."}</p>
     </details>
     </div>
-    {document.document_error ? <p className="error" role="alert">The retained report text could not be loaded. {document.document_error}</p> : <ResearchDocument text={content} renderHeading={renderHeading} renderImage={image} renderFileLink={fileLink} renderAnchor={(name) => <span id={anchorId(name)} />} renderInternalLink={(href, label) => <a href={`#${anchorId(href.slice(1))}`}>{label}</a>} />}
-    {materials.length > 0 && <details className="research-details report-materials" data-reading-anchor={`${readingAnchor}:materials`}><summary>Sources and reproducibility</summary>{materials.map((artifact, index) => <div key={index}>{verifiedMaterial(artifact) ? markdownMaterial(artifact) ? <ReportMaterialLink material={artifact} path={materialBase(artifact)} materials={materials} label={artifact.label || artifact.title || artifact.path || "Open supplement"} sourceAction /> : <a className="source-link ui-action" data-ui-role="system" href={artifact.artifact_url} target="_blank" rel="noreferrer"><ActionIcon name="source" />{artifact.label || artifact.title || artifact.path || "Open supplement"}</a> : <p className="note warn">{artifact.label || artifact.path || "Supplement"}: {artifact.source_error || "The retained file is unavailable."}</p>}</div>)}</details>}
+    {document.document_error ? <p className="error" role="alert">The retained report text could not be loaded. {document.document_error}</p> : <ResearchDocument text={content} renderHeading={renderHeading} renderImage={image} renderFileLink={fileLink} renderAnchor={(name, path) => reservedAnchors.has(name) && !/^document\.block\d+$/.test(path) ? <></> : <span id={anchorId(name)} className="report-anchor" tabIndex={-1} />} renderInternalLink={(href, label) => <a href={`#${anchorId(fragmentName(href.slice(1)))}`}>{label}</a>} />}
+    {materials.length > 0 && <details className="research-details report-materials" data-reading-anchor={`${readingAnchor}:materials`}><summary>Sources and reproducibility</summary>{materials.map((artifact, index) => {
+      const printable = printableReportMaterial(portable, artifact, materials, primary.artifact_id);
+      const label = artifact.label || artifact.title || artifact.authored_path || artifact.path || "Supporting document";
+      return <div className="report-material-actions" key={index}>{verifiedMaterial(artifact) ? markdownMaterial(artifact) ? <ReportMaterialLink material={artifact} path={materialBase(artifact)} materials={materials} label={label} sourceAction /> : <a className="source-link ui-action" data-ui-role="system" href={artifact.artifact_url} target="_blank" rel="noreferrer"><ActionIcon name="source" />{label}</a> : <p className="note warn">{label}: {artifact.source_error || "The retained file is unavailable."}</p>}
+        {printable && <a className="source-link ui-action" data-ui-role="system" href={printable} target="_blank" rel="noreferrer" aria-label={`Open HTML edition with ${label}`} title={`Open HTML edition with ${label}`}><ActionIcon name="source" />HTML edition</a>}
+      </div>;
+    })}</details>}
   </article>;
 }
 
@@ -171,7 +194,7 @@ export default function TechnicalReportReading({ documents = [], traceability = 
   const changes = documents.filter((doc) => /revision|change|reconciliation/.test(doc.kind || ""));
   const supporting = documents.filter((doc) => !isTechnicalReport(doc) && !manuscripts.includes(doc) && !historicalReviews.includes(doc) && !reviews.includes(doc) && !changes.includes(doc) && !(traceability.length && doc.kind === "claim_traceability"));
   const tabs = [
-    { id: "report", label: "Report", content: reports.length ? reports.map((document, index) => <TechnicalReportDocument key={document.generation_ref?.generation_id || index} document={document} onSource={onSource} onDiscussSection={onDiscussSection} />) : <p className="note">No technical report has been assembled for this model yet. An interim report can identify missing theory or numerical work from the available sources.</p> },
+    { id: "report", label: "Report", content: reports.length ? reports.map((document, index) => <TechnicalReportDocument key={document.generation_ref?.generation_id || index} document={document} onSource={onSource} onDiscussSection={onDiscussSection} />) : <EmptyState><p className="note">No technical report has been assembled for this model yet. An interim report can identify missing theory or numerical work from the available sources.</p></EmptyState> },
     { id: "evidence", label: "Supporting evidence", content: <><ClaimTraceability records={traceability} onSource={onSource} /><ScientificDocuments documents={supporting} onSource={onSource} empty="Retained model, justification, and numerical sources appear here when assembled into the report." /></> },
     { id: "reviews", label: "Reviews", content: reviews.length ? reviews.map((document, index) => {
       const target = document.reviewed_report_ref;

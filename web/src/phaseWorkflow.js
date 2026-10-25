@@ -3,11 +3,16 @@ import { contextApplies } from "./researcherDialogue.js";
 
 export const explanationRun = (run) => ["explanation", "issue_explanation", "project_context", "model_dialogue", "issue_suggestions"].includes(run?.assessment_purpose);
 
+// Partial progress leaves team work pending without changing its authored status.
+export const issueIsOpen = (issue) => !issue.disposition || issue.disposition === "open"
+  || issue.kind === "research_task" && issue.disposition === "partially_fixed";
+
 // Scope by recorded identities, never by matching titles or scientific prose.
 export function issuesForPhase(issues = [], phase, branch, methodId, modelRef) {
   return issues.filter((issue) => {
     if (issue.phase !== phase) return false;
     if (methodId && phase === "P2") return methodRequests([issue], methodId, branch, { includeShared: true, modelRef }).length > 0;
+    if (issue.scope?.kind === "project") return true;
     if (issue.scope?.kind === "model" && !contextApplies(issue.scope, branch, modelRef)) return false;
     return (issue.branch || issue.branch_id) === branch;
   });

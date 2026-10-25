@@ -48,6 +48,22 @@ is not silently recertified under a newer catalog.
    an isolated context. A successful review or schema check alone cannot
    publish; the entire package must pass its blocking checks and commit.
 
+In the P3 graph, `full` describes the submitted argument for the exact statement.
+An established limitation may have a complete counterexample with retained
+support artifacts; this does not prove the positive claim it refutes. An open
+obligation cannot be marked `full`. Existing source and digest checks remain in
+force, and permitting a label neither verifies the argument nor upgrades any
+saved assessment. This interpretation uses the existing schema shapes and does
+not require a catalog revision.
+
+P4 seed agreement with the planned replicate applies to eligible observations.
+An invalidated attempt retains its original observed fields, including missing
+or incorrect seed metadata, and stays outside replicate coverage and numerical
+summaries. A valid replacement must still cover the planned replicate. Schema,
+declared case identity, invalidation reason and managed-source byte checks remain
+in force for every retained attempt; invalidation cannot authorize rewriting its
+history.
+
 Initial assessment uses its separate schema and frozen evidence references.
 It ends as `assessed`, never `published`, and cannot change scientific files
 or formal status. P4 readiness requires the registered selected method and
@@ -212,3 +228,43 @@ or a general reduction in model cost.
 - Ordinary corrections can retain thread continuity, but a thread may be
   unavailable after restart. Frozen inputs and exact findings make context
   explicit; persistent threads do not guarantee scientific correctness.
+
+### P5 bibliography and HTML validation
+
+New candidates capturing `p5.reader_report.v1` require a declared trailing
+bibliography boundary. Any declared boundary must identify one genuine root
+Markdown heading, distinct from and after all seven scientific sections. Code,
+math, lists, quotations and tables cannot supply apparent boundary anchors.
+Python candidate validation, retained section extraction and browser/export
+parsing share accepted and rejected fixtures, including inline code/math,
+indented-code adjacency and ordinary paragraph continuation. Historical records
+without the declaration retain their prior extraction and validation scope.
+
+Portable support selection names one exact submitted Markdown artifact in the
+chosen report generation, retaining the full offline HTML bundle and its existing
+optional print selection. It does not isolate the selected material on screen.
+Unknown, ambiguous, unavailable, primary and non-Markdown selections are rejected.
+Offline asset integrity and exact-material selection checks complement the
+boundary tests. Inspect the main report, separately linked in-app proof appendix
+and full offline HTML edition in a browser, checking mathematics, figures,
+citations, cross-document links and narrow-screen reading.
+Keep the main report compact by selecting central results and decisive exhibits,
+without hard word or equation caps. PDF export, paper layout and page counts are
+outside acceptance unless the researcher explicitly requests them later. Source
+tests alone do not establish installed-app behavior or scientific adequacy.
+
+For this captured capability, candidate validation also dry-runs the portable
+renderer after ordinary source and declaration checks pass. It checks linked
+dependencies and every declared Markdown supplement, so an appendix
+cannot pass publication checks while its offline links fail. Source-specific
+findings include unresolved links and lone carriage returns inside mathematics;
+ordinary CRLF line endings and code examples remain valid. Historical report
+formats retain their prior validation scope. Completion mismatches return the
+exact derived completion object, allowing the member to correct its declaration
+without guessing or changing the scientific completion rules.
+
+Cross-phase artifact references retain the producer named by their explicit
+`run://` URI. The enclosing index's run is not substituted for that producer.
+The existing project containment, retained path and exact digest checks still
+apply; missing or changed producer bytes remain unavailable even if another run
+contains a same-name or exact-byte copy.

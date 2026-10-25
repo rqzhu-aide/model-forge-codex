@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "catalog_version": "1.26.0",
+  "catalog_version": "1.28.1",
   "source": {
     "repository": "model-forge",
     "commit": "33d21a27f4fc4351e43c45298a7766d1699ebd10",

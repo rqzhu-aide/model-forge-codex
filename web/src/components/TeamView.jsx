@@ -21,7 +21,7 @@ const orderedRoles = (members) => [
 ];
 const roleLabel = (role) => ROLE_LABELS[role] || humanLabel(role);
 
-export default function TeamView({ projectId }) {
+export default function TeamView({ projectId, embedded = false }) {
   const [members, setMembers] = useState({});
   const [options, setOptions] = useState({ openai_models: [] });
   const [selected, setSelected] = useState(null);
@@ -115,7 +115,7 @@ export default function TeamView({ projectId }) {
     <>
       <header className="page">
         <div>
-          <h1 className="serif">Team Settings</h1>
+          {!embedded && <h1>Team Settings</h1>}
           <div className="sub">Agent models, providers, instructions, and context settings.
             Changes apply to the next turn.</div>
         </div>

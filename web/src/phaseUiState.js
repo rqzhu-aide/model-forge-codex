@@ -1,4 +1,4 @@
-import { explanationRun, issueKey, issuesForPhase, answerMatchesIssue } from "./phaseWorkflow.js";
+import { explanationRun, issueKey, issuesForPhase, answerMatchesIssue, issueIsOpen } from "./phaseWorkflow.js";
 import { methodRequests } from "./methodWorkspace.js";
 import { humanLabel, TERMINAL } from "./research.js";
 import { compareDecisionPriority } from "./researcherDecisions.js";
@@ -9,7 +9,7 @@ import { compareDecisionPriority } from "./researcherDecisions.js";
 // kinds are findings; an absent legacy kind keeps its existing question view.
 export const issueDisplayKind = (issue) => ["researcher_decision", "research_task"].includes(issue.kind) ? issue.kind : issue.kind ? "scientific_issue" : undefined;
 export function issueDisplayState(issue) {
-  const open = !issue.disposition || issue.disposition === "open";
+  const open = issueIsOpen(issue);
   const kind = issueDisplayKind(issue);
   if (kind === "researcher_decision") {
     if (issue.researcher_answer) return { state: "saved", label: issue.researcher_answer.origin === "unknown" ? "Response saved · remains unknown" : "Response saved" };
@@ -22,7 +22,7 @@ export function issueDisplayState(issue) {
 export function issueUrgency(issue) {
   if (issue.researcher_answer?.origin === "unknown") return { state: "unknown", label: "Still unknown" };
   if (issue.researcher_answer) return { state: "saved", label: "Instruction saved" };
-  if (issue.disposition && issue.disposition !== "open") return { state: "recorded", label: "Recorded" };
+  if (!issueIsOpen(issue)) return { state: "recorded", label: "Recorded" };
   if (issue.severity === "blocking") return { state: "blocking", label: "Blocking" };
   if (issue.severity === "reassessment_required") return { state: "reassess", label: "Reassess" };
   return { state: "attention", label: "Discuss" };
@@ -38,12 +38,15 @@ export function issueCardEntries({ issues = [], attention = [], answers = [], ph
     const legacyAttached = !issue.scope && !issue.researcher_answer?.question_ref && !issue.researcher_answer?.attention ? issue.researcher_answer : undefined;
     return { ...issue, researcher_answer: candidates.sort((a, b) => (b.revision || 0) - (a.revision || 0))[0] || legacyAttached };
   });
-  const relatedScope = branch !== "trunk" || methodId
+  const relatedScope = branch !== "trunk" || methodId && phase !== "P1"
     ? methodRequests(withAnswers, methodId, branch, { includeShared: true, modelRef })
-    : withAnswers.filter((issue) => (issue.branch || issue.branch_id) === "trunk");
+    // A shared destination follows explicit project scope, not its source branch.
+    : withAnswers.filter((issue) => issue.scope?.kind === "project"
+      || issue.scope?.kind !== "model" && (issue.branch || issue.branch_id) === "trunk");
   const carried = relatedScope.filter((issue) => issue.phase !== phase && issue.target_phase === phase);
   const isTeamWork = issue => ["research_task", "scientific_issue"].includes(issueDisplayKind(issue));
-  const entries = [...issuesForPhase(withAnswers, phase, branch, methodId, modelRef), ...carried.filter(issue => !isTeamWork(issue))].sort(compareDecisionPriority);
+  const localScope = phase === "P1" && branch === "trunk" ? relatedScope : withAnswers;
+  const entries = [...issuesForPhase(localScope, phase, branch, methodId, modelRef), ...carried.filter(issue => !isTeamWork(issue))].sort(compareDecisionPriority);
   const related = carried.filter(isTeamWork).sort(compareDecisionPriority);
   return {
     entries,

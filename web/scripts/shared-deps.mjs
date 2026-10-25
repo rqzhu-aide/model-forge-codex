@@ -2,12 +2,21 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
-const complete = (directory) => ["react", "react-dom", "katex", "vite", "@vitejs/plugin-react"].every((name) => fs.existsSync(path.join(directory, name, "package.json")));
+const packages = ["react", "react-dom", "katex", "vite", "@vitejs/plugin-react", "@fontsource-variable/ibm-plex-sans", "@fontsource/ibm-plex-mono", "@fontsource/marcellus"];
+const requiredFiles = [
+  ...packages.map((name) => `${name}/package.json`),
+  "@fontsource-variable/ibm-plex-sans/wght.css", "@fontsource-variable/ibm-plex-sans/wght-italic.css",
+  "@fontsource/ibm-plex-mono/400.css", "@fontsource/ibm-plex-mono/500.css", "@fontsource/marcellus/400.css",
+  ...packages.filter((name) => name.startsWith("@fontsource")).map((name) => `${name}/LICENSE`),
+];
+const missingFiles = (directory) => requiredFiles.filter((name) => !fs.existsSync(path.join(directory, name)));
+const complete = (directory) => missingFiles(directory).length === 0;
 export function findSharedRoot() {
   if (process.env.MF_SHARED_NODE_MODULES) {
     const root = path.resolve(process.env.MF_SHARED_NODE_MODULES);
-    if (!complete(root)) throw new Error(`MF_SHARED_NODE_MODULES does not contain the declared shared frontend packages: ${root}`);
-    return root;
+    const missing = missingFiles(root);
+    if (missing.length) throw new Error(`MF_SHARED_NODE_MODULES is missing shared frontend files: ${missing.join(", ")} (${root}). Install the frontend packages declared in web/package.json in a user-wide or machine-wide npm location. Project-local installations are not used.`);
+    return fs.realpathSync(root);
   }
   // Windows packaged terminals may expose an AppData alias while child imports
   // resolve its physical package cache. Choose one physical root for every alias.
@@ -15,7 +24,7 @@ export function findSharedRoot() {
     const packages = path.join(process.env.LOCALAPPDATA, "Packages");
     if (fs.existsSync(packages)) {
       const candidates = fs.readdirSync(packages, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => path.join(packages, entry.name, "LocalCache", "Roaming", "npm", "node_modules")).filter(complete);
-      if (candidates.length === 1) return candidates[0];
+      if (candidates.length === 1) return fs.realpathSync(candidates[0]);
       if (candidates.length > 1) throw new Error("More than one shared frontend installation was found. Set MF_SHARED_NODE_MODULES to the intended physical npm global node_modules directory.");
     }
   }

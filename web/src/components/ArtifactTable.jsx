@@ -1,10 +1,32 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
-import { fmt, humanLabel } from "../research";
+import { humanLabel } from "../research";
 import { ActionButton } from "./Visuals";
 import { tablePageIdentity, tablePageUrl, tableReadings, tableResumeOffset } from "../tableReading";
 import { isVisibleElement } from "../dialogFocus";
 
 const INLINE_PAGE_SIZE = 25;
+
+// CSV numbers arrive as strings. Only recognize plain decimal/scientific values;
+// leave identifiers, leading-zero codes, authored intervals and missing markers alone.
+export function artifactTableCell(value) {
+  if (value === null || value === undefined || value === "") return { text: "Not recorded" };
+  if (typeof value === "object") return { text: JSON.stringify(value) };
+  if (typeof value === "number" && !Number.isFinite(value)) return { text: "Not recorded" };
+  const decimal = typeof value === "string" && /^-?(?:0|[1-9]\d*)(?:\.\d+(?:[eE][+-]?\d+)?|[eE][+-]?\d+)$/.test(value);
+  const number = decimal ? Number(value) : value;
+  if (typeof number !== "number" || !Number.isFinite(number)
+      || (Number.isInteger(number) && !Number.isSafeInteger(number))
+      || (number !== 0 && Math.abs(number) < 2.2250738585072014e-308)
+      || (decimal && number === 0 && /[1-9]/.test(value.split(/[eE]/)[0]))) return { text: String(value) };
+  // Six significant digits keep small differences in results readable, while
+  // the original value remains available on the cell and in the saved artifact.
+  const magnitude = Math.abs(number);
+  const text = number === 0 ? "0" : magnitude < 1e-4 || magnitude >= 1e7
+    ? number.toExponential(5).replace(/(\.\d*?[1-9])0+(?=e)|\.0+(?=e)/, "$1")
+    : number.toLocaleString(undefined, { maximumSignificantDigits: 6 });
+  const rounded = Number(number.toPrecision(6)) !== number;
+  return { text, ...(rounded || (decimal && text !== value) ? { original: String(value) } : {}) };
+}
 
 export function artifactTablePage(table, inlineOffset = 0) {
   const rows = table.rows || []; const total = table.total_rows ?? rows.length;
@@ -69,12 +91,14 @@ export default function ArtifactTable({ table, title = "Recorded results", capti
   };
   if (!page?.columns?.length) return null;
   const { rows, offset, total, inline } = artifactTablePage(page, inlineOffset);
+  const hasRoundedValues = rows.some((row) => page.columns.some((column) => artifactTableCell(row[column.key]).original));
   return <div className="artifact-table" aria-busy={busy} data-reading-pending={busy}>
     <div ref={region} onScroll={() => remember()} data-reading-anchor={identity ? `table:${identity}` : undefined} className="table-scroll" tabIndex={0} role="region" aria-label={title}><table aria-describedby={describedBy}>
       <caption className="sr-only">{caption || title}</caption>
       <thead><tr>{page.columns.map((column) => <th scope="col" key={column.key}>{!column.label || column.label === column.key ? humanLabel(column.key) : column.label}{column.unit && <span className="table-unit"> ({column.unit})</span>}</th>)}</tr></thead>
-      <tbody>{rows.map((row, index) => <tr key={offset + index}>{page.columns.map((column) => <td key={column.key}>{row[column.key] === null || row[column.key] === undefined || row[column.key] === "" ? "Not recorded" : typeof row[column.key] === "object" ? JSON.stringify(row[column.key]) : typeof row[column.key] === "boolean" ? String(row[column.key]) : fmt(row[column.key])}</td>)}</tr>)}</tbody>
+      <tbody>{rows.map((row, index) => <tr key={offset + index}>{page.columns.map((column) => { const cell = artifactTableCell(row[column.key]); return <td key={column.key} title={cell.original ? `Recorded value: ${cell.original}` : undefined}>{cell.text}</td>; })}</tr>)}</tbody>
     </table></div>
+    {hasRoundedValues && <p className="note">Values are rounded for display; the original table retains full precision.</p>}
     {(page.truncated || offset > 0 || total > rows.length) && <div className="table-pagination"><p className="note" role="status">Rows {rows.length ? offset + 1 : 0} to {offset + rows.length} of {total}. Each page preserves the saved row order.</p><div className="btnrow">{inline ? <><ActionButton action="details" disabled={offset === 0} onClick={() => moveInline(offset - INLINE_PAGE_SIZE)}>Previous rows</ActionButton><ActionButton action="details" disabled={offset + rows.length >= total} onClick={() => moveInline(offset + INLINE_PAGE_SIZE)}>Next rows</ActionButton></> : <>{page.previous_page_url && <ActionButton action="details" disabled={busy} onClick={() => load(page.previous_page_url)}>Previous rows</ActionButton>}{page.next_page_url && <ActionButton action="details" disabled={busy} onClick={() => load(page.next_page_url)}>Next rows</ActionButton>}</>}</div>{!inline && !page.next_page_url && !page.previous_page_url && <p className="note">The original table contains the complete results.</p>}</div>}
     {error && <p className="error" role="alert">{error}</p>}
   </div>;

@@ -6,15 +6,26 @@ body scrolls; the body is keyboard-focusable, and closing restores the invoking
 control without changing the underlying page's reading position. Notation
 citations save and restore the body's scroll position when returning from a paper.
 Research-meaningful labels only. The current source baseline is catalog
-1.26.0, including consequential researcher decisions. The approved October 19 visual
-refinement uses the shared blue/team, sage/system and orange/researcher roles,
-18px card titles, stronger primary card outlines and title separators, and the
+1.27.0, including consequential nonblocking invitations. The October 23 visual
+refinement uses the shared blue/team, navy (Illini Blue)/system and orange/researcher roles,
+17px card titles, neutral card outlines and title separators, and the
 reading rules in section 2a. The [design master](../../design-system/model-forge/MASTER.md)
 and [shared styles](../../web/src/styles.css) define the visual contract.
 Source checks, browser acceptance and installed-release verification are
 recorded separately in the [implementation status](../implementation-status.md).
 An installed app serves the built assets of its selected release; a source
 preview does not update that release.
+
+The Next line counts unanswered questions from the same projection as the
+destination card. P2 destinations preserve the exact proposal or catalog
+version, including the producing run for historical unregistered proposals.
+Shared questions count once, alongside the currently selected method's questions;
+the phase total is the unique project total. A jump to another method changes
+the mounted reader selection, preserves drafts, and focuses its decision card
+after reading restoration. Paused runs are checked project-wide, including a
+pause already present in pending decisions but not yet in the run list. The
+destination displays that run's requested input; P5 opens its recovery disclosure.
+Navigation never starts or resumes a run.
 
 The consequential-decision interface keeps one disclosure row per question.
 Expanded rows put the exact affected point,
@@ -59,7 +70,14 @@ P2 separates the overview in Proposed Methods from the selector and selected
 evidence in Select a Method to Explore, followed by Decisions to Discuss and
 Additional Runs and History. Current action locations
 are defined in section 2.
-The project header shows only its name. The existing authored overview appears
+The project header shows its name, the phase stepper and a resume region. From
+Phase 2 onward the region restates the opening of the trunk research goal and
+links to the full P1 setting. A Next line counts researcher decisions waiting
+in the P1 to P4 decision cards and opens the phase holding the first; P5
+clarification stays in report section discussions, so P5 is not counted.
+The stepper shows the same count under the phase that holds the questions.
+Opening the decisions moves focus to the decision card and briefly outlines
+it; it never answers, starts or saves anything. The existing authored overview appears
 before full work status, with a compact notice above it for exact-scope failure,
 requested direction or correction. Project instructions open from the P1 Research
 Setting header.
@@ -81,7 +99,8 @@ before its interface appears in the researcher's browser.
 
 The September 27 visual audit (retained in the ignored local archive)
 records the former aurora palette. Its role colors are superseded by the
-October 15 blue/sage/peach revision. The
+October 15 blue/sage/peach revision, whose sage system role the October 23
+Ironforge pass replaces with Illini Blue. The
 [design rules](../../design-system/model-forge/MASTER.md) define the current
 palette alongside the October 19 typography, spacing, controls and responsive
 behavior across phases.
@@ -132,9 +151,12 @@ separate.
   research goal; detailed proposed project methods belong in P2. Unknown facts
   and target ambiguities remain explicit. It retains a notation popup and an exact-source goal
   correction/discussion control beside Study goal. Findings contain cited
-  synthesis, mathematical distinctions when relevant, and concise approach rows
-  explaining modeled relationships, mechanism, decisive conditions and fit, with
-  equations integrated where informative. Each paper's visible contribution
+  synthesis and compact, initially closed approach rows showing the authored
+  title and fit. Opening a row reveals its complete account of modeled
+  relationships, mechanism, decisive conditions and fit, with equations
+  integrated where informative. Support qualifications remain visible on the
+  closed row. This disclosure changes the initial reading density, not the
+  authoring requirements or stored scientific content. Each paper's visible contribution
   explains its precise source-specific formulation or procedure and defining
   mathematics where available, with contextual notation. Detailed derivations,
   assumptions and evidence open on demand.
@@ -143,6 +165,11 @@ separate.
   expandable in the last card. Project-wide instructions remain distinct from
   the next study's instructions. Original publication pins determine whether an
   account follows the concise contract; earlier text remains intact on demand.
+  The paper selector groups equivalent official NeurIPS abstract URL paths only
+  when their publication year and hash match and source dispositions agree.
+  This is a reading projection: original source IDs, exact member assessments,
+  citations, provenance and saved reading anchors remain intact. History counts
+  accepted source records separately from grouped paper options.
 - **Phase 2 methods**: Four primary cards, in order: Proposed Methods,
   Select a Method to Explore, Decisions to Discuss, and Additional Runs and History.
   Proposed Methods contains the brief cross-method Lead conclusion and its
@@ -169,11 +196,20 @@ separate.
   rows requesting input use orange before expansion. Amber **Your input needed**
   styling applies only to an unanswered researcher decision, not ordinary team
   work. Conversation replies, researcher messages and editors use the same
-  blue/peach distinction. Source controls keep sage fills and blue reference
+  blue/peach distinction. Source controls keep system fills and blue reference
   labels. Navigation, selector, Close and Cancel controls retain the system
   role even inside a warm contribution panel.
   A saved instruction is not a resolved scientific finding. The same ownership
   cues apply throughout the phase readers.
+  A `research_task` marked `partially_fixed` remains pending team work with its
+  authored disposition visible; it never requests a researcher choice. Project
+  scope applies across method branches in the receiving phase, even when its
+  latest update was published on one method branch. Model scope remains exact.
+  A project-wide question explicitly directed to shared P1 remains answerable
+  there even when its source is a model's P5 report work. P1 never inherits a
+  selected method's private questions. Destination routing preserves the
+  original question/source identity for discussion, answer revisions and
+  future frozen inputs; the phase tabs and Next use the same question set.
   The full question, consequence, scope, Discuss, Lead suggestions and one
   Your instruction field appear when expanded. Save instruction replaces the
   current instruction for that exact question; Edit instruction reopens it.
@@ -429,7 +465,7 @@ Not retained disclosure does not add an assessment source control.
 
 ## 2a. Visual and density requirements
 
-Use the shared blue/sage/peach purpose palette with calm reading surfaces
+Use the shared blue/navy/peach purpose palette with calm reading surfaces
 and one compact, intuitive sans-serif heading per card. The main surface
 should explain the current scientific conclusion and the next useful
 researcher action. Counts, stage files, thread IDs, and raw JSON belong in
@@ -439,17 +475,17 @@ The shared type scale applies to both direct and wrapped card headings:
 
 | Element | Size and treatment |
 | --- | --- |
-| Project title | 22px |
-| Main card heading | 18px, weight 650, consistent title strip |
-| Selected method name | 19px document title |
-| Ordinary subsection | 16px, weight 650 |
+| Project title | 26px Marcellus; 21px on narrow screens |
+| Main card heading | 17px Plex, weight 600, consistent title strip |
+| Selected method name | 17px document title |
+| Ordinary subsection | 16px, weight 600 |
 | Scientific prose and researcher writing | 16px; scientific prose retains 1.65 line height |
 | Compact controls and metadata | 13px; meaningful status at least 12px |
 
 Researcher writing includes editable fields and saved contributions. Preserve
-the compact 10px card gaps, 12px corners and 8-10px inner padding. Primary blue
-cards have a stronger outer outline and separator below the title strip;
-inner sections keep lighter dividers and flat bands. Decision questions may
+the 16px card gaps, 8px corners and 14px by 16px body padding (12px on narrow screens).
+Cards use neutral hairline outlines and separators below the title strip, with
+decorative corner fittings. Inner sections keep lighter dividers and flat bands. Decision questions may
 use up to two lines on desktop while markers and status labels stay in stable
 positions; narrow layouts wrap the full question. P4 narrative uses a 72-76ch
 measure while tables, equations, figures and code retain the wider card area.
@@ -464,7 +500,7 @@ compact status pill. An absent outcome is Not assessed, even after successful
 execution. Purpose colors never imply urgency or scientific support. Issues
 and decisions distinguishes unanswered decisions, an evaluation still waiting
 for direction, open team research, correction needs and saved responses.
-Responding does not resolve a scientific finding. System selection uses sage,
+Responding does not resolve a scientific finding. System selection uses Illini Blue,
 independently of these states; research contribution controls use warm focus
 tokens. Disabled labels use readable colors
 instead of blanket opacity.
@@ -474,10 +510,10 @@ Writing and editing researcher direction, asking questions, discussion,
 suggestions, focused research assessments, and research preparation or launch
 explicitly use `data-ui-role="research"`. The primary visual variant does not
 assign that role. Settings saves, navigation, selectors, ordinary reading disclosures,
-source controls, Close and Cancel remain sage, including inside warm panels.
+source controls, Close and Cancel remain system navy, including inside warm panels.
 Inline publication citations use blue citation tokens in both themes, even
 inside a system-role panel. Citation text and hover/focus previews retain blue;
-general source-opening controls keep sage fills and blue reference labels.
+general source-opening controls keep system fills and blue reference labels.
 Unselected buttons and tabs retain their filled backgrounds. Team replies and
 all authored scientific accounts, table headers and inline code remain blue. Discussion and
 further-research entry points use orange; disclosures that open a researcher
@@ -513,6 +549,26 @@ exact inspected question and protocol into the launch dialog and server
 request. Theory context compares linked claims and dependencies with the
 tested generation; unknown provenance stays unknown. Historical claim links
 open historical theory, with a separate action for the current graph.
+
+When the Analyst declares a primary account, question source controls say
+**Open full Analyst account**. The existing Research source dialog loads that
+account lazily from its exact published run and verifies its digest. Markdown
+and bounded JSON previews render the authored prose and mathematics; the exact
+original remains linked. The compact structured record stays in source details.
+Informal question keys in a full account never replace or remap structured
+question IDs, and unavailable sources keep an explicit error.
+Inline P4 `run://` locators resolve through verified bindings from the same
+published evaluation's sealed record digests or declared artifact pointers.
+Declared reproduction pointers and source-registry entries with an exact output
+URI and digest are included. A registry filename is descriptive, never a path
+search; run, package, stage, containment and digest boundaries remain enforced.
+An unbound path never becomes a link merely because a retained file exists.
+
+Diagnostic completion counters retain their source values. The contract's
+`n_failures` includes unrun cases and reported nonconvergence, so the UI calls
+it "incomplete or nonconverged" rather than claiming solver failures. This
+aggregate alone does not receive failure coloring. Diagnostic runtime totals
+are labelled as sums of recorded case times, not elapsed experiment time.
 
 Catalog 1.13 adds authored P4 implementation and algorithm-fidelity accounts and
 a theory relationship with three explicit states: unavailable, available but
@@ -551,6 +607,11 @@ UI revision verification (retained in the ignored local archive).
   questions and answers retain their identities; shared setting decisions stay
   in P1. Scientific checks and repairs remain team tasks. The UI displays the
   authored decisions without inventing questions or inferring preferences.
+- **Nonblocking invitations**: a consequential request can be displayed while
+  conditional research proceeds. The Lead briefly explains what the answer
+  affects and when it is useful. Requested input and a paused run remain distinct;
+  the reader does not infer a launch prerequisite from an unanswered row. Existing
+  Discuss, Lead suggestions and one editable instruction supply the interaction.
 - **Exact source navigation**: optional audit `statement_refs` are JSON
   Pointers into the assessed original proposal. Display the original equation
   or algorithm step; do not infer anchors or manufacture repaired definitions.
@@ -633,21 +694,21 @@ phase readers. Existing aliases retain the shared role meanings:
 | --- | --- |
 | Team-authored phase summary, lead account, research setting, method, theory, evidence or manuscript | Blue |
 | Publication citations and their previews, including within system-role panels | Blue in both themes |
-| System navigation, settings, selectors and reading disclosures | Sage |
-| Source-opening controls | Sage fills with blue reference labels |
+| System navigation, settings, selectors and reading disclosures | Navy when selected; neutral stone otherwise |
+| Source-opening controls | System fills with blue reference labels |
 | Further-research request shells | Orange; blue authored recommendations within them |
-| History and system activity shells | Sage; blue authored scientific records within them |
+| History and system activity shells | System styling, with history on library parchment; blue authored scientific records within them |
 | Discussion card shell and rows requesting a response | Orange; blue team context and peach researcher contributions inside expanded rows |
 | Researcher writing, saved instructions, questions, conversation messages and editors | Peach, with warm cream fields |
 | Research contribution, assessment and launch actions | Warm buttons; terracotta/peach primary action |
 | Requested researcher input | Orange row before expansion; amber status label and marker, red for explicit blocking/reassessment |
 | Ordinary saved-status feedback | Neutral status badge; saved researcher words retain peach |
-| Execution progress | Sage system shell, with separate explicit state badges |
+| Execution progress | System shell, with separate explicit state badges |
 
 Completed execution is green, active work blue, waiting for direction amber,
 and failed execution red. Cancelled or unperformed work remains neutral. These
 signals describe execution, not scientific support. Text labels accompany color;
-changing a method's author never changes its reader color. Sage system controls
+changing a method's author never changes its reader color. System controls
 never indicate scientific success. Saving a response does not clear an unknown,
 waiting or blocking state and does not resolve the scientific finding.
 
@@ -663,6 +724,116 @@ different consequences. P2 and P4 use the same tab treatment, and all inline
 disclosures use one directional cue. Answered questions use past-tense labels
 and neutral styling. Outstanding waiting evaluations are visible, not hidden
 inside a closed history disclosure.
+
+### Compact revision summary
+
+After a scientific attempt, Phases 1 through 4 show one **Revise and rerun** card. It summarizes
+existing inputs and navigates to their original editors; it does not duplicate
+forms, request a Lead assessment, or start work. Phase 5 shows **Revise report**
+with preparation status, retaining discussion at each report section rather than
+adding a general problem discussion.
+
+- **Research questions** counts current applicable saved answers, unanswered
+  questions and saved unknown responses separately. Exact source identity and
+  explicit answer applicability follow the original question projection.
+  Scientific findings, team tasks, superseded questions and operational pause
+  history are excluded. A local unsaved edit is an additional indicator on the
+  same question, never another answer.
+- **Study understanding** counts confirmed context contributions and pending
+  interpretations within the current model scope. Optional empty context fields
+  do not create unanswered tasks.
+- **Run preparation** reports saved or unsaved instructions, selected files and
+  the existing launch form's input check. Response completion is not scientific
+  readiness and does not introduce a new launch gate.
+
+Labels navigate to the corresponding section; nonzero counts open the first
+exact matching item. Zero counts remain text, while the row label reaches its
+honest empty state. Navigation opens enclosing disclosures, focuses a heading or
+summary without entering an editor, clears the sticky toolbar and briefly marks
+the destination. **Back to rerun summary** restores the invoking control and
+reading offset; if saving removes that count, it returns to the same row label.
+Changed or ambiguous sources are reported rather than replaced by a guessed
+destination. Polling never replays navigation or changes answer status.
+
+One preparation card changes with the current phase's scientific history.
+Before its first scientific run, **Instructions and run settings** opens directly
+to the preparation form, with no rerun summary or duplicate heading. Once a run
+exists, **Revise and rerun** (P5: **Revise report**) contains the compact summary
+and a nested **Edit instructions and settings** disclosure. The nested form is
+collapsed on a fresh visit, remains mounted, and retains the original explicit
+Start action. A title transition during work preserves the open form and drafts.
+P4 **Prepare further work** enters this same card with the issue's exact source,
+retains the draft and run settings, and offers **Back to research question**.
+It neither opens a second launch form nor starts work. A phase or method change
+clears any pending navigation request for the former scope.
+P1/P2 use shared trunk history; P3/P4/P5 use the selected method's history.
+Failed attempts and retained publications count; focused discussions and
+assessments do not. The first P2 publication may select a method for reading,
+but it preserves the mounted shared preparation form and its draft. Only an
+explicit method choice changes preparation to that method's own draft and seed.
+The shared preparation choice is retained through phase navigation, run-history
+return and reload. With one automatically displayed method, **Prepare work on
+this method** provides that explicit choice without requiring a different method
+to be selected first. Team work and history remain siblings. Team recommendations
+remain blue, researcher input is orange, and system settings/navigation are
+navy. Activity and Record role markers remain teal-green. The revision card shell uses
+muted purple in both themes, including its title band, outline and separators;
+its controls retain their original role colors. Card headings remain 17px with a neutral
+outline and title separator. Exact question and context anchors, same-tab draft
+notifications, reduced-motion behavior and scope-bound return sessions preserve
+keyboard access and drafts without adding a scientific artifact contract.
+
+### Phase 3 theory preparation
+
+The P3 card uses the same lifecycle, with **Establish theory** and **Revise theory**
+as separate work choices. Its heading follows scientific run history; the initial
+work choice follows server eligibility. An untouched form prefers revision when
+eligible, otherwise establishment. A saved or explicitly selected mode remains
+selected through polling. Failed first work does not establish a revision basis,
+and an assessment alone does not turn the initial card into a rerun card.
+
+Revision actions from a claim, assumption, saved assessment or phase issue prepare
+this one card. Preparing next work from a P3 pause also reaches it. Assessment-only
+requests remain separate because they save an assessment without publishing theory.
+Preparing, saving, choosing sources and answering questions never start a run.
+The final action names the work: **Start theory development** or **Start theory
+revision**. Current work, including a pause, continues to block another launch.
+
+A focused revision displays the exact selected component and its source inside
+settings, with an explicit action to clear the focus. Its scope includes affected
+consequences and still produces a complete theory account. The component target
+and optional assessment ID remain separate from selected issue sources. The
+existing contract supplies current aligned theory and optional empirical evidence;
+there is no extra baseline selector, scientific stage or readiness score.
+
+Current issues authored in another phase can be carried into P3 with their exact
+source phase and provenance intact. Selected sources outside the current-phase
+issue list appear under **Additional selected issue sources**, labeled **Selected
+source N**, with factual copy that they remain attached to the request. This group
+does not imply that a source is earlier or has been replaced.
+
+P3 scientific accounts render inline saved-source citations through verified
+bindings from their producing publication. Run links require a matching sealed
+output; artifact and relative links require one declared, digest-matching file;
+generation links retain the exact source in the producing run's frozen basis.
+The same projection serves current and historical documents. Blue source controls
+open these exact records or existing artifact URLs. Missing, changed or ambiguous
+sources remain readable with **source unavailable**, without a current-source
+substitution or arbitrary file lookup.
+
+Reusable instructions persist for the method lineage. Exact target metadata is
+retained beside the prose in the browser draft and is checked against the current
+theory and full method identity before launch. Missing or changed linkage keeps
+the inspected target visible and blocked until the user clears or reselects it.
+Neither polling nor a new publication silently substitutes a target. Generated
+directions are shown separately from researcher prose so replacing or clearing a
+target cannot leave contradictory old directions. Successful launch cleanup must
+not discard edits made while launch was pending. Failed launches keep preparation.
+
+An explicit preparation action opens the settings and focuses a stable element
+below the sticky toolbar, with a return path to the invoking component. Ordinary
+refresh does not repeat that navigation. The compact summary remains an overview
+of the original question and study-understanding editors.
 
 ## 3. Live updates
 
@@ -697,6 +868,23 @@ and may consume a small number of provider tokens.
 Run activity streams over SSE. Show recorded stage/member progress and
 terminal errors without inventing experimental progress that was not emitted.
 The project view refreshes during work while preserving its research context.
+Its initial read loads the selected scope; recurring polling pauses while the
+tab is hidden and resumes when it becomes visible. Leaving a scope cancels its
+outstanding browser reads. A failed refresh cancels sibling reads, and an
+abandoned request must not replace the new scope's data or create an error.
+Expensive artifact, readiness and pending-question reads run outside the main
+server event loop so local status and unrelated reading remain responsive.
+Pending-question aggregation reads the current decisions directly rather than
+constructing every historical artifact. A readiness response reuses each
+mode's calculated basis for its gate checks; run creation still verifies the
+current inputs independently. No long-lived cache changes scientific freshness.
+Same-scope refreshes capture the current reading anchor immediately before
+committing results, after any reading during the request. A visible focused
+control keeps its screen position without being refocused; otherwise the
+nearest stable reading anchor is used. A short, bounded resize observation
+also accounts for delayed tables. Reader input cancels this preservation;
+scope changes, disconnected content and unmount dispose it. Publication must
+not move the active reading control behind the sticky phase toolbar.
 Raw event and thread data remain in execution detail.
 Waiting for researcher direction closes the activity stream without making the
 run terminal. If the run resumes in another view, its open activity page
@@ -710,3 +898,42 @@ Busy dialogs consistently disable dismissal by Escape, backdrop and Close.
   target; it does not grant permission to change that target.
 - No collaborative editing or external notification integrations. Research
   progress and failures are visible within the workbench.
+
+### P5 report and appendix reading
+
+P5 presents one continuous report with the existing seven exact-version section
+discussion/comment actions. An explicit `section_anchors.references` declaration
+places the bibliography after scientific content without adding a discussion
+action. The full-document block structure supplies heading paths and citation
+targets; partitioning does not reparse scientific substrings. Reproduction
+discussion excludes the declared bibliography and all supplementary documents.
+Reports without the declaration preserve historical reading semantics.
+
+Report tools expose the full offline HTML edition containing the report and its
+declared materials. The main report keeps its bibliography after the scientific
+account. Separately linked Markdown supporting documents, including the proof
+appendix, open as rendered HTML in their own in-app source dialogs, with exact
+document anchors and links. A material-specific HTML edition retains the full
+offline bundle and the existing optional print selection; it does not hide other
+screen content. Verified assets, exact report provenance and review status remain
+in the offline edition. Retained Markdown and LaTeX remain available as sources.
+The main report uses a compact reading budget without hard word or equation caps.
+HTML reading, mathematics, figures, citations and cross-document links are the
+acceptance surface; PDF export and pagination checks apply only if explicitly
+requested later. These presentation choices do not create a new scientific
+generation or confer independent review on revisions.
+
+### Connection guidance beside run controls
+
+Run preparation displays compact team-level credential configuration from the
+existing project API projection. It respects provider-file defaults, member
+overrides, environment credentials and retained member accounts. A global OpenAI
+connection flag is not a universal prerequisite. Configured credentials are not
+presented as a verified connection or a ready numerical runtime.
+
+Team Settings is the common action; OpenAI Account appears when account-backed
+credentials are missing. Setup details identify affected members. These actions
+are ordinary buttons, never form submissions or model probes. Settings open
+above the current reader so run drafts and reading position remain intact;
+closing settings refreshes the existing project/readiness query. The guidance
+adds no scientific gate, automatic paid test, or new onboarding wizard.

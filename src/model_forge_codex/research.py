@@ -348,7 +348,9 @@ def _citation_projection(binding: dict, snapshot: dict | None, card_for) -> dict
 
 def _issue_citation_projection(project_dir: Path, issues: list[dict]) -> None:
     """Add display-only citations without consulting a newer source revision."""
-    if not any(ref.get("entry_ref") for issue in issues for ref in issue.get("source_refs", [])):
+    # Audits can also retain plain record IDs and manuscript locations here.
+    if not any(isinstance(ref, dict) and ref.get("entry_ref")
+               for issue in issues for ref in issue.get("source_refs", [])):
         return
     phase_dir = project_dir / "branches" / "trunk" / "phases" / "p1"
     try:
@@ -357,7 +359,8 @@ def _issue_citation_projection(project_dir: Path, issues: list[dict]) -> None:
         packages = []
     snapshots = {}
     for issue in issues:
-        bindings = [ref for ref in issue.get("source_refs", []) if ref.get("source_id") and ref.get("entry_ref")]
+        bindings = [ref for ref in issue.get("source_refs", [])
+                    if isinstance(ref, dict) and ref.get("source_id") and ref.get("entry_ref")]
         if not bindings:
             continue
         issue["citations"] = []
@@ -599,15 +602,21 @@ def _literature_projection(project_dir: Path, records: dict, result: dict) -> No
     result["cards"].extend(card for source in library["sources"] for card in source["cards"])
 
 
+def _primary_document_pointer(document):
+    if not isinstance(document, dict):
+        return None
+    return (document.get("report_artifact") or document.get("primary_artifact") or document.get("manuscript_artifact")
+            or next((r.get("artifact") for r in document.get("representations") or []
+                     if isinstance(r, dict) and r.get("information_layer") == "primary_artifact"), None))
+
+
 def _primary_document(project_dir: Path, ref: dict, document) -> dict:
-    """Open an authored manuscript only through its producing run and digest."""
+    """Open an authored document only through its producing run and digest."""
     if not isinstance(document, dict):
         return {}
-    label = "report" if document.get("record_type") == "technical_report" or ref.get("family") in {"technical_report", "technical_report_candidate"} else "manuscript"
-    pointer = document.get("report_artifact") or document.get("primary_artifact") or document.get("manuscript_artifact")
-    if not pointer:
-        pointer = next((r.get("artifact") for r in document.get("representations", [])
-                        if r.get("information_layer") == "primary_artifact"), None)
+    analyst_account = ref.get("family") == "analyst_synthesis"
+    label = "Analyst account" if analyst_account else "report" if document.get("record_type") == "technical_report" or ref.get("family") in {"technical_report", "technical_report_candidate"} else "manuscript"
+    pointer = _primary_document_pointer(document)
     if not isinstance(pointer, dict):
         return {}
     relative = Path(pointer.get("path", ""))
@@ -632,7 +641,19 @@ def _primary_document(project_dir: Path, ref: dict, document) -> dict:
         result = {"primary_artifact_url": url, "primary_source_verified": True,
                   "primary_artifact_media_type": file_media(target),
                   "primary_artifact_kind": "tex_source" if suffix == ".tex" else "pdf" if suffix == ".pdf" else "markdown" if suffix == ".md" else "source"}
-        if suffix in (".md", ".txt", ".tex"):
+        if analyst_account and suffix == ".json":
+            from .table_exhibits import MAX_SOURCE_BYTES
+            if target.stat().st_size > MAX_SOURCE_BYTES:
+                result["document_error"] = "The readable Analyst account exceeds the source preview limit. Open the original account to read it in full."
+            else:
+                try:
+                    content = json.loads(target.read_text(encoding="utf-8"))
+                    if not isinstance(content, dict):
+                        raise ValueError("The account is not a JSON object.")
+                    result.update(primary_artifact_kind="json", primary_content=content)
+                except (OSError, UnicodeError, ValueError):
+                    result["document_error"] = "The readable Analyst account could not be decoded as a JSON object."
+        elif suffix in (".md", ".txt", ".tex"):
             try:
                 text = target.read_text(encoding="utf-8")
                 if suffix == ".tex":
@@ -683,6 +704,9 @@ def _document_projection(project_dir: Path, document, meta: dict) -> dict:
               "body_md": body, "body": body, "structured": document,
               "method_identity": document.get("method_identity") if isinstance(document, dict) else None,
               **_primary_document(project_dir, meta["generation_ref"], document)}
+    if meta.get("phase") == "P3" and isinstance(document, dict):
+        from .research_sources import scientific_document_sources
+        result["inline_sources"] = scientific_document_sources(project_dir, document, meta, result["body_md"])
     if kind in {"manuscript", "manuscript_candidate", "technical_report", "technical_report_candidate"} and isinstance(document, dict):
         from .research_sources import artifact_link, authored_pointer
         ref = meta["generation_ref"]
@@ -877,6 +901,44 @@ def _theory_assessment_projection(project_dir: Path, records: dict, theory: dict
     return projected, dispositions
 
 
+def _decision_projection(document: dict, meta: dict) -> dict:
+    outcome = document.get("scientific_outcome") or {}
+    return {**document, **meta, "outcome": outcome.get("state", ""),
+            "conclusion": document.get("current_conclusion") or outcome.get("conclusion", ""),
+            "material_disagreement": document.get("material_disagreement", outcome.get("material_disagreement", []))}
+
+
+def current_decisions_view(project_dir: Path) -> list[dict]:
+    """Read exact current decisions without projecting unrelated scientific history."""
+    decisions = []
+    branches = project_dir / "branches"
+    if not branches.is_dir():
+        return decisions
+    for branch_dir in sorted(branches.iterdir()):
+        if not branch_dir.is_dir():
+            continue
+        for phase_dir in sorted((branch_dir / "phases").glob("p[1-5]")):
+            try:
+                pointers = current_records(phase_dir)
+            except ArtifactError:
+                continue
+            for family, pointer in pointers.items():
+                if family.split(".", 1)[-1] not in ("decision", "phase_decision"):
+                    continue
+                try:
+                    document = read_generation(phase_dir, family, pointer)
+                except ArtifactError:
+                    continue
+                if not isinstance(document, dict):
+                    continue
+                ref = source_ref(branch_dir.name, phase_dir.name.upper(), family, pointer)
+                meta = {"branch": branch_dir.name, "phase": phase_dir.name.upper(), "family": family,
+                        "generation_ref": ref, "source_url": record_url(project_dir.name, ref),
+                        "published_at": pointer.get("published_at", "")}
+                decisions.append(_decision_projection(document, meta))
+    return decisions
+
+
 def artifacts_view(project_dir: Path, branch: str | None = None, *, _p4_records: dict | None = None,
                    _p4_metadata: dict | None = None) -> dict:
     result = {key: [] for key in ("cards", "summaries", "scores", "exhibits", "diagnostics", "claim_maps",
@@ -934,10 +996,7 @@ def artifacts_view(project_dir: Path, branch: str | None = None, *, _p4_records:
                     if suffix == "protocol" and isinstance(doc.get("cases"), list):
                         result["case_manifests"].append({"cases": effective_protocol(doc)["cases"], **meta})
                 elif suffix in ("decision", "phase_decision") and isinstance(doc, dict):
-                    outcome = doc.get("scientific_outcome") or {}
-                    result["decisions"].append({**doc, **meta, "outcome": outcome.get("state", ""),
-                                                 "conclusion": doc.get("current_conclusion") or outcome.get("conclusion", ""),
-                                                 "material_disagreement": doc.get("material_disagreement", outcome.get("material_disagreement", []))})
+                    result["decisions"].append(_decision_projection(doc, meta))
                     result["scores"].extend({**score, **meta} for score in doc.get("method_scores", []) if isinstance(score, dict))
     # Derive the graph from the complete theory, with the candidate as an explicit legacy fallback.
     status_catalog: dict | None = None
@@ -981,6 +1040,8 @@ def artifacts_view(project_dir: Path, branch: str | None = None, *, _p4_records:
                     answer = answers.get(question["question_id"])
                     if answer:
                         question["result"] = {**answer, "generation_ref": analyst_meta.get("generation_ref")}
+                        if isinstance(_primary_document_pointer(analyst), dict):
+                            question["result"]["has_full_analyst_account"] = True
                         question.update(conclusion=answer.get("answer_markdown", ""), status=answer.get("outcome"),
                                         category=answer.get("category"), title=answer.get("title") or question["title"])
                         for key in ("test_ids", "case_ids", "metric_ids", "exhibit_ids", "plan_revision_ids"):
@@ -1002,7 +1063,9 @@ def artifacts_view(project_dir: Path, branch: str | None = None, *, _p4_records:
                             groups[key]["count"] += 1
                         question["excluded_observations"] = list(groups.values())
                 if isinstance(lead, dict) and isinstance(lead.get("decision_summary"), dict) and _same_evaluation(meta, lead_meta):
+                    from .research_sources import empirical_run_sources
                     summary = {**lead, **lead_meta}
+                    summary["run_sources"] = empirical_run_sources(project_dir, lead, lead_meta, records)
                     evaluated_method = evaluated_method_projection(project_dir, lead, lead_meta["generation_ref"], _p4_metadata)
                     if evaluated_method:
                         summary["evaluated_method"] = evaluated_method

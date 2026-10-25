@@ -37,6 +37,7 @@
     "pyproject.toml",
     "docs/model-access.md",
     "docs/development.md",
+    "docs/installation.md",
     "npm-release-manifest.json",
     "scripts/npm_launcher.py",
     "scripts/npm_snapshot.py",

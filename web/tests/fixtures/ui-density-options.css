@@ -1,6 +1,6 @@
 /* Proposal-only overrides. Production UI and research content are unchanged. */
 #root > details { display:none; }
-.density-controls { position:fixed; right:12px; bottom:12px; z-index:100; max-width:min(350px,calc(100vw - 24px)); padding:10px 14px; background:var(--panel); color:var(--ink); border:1px solid var(--control-line); border-radius:12px; box-shadow:var(--popover-shadow); font:13px/1.5 var(--font-ui); }
+.density-controls { position:fixed; right:12px; bottom:12px; z-index:100; max-width:min(350px,calc(100vw - 24px)); padding:10px 14px; background:var(--panel); color:var(--ink); border:1px solid var(--control-line); border-radius:12px; box-shadow:0 4px 16px #0003; font:13px/1.5 var(--font-ui); }
 .density-controls summary { min-height:24px; display:flex; align-items:center; font-weight:600; }
 .density-controls p { margin:10px 0; }
 .density-controls div { display:grid; grid-template-columns:1fr 1fr; gap:8px; }

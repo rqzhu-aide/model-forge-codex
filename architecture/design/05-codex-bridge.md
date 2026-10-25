@@ -58,6 +58,12 @@ covers the installed SDK transport and scripted member turns.
   submitted configuration from acknowledged model/provider/effort; simulated
   tests identify their acknowledgement as simulated. The adapter depends on
   installed SDK internals and needs checking when that package changes.
+  Resume validates all existing top-level acknowledgement fields and the exact
+  requested thread ID, while ignoring unused returned thread history. A newer
+  shared CLI can add historical activity types absent from the pinned SDK;
+  these do not prevent resume or alter the saved history. Invalid settings
+  acknowledgements still fail, with a concise schema diagnostic that excludes
+  historical message content. Active-writer conflicts are reported separately.
 - Captured member `AGENTS.md` is supplied as `developer_instructions` without
   replacing Codex base instructions. Non-Windows native instruction discovery
   remains enabled. Its available source metadata is recorded, but the harness does
@@ -95,6 +101,16 @@ covers the installed SDK transport and scripted member turns.
   rollout/separate database arrangement. See [ADR-005](../decisions/ADR-005-per-member-codex-homes.md).
 - Output schemas are included in the brief; the current SDK call does not
   enforce a structured final chat response as the scientific artifact.
+- P4 continuation briefs summarize added plan declarations by count instead of
+  repeating full case and metric grids. Amendment reasons, inferential consequences,
+  ordering, deferrals and all work-item limits remain inline. The brief directs
+  members to the exact saved controller state for complete scientific declarations
+  before executing or interpreting affected work; saved plans are unchanged.
+- Structured P4 diagnostics, protocols, case manifests and metric rows larger
+  than 32 KiB travel as complete file references with SHA-256 hashes and explicit
+  read instructions in both upstream and same-run handoffs. Authored synthesis
+  and handoff narratives remain inline. Source bytes and recipient access stay
+  unchanged; this avoids repeating large historical records in provider inputs.
 - The optional shared `providers.toml` governs the members it names: their
   stored provider, model, and effort settings yield to the file; other members
   keep their stored settings. The API and each turn use the same resolver;
@@ -115,10 +131,18 @@ independent of provider. Its callback is bound to the active run, stage and
 member; the model cannot select a different owner, project or validation scope.
 It checks the caller's declared draft files and permitted sealed inputs using
 the same pinned schema, reference and deterministic consistency rules as
-publication. It reports findings and deferred checks without writing files,
-running research scripts, publishing, or evaluating scientific correctness.
+publication. It reports findings and deferred checks without changing research
+artifacts, running research scripts, publishing, or evaluating scientific correctness.
 Independent peers' drafts and inputs excluded by the phase's role-specific
 delivery rules remain unavailable through the tool.
+
+Member-facing validation responses are bounded to 16 KiB. Small reports retain
+their original shape. Oversized reports retain an exact execution-local copy
+and a credential-redacted member-readable copy, with its path and digest in the
+response. Counts, representative findings and explicit omission counts help the
+member inspect the relevant parts without flooding its context. Internal checks,
+recovery fingerprints and publication decisions still use all findings. Diagnostic
+copies use generated filenames and never replace scientific outputs.
 
 Members may call it repeatedly in an ordinary turn. A call does not start a
 second model or consume an automatic repair round. After submission, the engine
@@ -192,6 +216,10 @@ the generic `item/tool/call` callback. Registration, resumed-thread persistence
 and result delivery were verified against its installed runtime. Declarations
 are fixed at thread creation, so changing the retrieval tool set requires a
 new thread. These SDK internals must be rechecked on SDK upgrades.
+After this transition, the native startup check and research turn reuse the
+same newly acknowledged thread. An empty registry receipt does not hide the
+bridge's matching tool acknowledgement. A nonempty saved mismatch still takes
+precedence; absent compatibility evidence requires a fresh thread.
 
 ### Provider connection probe
 
@@ -223,6 +251,10 @@ Actual provider/model combinations require their own connection tests.
   with exit status and the failed marker or cleanup condition so an operator can
   investigate the actual failure. A failed check never supplies a scientific
   finding, triggers an automatic paid retry, or relaxes the sandbox.
+  On Windows, the bridge serializes these checks through command completion and
+  cleanup because they can refresh shared sandbox permissions. Thread startup
+  and subsequent research remain parallel. This lock coordinates checks in one
+  bridge; it does not control other Codex processes or later member commands.
 - **Provider failure or rate limit**: returned SDK failures become visible
   run failures. Automatic pause-until-reset and retry scheduling remain
   intended capabilities; the service does not silently resume paid work.
@@ -254,7 +286,39 @@ confirmation that the exact latest provider turn stopped with that capacity
 error before retry. The retry retains frozen inputs, completed experiments and
 the remaining budget. Other compaction failures do not qualify for this path.
 
+An exact JSON-RPC invalid-parameter rejection for an oversized input can also
+be retried explicitly after the brief renderer is repaired. Eligibility requires
+no acknowledged turn, a matching retained brief digest, and a brief longer than
+the reported limit. Frozen-source, member-setting and pending-execution checks
+still apply. Recovery resumes the rejected member step, preserves succeeded
+stages and remaining budget, and records the previous failure. It does not
+automatically retry or treat an ambiguous transport failure as a rejected turn.
+
+A local activity-log access error also permits explicit recovery only when its
+message identifies this run's exact event file and the app server confirms the
+receipt's exact latest turn was interrupted. The confirmation is read-only and
+does not accept a running, completed, different or unidentified turn. The saved
+receipt is checked again after that read before dispatching the interrupted
+stage. Windows JSONL appends briefly retry opening a denied handle; writes and
+closes are never replayed, and persistent access errors still surface.
+
 - Never writes formal state directly (orchestrator-only).
 - Never lets a member thread call publication, correction-authorization,
   or lifecycle tools — members get no MCP route to authority.
 - Never uses Codex `spawn_agent` for team orchestration.
+
+## Managed Windows numerical setup
+
+Managed P4 work checks the selected native configuration and Windows readiness
+before staging analyst work, and checks again before an experiment attempt.
+The supported Windows contract requires elevated sandbox mode with completed
+setup. Group presence alone is not evidence that the selected mode enforces
+the managed read, denied-read and write boundaries. The check reads native
+configuration and readiness without creating a model turn or starting sandbox
+setup. It never changes the shared configuration or weakens those boundaries.
+Other phases retain their existing native-tool requirements.
+
+Runtime setup and access-preparation failures are infrastructure failures;
+frozen source/input hash failures remain input failures. Both retain diagnostic
+evidence. A setup failure does not imply that computation ran or that the
+researcher's data should be replaced.

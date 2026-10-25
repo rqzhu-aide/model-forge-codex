@@ -11,7 +11,8 @@ import { decisionDraft, decisionOptions, decisionPriorityLabel, decisionSubmissi
 import { DecisionBrief, decisionResponseFields } from "./DecisionResponse";
 import { requestSourceReferences } from "../contextualRequests";
 
-export function IssueEntry({ issue, projectId, phase, branch, onSaved, onSource, onExplain, onAnswerSaved, onPrepare, compact = false }) {
+export function IssueEntry({ issue, projectId, phase, branch, onSaved, onSource, onExplain, onAnswerSaved, onPrepare, compact = false, headingLevel = 4 }) {
+  const SectionHeading = `h${headingLevel}`;
   const id = useId(); const key = `issue-response:${JSON.stringify([projectId, issueVersionKey(issue)])}`;
   const saved = issue.researcher_answer;
   const [localAnswer, setLocalAnswer] = useState(null);
@@ -75,7 +76,7 @@ export function IssueEntry({ issue, projectId, phase, branch, onSaved, onSource,
     <section className="issue-team-content" aria-label="Team question and context">
     {!compact && <div role="heading" aria-level={3}><ResearchDocument text={title} /></div>}
     <div className="issue-team-tools"><span className="note">{metadata}</span>{target && onExplain && <div className="btnrow issue-conversation-actions"><ActionButton action="ask" uiRole="research" disabled={busy} aria-haspopup="dialog" onClick={() => discuss()}>Discuss</ActionButton>{target.kind === "phase_issue" && <ActionButton action="ask" uiRole="research" disabled={busy} aria-haspopup="dialog" onClick={() => discuss("issue_suggestions")}>Lead suggestions</ActionButton>}</div>}</div>
-    <DecisionBrief item={issue} onSource={onSource} showMetadata={!compact} />
+    <DecisionBrief item={issue} onSource={onSource} showMetadata={!compact} headingLevel={headingLevel} />
     <details className="research-details" data-reading-anchor={`issue-context:${issueVersionKey(issue)}`}>
     <summary>Context and sources</summary>
     <p className="note issue-attribution"><span className="issue-state-badge" data-issue-state={display.state}>{display.label}</span>{(issue.original_role || issue.responsible_role) && ` · ${humanLabel(issue.original_role || issue.responsible_role)}`}</p>
@@ -84,13 +85,13 @@ export function IssueEntry({ issue, projectId, phase, branch, onSaved, onSource,
     {issue.scope && <p className="note">{issue.scope.kind === "project" ? "Applies across models." : `Applies only to this exact model version${issue.scope.model_ref?.version != null ? ` (Version ${issue.scope.model_ref.version})` : ""}.`}</p>}
     {issue.original_role === "outside_reviewer" && <p className="note">The Research Lead can explain this comment as an interpretation of the independent review.</p>}
     {issue.target_phase && issue.target_phase !== phase && <p className="note">This {teamWork ? "work" : "response"} is intended for {({ P1: "problem and literature work", P2: "model development", P3: "theory development", P4: "numerical evaluation", P5: "report work" })[issue.target_phase]}.</p>}
-    {decisionSupportSections(issue, title).map(({ text, heading, section }) => <section key={section}><h4>{heading}</h4>{contextDocument(text, section)}</section>)}
+    {decisionSupportSections(issue, title).map(({ text, heading, section }) => <section key={section}><SectionHeading>{heading}</SectionHeading>{contextDocument(text, section)}</section>)}
     {issue.disposition && issue.disposition !== "open" && <p className="note">Team assessment: {humanLabel(issue.disposition)}.{!teamWork && " Your response below is kept separately."}</p>}
     {requestSourceReferences(issue).length > 0 && <div className="btnrow issue-actions">{requestSourceReferences(issue).map(({ label, reference }, index) => <SourceRef key={index} reference={reference} onOpen={onSource} label={index === 0 ? "Read the scientific context" : label} />)}</div>}
     </details>
     </section>
-    {teamWork ? <><p className="note">{display.state === "science" ? "The team needs to investigate this question." : "The team's assessment is recorded above."} Use the further work request below to add your priorities.</p>{onPrepare && <ActionButton action="repair" uiRole="research" onClick={() => onPrepare(issue)}>Prepare further work</ActionButton>}{answer && <section className="issue-answer"><h4>Saved researcher instruction</h4><ResearchDocument text={answer.note} /><p className="note">{answerEffect(answer)}</p></section>}</>
-      : answer && !editing ? <section className="issue-answer contribution-surface" ref={editButton}><h4>Your instruction</h4><ResearchDocument text={answer.note} />{answer.origin === "unknown" && <p className="note">Still unknown. This response does not settle the question.</p>}<p className="note">{answerEffect(answer)}</p><ActionButton action="edit" uiRole="research" onClick={() => { restore(); setEditing(true); setNotice(null); globalThis.requestAnimationFrame?.(() => instructionInput.current?.focus({ preventScroll: true })); }}>Edit instruction</ActionButton></section>
+    {teamWork ? <><p className="note">{display.state === "science" ? "The team needs to investigate this question." : "The team's assessment is recorded above."} Use the further work request below to add your priorities.</p>{onPrepare && <ActionButton action="repair" uiRole="research" onClick={event => onPrepare(issue, event.currentTarget)}>Prepare further work</ActionButton>}{answer && <section className="issue-answer"><SectionHeading>Saved researcher instruction</SectionHeading><ResearchDocument text={answer.note} /><p className="note">{answerEffect(answer)}</p></section>}</>
+      : answer && !editing ? <section className="issue-answer contribution-surface" ref={editButton}><SectionHeading>Your instruction</SectionHeading><ResearchDocument text={answer.note} />{answer.origin === "unknown" && <p className="note">Still unknown. This response does not settle the question.</p>}<p className="note">{answerEffect(answer)}</p><ActionButton action="edit" uiRole="research" onClick={() => { restore(); setEditing(true); setNotice(null); globalThis.requestAnimationFrame?.(() => instructionInput.current?.focus({ preventScroll: true })); }}>Edit instruction</ActionButton></section>
       : <form className="issue-instruction-editor contribution-surface" onSubmit={save}>
         {decisionResponseFields({ item: issue, id, note, origin, choice, busy, inputRef: instructionInput, update, select, onSource })}
         {hasChoices && !questionSource && <p className="note">The exact question source is unavailable. A selected option cannot be saved until it is restored.</p>}
@@ -126,7 +127,10 @@ export default function IssuesCard({ projectId, phase, branch, methodId, modelRe
   }
   const state = issueCardState({ entries, related, activePause, activePauseKind, savedPauseCount, correctionCount });
   if (state.state === "empty" && !pause && !children && !corrections && !intro) return null;
-  const renderEntry = (issue) => <IssueEntry key={issueVersionKey(issue)} compact={questionsOnly || workOnly} issue={issue} projectId={projectId} phase={phase} branch={branch} onSaved={onSaved} onSource={onSource} onExplain={onExplain} onPrepare={onPrepare} onAnswerSaved={(answer) => setLocalAnswers((current) => ({ ...current, [issueVersionKey(issue)]: answer }))} />;
+  // Compact rows have no title heading, so their sections sit one level under the card heading.
+  const compactLevel = embedded ? 4 : 3;
+  const entryRenderer = (headingLevel) => (issue) => <IssueEntry key={issueVersionKey(issue)} compact={questionsOnly || workOnly} headingLevel={headingLevel} issue={issue} projectId={projectId} phase={phase} branch={branch} onSaved={onSaved} onSource={onSource} onExplain={onExplain} onPrepare={onPrepare} onAnswerSaved={(answer) => setLocalAnswers((current) => ({ ...current, [issueVersionKey(issue)]: answer }))} />;
+  const renderEntry = entryRenderer(questionsOnly || workOnly ? compactLevel : 4);
   const questions = entries.filter((issue) => !isWork(issue));
   const findings = entries.filter((issue) => issueDisplayKind(issue) === "scientific_issue");
   const tasks = entries.filter((issue) => issue.kind === "research_task");
@@ -140,8 +144,8 @@ export default function IssuesCard({ projectId, phase, branch, methodId, modelRe
     {pause}
     {questionsOnly ? <>{renderQuestions()}{intro}</> : progressive ? <>{renderQuestions()}{intro}{findings.length > 0 && <details className="research-details"><summary>Scientific findings ({findings.length})</summary>{findings.map(renderEntry)}</details>}{tasks.length > 0 && <details className="research-details"><summary>Team investigation tasks ({tasks.length})</summary>{tasks.map(renderEntry)}</details>}</> : entries.map(renderEntry)}
     {relatedQuestions.length > 0 && <section className="related-phase-questions"><h3>Questions carried from earlier work</h3><p className="note">Their responses stay with the original question, so you can review or edit them there.</p>{relatedQuestions.map((issue) => { const display = issueDisplayState(issue); return <div key={issueKey(issue)}><ResearchDocument text={issueLabel(issue)} /><p className="note"><span className="issue-state-badge" data-issue-state={display.state}>{display.label}</span>{issue.disposition && issue.disposition !== "open" && ` · Team assessment: ${humanLabel(issue.disposition)}`}</p>{onNavigate && <ActionButton action="details" onClick={() => onNavigate(issue.phase)}>{`Go to ${phaseLabel(issue.phase)} questions`}</ActionButton>}</div>; })}</section>}
-    {relatedWork.length > 0 && <section className="related-phase-work"><h3>Scientific work carried forward</h3><p className="note">These findings and tasks remain linked to their original scientific sources.</p>{relatedWork.map(renderEntry)}</section>}
-    {earlierEntries.size > 0 && <details className="research-details"><summary>Responses to earlier question versions ({earlierEntries.size})</summary><p className="note">These original responses do not answer the current question without an explicit link from its author.</p>{[...earlierEntries.values()].map((issue) => <IssueEntry key={issueVersionKey(issue)} compact issue={issue} projectId={projectId} phase={issue.phase} branch={issue.branch} onSaved={onSaved} onSource={onSource} onExplain={onExplain} onPrepare={onPrepare} onAnswerSaved={(answer) => setLocalAnswers((current) => ({ ...current, [issueVersionKey(issue)]: answer }))} />)}</details>}
+    {relatedWork.length > 0 && <section className="related-phase-work"><h3>Scientific work carried forward</h3><p className="note">These findings and tasks remain linked to their original scientific sources.</p>{relatedWork.map(entryRenderer(4))}</section>}
+    {earlierEntries.size > 0 && <details className="research-details"><summary>Responses to earlier question versions ({earlierEntries.size})</summary><p className="note">These original responses do not answer the current question without an explicit link from its author.</p>{[...earlierEntries.values()].map((issue) => <IssueEntry key={issueVersionKey(issue)} compact headingLevel={compactLevel} issue={issue} projectId={projectId} phase={issue.phase} branch={issue.branch} onSaved={onSaved} onSource={onSource} onExplain={onExplain} onPrepare={onPrepare} onAnswerSaved={(answer) => setLocalAnswers((current) => ({ ...current, [issueVersionKey(issue)]: answer }))} />)}</details>}
     {children}{corrections}
   </div></section>;
 }

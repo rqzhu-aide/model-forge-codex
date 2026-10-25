@@ -24,8 +24,18 @@ Options:
   --help            Show this help.
   --version         Show the package version.
 
-First-time Python setup, using your shared Python installation:
-  python -m pip install --user "fastapi>=0.115" "uvicorn>=0.30" "jsonschema>=4.20" "httpx>=0.27" "openai-codex>=0.147,<0.148"
+First-time Python setup:
+  Choose a shared Python 3.11+ installation using the OS-specific instructions:
+  https://github.com/rqzhu-aide/model-forge-codex/blob/main/docs/installation.md
+  Use that same absolute executable for -m pip and MF_PYTHON (or --python).
+${process.platform === "win32" ? `  PowerShell, after choosing your shared installation:
+    $mfPython = py -3 -c "import sys; print(sys.executable)"
+    & $mfPython -m pip install --user "fastapi>=0.115" "uvicorn>=0.30" "jsonschema>=4.20" "httpx>=0.27" "openai-codex>=0.147,<0.148"
+    $env:MF_PYTHON = $mfPython` : `  POSIX shell, using the absolute path from the setup instructions:
+    mf_python="/absolute/path/to/python3"
+    "$mf_python" -m pip install --user "fastapi>=0.115" "uvicorn>=0.30" "jsonschema>=4.20" "httpx>=0.27" "openai-codex>=0.147,<0.148"
+    export MF_PYTHON="$mf_python"`}
+  Keep MF_PYTHON set in this shell for web, status and stop.
 
 No project environment is created. Configure model access in the workbench.
 `;
@@ -87,6 +97,14 @@ export function userPath(value, cwd = process.cwd()) {
   return path.resolve(cwd, value);
 }
 
+export function normalizeUserPaths(env = process.env, cwd = process.cwd()) {
+  const environment = { ...env };
+  for (const name of ["MF_CODEX_HOME", "CODEX_HOME", "MF_P4_PYTHON", "MF_P4_RSCRIPT", "MF_CODEX_PROVIDER_CONFIG", "MF_SHARED_NODE_MODULES"]) {
+    if (environment[name]) environment[name] = userPath(environment[name], cwd);
+  }
+  return environment;
+}
+
 export async function main(args = process.argv.slice(2)) {
   const { command, values } = parseOptions(args);
   if (values.help) { console.log(help); return 0; }
@@ -109,10 +127,7 @@ export async function main(args = process.argv.slice(2)) {
   if (values.port) forwarded.push("--port", values.port);
   if (values["no-open"]) forwarded.push("--no-open");
   // User paths belong to the invoking terminal, never the transient npm cache.
-  const environment = { ...process.env };
-  for (const name of ["MF_CODEX_HOME", "CODEX_HOME", "MF_P4_PYTHON", "MF_CODEX_PROVIDER_CONFIG", "MF_SHARED_NODE_MODULES"]) {
-    if (environment[name]) environment[name] = userPath(environment[name]);
-  }
+  const environment = normalizeUserPaths();
   const child = spawn(python, forwarded, {
     cwd: appRoot, stdio: "inherit", windowsHide: true, shell: false,
     detached: process.platform !== "win32",

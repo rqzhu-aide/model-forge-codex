@@ -310,7 +310,9 @@ def open_attention_items(project_dir: Path, resolved: dict, *, include_closed: b
             candidates = [*(saved.get("history") or []), {**saved, "attention_id": key}] if isinstance(saved, dict) else []
             answered = any(answer_matches_question({**answer, "attention_id": key}, item)
                            for answer in candidates if isinstance(answer, dict))
-        if (not include_closed and item.get("disposition", "open") != "open") or answered:
+        pending = (item.get("disposition", "open") == "open"
+                   or (item.get("kind") == "research_task" and item.get("disposition") == "partially_fixed"))
+        if (not include_closed and not pending) or answered:
             continue
         identifiers = item.get("affected_record_ids") or []
         related = {}

@@ -56,6 +56,21 @@ test("small inline tables retain their complete rendering without pagination", (
   }
 });
 
+test("CSV decimals are readable without changing identifiers, missing values or source precision", () => {
+  const values = ["0.23013620876152083", "0.2302396069617", "2.2349999999999994", "2.220446049250313e-16", "001.20", "cal.1", "2000", "1e999", "1e-999", "3e-324", "1e-323", "1e-320", "1.0000000000000001", "9007199254740993", "0", "", false, "[-0.01,0.02]"];
+  const table = { columns: [{ key: "value", label: "Recorded value" }], rows: values.map(value => ({ value })) };
+  const before = structuredClone(table); const html = render(table);
+  assert.match(html, /title="Recorded value: 0.23013620876152083">0.230136<\/td>/);
+  assert.match(html, />0.23024<\/td>/);
+  assert.match(html, />2.235<\/td>/);
+  assert.match(html, />2.22045e-16<\/td>/);
+  for (const value of ["001.20", "cal.1", "2000", "1e999", "1e-999", "3e-324", "1e-323", "1e-320", "9007199254740993", "0", "false", "[-0.01,0.02]"]) assert.ok(html.includes(`>${value}</td>`), value);
+  assert.match(html, /title="Recorded value: 1.0000000000000001">1<\/td>/);
+  assert.match(html, />Not recorded<\/td>/);
+  assert.match(html, /original table retains full precision/);
+  assert.deepEqual(table, before);
+});
+
 test("server pages preserve their full rows, offsets and existing URL controls", () => {
   const table = { ...tableWithRows(200), row_offset: 200, total_rows: 401, truncated: true, previous_page_url: "/api/table?offset=0", next_page_url: "/api/table?offset=400" };
   const before = JSON.stringify(table); const page = artifactTablePage(table, 25); const html = render(table);

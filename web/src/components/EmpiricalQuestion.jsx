@@ -1,9 +1,10 @@
 import React, { useId, useState } from "react";
 import { fmt, humanLabel, OUTCOMES } from "../research";
 import { coverageForTab, evidenceTab, hasEmpiricalFollowup, theoryClaimSource } from "../empirical";
+import { researchBlocks } from "../researchMarkdown";
 import { Dialog, Outcome, RunState, SourceRef } from "./Shared";
 import ResearchDocument from "./EmpiricalDocument";
-import { ActionButton, ActionIcon } from "./Visuals";
+import { ActionButton, ActionIcon, EmptyState } from "./Visuals";
 import ArtifactTable from "./ArtifactTable";
 
 export const EVIDENCE_TABS = [["setup", "Synthetic example"], ["comparisons", "Performance"], ["computation", "Computation"], ["tuning", "Tuning"], ["sensitivity", "Robustness"]];
@@ -94,18 +95,33 @@ export default function EmpiricalQuestion({ question, cases = [], diagnostics = 
       </details>}
     </section>
     <Passage title="Implication for the model" text={result.decision_implication_markdown} />
-    <div className="btnrow"><SourceRef reference={result.generation_ref || question.generation_ref} onOpen={onSource} />{onRequest && hasEmpiricalFollowup(question) && <ActionButton action="check" uiRole="research" variant="link" onClick={() => onRequest(question)}>Request another check</ActionButton>}</div>
+    <div className="btnrow"><SourceRef reference={result.generation_ref || question.generation_ref} onOpen={onSource} label={result.has_full_analyst_account ? "Open full Analyst account" : "Open source"} />{onRequest && hasEmpiricalFollowup(question) && <ActionButton action="check" uiRole="research" variant="link" onClick={() => onRequest(question)}>Request another check</ActionButton>}</div>
   </article>;
+}
+
+function CaseConditions({ value }) {
+  if (value == null) return <span>Not recorded</span>;
+  if (typeof value === "string") return <ResearchDocument text={value} />;
+  if (Array.isArray(value)) return value.length
+    ? <ul className="research-items">{value.map((item, index) => <li key={index}><CaseConditions value={item} /></li>)}</ul>
+    : <code>[]</code>;
+  if (typeof value === "object") return Object.keys(value).length
+    ? <ul className="research-items">{Object.entries(value).map(([key, item]) => <li key={key}><b>{humanLabel(key)}:</b> {typeof item === "string" && ["latex", "symbol"].includes(key) ? <ResearchDocument text={{ latex: item }} /> : <CaseConditions value={item} />}</li>)}</ul>
+    : <code>{"{}"}</code>;
+  return <span>{String(value)}</span>;
 }
 
 export function EmpiricalQuestionSetup({ question, cases = [], onSource, onTheory }) {
   const result = question.result || {};
   const settings = cases.filter((item) => question.case_ids?.includes(item.case_id));
+  const conditions = (item) => [item.conditions, item.regime, item.description].find((value) =>
+    typeof value === "string" ? value.trim() : value && typeof value === "object" ? Object.keys(value).length : value != null
+  ) ?? "No separate conditions are recorded.";
   return <section className="empirical-question-setup"><h4>{question.title || question.question || question.hypothesis || "Study design"}</h4>
     <ResearchDocument text={result.design_markdown || question.caption || question.design || "A separate study-design account is not recorded for this question."} />
     {(result.conditions_markdown || question.scope || question.conditions) && <ResearchDocument text={result.conditions_markdown || question.scope || question.conditions} />}
     {question.falsification_rule && <div><b>What would count against the claim?</b><ResearchDocument text={question.falsification_rule} /></div>}
-    {settings.length > 0 && <details className="research-details empirical-question-cases"><summary>Experiment settings ({settings.length})</summary><div className="table-scroll" tabIndex={0} role="region" aria-label={`Experiment settings for ${question.title || question.question || question.hypothesis || "this question"}`}><table className="empirical-case-table"><caption className="sr-only">Authored conditions and planned repetitions</caption><thead><tr><th scope="col">Setting</th><th scope="col">Conditions</th><th scope="col">Comparator</th><th scope="col">Planned repetitions</th></tr></thead><tbody>{settings.map((item) => <tr key={item.case_id}><th scope="row">{item.label || item.title || humanLabel(item.case_id)}</th><td><ResearchDocument text={item.conditions || item.regime || item.description || "No separate conditions are recorded."} /></td><td>{item.baseline_label || humanLabel(item.comparator_id || "Not recorded")}</td><td>{item.replicates?.length ?? "Not recorded"}</td></tr>)}</tbody></table></div></details>}
+    {settings.length > 0 && <details className="research-details empirical-question-cases"><summary>Experiment settings ({settings.length})</summary><div className="table-scroll" tabIndex={0} role="region" aria-label={`Experiment settings for ${question.title || question.question || question.hypothesis || "this question"}`}><table className="empirical-case-table"><caption className="sr-only">Authored conditions and planned repetitions</caption><thead><tr><th scope="col">Setting</th><th scope="col">Conditions</th><th scope="col">Comparator</th><th scope="col">Planned repetitions</th></tr></thead><tbody>{settings.map((item) => <tr key={item.case_id}><th scope="row">{item.label || item.title || humanLabel(item.case_id)}</th><td><CaseConditions value={conditions(item)} /></td><td>{item.baseline_label || humanLabel(item.comparator_id || "Not recorded")}</td><td>{item.replicates?.length ?? "Not recorded"}</td></tr>)}</tbody></table></div></details>}
     {question.statement_ids?.length > 0 && <div><h4>Claims in the theory used for this evaluation</h4>{question.statement_ids.map((claim) => { const source = theoryClaimSource(question, claim); return <ActionButton action="details" key={claim} aria-label={`Inspect tested claim: ${humanLabel(claim)}`} disabled={!source || !onTheory} onClick={() => onTheory?.(...source)}>{humanLabel(claim)}</ActionButton>; })}{!question.theory_context?.tested_ref && <p className="note">The exact theory source is unavailable for these links.</p>}</div>}
     <SourceRef reference={question.generation_ref} onOpen={onSource} />
   </section>;
@@ -115,21 +131,24 @@ export function EmpiricalDecisionSummary({ record, questions = [], dataSources =
   const summary = record?.decision_summary; const method = record?.evaluated_method;
   const outcome = record?.scientific_outcome;
   const conciseOutcome = [outcome?.conclusion, outcome?.scope].every((text) => typeof text === "string" && text.trim());
+  const formulationBlocks = summary?.method_formulation_markdown ? researchBlocks(summary.method_formulation_markdown) : [];
+  const fullFormulation = formulationBlocks.length > 1;
+  const formulationRecap = fullFormulation && formulationBlocks[0].kind === "paragraph" ? formulationBlocks[0].text : null;
   const anchor = `evaluation:${record?.generation_ref?.generation_id || record?.branch || "overview"}`;
   const source = (field) => <SourceRef reference={record?.generation_ref && { ...record.generation_ref, entry_pointer: `/decision_summary/${field}` }} onOpen={onSource} label="Summary source" />;
   const questionIds = [...new Set((summary?.coverage || []).flatMap((entry) => entry.question_ids || []))];
   const questionLinks = questionIds.map((id) => questions.find((question) => (question.id || question.question_id || question.test_id) === id)).filter(Boolean);
   return <section className="card empirical-decision" data-card-role="summary"><h2>Summary</h2><div className="body" data-overview-complete={Boolean(summary?.implementation_markdown && (summary?.method_formulation_markdown || method?.summary))}>
-    {!summary ? <p className="note">{awaitingDirection ? "This evaluation is waiting for your direction. Inspect the latest attempt in Activity; any recorded questions appear below. No reviewed implementation or performance account has been published yet." : ["failed", "cancelled"].includes(progressState) ? "The evaluation stopped before publication. Inspect Activity for the interruption and available recovery actions. Saved experiments remain in the evaluation plan below." : hasProgress ? "The evaluation is in progress. Its implementation and performance account will appear after scientific review." : "No reviewed implementation or performance account has been published for this model yet."}</p> : <>
+    {!summary ? <EmptyState><p className="note">{awaitingDirection ? "This evaluation is waiting for your direction. Inspect the latest attempt in Activity; any recorded questions appear below. No reviewed implementation or performance account has been published yet." : ["failed", "cancelled"].includes(progressState) ? "The evaluation stopped before publication. Inspect Activity for the interruption and available recovery actions. Saved experiments remain in the evaluation plan below." : hasProgress ? "The evaluation is in progress. Its implementation and performance account will appear after scientific review." : "No reviewed implementation or performance account has been published for this model yet."}</p></EmptyState> : <>
+      {conciseOutcome && <section className="empirical-overview-section"><h3>Current finding and scope</h3><ResearchDocument text={outcome.conclusion} /><SourceRef reference={record.generation_ref && { ...record.generation_ref, entry_pointer: "/scientific_outcome/conclusion" }} onOpen={onSource} label="Conclusion source" /><ResearchDocument text={outcome.scope} /><SourceRef reference={record.generation_ref && { ...record.generation_ref, entry_pointer: "/scientific_outcome/scope" }} onOpen={onSource} label="Scope source" /></section>}
       <section className="empirical-overview-section empirical-method-formulation"><h3>{summary.method_formulation_markdown ? "Implemented method" : "Method evaluated"}</h3>{!summary.method_formulation_markdown && method?.summary && <p className="note">Definition recorded at the start of this evaluation</p>}
-        {summary.method_formulation_markdown ? <><ResearchDocument text={summary.method_formulation_markdown} />{source("method_formulation_markdown")}</> : method?.summary ? <><ResearchDocument text={method.summary} /><SourceRef reference={method.source_ref} onOpen={onSource} label="Evaluated method source" />
+        {summary.method_formulation_markdown ? fullFormulation ? <>{formulationRecap && <><ResearchDocument text={formulationRecap} />{source("method_formulation_markdown")}</>}<details className="research-details empirical-method-definition" data-reading-anchor={`${anchor}:method-definition`}><summary>Full mathematical formulation and fitting criterion</summary><ResearchDocument text={summary.method_formulation_markdown} />{source("method_formulation_markdown")}</details></> : <><ResearchDocument text={summary.method_formulation_markdown} />{source("method_formulation_markdown")}</> : method?.summary ? <><ResearchDocument text={method.summary} /><SourceRef reference={method.source_ref} onOpen={onSource} label="Evaluated method source" />
           {(method.objective_markdown || method.target_markdown) && <details className="research-details empirical-method-definition" data-reading-anchor={`${anchor}:method-definition`}><summary>Model formulation and fitting criterion</summary>{method.objective_markdown && <ResearchDocument text={method.objective_markdown} />}{method.target_markdown && <ResearchDocument text={method.target_markdown} />}<SourceRef reference={method.source_ref} onOpen={onSource} label="Method formulation source" /></details>}</> : <p className="note">No mathematical formulation is available from the method frozen for this evaluation.</p>}
       </section>
       <section className="empirical-overview-section"><h3>What was developed and tested</h3>{summary.implementation_markdown ? <><ResearchDocument text={summary.implementation_markdown} />{source("implementation_markdown")}</> : <p className="note">This saved evaluation has no separate authored account of its implementation and completed experiments.</p>}
         {dataSources.length > 0 && <p className="note">Recorded data: {dataSources.map((entry) => `${entry.label || "Unnamed data source"} (${humanLabel(entry.origin)})`).join("; ")}</p>}
         {record.actual_data_application && <div className="empirical-actual-data"><h4>Actual data</h4><p className="note">{{ analyzed: "Analyzed", supplied_not_analyzed: "Supplied but not analyzed", not_supplied: "No actual data supplied" }[record.actual_data_application.status] || "Application status not recorded"}</p><ResearchDocument text={record.actual_data_application.summary_markdown} /></div>}
       </section>
-      {conciseOutcome && <section className="empirical-overview-section"><h3>Current finding and scope</h3><ResearchDocument text={outcome.conclusion} /><SourceRef reference={record.generation_ref && { ...record.generation_ref, entry_pointer: "/scientific_outcome/conclusion" }} onOpen={onSource} label="Conclusion source" /><ResearchDocument text={outcome.scope} /><SourceRef reference={record.generation_ref && { ...record.generation_ref, entry_pointer: "/scientific_outcome/scope" }} onOpen={onSource} label="Scope source" /></section>}
       {questionIds.length > 0 && <details className="research-details empirical-question-links" data-reading-anchor={`${anchor}:questions`}><summary>Explore evaluation questions</summary><div className="btnrow empirical-support-links">{questionLinks.map((question) => <ActionButton action="details" variant="link" key={question.id || question.question_id || question.test_id} onClick={() => onSelect?.(question.id || question.question_id || question.test_id)}>{question.question || question.title || question.hypothesis || "Evaluation question"}</ActionButton>)}</div>{questionLinks.length < questionIds.length && <p className="note">Some linked evaluation questions are unavailable in this saved account.</p>}</details>}
     </>}
   </div></section>;
