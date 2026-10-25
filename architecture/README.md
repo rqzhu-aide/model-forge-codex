@@ -5,7 +5,7 @@ models, and algorithms. A Research Lead, Theorist, Data Analyst, and Outside
 Reviewer produce structured research that the application presents as concise
 cards and a technical report. The researcher chooses which phase to run.
 
-Application **0.9.1** uses workflow catalog **1.26.0**. Application releases,
+Application **0.9.2** includes workflow catalog **1.28.1**. Application releases,
 project workflow adoption, and scientific publications are separate versions.
 An existing project keeps its catalog and historical results until an explicit
 update or new run. Application updates do not rewrite past research.
@@ -20,7 +20,7 @@ update or new run. Application updates do not rewrite past research.
 | [Context and artifacts](SPEC-context-and-artifacts.md) | Ownership, context delivery, exact sources, and history |
 | [Artifact types](system_artifact_types.md) | Scientific, presentation, and operational records |
 | [Member and phase matrix](member-phase-matrix.md) | Production and independent review responsibilities |
-| [Visual design](../design-system/model-forge/MASTER.md) | Blue research, green system controls, orange researcher interaction |
+| [Visual design](../design-system/model-forge/MASTER.md) | Blue research, navy system controls, orange researcher interaction |
 
 The detailed design covers [principles](design/00-system-principles.md),
 [domain objects](design/01-domain-model.md), [run orchestration](design/02-run-harness.md),

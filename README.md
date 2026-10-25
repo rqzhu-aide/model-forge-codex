@@ -1,6 +1,6 @@
 # Model Forge, Codex edition
 
-[![Version 0.9.1 prerelease](https://img.shields.io/badge/version-0.9.1--prerelease-blue)](https://www.npmjs.com/package/@rqzhu-aide/model-forge-codex/v/0.9.1)
+[![Version 0.9.2 prerelease](https://img.shields.io/badge/version-0.9.2--prerelease-blue)](https://www.npmjs.com/package/@rqzhu-aide/model-forge-codex/v/0.9.2)
 
 Model Forge is a local workbench for developing statistical models, machine learning models, and algorithms with an AI research team. Start with a problem, explore methods, examine theory and numerical results, and produce a concise **technical report** with mathematical notation, citations, and reproducible sources.
 
@@ -33,7 +33,7 @@ npx @rqzhu-aide/model-forge-codex@next status
 npx @rqzhu-aide/model-forge-codex@next stop
 ```
 
-`@next` tracks prereleases; use `@0.9.1` to pin this version. The development guide also covers [source installation](docs/development.md#source-checkout) and [GitHub tarballs](docs/development.md#prepared-release-tarball).
+`@next` tracks prereleases; use `@0.9.2` to pin this version. The development guide also covers [source installation](docs/development.md#source-checkout) and [GitHub tarballs](docs/development.md#prepared-release-tarball).
 
 For example, start a project with: “Develop a model to predict an outcome from baseline and repeated measurements. I do not have data ready yet. Compare feasible approaches and explain which assumptions need my input.” For setup errors, updates, and application-cache recovery, see [installation and troubleshooting](docs/installation.md).
 

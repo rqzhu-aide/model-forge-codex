@@ -16,7 +16,7 @@ Read the [README](README.md), [development guide](docs/development.md), and rele
 | `docs/` | Public setup and development guidance |
 | `architecture/`, `design-system/` | Workflow design, responsibilities, and interface specifications |
 
-The application release version and workflow catalog version have different meanings. Published application 0.9.1 ships catalog 1.26.0; the development catalog version is recorded in `contracts/VERSION`. A catalog update is not an automatic migration of existing projects. Do not move or reseal catalog files as part of unrelated cleanup. Historical fixtures can remain necessary even when their format is older.
+The application release version and workflow catalog version have different meanings. Application 0.9.2 includes catalog 1.28.1, recorded in `contracts/VERSION`. A catalog update is not an automatic migration of existing projects. Do not move or reseal catalog files as part of unrelated cleanup. Historical fixtures can remain necessary even when their format is older.
 
 ## Keep private and generated files local
 

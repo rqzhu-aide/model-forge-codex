@@ -1,11 +1,11 @@
-# Implementation status for 0.9.1
+# Implementation status for 0.9.2
 
-Version 0.9.1 updates the documentation from 0.9.0. Application behavior,
-workflow catalog, and scientific verification limits are unchanged.
+Version 0.9.2 includes the revised research interface, targeted revision workflows,
+HTML report reader, and installation and onboarding fixes.
 
 This prerelease provides the five researcher-directed phases described in the
-[architecture guide](README.md). The pinned workflow catalog is 1.26.0:
-P1 3.7.0, P2 3.11.0, P3 2.11.0, P4 3.4.0, and P5 3.2.0.
+[architecture guide](README.md). The included workflow catalog is 1.28.1.
+Existing projects retain their own catalog and scientific history.
 
 ## Available behavior
 
@@ -24,12 +24,14 @@ P1 3.7.0, P2 3.11.0, P3 2.11.0, P4 3.4.0, and P5 3.2.0.
 - Direct report reading, section comments, mathematical rendering, inspectable
   sources, and portable HTML export. General problem elicitation stays in
   earlier phases.
-- Blue team research, green system controls, and orange researcher interaction.
+- Blue team research, navy system controls, and orange researcher interaction.
   Card titles use 18px type and visible outlines and separators. Reading
   position, focus, disclosure state, and editable drafts persist across supported
   navigation paths.
 - Shared account access or per-member custom providers, connection testing,
   and application snapshots kept separately from research data.
+- Compact provider-aware setup guidance, OS-specific installation instructions,
+  and Windows Phase 4 sandbox readiness diagnostics before managed computation.
 
 The implementation is anchored by the [catalog](../contracts/catalog-pin.json),
 [run engine](../src/model_forge_codex/runs.py),
