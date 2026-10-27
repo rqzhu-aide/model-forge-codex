@@ -1,43 +1,51 @@
 # Model Forge, Codex edition
 
-[![Version 0.9.3 prerelease](https://img.shields.io/badge/version-0.9.3--prerelease-blue)](https://www.npmjs.com/package/@rqzhu-aide/model-forge-codex/v/0.9.3)
+[![Version 0.9.3](https://img.shields.io/badge/version-0.9.3-blue)](https://www.npmjs.com/package/@rqzhu-aide/model-forge-codex/v/0.9.3)
 
-Model Forge is a local workbench for developing statistical models, machine learning models, and algorithms with an AI research team. Start with a problem, explore methods, examine theory and numerical results, and produce a concise **technical report** with mathematical notation, citations, and reproducible sources.
+Model Forge is a local workbench for developing statistical and machine learning models and algorithms with an AI research team. Start from a problem, compare approaches, examine theory and numerical evidence, and build a **technical report** with mathematics, citations, and links to supporting work.
 
-**Interactive model development is a core feature.** The team actively invites your feedback on critical decisions affecting model interpretation, assumptions, statistical inference, or practical use. Decision cards explain what is affected and the trade-offs. You can discuss the issue, request a recommendation, choose an option, or save an editable instruction to guide subsequent work. The Lead handles routine choices.
+**You direct the research.** The team invites your input on critical decisions affecting the scientific goal, model interpretation, statistical claims, data applicability, or meaningful resource tradeoffs. Each decision explains its consequences. Discuss the question, ask for the Lead's advice, and save an editable answer for future work. The Lead handles routine choices; you choose which phase to run next.
+
+![Model Forge 0.9.3 research workbench showing a synthetic demonstration project](https://raw.githubusercontent.com/rqzhu-aide/model-forge-codex/main/docs/images/model-forge-overview.jpg)
+
+*Model Forge 0.9.3 with a synthetic demonstration project. The example content illustrates the interface and is not output from a live model run.*
 
 ## Install and use
 
-Use shared **Node.js 22+ with npm** and **Python 3.11+** installations. Follow the one-time setup for your system: **[Windows](docs/installation.md#windows)**, **[macOS](docs/installation.md#macos)**, or **[Linux](docs/installation.md#linux)**. Each route installs the backend dependencies and selects the same Python for launch using `MF_PYTHON`.
+Use shared **Node.js 22+ with npm** and **Python 3.11+** installations. Complete the one-time setup for **[Windows](docs/installation.md#windows)**, **[macOS](docs/installation.md#macos)**, or **[Linux](docs/installation.md#linux)**. This installs the backend dependencies and sets `MF_PYTHON` to the shared Python used for launch. Then run in the same terminal:
 
 ```sh
-npx @rqzhu-aide/model-forge-codex@next web
+npx @rqzhu-aide/model-forge-codex web
 ```
 
-Run this in the terminal where you selected Python. In a new terminal, set `MF_PYTHON` again or pass `--python PATH` to that same shared executable. No project environment or frontend build is needed. The Codex desktop app is optional.
+In a new terminal, set `MF_PYTHON` again or pass `--python PATH` to that same shared executable. The package includes the built interface. No project environment or frontend build is needed, and the Codex desktop app is optional.
 
 The app opens at **[http://127.0.0.1:8766](http://127.0.0.1:8766)**. Keep the terminal open while using it.
 
 1. **Create a project.** Describe your problem, data collection, goal, and constraints. Data are optional.
-2. **Connect the team.** Use **Workspace → OpenAI Account**, or configure an API provider in **Workspace → Team Settings**. The run controls show missing connection settings for team members. Configured credentials do not mean a connection has been tested. Select available models and run **Test saved settings** for each member; tests may consume provider tokens.
-3. **Start Phase 1.** Read the findings, discuss consequential choices, and choose which phase to run next. Saving a comment or instruction does not start a research run.
+2. **Connect the team.** In **Workspace → OpenAI Account**, sign in and connect the account to the research team, or configure an API provider in **Workspace → Team Settings**. Select available models and reasoning efforts, then run **Test saved settings** for each member. Tests may consume provider tokens; configured credentials alone do not establish a working connection.
+3. **Start Phase 1.** Read the interpreted problem and findings, correct the team's understanding, and discuss consequential choices. Saving an answer or instruction does not start a research run. Work already underway keeps its recorded inputs.
 
-On native Windows, complete the shared Codex runtime's one-time sandbox setup. Managed Phase 4 numerical experiments require its supported **elevated sandbox** setup. See [model access and setup](docs/model-access.md) for sign-in, API providers, Windows setup, and experiment dependencies.
+For a first project, try: “Develop a model to predict an outcome from baseline and repeated measurements. I do not have data ready yet. Compare feasible approaches and explain which assumptions need my input.”
+
+On native Windows, complete the shared Codex runtime's one-time sandbox setup. Managed **Phase 4 numerical experiments require elevated Windows sandbox mode and completed setup**, plus shared scientific runtimes and packages accessible inside the sandbox. See [model access and runtime setup](docs/model-access.md) for sign-in, API providers, and experiment dependencies.
 
 Projects and settings are saved in **`~/.model-forge-codex`**, separately from application files. Use `--data-root PATH` for another folder or `--python PATH` for a specific shared Python. See `--help` for all options.
 
 Finish or cancel active research before stopping. Use the same data folder and port when checking or stopping a custom instance:
 
 ```sh
-npx @rqzhu-aide/model-forge-codex@next status
-npx @rqzhu-aide/model-forge-codex@next stop
+npx @rqzhu-aide/model-forge-codex status
+npx @rqzhu-aide/model-forge-codex stop
 ```
 
-`@next` tracks prereleases; use `@0.9.3` to pin this version. The development guide also covers [source installation](docs/development.md#source-checkout) and [GitHub tarballs](docs/development.md#prepared-release-tarball).
+Use `@0.9.3` to pin this release or `@next` to follow the prerelease channel. For setup errors and updates, see [installation and troubleshooting](docs/installation.md). The development guide also covers [source installation](docs/development.md#source-checkout) and [GitHub tarballs](docs/development.md#prepared-release-tarball).
 
-For example, start a project with: “Develop a model to predict an outcome from baseline and repeated measurements. I do not have data ready yet. Compare feasible approaches and explain which assumptions need my input.” For setup errors, updates, and application-cache recovery, see [installation and troubleshooting](docs/installation.md).
+Windows package launch and browser onboarding have been checked locally. Native clean-profile macOS/Linux verification remains pending. Model-generated scientific claims and results require researcher review.
 
-## Architecture and design
+## Five research phases
+
+Run the phases that serve your question, returning to earlier work when needed. Data are optional at the start; numerical work can use synthetic data or available real data.
 
 | Phase | Purpose |
 | --- | --- |
@@ -47,14 +55,18 @@ For example, start a project with: “Develop a model to predict an outcome from
 | **Phase 4 - Numerical Eval** | Implement and evaluate methods on synthetic or available real data. |
 | **Phase 5 - Report** | Read, discuss, revise, and export the technical report. |
 
+![Researcher response in Model Forge 0.9.3 showing the Lead's recommendation, alternatives, and answer controls](https://raw.githubusercontent.com/rqzhu-aide/model-forge-codex/main/docs/images/model-forge-decisions.jpg)
+
+*Choosing which population a treatment effect should describe. This illustrative selection has not been saved; the researcher can add a note or give a different response. The content is synthetic, not live model output.*
+
+## Architecture and design
+
 - **Specialized team.** A Research Lead, Theorist, Data Analyst, and Outside Reviewer work through a Codex bridge. Structured outputs feed the interface directly.
-- **Clear interaction.** Blue marks team findings, navy (Illini Blue) marks system controls, and orange marks researcher input. Reports support section-level discussion and self-contained HTML export.
-- **Traceable work.** Results retain their method, theory, and experiment sources. Application updates preserve research history; each project retains its workflow catalog until explicitly updated.
+- **Researcher interaction.** Blue marks team findings, navy marks system controls, and orange marks researcher input. Questions support discussion, advice, and editable answers. Reports support section-level discussion and self-contained HTML export.
+- **Traceable work.** Findings link to their method, theory, and experiment sources. Application updates preserve research history; each project retains its workflow catalog until explicitly updated.
 - **Local workspace.** React provides the interface and FastAPI manages runs and artifacts. Research is stored locally; model requests go to your configured account or provider.
 
 See the [architecture guide](https://github.com/rqzhu-aide/model-forge-codex/blob/main/architecture/README.md) for component responsibilities, artifact flow, and UI specifications.
-
-**Prerelease status:** Windows package launch and shutdown have been checked; clean macOS/Linux verification remains pending. Model-generated scientific claims and results require researcher review.
 
 ## Development
 
