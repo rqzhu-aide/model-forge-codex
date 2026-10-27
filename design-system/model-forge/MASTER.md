@@ -148,8 +148,9 @@ Research instrument rules:
   full setting** opening Phase 1. Below it, the Next line names how many
   researcher decisions wait and where, with one forward action, the one
   heat button in the header. It counts
-  only the Phase 1 to Phase 4 decision cards; Phase 5 clarification happens in
-  report section discussions. Without waiting decisions it says which phase
+  the Phase 1 to Phase 4 decision cards and any indispensable Phase 5 editorial
+  choices in Revise report. Ordinary Phase 5 clarification stays in report
+  section discussions; no general discussion card is added. Without waiting decisions it says which phase
   waits for direction, that work stopped, that the team is working, or that
   nothing needs a decision.
 - Arrival. The Next action opens the phase and scrolls to its decision card:

@@ -112,6 +112,19 @@ test("phase and exact model scope stay aligned with the original question projec
   assert.equal(summarize({ issues: [exact], modelRef: undefined }).questions.total, 0);
 });
 
+test("P5 editorial summaries stay with their report method and exclude upstream questions and pause editors", () => {
+  const editorial = question("editorial", { phase: "P5", target_phase: "P5", scope: { kind: "model", branch: scope.branch, model_ref: modelRef } });
+  const projectEditorial = question("project-editorial", { phase: "P5", target_phase: "P5" });
+  const stale = { ...editorial, attention_id: "earlier-model", scope: { ...editorial.scope, model_ref: { ...modelRef, version: 1 } } };
+  const upstream = question("upstream", { phase: "P5", target_phase: "P1" });
+  const carried = question("carried", { phase: "P3", target_phase: "P5" });
+  const pause = question("pause", { phase: "P5", explanation_target: source("pause", { kind: "researcher_pause", phase: "P5" }) });
+  const result = summarize({ phase: "P5", issues: [editorial, projectEditorial, stale, upstream, carried, pause], answers: [answerFor(editorial)] });
+  assert.deepEqual(result.questions.items.map(row => row.issue.attention_id), ["editorial", "project-editorial"]);
+  assert.equal(result.questions.answered, 1); assert.equal(result.questions.unanswered, 1);
+  assert.equal(summarize({ phase: "P5", branch: "method.b", issues: [projectEditorial] }).questions.total, 0);
+});
+
 test("P2 selected candidates include shared and intended questions, with exact identity checks", () => {
   const candidateSource = (id) => source(id, { branch: "trunk", phase: "P2" });
   const candidate = question("candidate", { phase: "P2", branch: "trunk", target_phase: "P2", scope: { kind: "model", branch: "trunk", model_ref: modelRef }, generation_ref: candidateSource("candidate"), explanation_target: candidateSource("candidate") });
@@ -171,6 +184,20 @@ test("navigation keys survive reordering and cosmetic source metadata but detect
   assert.equal(phaseQuestionAnchor(item), `issue:${issueVersionKey(item)}`);
   assert.equal(phaseInputScopeKey(scope), phaseInputScopeKey({ ...scope, modelRef: Object.fromEntries(Object.entries(modelRef).reverse()) }));
   for (const changed of [{ phase: "P3" }, { branch: "method.b" }, { modelRef: { ...modelRef, version: 3 } }]) assert.notEqual(phaseInputScopeKey(scope), phaseInputScopeKey({ ...scope, ...changed }));
+});
+
+test("copied answers never count as extra information, including earlier phases, pauses and damaged legacy links", () => {
+  const current = question("current"), earlier = question("earlier", { phase: "P1", explanation_target: source("earlier", { phase: "P1" }) });
+  const saved = answerFor(current, { context_ref: { item_id: "custom.answer-copy", revision: 1 } });
+  const prior = answerFor(earlier, { context_ref: { item_id: "new.custom-copy", revision: 2 }, history: [{ context_ref: { item_id: "historical.custom-copy", revision: 1 } }] });
+  const ref = { kind: "researcher_answer", attention_id: current.attention_id, question_ref: current.explanation_target, answer_revision: 1 };
+  const item = (item_id, extra = {}) => ({ item_id, revision: 1, status: "confirmed", statement: "Keep this exact statement.", scope: { kind: "project" }, ...extra });
+  const problemContext = { items: [item("context.answer.current", { answer_refs: [ref] }), item("context.answer.pause"), item("custom.answer-copy"), item("historical.custom-copy"), item("context.note"), item("context.interpretation", { answer_refs: [ref] })], proposals: [] };
+  for (const phase of ["P1", "P2", "P3", "P4", "P5"]) {
+    const result = summarize({ phase, issues: [current], answers: [saved, prior], problemContext });
+    assert.deepEqual(result.understanding.items.map(row => row.item.item_id), ["context.note", "context.interpretation"], phase);
+    assert.equal(result.understanding.saved, 2, phase);
+  }
 });
 
 test("projection leaves saved questions, context, answers and local drafts unchanged", () => {

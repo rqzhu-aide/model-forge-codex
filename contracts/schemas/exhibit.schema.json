@@ -35,7 +35,7 @@
     "caption": {
       "type": "string",
       "maxLength": 600,
-      "description": "Explain what the exhibit shows, its comparison and tested scope. Define uncertainty/error bars, repetitions and units when applicable; do not infer general validity from a plotted ordering."
+      "description": "Explain what the exhibit shows, its comparison and tested scope. Define uncertainty/error bars, repetitions and units when applicable; do not infer general validity from a plotted ordering. Explain comparison direction, units, attempted/returned denominators where relevant, uncertainty and tested scope, preserving the synthetic/actual-data boundary."
     },
     "detail_md": {
       "type": "string",

@@ -23,6 +23,7 @@
       "$ref": "method.schema.json"
     },
     "data_requirements_markdown": {
+      "description": "Describe consequential applicability premises for Lead consolidation, with source references and honest unknowns; this grants no separate attention artifact or pause authority.",
       "type": "string",
       "minLength": 1
     },
@@ -58,7 +59,7 @@
           "description": "How the cost grows with the problem dimensions."
         }
       },
-      "description": "The proposer's authored cost account for its own candidate. Stated uncertainty (\"unknown, because ...\") is legitimate content; invented precision is not."
+      "description": "The proposer's authored cost account for its own candidate. Stated uncertainty (\"unknown, because ...\") is legitimate content; invented precision is not. Keep cost, memory, scaling and honest unknowns here; do not invent numerical precision to make the comparison look settled."
     },
     "researcher_origin": {
       "type": "object",

@@ -1,11 +1,24 @@
-# Implementation status for 0.9.2
+# Implementation status for 0.9.3 preparation
 
-Version 0.9.2 includes the revised research interface, targeted revision workflows,
+The source tree prepares version 0.9.3 with researcher-communication improvements,
+clearer saved and paused states, and verified source links for theory overviews.
+It retains the revised research interface, targeted revision workflows,
 HTML report reader, and installation and onboarding fixes.
 
-This prerelease provides the five researcher-directed phases described in the
-[architecture guide](README.md). The included workflow catalog is 1.28.1.
+This source tree provides the five researcher-directed phases described in the
+[architecture guide](README.md). The included workflow catalog is 1.28.5.
 Existing projects retain their own catalog and scientific history.
+
+The communication revision uses field-specific writing guidance, neutral
+open-question labels, visible decision consequences and distinct saved, unknown
+and paused states. It preserves existing answers, source versions and run inputs.
+Source changes do not update the published npm package or adopt a catalog for
+existing projects automatically.
+
+The follow-up clarifies scientific change and uncertainty accounts, separates
+recorded observations from assumptions about unobserved outcomes, and connects
+P3 overview proof references to their verified producing publication. These
+changes preserve scientific history and the existing source-window interaction.
 
 ## Available behavior
 

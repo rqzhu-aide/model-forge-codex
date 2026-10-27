@@ -55,11 +55,27 @@ An implementation does not parse Markdown at runtime. It loads the selected JSON
 contract, validates it against `../schemas/phase-contract.schema.json`, and
 requires the command and run manifest to freeze the same contract version and digest.
 
-Rebuild the aggregate with:
+Rebuild the aggregate's `contracts` array from the five executable files, preserving
+its registry metadata. Run this Python snippet with the shared installation from
+the repository root:
 
-```text
-python architecture/tools/build_contract_registry.py
+```python
+import json
+from pathlib import Path
+
+root = Path("contracts/contracts")
+path = root / "phases.json"
+registry = json.loads(path.read_text(encoding="utf-8"))
+registry["contracts"] = [
+    json.loads((root / "phases" / f"P{number}.json").read_text(encoding="utf-8"))
+    for number in range(1, 6)
+]
+path.write_text(json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8", newline="\n")
 ```
+
+After all catalog content and version metadata are final, refresh integrity with
+`python contracts/refresh_manifest.py` and run `tests/test_catalog_scientific.py`.
 
 ## User-choice materialization
 

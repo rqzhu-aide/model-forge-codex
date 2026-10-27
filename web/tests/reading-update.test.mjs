@@ -33,7 +33,7 @@ function fixture({ focus = true } = {}) {
   globalThis.setTimeout = callback => { const id = ++sequence; timers.set(id, callback); return id; };
   globalThis.clearTimeout = id => timers.delete(id);
   return { root, row, control, scrolls, listeners, timers, focusOptions,
-    disclosure({ anchor = "further-work", text = "Edit instructions and settings", hidden = false, y = control.y } = {}) {
+    disclosure({ anchor = "further-work", text = "Tell me what to do next", hidden = false, y = control.y } = {}) {
       const detail = node(anchor, y); detail.tagName = "DETAILS"; detail.open = true;
       const summary = node(null, y, 28); summary.tagName = "SUMMARY"; summary.textContent = text; summary.parentElement = detail; summary.hidden = hidden;
       detail.querySelector = () => summary; details.push(detail); elements.add(detail); elements.add(summary);

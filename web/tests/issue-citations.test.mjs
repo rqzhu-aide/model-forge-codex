@@ -40,6 +40,30 @@ test("citation opens its original retained generation and entry without current-
   assert.deepEqual(opened, exact);
 });
 
+test("question-only citations stay actionable in details while the full question appears once in its summary", () => {
+  const item = { ...question, title: "Observation design and retained source identity", context_markdown: "The original observation context.", likely_consequence: undefined, question: "Can [Original author](#cite:source.shared) or [Missing author](#cite:source.missing) establish the observation design?" };
+  const before = structuredClone(item), html = render.issues({ ...props, issues: [item] });
+  const summary = html.match(/class="issue-row-summary"[^>]*>([\s\S]*?)<\/summary>/)[1];
+  assert.match(summary, /Can Original author or Missing author establish the observation design\?/);
+  assert.doesNotMatch(summary, /<a\b|<button\b|<p\b|#cite:/);
+  assert.equal((visibleText(html).match(/establish the observation design\?/g) || []).length, 1);
+  assert.equal((html.match(/class="inline-citation"/g) || []).length, 1);
+  assert.match(html, /Question sources/);
+  assert.match(html, /class="citation-unavailable"[^>]*>Missing author/);
+  assert.ok(html.indexOf('class="inline-citation"') > html.indexOf("Context and sources"));
+  assert.ok(html.includes('citation:unpublished:request:attention.observation.v3:question-sources:'));
+  assert.deepEqual(item, before);
+});
+
+test("external question sources remain links outside the summary, while math and code stay opaque", () => {
+  const item = { ...question, context_markdown: undefined, likely_consequence: undefined, question: "Does [the schedule](https://example.test/schedule) match `$x$ [an example](#cite:code)` and $[x](#cite:math)$?" };
+  const html = render.issues({ ...props, issues: [item] });
+  const summary = html.match(/class="issue-row-summary"[^>]*>([\s\S]*?)<\/summary>/)[1];
+  assert.doesNotMatch(summary, /<a\b|<button\b/);
+  assert.match(html, /href="https:\/\/example.test\/schedule"/);
+  assert.doesNotMatch(html, /inline-citation|citation-unavailable/);
+});
+
 test("unprojected references remain visibly unavailable instead of literal Markdown", () => {
   const html = render.issues({ ...props, issues: [{ ...question, citations: undefined }] });
   assert.doesNotMatch(html, /inline-citation/);
@@ -51,7 +75,8 @@ test("legacy contextual request uses the same exact citation renderer", () => {
   const html = render.decisions({ ...props, items: [{ ...question, target_phase: "P3" }], answers: [] });
   assert.equal((html.match(/class="inline-citation"/g) || []).length, 2);
   assert.match(html, /reference unavailable/);
-  assert.doesNotMatch(html, /#cite:|katex-error/);
+  assert.doesNotMatch(visibleText(html), /#cite:/);
+  assert.doesNotMatch(html, /katex-error/);
 });
 
 test("question scope keeps other model citations out of this branch", () => {

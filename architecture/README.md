@@ -5,7 +5,8 @@ models, and algorithms. A Research Lead, Theorist, Data Analyst, and Outside
 Reviewer produce structured research that the application presents as concise
 cards and a technical report. The researcher chooses which phase to run.
 
-Application **0.9.2** includes workflow catalog **1.28.1**. Application releases,
+The current source tree prepares application **0.9.3** with workflow catalog **1.28.5**;
+already published packages are unchanged. Application releases,
 project workflow adoption, and scientific publications are separate versions.
 An existing project keeps its catalog and historical results until an explicit
 update or new run. Application updates do not rewrite past research.
@@ -20,6 +21,7 @@ update or new run. Application updates do not rewrite past research.
 | [Context and artifacts](SPEC-context-and-artifacts.md) | Ownership, context delivery, exact sources, and history |
 | [Artifact types](system_artifact_types.md) | Scientific, presentation, and operational records |
 | [Member and phase matrix](member-phase-matrix.md) | Production and independent review responsibilities |
+| [Researcher question language](../contracts/phases/researcher-question-language.md) | Scientific interpretation, mathematical precision and reader context across phases |
 | [Visual design](../design-system/model-forge/MASTER.md) | Blue research, navy system controls, orange researcher interaction |
 
 The detailed design covers [principles](design/00-system-principles.md),
@@ -46,6 +48,14 @@ them concisely. Researcher questions require a material consequence and a missin
 study fact or preference. Multiple-choice questions explain the affected point,
 practical consequences, and recommendation. Nothing is preselected, unknown facts
 remain unknown, and each item has one editable effective instruction.
+
+Member briefs put the reader's task and field-specific writing duties before
+execution constraints. Summaries lead with the scientific answer and its decisive
+conditions; equations are interpreted in the supplied study context. The UI
+distinguishes open questions, saved answers, unknown responses and actual pauses.
+Consequences remain visible when a question is opened, while source history and
+classifications stay in details. These presentation rules preserve scientific
+meaning, answer ownership and the inputs already used by started work.
 
 The executable [catalog](../contracts/catalog-pin.json), phase contracts, and
 schemas govern new member outputs. Design prose explains those contracts; it

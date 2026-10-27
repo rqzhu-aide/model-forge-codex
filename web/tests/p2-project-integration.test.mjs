@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { sharedPackage } from "../scripts/shared-deps.mjs";
 import { catalogSelectionKey, proposalKey } from "../src/methodWorkspace.js";
 import { issueCardEntries, issueDisplayState } from "../src/phaseUiState.js";
+import { phaseQuestionAnchor } from "../src/phaseInputSummary.js";
 
 const require = createRequire(import.meta.url);
 const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.js"));
@@ -69,17 +70,17 @@ const methodA = { method_id: "method.a", branch_id: "method.a", title: "Navigati
 const methodB = { method_id: "method.b", branch_id: "method.b", title: "Selected model B", identity: { stable_id: "method.b", version: 3, definition_sha256: "b".repeat(64) } };
 const target = { kind: "phase_issue", branch: "trunk", phase: "P2", family: "theory_review", generation_id: "review.b", sha256: "c".repeat(64), run_id: "run.b", package_id: "package.b", object_id: "finding.b", entry_pointer: "/assessments/0/findings/0", label: "Support for model B" };
 
-async function projectFixture(branch, action, { corrections = [], runs = [], branches = [], phase = "P2", attention = [], answers = [], artifacts = {}, awaiting = runs.filter(run => run.state === "awaiting_user"), p2ProposalKey, layout = false } = {}) {
+async function projectFixture(branch, action, { corrections = [], runs = [], branches = [], phase = "P2", attention = [], answers = [], artifacts = {}, problemContext, readiness = {}, awaiting = runs.filter(run => run.state === "awaiting_user"), p2ProposalKey, layout = false } = {}) {
   const originals = { api: { ...ui.api }, window: globalThis.window, document: globalThis.document,
     requestAnimationFrame: globalThis.requestAnimationFrame, cancelAnimationFrame: globalThis.cancelAnimationFrame, MutationObserver: globalThis.MutationObserver, setTimeout: globalThis.setTimeout };
   const harness = hookHarness({ layout }); const elements = new Map(); let starts = 0;
   globalThis.window = { addEventListener() {}, removeEventListener() {}, matchMedia: () => ({ matches: true }) };
   globalThis.document = { hidden: false, addEventListener() {}, removeEventListener() {}, getElementById: id => elements.get(id) };
   Object.assign(ui.api, {
-    project: async () => ({ project: { name: "Integration project" }, workflow_capabilities: { researcher_dialogue: true } }),
+    project: async () => ({ project: { name: "Integration project" }, problem_context: problemContext, workflow_capabilities: { researcher_dialogue: true } }),
     branches: async () => ({ branches }), listRuns: async () => ({ runs }), run: async (_projectId, runId) => runs.find(run => run.run_id === runId),
     artifacts: async () => artifacts, decisionsPending: async () => ({ attention, researcher_answers: answers, runs_needing_correction: corrections, runs_awaiting_direction: awaiting }),
-    readiness: async () => ({}), records: async () => ({ records: [] }),
+    readiness: async () => readiness, records: async () => ({ records: [] }),
     assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [methodA, methodB], diagnostics: [] }),
     startRun: async () => { starts++; throw new Error("This inspection must not start research."); },
   });
@@ -98,6 +99,32 @@ async function projectFixture(branch, action, { corrections = [], runs = [], bra
     }
   }
 }
+
+test("P3 method selection keeps the shared goal label current and follows a replaced P1 source on refresh", async () => {
+  const reference = { branch: "trunk", phase: "P1", family: "research_basis", generation_id: "goal.current", sha256: "c".repeat(64), run_id: "run.goal", package_id: "package.goal" };
+  const basis = { branch: "trunk", phase: "P1", generation_ref: reference, research_setting: { research_goal_markdown: "Keep cost and chance constraints separate." } };
+  const item = { item_id: "context.goal", revision: 1, status: "confirmed", topic: "research_goal", statement: "Cost and chance constraints have separate roles.", origin: "researcher_reported", scope: { kind: "project" }, source_refs: [{ ...reference, kind: "research_goal", entry_pointer: "/research_setting/research_goal_markdown" }] };
+  const problemContext = { revision: 9, items: [item] };
+  const readiness = { basis: { records: [{ ...reference, content_sha256: reference.sha256 }] } };
+  const original = JSON.stringify(problemContext);
+  await projectFixture("trunk", async ({ render, props, load, starts }) => {
+    const label = () => ui.renderToStaticMarkup(find(render(), ui.Dialogue));
+    assert.match(label(), /Research goal correction · current published goal/);
+    ui.api.artifacts = async () => ({});
+    props.context = { phase: "P3", branch: "method.a" };
+    render(); await load();
+    assert.match(label(), /Research goal correction · current published goal/);
+    assert.equal(find(render(), ui.Dialogue).props.branch, "method.a");
+    readiness.basis.records[0] = { ...reference, generation_id: "goal.replaced", content_sha256: "d".repeat(64) };
+    find(render(), ui.Dialogue).props.onSaved(); render(); await load();
+    assert.match(label(), /Research goal correction · earlier published goal/);
+    readiness.basis.records = [];
+    find(render(), ui.Dialogue).props.onSaved(); render(); await load();
+    assert.match(label(), /Research goal correction · published goal status unavailable/);
+    assert.equal(starts(), 0);
+    assert.equal(JSON.stringify(problemContext), original);
+  }, { phase: "P3", artifacts: { research_bases: [basis] }, problemContext, readiness });
+});
 
 test("P2 decisions and moved team findings discuss the selected model with its exact source", async () => {
   for (const branch of ["trunk", "method.a"]) await projectFixture(branch, async ({ render, starts }) => {
@@ -144,7 +171,7 @@ test("Next counts exact P2 questions and changes an already mounted reader to th
       harness.render(explore.props, explore.type); harness.settleLayout();
       const initial = harness.render(explore.props, explore.type);
       assert.equal(responseCount(find(initial, ui.Dialogue)), 0);
-      assert.match(ui.renderToStaticMarkup(findClass(render(), "project-resume")), /1 question.*Selected model B.*Version 3/);
+      assert.match(ui.renderToStaticMarkup(findClass(render(), "project-resume")), /1 unanswered question.*Selected model B.*Version 3/);
       nextButton(render()).props.onClick();
       assert.deepEqual(navigations, [{ phase: "P2", p2ProposalKey: catalogSelectionKey(methodB) }]);
       props.context = { ...props.context, ...navigations[0] };
@@ -192,7 +219,7 @@ test("Next finds project-wide paused work and routes to that method even within 
     // refresh does not yet include the newly paused run.
     for (const runs of [[], [paused]]) await projectFixture("method.a", async ({ render, navigations, props, load, starts }) => {
       const html = ui.renderToStaticMarkup(findClass(render(), "project-resume"));
-      assert.match(html, /Selected model B is waiting for your direction/);
+      assert.match(html, new RegExp(`Work is paused in Phase ${phase.slice(1)}[^<]*Selected model B`));
       assert.doesNotMatch(html, /Nothing needs your decision/);
       nextButton(render()).props.onClick();
       assert.deepEqual(navigations, [{ phase, branch: "method.b" }]);
@@ -216,7 +243,7 @@ test("Next uses the default P2 selection and counts shared questions in its curr
     { attention_id: "p1", kind: "researcher_decision", phase: "P1", branch: "trunk", disposition: "open", question: "Which setting?" }];
   for (const p2ProposalKey of [undefined, "unavailable:proposal"]) await projectFixture("method.b", async ({ render }) => {
     const tree = render();
-    assert.match(ui.renderToStaticMarkup(findClass(tree, "project-next")), /2 questions.*need your response in this phase/);
+    assert.match(ui.renderToStaticMarkup(findClass(tree, "project-next")), /2 unanswered questions.*in this phase/);
     const reader = find(tree, ui.Methods);
     assert.equal(responseCount(reader.props.issues({ method: methodA, methodId: methodA.method_id, methodBranch: methodA.branch_id, catalogMethod: methodA })), 2);
   }, { attention, p2ProposalKey });
@@ -330,6 +357,50 @@ test("P5 omits general problem discussion while report sections keep their exact
     }
     assert.equal(starts(), 0);
   }, { phase: "P5" });
+});
+
+test("P5 editorial choices appear once in Revise report before settings and Next opens the exact row", async () => {
+  const source = { kind: "phase_issue", phase: "P5", branch: "method.a", family: "attention_items", generation_id: "report.editorial", sha256: "a".repeat(64), run_id: "run.report", package_id: "package.report", object_id: "editorial.focus", entry_pointer: "/items/0" };
+  const editorial = { issue_id: source.object_id, attention_id: source.object_id, phase: "P5", target_phase: "P5", branch: "method.a", kind: "researcher_decision", question: "Which report emphasis should lead the introduction?", disposition: "open", response_kind: "choice", decision_priority: "interpretation", scope: { kind: "model", branch: "method.a", model_ref: methodA.identity }, explanation_target: source, generation_ref: source };
+  const oldModel = { ...editorial, issue_id: "editorial.old", attention_id: "editorial.old", scope: { ...editorial.scope, model_ref: { ...methodA.identity, version: 0 } } };
+  await projectFixture("method.a", async ({ render, starts }) => {
+    const previousStyle = globalThis.getComputedStyle;
+    try {
+      const tree = render(); const revision = find(tree, ui.FurtherWork);
+      assert.ok(!find(tree, ui.Dialogue)); assert.ok(find(tree, ui.Report));
+      const html = ui.renderToStaticMarkup(revision);
+      assert.match(html, /<h2>Revise report<\/h2>/);
+      assert.equal((html.match(/>Which report emphasis should lead the introduction\?</g) || []).length, 1);
+      assert.equal((html.match(/class="issue-instruction-editor contribution-surface"/g) || []).length, 1);
+      assert.ok(html.indexOf('data-reading-anchor="report-editorial-choices"') < html.indexOf('data-reading-anchor="further-work"'));
+      assert.doesNotMatch(html, /Decisions to discuss|Other information you gave me|editorial\.old/);
+      assert.match(ui.renderToStaticMarkup(findClass(tree, "project-next")), /1 unanswered question.*in this phase/);
+      const effects = [];
+      const target = { tagName: "DETAILS", open: false, isConnected: true, dataset: {}, closest: () => null, hasAttribute: () => true, getAttribute: key => key === "data-reading-anchor" ? phaseQuestionAnchor(editorial) : null, getBoundingClientRect: () => ({ top: 16 }), focus: () => effects.push("focus"), addEventListener() {} };
+      const root = { querySelectorAll: () => [target], querySelector: () => null }; target.parentElement = root; tree.ref.current = root;
+      globalThis.getComputedStyle = () => ({ display: "block", visibility: "visible" });
+      globalThis.setTimeout = () => 0; window.scrollY = 0;
+      nextButton(tree).props.onClick();
+      assert.equal(target.open, true); assert.deepEqual(effects, ["focus"]); assert.equal(target.dataset.arrival, "true");
+      assert.equal(starts(), 0);
+    } finally { if (previousStyle === undefined) delete globalThis.getComputedStyle; else globalThis.getComputedStyle = previousStyle; }
+  }, { phase: "P5", attention: [editorial, oldModel], artifacts: { issues: [editorial] }, runs: [{ run_id: "run.report", phase: "P5", branch_id: "method.a", state: "published" }] });
+});
+
+test("P5 current pauses retain their one response editor without adding editorial counts", async () => {
+  const source = { kind: "researcher_pause", project_id: "project.integration", branch: "method.a", phase: "P5", run_id: "run.pause.editorial", stage_id: "report.assembly", request_id: "request.editorial", object_id: "request.editorial", revision: 1, sha256: "a".repeat(64) };
+  const request = { request_id: source.request_id, stage_id: source.stage_id, revision: 1, question: "Which authorized audience should the report address?", explanation_target: source };
+  const paused = { project_id: source.project_id, run_id: source.run_id, phase: source.phase, branch_id: source.branch, state: "awaiting_user", researcher_pause: { pending_request: request } };
+  const mirrored = { attention_id: source.request_id, phase: source.phase, branch: source.branch, kind: "researcher_decision", question: request.question, disposition: "open", explanation_target: source };
+  await projectFixture("method.a", async ({ render, starts }) => {
+    const tree = render(); const revision = find(tree, ui.FurtherWork);
+    const html = ui.renderToStaticMarkup(revision);
+    assert.ok(find(revision.props.children, ui.ResearcherPause));
+    assert.match(html, /Which authorized audience should the report address/);
+    assert.doesNotMatch(html, /Editorial choices for this report|data-reading-anchor="report-editorial-choices"|unanswered question/);
+    assert.match(ui.renderToStaticMarkup(findClass(tree, "project-next")), /Work is paused in Phase 5/);
+    assert.equal(starts(), 0);
+  }, { phase: "P5", attention: [mirrored], runs: [paused] });
 });
 
 test("P5 activity opens Next revision for retained execution recovery and an active researcher pause", async () => {

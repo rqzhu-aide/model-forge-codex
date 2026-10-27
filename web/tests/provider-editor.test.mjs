@@ -151,8 +151,8 @@ test("a draft kept across a refresh offers reapply and discard actions, never a 
   assert.match(html, /role="alert"[^>]*>Provider settings changed outside this editor/);
   assert.match(html, /Review the latest settings before saving/);
   assert.match(html, /unsaved edits were kept/);
-  assert.match(html, /Reapply my edits/);
-  assert.match(html, /Discard my edits/);
+  assert.match(html, /Reapply your edits/);
+  assert.match(html, /Discard your edits/);
   assert.doesNotMatch(html, /force-overwrite|Overwrite the latest/i);
 });
 

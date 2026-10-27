@@ -11,6 +11,7 @@ import { assumptionSource, conversationDraftKey, conversationsForTarget, isConve
 import { activePhaseRun, scientificPhaseRuns } from "../src/phaseUiState.js";
 import { readDecisionDraft, saveDecisionDraft, decisionAnswerPayload } from "../src/empiricalProgress.js";
 import { adoptWorkflow } from "../src/workflowAdoption.js";
+import { GOAL_POINTER } from "../src/phaseOneReader.js";
 
 const require = createRequire(import.meta.url);
 const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.js"));
@@ -24,6 +25,25 @@ const target = { kind: "project_context", project_id: "project.dialogue", contex
 const context = { revision: 2, dialogue_target: target, items: [{ item_id: "context.collection", statement: "Visits occur when the patient feels worse.", origin: "researcher_reported", scope: { kind: "project" }, revision: 1, status: "confirmed" }], proposals: [] };
 const ref = { branch: "method.mean", phase: "P5", family: "technical_report", generation_id: "report.1", sha256: "b".repeat(64) };
 const offeredWorkflow = { version: "1.15.0", available_version: "1.16.0", upgrade_available: true, can_adopt: true, blocked_runs: [] };
+
+test("goal correction labels distinguish exact current, replaced, and unavailable published sources on any branch", () => {
+  const source = { branch: "trunk", phase: "P1", family: "research_basis", generation_id: "goal.one", sha256: "c".repeat(64), run_id: "run.goal", package_id: "package.goal", kind: "research_goal", entry_pointer: GOAL_POINTER };
+  const item = { ...context.items[0], topic: "research_goal", source_refs: [source] };
+  const problemContext = { ...context, items: [item] };
+  const original = JSON.stringify(problemContext);
+  for (const branch of ["trunk", "method.mean"]) {
+    const props = { projectId: target.project_id, phase: "P3", branch, problemContext, onDiscuss: noop, onSource: noop };
+    const current = render.dialogue({ ...props, goalReference: source });
+    assert.match(current, /Research goal correction · current published goal/);
+    const earlier = render.dialogue({ ...props, goalReference: { ...source, generation_id: "goal.two", sha256: "d".repeat(64) } });
+    assert.match(earlier, /Research goal correction · earlier published goal/);
+    const unavailable = render.dialogue(props);
+    assert.match(unavailable, /Research goal correction · published goal status unavailable/);
+    assert.doesNotMatch(unavailable, /current published goal|earlier published goal/);
+    for (const html of [current, earlier, unavailable]) assert.match(html, /title="Research basis · goal\.one"/);
+  }
+  assert.equal(JSON.stringify(problemContext), original);
+});
 
 test("legacy dialogue offers a collapsed workflow review and blocks adoption while work is paused", () => {
   const props = { projectId: "project.legacy", phase: "P1", branch: "trunk", catalogPreview: offeredWorkflow };
@@ -50,7 +70,7 @@ test("existing dialogue keeps a newer workflow reachable without losing current 
   assert.match(html, /data-reading-anchor="workflow-adoption"/);
   assert.doesNotMatch(adoptionButton(html), /\bdisabled(?:=|\s|>)/);
   assert.match(html, /Visits occur when the patient feels worse\./);
-  assert.match(html, /Save response/);
+  assert.match(html, /Save your note/);
   assert.doesNotMatch(html, /Project-context dialogue becomes available when/);
 
   for (const state of ["running", "awaiting_user"]) {
@@ -143,9 +163,9 @@ test("successful workflow adoption preserves focus moved elsewhere or originatin
 test("dialogue remains available in all phases before outputs and while work is active", () => {
   for (const phase of ["P1", "P2", "P3", "P4", "P5"]) {
     const html = render.dialogue({ projectId: target.project_id, phase, branch: "trunk", problemContext: { ...context, items: [] }, activeWork: true, onDiscuss: noop, onSaved: noop });
-    for (const text of [["P1", "P2", "P4"].includes(phase) ? "Decisions to Discuss" : "Discuss your problem", "Data are optional", "I am not sure", "No data yet", "Save response", "Work in progress retains its captured context"]) assert.ok(html.includes(text), `${phase}: ${text}`);
-    assert.match(html, /Type of understanding \(optional\)/); assert.match(html, /value="expectation"/);
-    assert.match(html, /data-card-role="attention"/); assert.doesNotMatch(html, /Confirm understanding|Continue work/);
+    for (const text of ["Decisions to Discuss", "Data are optional", "Not sure yet", "No data yet", "Save your note", "Work in progress retains its captured context"]) assert.ok(html.includes(text), `${phase}: ${text}`);
+    assert.match(html, /What your note describes \(optional\)/); assert.match(html, /value="expectation"/);
+    assert.match(html, /data-card-role="attention"/); assert.doesNotMatch(html, /Confirm interpretation|Continue work/);
   }
 });
 
@@ -163,7 +183,7 @@ test("P4 keeps its decisions title with or without problem context and all exist
     assert.doesNotMatch(html, /<h2>Discuss your problem<\/h2>/);
     if (problemContext) {
       assert.match(html, /Visits occur when the patient feels worse\./);
-      assert.match(html, /Save response/);
+      assert.match(html, /Save your note/);
     } else assert.match(html, /Project-context dialogue becomes available/);
     if (content.issues) {
       assert.match(html, /Recorded fidelity concern/);
@@ -171,7 +191,7 @@ test("P4 keeps its decisions title with or without problem context and all exist
       assert.match(html, /Prepare further work/);
     } else if (content.attention) {
       assert.match(html, /Choose the next data setting/);
-      assert.match(html, /Save instruction/);
+      assert.match(html, /Save answer/);
     } else if (content.pause) {
       assert.match(html, /Saved evaluation pause/);
       assert.match(html, /Retained execution correction/);
@@ -182,8 +202,8 @@ test("P4 keeps its decisions title with or without problem context and all exist
 test("authored question keeps consequence, checkability, uncertainty and answer separate", () => {
   const issue = { attention_id: "question.visits", phase: "P1", branch: "trunk", kind: "researcher_decision", title: "Why does a visit enter the data?", scope: { kind: "project" }, why_it_matters: "Visit selection changes the population interpretation.", checkability: "Collection records may describe the visit rule.", information_limits: "A diagnostic cannot establish an unobserved selection mechanism." };
   const html = render.dialogue({ projectId: target.project_id, phase: "P1", branch: "trunk", problemContext: context, attention: [issue], onDiscuss: noop });
-  for (const text of [issue.title, "Practical consequence", issue.why_it_matters, "How this could be checked", issue.checkability, "What remains unknown", issue.information_limits, "Saved understanding", context.items[0].statement]) assert.ok(html.includes(text), text);
-  assert.match(html, /Your instruction/); assert.doesNotMatch(html, /Your direction for further work/);
+  for (const text of [issue.title, "Why your answer matters", issue.why_it_matters, "How this could be checked", issue.checkability, "What remains unknown", issue.information_limits, "Other information you gave me", context.items[0].statement]) assert.ok(html.includes(text), text);
+  assert.match(html, /Your answer/); assert.doesNotMatch(html, /Your direction for further work/);
 });
 
 test("context scope cannot follow a stable branch into a different model version", () => {
@@ -216,11 +236,11 @@ test("published P2 dialogue separates independent findings and includes exact tr
   const previous = { ...own, attention_id: "question.old-version", question: "Old version question must stay hidden", scope: { ...own.scope, model_ref: { ...identity, version: 0 } } };
   const input = { projectId: target.project_id, phase: "P2", branch: identity.stable_id, methodId: identity.stable_id, modelRef: identity, problemContext: context, issues: [finding], attention: [own, shared, task, other, previous], onDiscuss: noop, onSource: noop };
   const before = JSON.stringify(input); const html = render.dialogue(input);
-  assert.match(html, /2 questions need your response/);
+  assert.match(html, /2 unanswered questions/);
   assert.match(html, /Is monthly clinical history available/);
   assert.match(html, /Which report target is useful/);
   assert.match(html, /Applies only to this exact model version.*Version 1/); assert.match(html, /Applies across models/);
-  assert.match(html, /<summary>Your problem, data and saved understanding<\/summary>/);
+  assert.match(html, /<summary>What you told me<\/summary>/);
   assert.equal((html.match(/<summary>Context and sources<\/summary>/g) || []).length, 2);
   assert.doesNotMatch(html, /Other questions and saved responses|Theorist&#x27;s exact support concern|Investigate this exact support rule/);
   const work = render.issues({ ...input, embedded: true, workOnly: true, title: "Team work" });
@@ -262,7 +282,7 @@ test("context dialogue does not claim the scientific phase lock", () => {
 
 test("paused work separates saving from explicit continuation", () => {
   const html = render.pause({ projectId: target.project_id, run: { run_id: "run.waiting", state: "awaiting_user", researcher_pause: { pending_request: { request_id: "request.target", revision: 1, question: "Which population matters?", reason: "A changed target changes the authorized interpretation.", options: ["All patients", "Symptom-triggered visits"], scope: { kind: "project" } }, saved_answers: [] } }, onSaved: noop });
-  for (const text of ["Work waiting for your response", "Which population matters?", "Why it matters", "Save response", "Continue work"]) assert.ok(html.includes(text), text);
+  for (const text of ["Work is paused", "Which population matters?", "Why it matters", "Save answer", "Continue work"]) assert.ok(html.includes(text), text);
   const teamStart = html.indexOf('<div class="team-context-band">');
   const responseStart = html.indexOf('<form class="contribution-surface"', teamStart);
   assert.ok(teamStart >= 0 && responseStart > teamStart, "Team context precedes the researcher's separate response area.");
@@ -282,11 +302,11 @@ test("proposed understanding distinguishes the team's reason from the editable r
   const responseStart = html.indexOf('<div class="field contribution-surface">', teamStart);
   assert.ok(teamStart >= 0 && responseStart > teamStart);
   const team = html.slice(teamStart, responseStart);
-  for (const text of ["Proposed understanding", "Research team", proposal.reason, "conflict with saved context"]) assert.ok(team.includes(text), text);
+  for (const text of ["Please check my interpretation", "Research team", proposal.reason, "conflict with saved context"]) assert.ok(team.includes(text), text);
   assert.doesNotMatch(team, /<textarea|Reviewable interpretation/);
   assert.ok(html.indexOf(proposal.item.statement, responseStart) > responseStart);
-  assert.match(html, /Review or edit the team&#x27;s interpretation/);
-  assert.match(html, /Confirm understanding/);
+  assert.match(html, /How I interpreted your input: review or correct it/);
+  assert.match(html, /Confirm interpretation/);
   assert.equal(JSON.stringify(problemContext), before);
 });
 

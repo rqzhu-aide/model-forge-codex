@@ -12,6 +12,7 @@ from pathlib import Path
 
 from .phase_interactions import digest
 from .problem_context import effective_account, scope_applies, validate_scope
+from .researcher_language import RESEARCHER_LANGUAGE_GUIDANCE, has_researcher_language_guidance
 from .storage import read_json, write_json_atomic
 
 
@@ -41,20 +42,26 @@ def researcher_pause_target(record, request):
 def pause_brief(record, stage, role):
     if not eligible_stage(record, stage) or _role(role) != _role(_value(stage, "roles")[0]):
         return ""
+    language = ("" if has_researcher_language_guidance(_value(stage, "objective", ""))
+                else RESEARCHER_LANGUAGE_GUIDANCE + "\n\n")
     if _value(record, "phase") == "P5":
-        return ("## Consequential researcher input\n\n"
-                "Ask only for an indispensable editorial choice needed to write this exact report. "
+        return ("## Consequential researcher input\n\n" + language
+                + "Ask only for an indispensable editorial choice needed to write this exact report. "
                 "Do not reopen problem, collection, method or study-design questions from P1-P4. "
                 "Keep scientific gaps in the report's source records or review ledger, qualify the affected claims and route resolving work upstream. "
                 "Do not choose between conflicting statistical definitions; state the conflict and route it upstream. "
                 "attention_items may be empty. If a missing editorial choice makes the next authorized reporting action unjustified, "
                 "write researcher-question.json with question, reason, blocking=true, "
                 "scope ({kind: project}, or {kind: model, branch, model_ref} naming the exact model), "
-                "source_refs, and optional options and conditional_scope. Retain partial work before stopping. "
+                "source_refs, and optional options and conditional_scope. "
+                "When an editorial choice changes the presentation of existing mathematics, reason shows the affected problem or equation, "
+                "defining symbols and any shared objective once. Each option's consequence shows that retained formulation as it would appear "
+                "and its concise practical effect. This does not authorize choosing between scientific definitions. "
+                "Choices without a mathematical distinction need no artificial equation. Retain partial work before stopping. "
                 "Otherwise continue justified conditional or interim reporting. A saved response does not launch work; "
                 "an explicit continuation supplies its exact revision and only context items accepted from that response.\n")
-    return ("## Consequential researcher input\n\n"
-            "Ask only when an unresolved researcher preference or unavailable study fact materially changes the target or interpretation, "
+    return ("## Consequential researcher input\n\n" + language
+            + "Ask only when an unresolved researcher preference or unavailable study fact materially changes the target or interpretation, "
             "validity of the intended claim, data applicability or a meaningful resource compromise. "
             "Different mathematical alternatives alone are not a researcher decision; scientific justification and routine choices belong to the team. "
             "When input is consequential and useful now, the Lead consolidates and invites it through the existing owned attention output at its designated stage even if conditional work can proceed; "
@@ -66,6 +73,10 @@ def pause_brief(record, stage, role):
             "researcher-question.json in your workspace with question, reason, blocking=true, "
             "scope ({kind: project}, or {kind: model, branch, model_ref} naming the exact model), "
             "source_refs, and optional options and conditional_scope. Explain the concrete decision needed. "
+            "When mathematics distinguishes the choices, reason shows the affected problem or equation with enough formulation to understand the decision, "
+            "defining symbols and any shared objective once. Each option's consequence gives its formulation or changed equation under that shared context, "
+            "followed by a concise practical effect; prose-only options do not explain a mathematical distinction. "
+            "Plain study facts, budgets and choices without a mathematical distinction need no artificial equation. "
             "Stop this turn after retaining your partial work. Do not publish conditional work as established. "
             "Set scope_change=true if resolving the question requires a changed model, scientific target, "
             "or computation scope outside this authorized run; that prepares new work. "

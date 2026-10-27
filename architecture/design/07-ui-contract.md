@@ -6,15 +6,28 @@ body scrolls; the body is keyboard-focusable, and closing restores the invoking
 control without changing the underlying page's reading position. Notation
 citations save and restore the body's scroll position when returning from a paper.
 Research-meaningful labels only. The current source baseline is catalog
-1.27.0, including consequential nonblocking invitations. The October 23 visual
+1.28.5, including consequential nonblocking invitations. The October 23 visual
 refinement uses the shared blue/team, navy (Illini Blue)/system and orange/researcher roles,
-17px card titles, neutral card outlines and title separators, and the
+18px card titles, neutral card outlines and title separators, and the
 reading rules in section 2a. The [design master](../../design-system/model-forge/MASTER.md)
 and [shared styles](../../web/src/styles.css) define the visual contract.
 Source checks, browser acceptance and installed-release verification are
 recorded separately in the [implementation status](../implementation-status.md).
 An installed app serves the built assets of its selected release; a source
 preview does not update that release.
+
+P3 overview references open the exact cited proof or supporting account in the
+existing source window. Decisions and summary fallbacks use their own producing
+publication's verified sources. A newer similarly named artifact cannot replace
+an unavailable cited source. Closing the source window returns focus and reading
+position to the invoking reference.
+
+The Lead's change account explains the scientific change or unchanged conclusion.
+The uncertainty account states what cannot yet be concluded or used before its
+technical checks. Detailed inventories and revision bookkeeping remain in the
+owned sources. Assumption explanations distinguish observations that must be
+recorded from scientific bounds on unobserved outcomes. These are generating
+instructions and field descriptions, not renderer rewrites of historical prose.
 
 The Next line counts unanswered questions from the same projection as the
 destination card. P2 destinations preserve the exact proposal or catalog
@@ -31,7 +44,15 @@ The consequential-decision interface keeps one disclosure row per question.
 Expanded rows put the exact affected point,
 practical consequence and Lead recommendation before Context and sources. Newly
 authored choice options are radio controls with a short consequence; no answer is
-preselected. A selection and optional note save as one editable instruction bound
+preselected. When alternatives change a mathematical target, assumption or method,
+`context_markdown` states the smallest sufficient affected formulation and defines
+its symbols. A common objective appears once; each option's `consequence` gives
+its changed equation or constraint followed by its practical effect. Short option
+labels remain easy to scan. Formulas do not replace interpretation, and plain
+factual or resource questions do not require artificial mathematics. These rules
+also apply to run pauses through their existing `reason` and option fields, and to
+P5 editorial questions only within their existing editorial scope. All these
+fields render LaTeX, including numerical-run pause options. A selection and optional note save as one editable instruction bound
 to the exact question. Custom answers and uncertainty remain available. Study
 information requests retain unknowns without inventing preference options. Legacy
 prose alternatives remain readable rather than becoming fabricated radio choices.
@@ -232,6 +253,19 @@ separate.
   and missing information. Its history and drafts remain separate from Discuss.
   Both use asynchronous replies and preserve their initial context for followups
   and retries. They do not resolve the question or revise the model automatically.
+  Across phases, Discuss, Lead suggestions and research-goal/study-context replies
+  use their own assessment instructions. For a consequential mathematical choice
+  or a comparison the researcher asks about, `assessment_markdown` identifies the
+  affected formulation, defines shared notation once, and pairs each alternative's
+  changed equation or formulation with a concise practical effect and tradeoff. Advice states
+  its supporting conditions or the missing evidence. These are conditional writing
+  rules, not a fixed response template: ordinary factual questions need no artificial
+  equations, and routine scientific choices remain with the Lead. Optional context
+  follow-up questions use the existing `consequence_markdown` for their affected
+  formulation and answer effect, with exact scope and no repeated shared explanation.
+  Existing P3 assumption explanations and P5 report-section discussions keep their
+  focused instructions. The normal phase catalog does not control these separate
+  interactive briefs; a runtime update applies to newly prepared discussion turns.
   Additional Runs and History owns modification options, proposed investigations,
   team work, correction recovery, run history and previous method versions.
   Before methods exist, Select a Method to Explore is omitted and the work form
@@ -733,16 +767,19 @@ forms, request a Lead assessment, or start work. Phase 5 shows **Revise report**
 with preparation status, retaining discussion at each report section rather than
 adding a general problem discussion.
 
-- **Research questions** counts current applicable saved answers, unanswered
+- **Your answers to my questions** counts current applicable saved answers, unanswered
   questions and saved unknown responses separately. Exact source identity and
   explicit answer applicability follow the original question projection.
   Scientific findings, team tasks, superseded questions and operational pause
   history are excluded. A local unsaved edit is an additional indicator on the
   same question, never another answer.
-- **Study understanding** counts confirmed context contributions and pending
-  interpretations within the current model scope. Optional empty context fields
-  do not create unanswered tasks.
-- **Run preparation** reports saved or unsaved instructions, selected files and
+- **Other information you gave me** counts separately saved notes and confirmed
+  interpretations within the current model scope. Copied question or pause answers
+  are excluded even when their original question is in another phase or history.
+  An empty row says **None added**, not an unanswered task.
+- **Please check my interpretation** appears only for a pending interpretation
+  the researcher can confirm. Saving an answer never creates a second review task.
+- **Instructions for my next run** reports saved or unsaved instructions, selected files and
   the existing launch form's input check. Response completion is not scientific
   readiness and does not introduce a new launch gate.
 
@@ -759,7 +796,7 @@ One preparation card changes with the current phase's scientific history.
 Before its first scientific run, **Instructions and run settings** opens directly
 to the preparation form, with no rerun summary or duplicate heading. Once a run
 exists, **Revise and rerun** (P5: **Revise report**) contains the compact summary
-and a nested **Edit instructions and settings** disclosure. The nested form is
+and a nested **Tell me what to do next** disclosure. The nested form is
 collapsed on a fresh visit, remains mounted, and retains the original explicit
 Start action. A title transition during work preserves the open form and drafts.
 P4 **Prepare further work** enters this same card with the issue's exact source,
@@ -767,6 +804,30 @@ retains the draft and run settings, and offers **Back to research question**.
 It neither opens a second launch form nor starts work. A phase or method change
 clears any pending navigation request for the former scope.
 P1/P2 use shared trunk history; P3/P4/P5 use the selected method's history.
+
+### Directional language and one answer editor
+
+Interface text addresses the researcher as **you/your**. **I/me** denotes the
+harness speaking to the researcher. Name a particular team member when attribution
+matters, such as **The Lead recommends**. Stock response choices use neutral text
+such as **Not sure yet**; authored and historical researcher text stays exact.
+
+The revision summary is headed **What I’ll use in the next run**. The input
+destination is **What you told me**. A genuine proposed interpretation is labelled
+**Please check my interpretation**, with **Confirm interpretation** as its action.
+P5 retains section comments and report revision settings, without adding a generic
+problem discussion or duplicate comment count.
+
+A saved answer is edited at its original question or pause request. Its context
+copy is read-only, linked back to that owner and excluded from extra-input counts.
+Use the reserved answer-copy identity or explicit saved-answer context reference;
+answer citations alone do not make a genuine interpretation a copied answer.
+Generic context editing and interpretation confirmation cannot overwrite an answer
+copy. Normal question edits update that same copy and retain earlier revisions.
+Current sequential and evaluation pause owners suppress only their exact duplicate
+question/answer projection. Other source versions remain reachable in history.
+Navigation follows exact anchors, opens disclosures, preserves return position and
+keyboard focus, and never repeats automatically after a refresh.
 Failed attempts and retained publications count; focused discussions and
 assessments do not. The first P2 publication may select a method for reading,
 but it preserves the mounted shared preparation form and its draft. Only an
@@ -937,3 +998,54 @@ are ordinary buttons, never form submissions or model probes. Settings open
 above the current reader so run drafts and reading position remain intact;
 closing settings refreshes the existing project/readiness query. The guidance
 adds no scientific gate, automatic paid test, or new onboarding wizard.
+
+### Reader hardening and concise decision presentation
+
+Restoring a saved numerical-run answer restores its origin and revision with its
+text. An unknown response remains unknown; an origin-only draft change survives
+reopening and is not mistaken for the saved response.
+
+The complete question appears once in its native disclosure heading when opened.
+Its defining context, consequences, alternatives and advice remain visible,
+including distinct answer consequences in older records. No word-count threshold
+hides these fields. Scientific importance, classifications, source identities and
+history remain in Context and sources. Authored mathematics, qualifications and
+citations stay intact; the renderer does not rewrite scientific prose.
+Numerical Summary sources collect exact field links without repeating them
+between paragraphs. The underlying implementation and evidence remain available.
+
+Report and recovery anchors use the current measured sticky-toolbar height.
+Changing that offset does not scroll or refocus the reader. Supporting-document
+dialogs use their own scroll gap. Search selection in the theory graph focuses
+the selected inspector, and closing it returns to the originating control;
+polling and restored selections do not move focus.
+
+P5 keeps its report-first layout. Indispensable P5 editorial questions have one
+conditional answer location within Revise report, before the run settings.
+The Next action and compact summary navigate to that same question. Exact model,
+source and answer-version filtering applies; an active run pause owns its answer
+instead of creating another editor. Scientific and study-design questions remain
+at their upstream owners. Ordinary report discussion stays section-based.
+
+### Truthful question and answer states
+
+An unanswered ordinary item is an Open question. Only an actual active run pause
+is described as paused, and it takes precedence in Next and phase navigation.
+Scientific severity does not imply that the researcher must answer before work
+can continue. Missing legacy metadata does not imply optionality. Counts separate
+saved answers, saved unknown responses and unanswered questions without counting
+mirrored context twice; these labels do not change run readiness.
+
+Each answer has one editor. A first draft never claims that an answer is already
+saved. Editing changes future work after Save answer; work already started keeps
+its original inputs. Get the Lead's advice and Discuss retain separate targeted
+conversations and never save a preference or study fact automatically. Saving a
+pause answer and choosing Continue work remain separate actions. Continuation uses
+inputs already accepted by the paused step, including earlier pause responses.
+
+Question headings expose inline mathematics without interactive elements inside
+the summary. Citation actions remain in the details with their original source.
+Stable question, source, draft and reading-anchor keys survive copy and layout
+changes. Same-scope updates preserve focus, caret, open disclosures and reading
+offsets; user interaction cancels competing restoration. Unknown review status
+is shown as unconfirmed, never as a confirmed absence of review.

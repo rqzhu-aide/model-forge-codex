@@ -73,18 +73,18 @@ test("saved responses distinguish currently used instructions from an edited rev
   assert.match(answerEffect({ applied_to: [], previously_applied_to: ["run.old"] }), /Earlier work used your previous response/);
   assert.match(answerEffect({}), /Saved for future work/);
   const html = render.issues({ projectId: "project.a", phase: "P3", branch: "method.a", issues: [{ ...issue, researcher_answer: { note: "Study weak dependence first.", applied_to: [], previously_applied_to: ["run.old"] } }] });
-  assert.match(html, /Study weak dependence first/); assert.match(html, /Earlier work used your previous response/); assert.match(html, /Edit instruction/); assert.doesNotMatch(html, /<textarea/);
+  assert.match(html, /Study weak dependence first/); assert.match(html, /Earlier work used your previous response/); assert.match(html, /Edit your answer/); assert.doesNotMatch(html, /<textarea/);
 });
 
 test("issues distinguish scientific work from researcher questions and omit an empty card", () => {
   const scientific = render.issues({ projectId: "p", phase: "P3", branch: "method.a", issues: [{ ...issue, kind: "research_task" }] });
   assert.match(scientific, /Open scientific work/); assert.match(scientific, /further work request below/); assert.doesNotMatch(scientific, /<textarea|Add your direction|Save response/);
   const finding = render.issues({ projectId: "p", phase: "P3", branch: "method.a", issues: [{ ...issue, kind: "scientific_issue" }] });
-  assert.match(finding, /Open scientific work/); assert.match(finding, /further work request below/); assert.doesNotMatch(finding, /<textarea|Save instruction/);
-  const question = render.issues({ projectId: "p", phase: "P3", branch: "method.a", issues: [issue] }); assert.match(question, /1 question needs your response/); assert.match(question, /Your input needed/); assert.match(question, /<textarea/);
+  assert.match(finding, /Open scientific work/); assert.match(finding, /further work request below/); assert.doesNotMatch(finding, /<textarea|Save your answer/);
+  const question = render.issues({ projectId: "p", phase: "P3", branch: "method.a", issues: [issue] }); assert.match(question, /1 unanswered question/); assert.match(question, /Open question/); assert.match(question, /<textarea/);
   const empty = render.issues({ projectId: "p", phase: "P3", branch: "method.a" }); assert.equal(empty, "");
   assert.match(render.issues({ projectId: "p", phase: "P3", branch: "method.a", correctionCount: 1 }), /Work needs correction/);
-  assert.match(render.issues({ projectId: "p", phase: "P4", branch: "method.a", activePause: true }), /Evaluation waiting for your direction/);
+  assert.match(render.issues({ projectId: "p", phase: "P4", branch: "method.a", activePause: true }), /Work is paused/);
   assert.match(render.issues({ projectId: "p", phase: "P4", branch: "method.a", savedPauseCount: 1 }), /Recorded issues and responses/);
 });
 
@@ -142,5 +142,5 @@ test("opening explanation UI does not submit work and requires an explicit quest
   assert.match(button(html, "Discuss"), /type="button"/); assert.match(button(html, "Discuss"), /aria-haspopup="dialog"/);
   const conversation = render.conversation({ projectId: "p", target: issueSourceTarget(issue), onClose: noop, onStarted: noop });
   assert.match(conversation, /About this issue/); assert.match(conversation, /Your question/); assert.match(button(conversation, ">Discuss<"), /disabled=""/); assert.deepEqual(render.requests, []);
-  assert.match(conversation, /Saving a response is a separate action/);
+  assert.match(conversation, /Saving an answer is a separate action/);
 });

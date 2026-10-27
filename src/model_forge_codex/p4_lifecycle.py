@@ -10,6 +10,7 @@ from dataclasses import asdict
 
 from .domain import Finding, MemberRole, RunState, StageResult, TERMINAL_STATES
 from .project_brief import project_instructions
+from .researcher_language import RESEARCHER_LANGUAGE_GUIDANCE, has_researcher_language_guidance
 from .storage import read_json, sha256_file, write_json_atomic
 
 
@@ -190,6 +191,8 @@ class P4LifecycleMixin:
     def _p4_brief(self, record, stage, role) -> str:
         if not self._progressive_p4(record):
             return ""
+        researcher_language = ("" if has_researcher_language_guidance(getattr(stage, "objective", ""))
+                               else RESEARCHER_LANGUAGE_GUIDANCE + "\n\n")
         from .p4_execution import P4Controller, _declared_sources_enabled
         progress = P4Controller.load_snapshot(self.run_dir(record.project_id, record.run_id)) or {}
         declared_sources = _declared_sources_enabled(self.run_dir(record.project_id, record.run_id))
@@ -271,12 +274,18 @@ class P4LifecycleMixin:
             '"evidence_refs":[{"path":"rows.jsonl","sha256":"<actual file SHA256>"}]}}`. '
             "Replace the example path and digest with the actual saved file path and SHA256. "
             "The analyst calls complete only after all final analyst outputs pass validate_artifacts. "
-            "A pause uses request_decision with one concrete question, reason, options and evidence_refs. "
+            + researcher_language
+            + "A pause uses request_decision with one concrete question, reason, options and evidence_refs. "
+            "When mathematics distinguishes the choices, reason shows the affected problem or equation with enough formulation to understand the decision, "
+            "defining symbols and any shared objective once. Each option's consequence gives its formulation or changed equation under that shared context, "
+            "followed by a concise practical effect; prose-only options do not explain a mathematical distinction. "
+            "Plain study facts, budgets and choices without a mathematical distinction need no artificial equation. "
             "Ask for an unresolved researcher preference or unavailable study fact only when its answer materially changes interpretation, "
             "inferential validity, data applicability or an unavoidable resource compromise. "
             "Do not manufacture alternatives for a study fact or ask the researcher to resolve a proof or implementation defect; "
             "report the defect and, if progress is blocked, the consequential scope or continuation choice. "
-            "Nonblocking unknowns permit explicitly conditional work and need no question. "
+            "Nonblocking unknowns permit explicitly conditional work and need no pause. "
+            "Propose useful consequential invitations in the stage's existing owned outputs for Lead consolidation. "
             "Missing final artifacts at a pause are expected. Theorist and lead can also request_decision "
             "on a severe issue; otherwise save and validate their normal owned outputs and end their turn. "
             "Reviewers must not call complete or run_batch; those operations are analyst-only. "

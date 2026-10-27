@@ -1,6 +1,6 @@
 # Phase 1: research setting and literature landscape
 
-Contract version: 3.6.4. Catalog: 1.23.4.
+Contract version: 3.7.4. Catalog: 1.28.4.
 
 ## Five-card reading contract
 
@@ -333,7 +333,9 @@ additional P2 input continues to go only to the Research Lead.
 Under catalog 1.23.4, discovery collections use schema 1.2.0 and the Lead basis
 uses schema 1.3.0. Each collection may record consequential missing information
 in `proposed_questions`, with the affected point in `context_markdown`, its practical
-answer effect in `answer_consequences_markdown` and exact `source_refs`. A separate
+answer effect in `answer_consequences_markdown` and exact `source_refs`. Where
+mathematics distinguishes the proposed answers, include sufficient formulation and
+locally defined symbols in that affected point for Lead consolidation. A separate
 `why_it_matters_markdown` repetition is optional historical support. Parallel discovery must not contact
 the researcher through native host question tools or create a blocking pause.
 After submissions close, the Lead consolidates these proposals into scoped
@@ -415,11 +417,17 @@ For each new `researcher_decision`, author `decision_priority` as `interpretatio
 `inference`, `data` or `resources`, using the highest material consequence in that
 order, and `response_kind` as `choice` or `study_fact`. Urgency and an actual pause
 remain separate. Keep `question` to one current choice or exact factual request.
-`context_markdown` identifies the affected point with the minimum useful mathematics
-and locally defined symbols; `likely_consequence` gives its practical effect once.
-For a choice, provide useful finite `options` when appropriate, usually two or three
-realistic alternatives as `{id, label, consequence}` with unique IDs and actual
-benefits/costs. `recommendation` is Markdown Lead advice with its reason, or a candid
+`context_markdown` identifies the affected point. When mathematics distinguishes
+the choices, show the affected problem or equation with enough formulation to
+understand the decision, defining symbols and any shared objective once in that
+context. For a choice, provide useful finite `options` when appropriate, usually
+two or three realistic alternatives as `{id, label, consequence}` with unique IDs.
+Each mathematically distinct option's `consequence` gives its formulation or changed
+equation under that shared context, followed by a concise practical effect and
+material benefits/costs. Prose-only options do not explain a mathematical distinction.
+`likely_consequence` gives the overall practical effect without repeating the option
+accounts. Plain study facts, budgets and choices without a mathematical distinction
+need no artificial equation. `recommendation` is Markdown Lead advice with its reason, or a candid
 statement of what is missing. Do not preselect, save a recommendation as an answer,
 or invent literal researcher responses. An open-ended choice need not have options.
 A study-fact request names the missing information, applicability limit and what
@@ -440,3 +448,23 @@ owned outputs; the Lead prioritizes and authors the final brief without another
 stage or writer.
 
 The Data Analyst may inspect supplied accessible data read-only within P1 for observation units, repetition/timing, missingness, ranges and consequential descriptive structure. Record exact identity/digest, scope, shared runtime and limits in empirical_literature.data_profiles. Fit no model and import no full P4 controller. An observed discrepancy becomes a sourced question, not a silent correction of the researcher account.
+
+## Scientific meaning for the intended reader
+
+Apply the [shared question-language guidance](researcher-question-language.md) within this phase's existing output ownership and interaction rules. It refines the existing question, context, option consequences and recommendation; it adds no artifact, questionnaire or question quota.
+
+In P1, connect a proposed question to the scientific objective, population, observation unit or intended interpretation. Do not ask for an estimator choice before the research goal calls for it.
+
+## Writing duties in existing outputs
+
+The executable objectives give the task, shared writing core, owned output duties
+and separate scientific/execution constraints. `papers[].explanation_markdown`
+explains each paper's actual target and mechanism with source-supported defining
+mathematics. `formulation_markdown` retains the fuller account; relevance and
+limitations stay in their fields, with honest access and verification limits.
+The Lead's `research_setting.statement_markdown` and `research_goal_markdown`
+describe observations and the intended scientific answer with essential notation,
+keeping prediction, estimation and causal aims distinct. `landscape.summary_markdown`
+and approach accounts explain meaningful differences across sources. Specialists
+propose consequential premises through `proposed_questions[]`; only the designated
+Lead stage consolidates attention. No new pause authority is granted.

@@ -186,7 +186,8 @@
         },
         "text": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "State the exact condition and its scope. Keep observation or measurement accuracy distinct from mathematical bounds and model premises. In readable summaries and assumption tables, accurate recorded histories do not imply observation of unobserved continuation; any bound covering that continuation needs its own stated scientific premise."
         },
         "scope": {
           "type": "string",
@@ -526,7 +527,8 @@
         },
         "change_summary": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Explain the scientific change and consequence, or state that the conclusion is unchanged. Distinguish new support or a changed assessment from rechecking or clarifying an existing argument; the exact component changes remain in the structured sets below."
         },
         "strengthened_statement_ids": {
           "$ref": "#/$defs/statementIdSet"

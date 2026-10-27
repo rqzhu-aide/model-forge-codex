@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { sharedPackage } from "../scripts/shared-deps.mjs";
 import { normalizeReader } from "../src/readingPosition.js";
 import { mathSegments, validateMathText } from "../src/researchMath.js";
+import { goalSource } from "../src/phaseOneReader.js";
 
 const require = createRequire(import.meta.url);
 const katex = require(sharedPackage("katex"));
@@ -85,6 +86,61 @@ function passageBetween(html, start, end) {
   assert.ok(from >= 0 && to > from, `visible passage: ${start}`);
   return html.slice(from, to);
 }
+
+const correctionBasis = () => ({ ...structuredClone(basis),
+  catalog_pin: { catalog_version: "1.28.5", catalog_manifest_sha256: "a".repeat(64) },
+  generation_ref: { branch: "trunk", phase: "P1", family: "research_basis", generation_id: "basis.first", sha256: "b".repeat(64), run_id: "run.first", package_id: "package.first" },
+});
+const correction = (current, changes = {}) => ({ item_id: "goal.clarification", revision: 2, status: "confirmed", topic: "research_goal", origin: "researcher_reported", scope: { kind: "project" },
+  statement: "Maximize reward subject to separate cost risk $p_C(\\pi;b)\\le\\alpha$.", source_refs: [goalSource(current)], ...changes });
+
+test("the exact saved goal clarification leads while the published goal and formulation remain on demand", () => {
+  const current = correctionBasis(); const item = correction(current);
+  const props = { project: { research_instructions: "Original brief." }, basis: current, problemContext: { items: [item] }, onGoal: () => {} };
+  const before = JSON.stringify(props);
+  const html = render.phase(props), visible = outsideClosedDetails(html);
+  assert.match(visible, /Study goal.*Your clarification/);
+  assert.match(visible, /Maximize reward subject to separate cost risk/);
+  assert.match(visible, /class="katex/);
+  assert.doesNotMatch(visible, /Develop a model and technical report|Y_i=f|Study description/);
+  assert.match(html, /<details class="research-details" data-reading-anchor="earlier-goal"><summary>Earlier Lead interpretation<\/summary>/);
+  assert.match(html, /<details class="research-details" data-reading-anchor="earlier-setting"><summary>Earlier study formulation<\/summary>/);
+  assert.match(html, /Develop a model and technical report/);
+  assert.equal((html.match(/Correct or discuss goal/g) || []).length, 1);
+  assert.doesNotMatch(html, /Your correction is saved|<textarea|data-reading-anchor="problem-context:/);
+  assert.ok(html.indexOf("Maximize reward") < html.indexOf("Earlier Lead interpretation"));
+  assert.ok(html.indexOf("Maximize reward") < html.indexOf("Earlier study formulation"));
+  assert.equal(JSON.stringify(props), before, "Display does not rewrite the goal, its correction or the original study.");
+});
+
+test("multiple exact clarifications remain separate and unknown content is not resolved by presentation", () => {
+  const current = correctionBasis();
+  const items = [correction(current), correction(current, { item_id: "goal.unknown", revision: 1, origin: "unknown", statement: "The cost measure remains unknown." })];
+  const html = render.phase({ project: {}, basis: current, problemContext: { items }, onGoal: () => {} });
+  const visible = outsideClosedDetails(html);
+  assert.match(visible, /Your clarifications/);
+  assert.match(visible, /Maximize reward subject to separate cost risk/);
+  assert.match(visible, /The cost measure remains unknown/);
+  assert.equal((html.match(/data-reading-anchor="goal-clarification:/g) || []).length, 2);
+  assert.equal((html.match(/Correct or discuss goal/g) || []).length, 1);
+});
+
+test("unconfirmed, different-source and model-scoped notes cannot replace the current published goal", () => {
+  const current = correctionBasis();
+  const items = [
+    correction(current, { status: "proposed", statement: "Unconfirmed target." }),
+    correction(current, { source_refs: [{ ...goalSource(current), generation_id: "basis.other" }], statement: "Another goal." }),
+    correction(current, { source_refs: [], statement: "Unlinked note." }),
+    correction(current, { scope: { kind: "model", branch: "method.one" }, statement: "Model target." }),
+    correction(current, { topic: "expectation", statement: "Another topic." }),
+  ];
+  const visible = outsideClosedDetails(render.phase({ project: {}, basis: current, problemContext: { items } }));
+  assert.match(visible, /Lead&#x27;s interpretation/);
+  assert.match(visible, /Develop a model and technical report/);
+  assert.doesNotMatch(visible, /Your clarification|Unconfirmed target|Another goal|Unlinked note|Model target|Another topic/);
+  const noSource = render.phase({ project: {}, basis: { ...current, generation_ref: undefined }, problemContext: { items: [correction(current)] } });
+  assert.doesNotMatch(noSource, /Your clarification|Maximize reward subject to separate cost risk/);
+});
 
 test("browser mathematics fixture retains its producing pin and exact source examples", () => {
   const load = (name) => JSON.parse(fs.readFileSync(new URL(`../../contracts/${name}`, import.meta.url), "utf8"));

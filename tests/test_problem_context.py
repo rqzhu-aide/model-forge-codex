@@ -2,15 +2,17 @@
 import json
 
 import pytest
+from httpx import ASGITransport, AsyncClient
 
 from model_forge_codex.cumulative_attention import (answer_for_question, applicable_researcher_answers,
                                                    open_attention_items)
 from model_forge_codex.phase_interactions import answers_with_usage, save_scoped_answer
-from model_forge_codex.problem_context import (confirm_context_amendment, context_change_notices,
+from model_forge_codex.problem_context import (answer_reference, confirm_context_amendment, context_change_notices,
     context_snapshot, effective_account, frozen_problem_context, initialize_problem_context,
     load_problem_context, project_context_target, propose_context_amendment,
     refresh_problem_context_brief, resolve_context_model, resolve_project_context_target, save_context_item, supports_problem_context)
 from model_forge_codex.records import publish_package
+from model_forge_codex.service import create_app
 from model_forge_codex.storage import read_json, write_json_atomic
 from test_direct_workflow import direct_engine
 
@@ -126,6 +128,189 @@ def test_same_words_can_change_origin_and_keep_authored_expectation_topic(projec
     assert read_json(project / "researcher/attention_resolutions.json")[question["attention_id"]]["history"][0]["origin"] == "researcher_reported"
     assert save_scoped_answer(project, question, second["note"], expected_revision=second["revision"],
                               save_to_context=True, origin="unknown") == second
+
+
+@pytest.mark.parametrize("references", ["omitted", "unchanged", "forged"])
+async def test_generic_context_api_cannot_edit_an_answer_mirror(direct_engine, references):
+    engine, project = direct_engine
+    question = publish_question(project, 1)
+    answer = save_scoped_answer(project, question, "Predict the next visit.",
+                                expected_revision=0, save_to_context=True)
+    context = load_problem_context(project)
+    item = context["items"][0]
+    body = {"expected_revision": context["revision"], "item_id": item["item_id"],
+            "statement": "A different answer through the context editor."}
+    if references != "omitted":
+        reference = answer_reference(answer)
+        body["answer_refs"] = [{**reference, "answer_revision": 999}] if references == "forged" else [reference]
+    before = {path: path.read_bytes() for path in (project / "researcher").glob("*.json")}
+    app = create_app(data_root=engine.data_root, bridge=engine.bridge)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.put("/api/v1/projects/project.direct/problem-context", json=body)
+        assert response.status_code == 409, response.text
+        assert "original question" in response.json()["detail"]
+        if references == "omitted":
+            bypass = await client.put("/api/v1/projects/project.direct/problem-context",
+                                      json={**body, "_answer_sync": True})
+            assert bypass.status_code == 422, bypass.text
+    assert {path: path.read_bytes() for path in (project / "researcher").glob("*.json")} == before
+
+
+@pytest.mark.parametrize("item_id", [None, "context.collection.answer"])
+def test_scoped_answer_edit_updates_one_mirror_and_preserves_exact_history(project, item_id):
+    question = publish_question(project, 1)
+    first = save_scoped_answer(project, question, "The original collection description.",
+                              expected_revision=0, save_to_context=True, context_item_id=item_id)
+    original_context = load_problem_context(project)
+    second = save_scoped_answer(project, question, "The corrected collection description.",
+                               expected_revision=first["revision"], save_to_context=True,
+                               context_expected_revision=original_context["revision"])
+    context = load_problem_context(project)
+    assert len(context["items"]) == 1
+    assert context["items"][0]["item_id"] == first["context_ref"]["item_id"]
+    assert context["items"][0]["statement"] == second["note"]
+    assert context["items"][0]["answer_refs"] == [answer_reference(second)]
+    assert context["history"][-1] == context_snapshot(original_context)
+    stored = read_json(project / "researcher/attention_resolutions.json")[question["attention_id"]]
+    assert stored["note"] == second["note"]
+    assert stored["history"][0]["note"] == first["note"]
+    assert stored["history"][0]["context_ref"] == first["context_ref"]
+
+
+@pytest.mark.parametrize("item_id", [None, "context.collection.answer"])
+def test_context_confirmation_cannot_overwrite_an_answer_mirror(project, item_id):
+    question = publish_question(project, 1)
+    answer = save_scoped_answer(project, question, "The researcher's exact answer.",
+                               expected_revision=0, save_to_context=True, context_item_id=item_id)
+    context = load_problem_context(project)
+    proposed = propose_context_amendment(project, "An interpretation of the answer.",
+        expected_revision=context["revision"], item_id=answer["context_ref"]["item_id"])
+    proposal = proposed["proposals"][-1]
+    before = (project / "researcher/problem_context.json").read_bytes()
+    with pytest.raises(ValueError, match="original question"):
+        confirm_context_amendment(project, proposal["amendment_id"], expected_revision=proposed["revision"])
+    assert (project / "researcher/problem_context.json").read_bytes() == before
+    assert load_problem_context(project)["proposals"][-1]["status"] == "pending"
+
+
+def test_historical_custom_answer_link_protects_a_previously_detached_mirror(project):
+    question = publish_question(project, 1)
+    answer = save_scoped_answer(project, question, "The original answer.", expected_revision=0,
+                               save_to_context=True, context_item_id="context.collection.answer")
+    save_scoped_answer(project, question, "A later answer without a context save.", expected_revision=answer["revision"])
+    context = load_problem_context(project)
+    # Reproduce a row detached by the old generic editor. The saved answer's
+    # retained context link remains its explicit identity even without refs.
+    context["items"][0].update(statement="A detached context edit.", answer_refs=[])
+    write_json_atomic(project / "researcher/problem_context.json", context)
+    stored = read_json(project / "researcher/attention_resolutions.json")[question["attention_id"]]
+    assert "context_ref" not in stored
+    assert stored["history"][0]["context_ref"]["item_id"] == context["items"][0]["item_id"]
+    projected = answers_with_usage(project)
+    assert len(projected) == 1
+    assert projected[0]["history"] == [{"revision": answer["revision"], "question_ref": answer["question_ref"],
+                                        "context_ref": answer["context_ref"]}]
+    assert "history" not in applicable_researcher_answers(project, "trunk")[0]
+    before = (project / "researcher/problem_context.json").read_bytes()
+    with pytest.raises(ValueError, match="original question"):
+        save_context_item(project, "Another detached edit.", expected_revision=context["revision"],
+                          item_id=context["items"][0]["item_id"])
+    assert (project / "researcher/problem_context.json").read_bytes() == before
+    latest = stored["revision"]
+    corrected = save_scoped_answer(project, question, "The corrected answer.", expected_revision=latest, save_to_context=True)
+    updated = load_problem_context(project)
+    assert len(updated["items"]) == 1
+    assert updated["items"][0]["item_id"] == answer["context_ref"]["item_id"]
+    assert updated["items"][0]["answer_refs"] == [answer_reference(corrected)]
+
+
+async def test_service_answer_projection_retains_only_exact_context_ownership(direct_engine):
+    engine, project = direct_engine
+    question = publish_question(project, 1)
+    first = save_scoped_answer(project, question, "An earlier private answer.", expected_revision=0,
+                              save_to_context=True, context_item_id="context.custom.answer")
+    second = save_scoped_answer(project, question, "The latest answer.", expected_revision=first["revision"])
+    successor = publish_question(project, 2)
+    third = save_scoped_answer(project, successor, "A successor answer.", expected_revision=0)
+    before = engine.compute_basis("project.direct", "P2", "trunk", "p2.full_catalog")
+    app = create_app(data_root=engine.data_root, bridge=engine.bridge)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/v1/projects/project.direct/decisions-pending")
+        assert response.status_code == 200, response.text
+    answers = response.json()["researcher_answers"]
+    exact = next(row for row in answers if row["revision"] == second["revision"])
+    assert exact["history"] == [{"revision": first["revision"], "question_ref": first["question_ref"],
+                                 "context_ref": first["context_ref"]}]
+    assert "An earlier private answer." not in json.dumps(answers)
+    assert "history" not in next(row for row in answers if row["revision"] == third["revision"])
+    assert "history" not in applicable_researcher_answers(project, "trunk")[0]
+    assert engine.compute_basis("project.direct", "P2", "trunk", "p2.full_catalog") == before
+
+
+def test_legacy_adopted_answer_mirror_is_protected_without_a_saved_context_link(project):
+    write_json_atomic(project / "researcher/attention_resolutions.json", {"legacy.answer": {
+        "note": "The retained original answer.", "revision": 1, "scope": {"kind": "project"},
+        "save_to_context": True, "attention": {"phase": "P2", "branch": "trunk"}}})
+    context = load_problem_context(project)
+    item = context["items"][0]
+    assert item["item_id"].startswith("context.answer.")
+    with pytest.raises(ValueError, match="original question"):
+        save_context_item(project, "A separate context edit.", expected_revision=context["revision"], item_id=item["item_id"])
+    assert not (project / "researcher/problem_context.json").exists()
+
+
+def test_answer_edit_reuses_exact_adopted_mirror_without_a_saved_context_link(project):
+    question = publish_question(project, 1)
+    original = save_scoped_answer(project, question, "The retained original answer.", expected_revision=0)
+    stored = read_json(project / "researcher/attention_resolutions.json")
+    stored[question["attention_id"]]["save_to_context"] = True
+    write_json_atomic(project / "researcher/attention_resolutions.json", stored)
+    adopted = initialize_problem_context(project)
+    item = adopted["items"][0]
+    updated = save_scoped_answer(project, question, "The corrected adopted answer.",
+                                expected_revision=original["revision"], save_to_context=True)
+    context = load_problem_context(project)
+    assert len(context["items"]) == 1
+    assert context["items"][0]["item_id"] == item["item_id"]
+    assert context["items"][0]["answer_refs"] == [answer_reference(updated)]
+    assert context["history"][-1]["items"] == [item]
+
+
+def test_implicit_answer_context_save_does_not_overwrite_another_answers_mirror(project):
+    question = publish_question(project, 1)
+    first = save_scoped_answer(project, question, "The first answer.", expected_revision=0, save_to_context=True)
+    other = publish_question(project, 2, attention_id="question.other")
+    save_scoped_answer(project, other, "Another answer now owns this item.", expected_revision=0,
+                       save_to_context=True, context_item_id=first["context_ref"]["item_id"])
+    before = {path: path.read_bytes() for path in (project / "researcher").glob("*.json")}
+    with pytest.raises(ValueError, match="different answer"):
+        save_scoped_answer(project, question, "Edit the first answer.", expected_revision=first["revision"], save_to_context=True)
+    assert {path: path.read_bytes() for path in (project / "researcher").glob("*.json")} == before
+
+
+def test_answer_citations_do_not_block_genuine_amendments_or_standalone_note_edits(project):
+    question = publish_question(project, 1)
+    answer = save_scoped_answer(project, question, "Collection records are incomplete.", expected_revision=0)
+    original = save_context_item(project, "Use the supplied collection records.", expected_revision=1)
+    amended = save_context_item(project, "Review the supplied collection records.",
+        expected_revision=original["revision"], item_id=original["items"][0]["item_id"])
+    reference = answer_reference(answer)
+    proposed = propose_context_amendment(project, "Collection completeness is an open assumption.",
+        expected_revision=amended["revision"], item_id="context.collection.interpretation", answer_refs=[reference],
+        amends=[{"kind": "context_item", "item_id": amended["items"][0]["item_id"], "revision": 2}])
+    confirmed = confirm_context_amendment(project, proposed["proposals"][-1]["amendment_id"],
+                                           expected_revision=proposed["revision"])
+    edited = save_context_item(project, "Verify collection completeness before applying the model.",
+        expected_revision=confirmed["revision"], item_id="context.collection.interpretation", answer_refs=[reference])
+    assert len(effective_account(edited)["items"]) == 1
+    assert effective_account(edited)["items"][0]["statement"] == "Verify collection completeness before applying the model."
+    assert effective_account(edited)["items"][0]["answer_refs"] == [reference]
+    assert read_json(project / "researcher/attention_resolutions.json")[question["attention_id"]]["note"] == answer["note"]
+    save_scoped_answer(project, question, answer["note"], expected_revision=answer["revision"], save_to_context=True)
+    context = load_problem_context(project)
+    interpretation = next(row for row in context["items"] if row["item_id"] == "context.collection.interpretation")
+    assert interpretation == effective_account(edited)["items"][0]
+    assert len([row for row in context["items"] if row["item_id"].startswith("context.answer.")]) == 1
 
 
 def test_direct_amendment_has_authority_only_over_explicit_brief_excerpt(project):

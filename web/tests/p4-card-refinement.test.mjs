@@ -36,7 +36,7 @@ test("Summary shows the frozen math recap and developed work, with full formulat
   assert.doesNotMatch(summary, /<figure|<table/); assert.doesNotMatch(html, /empirical-data-picker|<select/);
   assert.equal((html.match(/<figure\b/g) || []).length, 1); assert.ok(html.indexOf("Result exhibit.saved") > html.indexOf("Experiments and Results"));
   for (const source of nodes(ui.Summary({ record, onSource: (value) => opened.push(value) })).filter((node) => node.type === ui.SourceRef && node.props.reference?.generation_id === frozen.generation_id)) source.props.onOpen(source.props.reference);
-  assert.equal(opened.length, 2); assert.ok(opened.every((source) => source.sha256 === frozen.sha256));
+  assert.equal(opened.length, 1); assert.ok(opened.every((source) => source.sha256 === frozen.sha256));
   const authored = ui.render(ui.Summary, { record: { ...record, decision_summary: { ...data, method_formulation_markdown: "The implemented method is $$m(x)=x^2.$$" } } });
   assert.match(outsideDetails(authored), /Implemented method|katex-display/); assert.doesNotMatch(authored, /ridge hazard|Definition recorded at the start/);
   assert.deepEqual(record, before);
@@ -58,7 +58,9 @@ test("long authored formulations retain complete math behind a native disclosure
   assert.equal(nodes(disclosure).find((node) => node.type === "summary").props.children, "Full mathematical formulation and fitting criterion");
   assert.ok(nodes(disclosure).some((node) => node.props.text === formulation), "The complete authored string is retained without reconstructing or clipping equations.");
   assert.ok(nodes(tree).some((node) => node.props.text === recap), "The recap ends at the parsed paragraph boundary after the complete display equation.");
-  const source = nodes(disclosure).find((node) => node.type === ui.SourceRef);
+  const sources = nodes(tree).find((node) => node.type === "details" && node.props.className === "research-details empirical-summary-sources");
+  const source = nodes(sources).find((node) => node.type === ui.SourceRef && node.props.reference.entry_pointer === "/decision_summary/method_formulation_markdown");
+  assert.equal(nodes(tree).filter((node) => node.type === ui.SourceRef && node.props.reference.entry_pointer === source.props.reference.entry_pointer).length, 1);
   assert.equal(source.props.reference.entry_pointer, "/decision_summary/method_formulation_markdown");
   assert.equal(source.props.reference.sha256, ref.sha256);
   assert.match(html, /href="https:\/\/example.test\/definition"/);

@@ -38,7 +38,7 @@
           "assessment_markdown": {
             "type": "string",
             "minLength": 1,
-            "description": "Explain what is supported, what prevents the intended claim and the next work that would resolve it. Keep the opening concise and preserve exact relevant mathematics below."
+            "description": "Explain what is supported, what prevents the intended claim and the next work that would resolve it. Keep the opening concise and preserve exact relevant mathematics below. Lead with the assessment, support and consequence; distinguish an undefined procedure, lost identification, loss of a guarantee and observed failure."
           },
           "applicability_markdown": {
             "type": "string",
@@ -70,6 +70,7 @@
                   "minLength": 1
                 },
                 "consequence_markdown": {
+                  "description": "Explain the supported scientific consequence in the supplied study setting, preserving uncertainty and independent disagreement.",
                   "type": "string",
                   "minLength": 1
                 },

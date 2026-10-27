@@ -35,7 +35,7 @@
         "statement_markdown": {
           "type": "string",
           "minLength": 1,
-          "description": "Brief, connected description of the study problem, essential observations or conceptual objects, and the notation needed to understand them. Explain symbols in the researcher's context and preserve unknown collection facts. A full model specification or methodological development is not required here; detailed proposed project methods belong in P2. Do not choose an unspecified model family or estimator, recap literature or list questions. Keep the account sufficient to orient the reader without a fixed word or paragraph quota."
+          "description": "Brief, connected description of the study problem, essential observations or conceptual objects, and the notation needed to understand them. Explain symbols in the researcher's context and preserve unknown collection facts. A full model specification or methodological development is not required here; detailed proposed project methods belong in P2. Do not choose an unspecified model family or estimator, recap literature or list questions. Keep the account sufficient to orient the reader without a fixed word or paragraph quota. Explain the observations and essential notation before model development; distinguish the researcher from the units studied and label hypothetical examples."
         },
         "clarification_questions": {
           "type": "array",
@@ -83,7 +83,7 @@
           "type": "string",
           "minLength": 1,
           "pattern": "\\S",
-          "description": "Brief interpretation of what the researcher wants to learn, predict, compare, estimate or establish and what a useful result would answer. Use a simple target expression when it clarifies the goal, without requiring a full method specification. Distinguish the target from an estimator or report deliverable, and prediction or association from intervention effects. Put consequential ambiguities in attention_items without inventing a time origin, horizon, loss, policy or identification assumption. Detailed proposed project methods belong in P2."
+          "description": "Brief interpretation of what the researcher wants to learn, predict, compare, estimate or establish and what a useful result would answer. Use a simple target expression when it clarifies the goal, without requiring a full method specification. Distinguish the target from an estimator or report deliverable, and prediction or association from intervention effects. Put consequential ambiguities in attention_items without inventing a time origin, horizon, loss, policy or identification assumption. Detailed proposed project methods belong in P2. State the intended scientific answer while preserving the distinction between prediction, estimation and causal aims and keeping unknown study facts unknown."
         }
       }
     },
@@ -134,7 +134,7 @@
       ],
       "properties": {
         "summary_markdown": {
-          "description": "Concise cross-paper methodological synthesis with exact inline citations: explain how the approaches address the problem, which model relationships or inferential targets distinguish them, and what their assumptions permit or leave unresolved. Integrate mathematical expressions when they clarify the comparison; do not substitute model names, isolated formulas or repeated paper summaries. State unavailable support honestly.",
+          "description": "Concise cross-paper methodological synthesis with exact inline citations: explain how the approaches address the problem, which model relationships or inferential targets distinguish them, and what their assumptions permit or leave unresolved. Integrate mathematical expressions when they clarify the comparison; do not substitute model names, isolated formulas or repeated paper summaries. State unavailable support honestly. Lead with the landscape conclusion and meaningful differences, rather than a paper-by-paper list or repeated project history.",
           "type": "string",
           "minLength": 1
         },

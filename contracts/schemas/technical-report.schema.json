@@ -46,7 +46,7 @@
         },
         "report_artifact": {
           "$ref": "common-definitions.schema.json#/$defs/artifactPointer",
-          "description": "Primary readable technical report in connected statistical prose. Develop the exact model, defining mathematics and findings once, preserving essential conditions and scientific scope. Reader-report instructions place all proofs and proof sketches in a separate declared appendix and identify the trailing bibliography through section_anchors.references. Each body-relative file link or image resolves uniquely to a declared, digest-verified submitted material. Page and layout requirements come from the run's frozen instructions."
+          "description": "Primary readable technical report in connected statistical prose. Develop the exact model, defining mathematics and findings once, preserving essential conditions and scientific scope. Reader-report instructions place all proofs and proof sketches in a separate declared appendix and identify the trailing bibliography through section_anchors.references. Each body-relative file link or image resolves uniquely to a declared, digest-verified submitted material. Page and layout requirements come from the run's frozen instructions. The opening states the problem, model idea, main result and contribution, including negative evidence and decisive conditions. Keep proofs separate and preserve exact mathematical meaning and reviewed-version distinctions."
         },
         "problem_context_ref": {
           "type": "object",

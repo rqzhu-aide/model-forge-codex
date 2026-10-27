@@ -44,6 +44,7 @@ from .problem_context import (supports_problem_context, frozen_problem_context,
 from .technical_reports import (technical_report_enabled, report_assembly_readiness,
                                 technical_report_scope_brief, derive_report_completion)
 from .researcher_pause import ResearcherPauseStore, eligible_stage, researcher_pause_target
+from .researcher_language import RESEARCHER_LANGUAGE_GUIDANCE
 from .p5_review_packet import (frozen_review_packet_enabled, prepare_review_packet,
                                review_packet_brief, manuscript_scope_brief,
                                validate_review_packet_outputs, validate_manuscript_scope)
@@ -3054,6 +3055,29 @@ class RunEngine(P4LifecycleMixin):
                     "A saved section comment is user-authored discussion context, not a validated scientific fact or an instruction to change the report. "
                     "Do not save comments, propose context amendments, resolve issues, change the report or launch further work. "
                     "Return assessment_markdown and exact evidence_refs for sources actually used. ")
+            if (record.assessment_purpose in ("issue_explanation", "issue_suggestions", "model_dialogue", "project_context")
+                    and (record.target or {}).get("kind") != "report_section"):
+                objective += (
+                    "When a consequential choice has a mathematical distinction, or the researcher requests a mathematical comparison, "
+                    "state the affected target, model, constraint, assumption or guarantee in assessment_markdown with sufficient mathematical formulation. "
+                    "Use the frozen source's notation where available, defining symbols and any shared objective once. "
+                    "Show each mathematically distinct alternative's changed equation or formulation, followed by its concise practical consequence and material tradeoff. "
+                    "Notation definitions or verbal option labels alone do not explain a mathematical distinction. "
+                    "If advice is warranted, explain the conditions supporting the recommendation; otherwise state the missing evidence or preference. "
+                    "Answer the exact question first; this is not a mandatory template for every reply. "
+                    "Keep the comparison concise without repeating full derivations or source accounts, and do not invent quantities or established guarantees. "
+                    "Plain study facts, budgets and choices without a mathematical distinction need no artificial equation. "
+                    "The Lead owns routine scientific choices within the agreed goal and budget; explaining alternatives does not make them researcher decisions. "
+                    "Ask a new follow-up only for unresolved preferences or unavailable facts that materially affect interpretation, inferential validity, data applicability or a meaningful resource compromise. "
+                    "Reuse applicable saved answers, preserve unknowns and unsaved drafts, and do not ask the researcher to resolve a proof or implementation defect. "
+                    "No follow-up question is required. "
+                )
+                if record.assessment_purpose in ("project_context", "model_dialogue"):
+                    objective += (
+                        "For any optional followup_questions, keep question as the direct request and scope exact. "
+                        "Use consequence_markdown for the affected formulation and practical answer effect when mathematics distinguishes the choices; "
+                        "refer to the shared explanation without repeating it, and keep factual requests useful when the answer is unknown. "
+                    )
             draft_context = ("Researcher response note draft (verbatim, unsaved):\n" + record.researcher_note_draft
                 + "\n\nThis is an editable researcher draft, not a saved answer or validated fact. Discuss it as provisional input; do not save or adopt it.\n\n"
                 if record.researcher_note_draft is not None else "")
@@ -3068,6 +3092,7 @@ class RunEngine(P4LifecycleMixin):
                 f"Researcher note (verbatim):\n{record.instructions}\n\n{target_context}\n"
                 f"{draft_context}"
                 f"{objective}"
+                f"\n\n{RESEARCHER_LANGUAGE_GUIDANCE}\n\n"
                 "Do not change the theory, proofs, method, implementation, or existing scientific files. "
                 "Do not launch repairs or experiments, or update the scientific member's continuing memory. "
                 "Your writable workspace is isolated from all scientific sources.\n\n"

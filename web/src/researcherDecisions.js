@@ -27,7 +27,7 @@ export function decisionSubmission(item, { note = "", origin = "researcher_repor
   if (option) return { note: note.trim(), origin: "researcher_reported", selection: { option_id: option.id, ...(note.trim() ? { note: note.trim() } : {}) } };
   if (options.length && !["custom", "unknown"].includes(choice)) return null;
   const unknown = options.length ? choice === "unknown" : origin === "unknown";
-  const text = note.trim() || (unknown ? options.length ? "I am unsure. Keep this choice unresolved." : "This information remains unknown." : "");
+  const text = note.trim() || (unknown ? options.length ? "This choice remains unresolved." : "This information remains unknown." : "");
   return text ? { note: text, origin: unknown ? "unknown" : origin } : null;
 }
 
@@ -53,21 +53,39 @@ export function legacyOptionText(options) {
   return options.map(option => typeof option === "string" ? option : option && typeof option.label === "string" ? [option.label, option.consequence].filter(Boolean).join(". ") : "").filter(Boolean).join("\n\n");
 }
 
+function distinctSections(sections, alreadyShown = []) {
+  const shown = new Set(alreadyShown.filter(Boolean));
+  return sections.flatMap(([text, heading, section]) => {
+    if (!text || shown.has(text)) return [];
+    shown.add(text); return [{ text, heading, section }];
+  });
+}
+
+export function decisionBriefSections(item, { showOptions = true } = {}) {
+  const authoredBrief = ["choice", "study_fact"].includes(item.response_kind);
+  const context = authoredBrief ? item.context_markdown || item.summary_markdown : null;
+  const consequence = item.likely_consequence || item.consequence_markdown || item.why_it_matters || item.why_it_matters_markdown;
+  const role = item.original_role || item.responsible_role || item.raised_by;
+  const recommendationLabel = authoredBrief || role === "research_lead" ? "Lead recommendation" : role === "outside_reviewer" ? "Reviewer recommendation" : "Author recommendation";
+  return distinctSections([
+    [context, item.response_kind === "study_fact" ? "Study context" : "What this choice changes", "context"],
+    [consequence, "Why your answer matters", "consequence"],
+    [item.expected_consequence, "What your answer changes", "answer-consequences"],
+    [item.answer_consequences_markdown, "What your answer changes", "answer-consequences-markdown"],
+    [showOptions && !decisionOptions(item).length && item.response_kind !== "study_fact" ? legacyOptionText(item.options) : null, "Possible directions", "options"],
+    [item.response_kind !== "study_fact" ? item.recommendation : null, recommendationLabel, "recommendation"],
+  ], [item.question || item.title]);
+}
+
 export function decisionSupportSections(item, title = item.question || item.title) {
   const authoredBrief = ["choice", "study_fact"].includes(item.response_kind);
   const context = item.context_markdown || item.summary_markdown;
-  const consequence = item.likely_consequence || item.consequence_markdown || item.why_it_matters || item.why_it_matters_markdown;
-  const shown = new Set([title, consequence, item.recommendation, ...(authoredBrief ? [context] : [])].filter(Boolean));
-  return [
+  return distinctSections([
     ...(!authoredBrief ? [[context, "Context", "context"]] : []),
     [item.summary_markdown, "Earlier context", "summary"],
-    [item.expected_consequence || item.answer_consequences_markdown, "What your answer changes", "answer-consequences"],
     [item.checkability || item.checkability_markdown, "How this could be checked", "checkability"],
     [item.information_limits || item.information_limits_markdown, "What remains unknown", "limits"],
     [item.why_it_matters || item.why_it_matters_markdown, "Supporting explanation", "why"],
     [item.disposition_reason, "The lead's response", "disposition"],
-  ].flatMap(([text, heading, section]) => {
-    if (!text || shown.has(text)) return [];
-    shown.add(text); return [{ text, heading, section }];
-  });
+  ], [title, ...decisionBriefSections(item).map(({ text }) => text)]);
 }

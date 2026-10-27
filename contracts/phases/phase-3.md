@@ -1,5 +1,7 @@
 # Phase 3: Theory Development
 
+Contract version: 2.11.4. Catalog: 1.28.4.
+
 ## 1. Purpose
 
 Phase 3 develops the complete current theoretical account for one user-selected method. It states the estimand or target, assumptions, formal claims, proofs or proof obligations, limitations, and connections between the mathematical definition and later empirical work.
@@ -68,6 +70,10 @@ The role order is fixed.
 
 Each handoff states what changed, which claims are supported, which assumptions remain active, which issues remain unresolved, and what the next role must verify. The fixed sequence contains no silent repair loop. If a material problem remains after analyst review, the lead reports it and gives the user an exact rerun question. The outside reviewer does not participate in Phase 3.
 
+Handoffs carry findings, exact references, shared issue objects and next checks.
+Complete derivations and repeated statement or assumption inventories remain in
+their owned manuscript or audit, accessible through those references.
+
 ## 6. Run-local outputs
 
 The active run workspace must contain:
@@ -103,6 +109,12 @@ Before promotion, the system verifies that:
 Machine validation establishes structural completeness, identity, and traceability. It cannot prove a theorem, detect every hidden assumption, establish novelty, or determine whether the theoretical contribution is important.
 
 ## 8. Scientific assessment boundary
+
+Readable assumption summaries and tables must preserve the formal premise's
+scope. Measurement accuracy in recorded histories and justified bounds covering
+unobserved continuation are different conditions; neither establishes that future
+outcomes have been observed. The analyst checks this distinction against the
+formal assumptions. An explanatory clarification is not new proof support.
 
 The theorist owns the mathematical construction and first assessment of formal validity. The data analyst independently challenges operational meaning, identifiability, computational implications, and empirical consistency. The research lead owns the integrated scientific assessment, substantive interpretation, scope of claims, and communication of disagreement.
 
@@ -255,11 +267,17 @@ For each new `researcher_decision`, author `decision_priority` as `interpretatio
 `inference`, `data` or `resources`, using the highest material consequence in that
 order, and `response_kind` as `choice` or `study_fact`. Urgency and an actual pause
 remain separate. Keep `question` to one current choice or exact factual request.
-`context_markdown` identifies the affected point with the minimum useful mathematics
-and locally defined symbols; `likely_consequence` gives its practical effect once.
-For a choice, provide useful finite `options` when appropriate, usually two or three
-realistic alternatives as `{id, label, consequence}` with unique IDs and actual
-benefits/costs. `recommendation` is Markdown Lead advice with its reason, or a candid
+`context_markdown` identifies the affected point. When mathematics distinguishes
+the choices, show the affected problem or equation with enough formulation to
+understand the decision, defining symbols and any shared objective once in that
+context. For a choice, provide useful finite `options` when appropriate, usually
+two or three realistic alternatives as `{id, label, consequence}` with unique IDs.
+Each mathematically distinct option's `consequence` gives its formulation or changed
+equation under that shared context, followed by a concise practical effect and
+material benefits/costs. Prose-only options do not explain a mathematical distinction.
+`likely_consequence` gives the overall practical effect without repeating the option
+accounts. Plain study facts, budgets and choices without a mathematical distinction
+need no artificial equation. `recommendation` is Markdown Lead advice with its reason, or a candid
 statement of what is missing. Do not preselect, save a recommendation as an answer,
 or invent literal researcher responses. An open-ended choice need not have options.
 A study-fact request names the missing information, applicability limit and what
@@ -288,3 +306,22 @@ exact scope and audience. Specialists do not author an unassigned attention
 artifact. A genuinely blocking missing fact or choice uses the existing
 researcher-question.json pause; native host questions are not used. Unknown
 facts can remain explicit conditions when work can proceed responsibly.
+
+## Scientific meaning for the intended reader
+
+Apply the [shared question-language guidance](researcher-question-language.md) within this phase's existing output ownership and interaction rules. It refines the existing question, context, option consequences and recommendation; it adds no artifact, questionnaire or question quota.
+
+In P3, connect an assumption to the specific claim it supports and its meaning in the study. Ask for relevant study information, never for permission to treat an assumption as true. Missing proofs and numerical correctness remain team work.
+
+## Writing duties in existing outputs
+
+The executable objectives give the task, shared writing core, owned output duties
+and separate scientific/execution constraints. The decision,
+`phase_summary.evaluation_markdown` and `theory_compact.summary_markdown` interpret
+the supported result and practical boundary in the supplied study. Clearer prose
+cannot rewrite audited statement text, quantifiers, assumptions or proof support.
+For example, a sufficient finite stationary state keeps those qualifications.
+Existing theory summaries and audits explain what is supported and what loses
+justification, without turning absence of a proof into demonstrated failure.
+Proposed next work remains a conditional recommendation within its stated scope;
+prioritization does not authorize or launch another run.

@@ -10,7 +10,7 @@ function Count({ count, label, state, onClick }) {
   return count ? <button type="button" className="input-summary-count" data-ui-role="research" onClick={onClick}>{content}</button> : <span className="input-summary-count empty">{content}</span>;
 }
 
-export default function PhaseInputSummary({ context, phase, scope, preparation, preparationStatus, activeRun, showSummary = true, status, navigationRequest, children }) {
+export default function PhaseInputSummary({ context, phase, scope, preparation, preparationStatus, activeRun, showSummary = true, status, navigationRequest, editorialQuestions, children }) {
   const title = !showSummary ? "Instructions and run settings" : phase === "P5" ? "Revise report" : "Revise and rerun";
   const [, setDraftRevision] = useState(0);
   const [session, setSession] = useState(null);
@@ -38,7 +38,7 @@ export default function PhaseInputSummary({ context, phase, scope, preparation, 
   const back = () => { sessionRef.current?.back({ currentScope: () => scopeRef.current }); setSession(null); };
   const first = state => questions.items.find(item => item.state === state)?.anchor;
   const instructionState = !preparation.loaded ? preparation.error ? "Instructions unavailable" : "Loading instructions" : preparation.instructionsChanged ? "Unsaved instructions" : preparation.hasInstructions ? "Instructions saved" : "No added instructions";
-  const inputState = activeRun ? activeRun.state === "awaiting_user" ? "Work waiting for input" : "Work in progress"
+  const inputState = activeRun ? activeRun.state === "awaiting_user" ? "Work is paused" : "Work in progress"
     : !preparation.loaded && preparation.error ? "Input check unavailable"
     : !preparationStatus || preparationStatus.loading ? "Checking inputs"
     : preparationStatus.error ? "Input check unavailable"
@@ -51,32 +51,38 @@ export default function PhaseInputSummary({ context, phase, scope, preparation, 
       <div className="card-heading"><h2>{title}</h2>{status}</div>
       <div className="body">
         {showSummary && <>
-        {phase !== "P5" && <>
+        <h3>What I’ll use in the next run</h3>
+        {(phase !== "P5" || questions.total > 0) &&
           <div className="input-summary-row" data-reading-anchor="rerun-questions">
-            <button className="input-summary-label" type="button" data-ui-role="research" onClick={event => visit(event.currentTarget, "phase-decisions")}>Research questions<ActionIcon name="details" /></button>
+            <button className="input-summary-label" type="button" data-ui-role="research" onClick={event => visit(event.currentTarget, phase === "P5" ? questions.items[0]?.anchor : "phase-decisions")}>{phase === "P5" ? "Editorial choices for this report" : "Your answers to my questions"}<ActionIcon name="details" /></button>
             <div className="input-summary-statuses">
-              <Count count={questions.answered} label="answered" state="saved" onClick={event => visit(event.currentTarget, first("answered"))} />
-              <Count count={questions.unanswered} label="unanswered" state="pending" onClick={event => visit(event.currentTarget, first("unanswered"))} />
-              <Count count={questions.unknown} label="unknown" state="unknown" onClick={event => visit(event.currentTarget, first("unknown"))} />
+              <Count count={questions.answered} label={questions.answered === 1 ? "answer saved" : "answers saved"} state="saved" onClick={event => visit(event.currentTarget, first("answered"))} />
+              <Count count={questions.unanswered} label={questions.unanswered === 1 ? "unanswered question" : "unanswered questions"} state="pending" onClick={event => visit(event.currentTarget, first("unanswered"))} />
+              <Count count={questions.unknown} label="saved · still unknown" state="unknown" onClick={event => visit(event.currentTarget, first("unknown"))} />
               {questions.unsaved > 0 && <button type="button" className="input-summary-count" data-ui-role="research" onClick={event => visit(event.currentTarget, questions.items.find(item => item.unsaved)?.anchor)}>{questions.unsaved} unsaved {questions.unsaved === 1 ? "edit" : "edits"}</button>}
             </div>
-          </div>
+          </div>}
+        {phase !== "P5" && <>
           <div className="input-summary-row" data-reading-anchor="rerun-understanding">
-            <button className="input-summary-label" type="button" data-ui-role="research" onClick={event => visit(event.currentTarget, "researcher-dialogue")}>Study understanding<ActionIcon name="details" /></button>
+            <button className="input-summary-label" type="button" data-ui-role="research" onClick={event => visit(event.currentTarget, "researcher-dialogue")}>Other information you gave me<ActionIcon name="details" /></button>
             <div className="input-summary-statuses">
-              <Count count={understanding.saved} label="saved" state="saved" onClick={event => visit(event.currentTarget, understanding.items[0]?.anchor)} />
-              <Count count={understanding.pending} label="to confirm" state="pending" onClick={event => visit(event.currentTarget, understanding.proposals[0]?.anchor)} />
+              {understanding.saved ? <Count count={understanding.saved} label="saved" state="saved" onClick={event => visit(event.currentTarget, understanding.items[0]?.anchor)} /> : <span className="input-summary-count empty">None added</span>}
             </div>
           </div>
+          {understanding.pending > 0 && <div className="input-summary-row" data-reading-anchor="rerun-interpretations">
+            <button className="input-summary-label" type="button" data-ui-role="research" onClick={event => visit(event.currentTarget, understanding.proposals[0]?.anchor)}>Please check my interpretation<ActionIcon name="details" /></button>
+            <Count count={understanding.pending} label="awaiting your review" state="pending" onClick={event => visit(event.currentTarget, understanding.proposals[0]?.anchor)} />
+          </div>}
         </>}
         <div className="input-summary-row preparation" data-reading-anchor="rerun-preparation">
-          <button className="input-summary-label" type="button" data-ui-role="system" onClick={event => visit(event.currentTarget, "further-work")}>Run preparation<ActionIcon name="details" /></button>
+          <button className="input-summary-label" type="button" data-ui-role="system" onClick={event => visit(event.currentTarget, "further-work")}>Instructions for my next run<ActionIcon name="details" /></button>
           <div className="input-summary-statuses"><span>{instructionState}</span><span>{inputState}</span>{phase === "P4" && <span>{preparation.inputCount} files selected{preparation.inputsChanged ? " · unsaved" : ""}</span>}</div>
         </div>
         {context?.activePause && <ActionButton action="details" uiRole="research" onClick={event => visit(event.currentTarget, phase === "P5" ? "further-work" : "phase-decisions")}>Review the current pause</ActionButton>}
-        <p className="note input-summary-hint">{phase === "P5" ? "Section discussions stay with the report." : "Counts reflect saved responses, not scientific readiness."} Review instructions and settings before starting.</p>
+        <p className="note input-summary-hint">{phase === "P5" ? "Your section comments stay with the report." : "You do not need to enter saved answers again."} I’ll use your saved input when you start the next run. Review the instructions and settings first.</p>
         {notice && <p className="note" role="status">{notice}</p>}
         </>}
+        {editorialQuestions}
         {children}
       </div>
     </section>

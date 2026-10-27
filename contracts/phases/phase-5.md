@@ -1,5 +1,7 @@
 # Phase 5: Technical report
 
+Contract version: 3.3.4. Catalog: 1.28.4.
+
 Phase 5 assembles, independently reviews and revises a connected statistical technical report for one exact published model. It connects the researcher's problem and intended use with the formulation, mathematical justification, numerical findings and limitations. Journal selection, novelty and publication readiness are absent from this workflow. The reading output is HTML: a compact main report with a separately linked in-app proof appendix. Each run's frozen `p5.instructions` governs reading scope and appendix organization. PDF creation, print layout and page-count checks are required only if the researcher explicitly requests them later.
 
 The technical report has its own current slot and generation history. Historical manuscripts retain their original family, scope and exact review target. A selected manuscript can be history, but never supplies the current report to continue or review.
@@ -84,8 +86,31 @@ does not authorize P5 study-fact elicitation. Keep `question` to the current edi
 choice, `context_markdown` to its affected point and `likely_consequence` to its
 practical effect. When useful, offer usually two or three realistic `options` as
 `{id, label, consequence}` with unique IDs; open-ended choices may omit them.
+When an editorial choice changes the presentation of existing mathematics,
+`context_markdown` shows the affected problem or equation, defining symbols and
+any shared objective once. Each option's `consequence` shows that retained
+formulation as it would appear and its concise practical effect. This does not
+authorize choosing between scientific definitions. Choices without a mathematical
+distinction need no artificial equation.
 `recommendation` gives the Lead's Markdown advice and reason, or the evidence missing
 for advice. Do not preselect or save it as the researcher answer. Keep full sources
 accessible without repeating context or imposing a word cap. Preserve exact question
 scope, model version, audience and answer history. Saving an instruction does not
 resume a pause or launch scientific work.
+
+## Scientific meaning for the intended reader
+
+Apply the [shared question-language guidance](researcher-question-language.md) within this phase's existing output ownership and interaction rules. It refines the existing question, context, option consequences and recommendation; it adds no artifact, questionnaire or question quota.
+
+In P5, adapt explanations to the intended report reader while preserving the retained scientific claims and qualifications. Researcher-directed attention and pauses remain limited to indispensable editorial choices. Scientific open-question findings stay in the owned review output or source records. Do not reopen upstream scientific choices or use audience adaptation to remove necessary mathematics or limitations.
+
+## Writing duties in existing outputs
+
+The executable objectives give the task, shared writing core, owned output duties
+and separate scientific/execution constraints. The report opening states the
+problem, model idea, main result and contribution, including negative evidence
+when supported. Keep proofs separate and preserve exact mathematical meaning and
+necessary conditions. Review findings state assessment, support and consequence;
+the revision account distinguishes the independently reviewed original bytes from
+a later Lead-checked revision. Researcher questions remain editorial only;
+reviewers retain scientific open-question findings in their owned outputs.

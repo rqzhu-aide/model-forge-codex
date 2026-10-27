@@ -37,7 +37,7 @@ def test_workflow_keeps_existing_roles_outputs_and_publication_families():
     contract = read_json(CONTRACTS / "contracts/phases/P4.json")
     registry = read_json(CONTRACTS / "contracts/phases.json")
     assert next(phase for phase in registry["contracts"] if phase["phase_id"] == "P4") == contract
-    assert contract["contract_version"] == "3.4.0"
+    assert contract["contract_version"] == "3.4.4"
     assert {"p4.workflow_templates.v1", "p4.declared_source_snapshots.v1"} <= set(contract["capabilities"])
     assert [stage["roles"] for stage in contract["role_stages"]] == [["data_analyst"], ["theorist"], ["research_lead"]]
     assert [len(stage["writes"]) for stage in contract["role_stages"]] == [8, 2, 5]
@@ -260,7 +260,7 @@ def test_explicit_historical_protocol_fixture_stays_on_its_producing_schema():
 
 def test_catalog_version_and_manifest_are_coherent():
     catalog = Catalog(CONTRACTS)
-    assert catalog.version == (CONTRACTS / "VERSION").read_text().strip() == "1.26.0"
+    assert catalog.version == (CONTRACTS / "VERSION").read_text().strip() == "1.28.5"
     assert read_json(CONTRACTS / "catalog-index.json")["catalog_version"] == catalog.version
     assert not catalog.verify_manifest()
 

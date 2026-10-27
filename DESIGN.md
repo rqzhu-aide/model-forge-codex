@@ -463,7 +463,7 @@ The frame is a navy ramp lit from within by one orange; the reading room is warm
 - **Brand** (Marcellus 400, 20px, 1.15, .03em): "Model Forge" beside the mark (18px below 800px).
 - **Record title** (Marcellus 400, 17px, 1.35, .01em): the summary line of a history record.
 - **Report heading** (Plex 600, 18px, 1.4): lower section headings inside the technical report, in Team Ink.
-- **Title** (Plex 600, 17px, 1.4, -.015em): one heading per card in its band, document window titles and a selected method's title.
+- **Title** (Plex 600, 17px, 1.4, -.015em): document window titles and a selected method's title. Card headings use 18px in their title band, retaining the same weight and line height.
 - **Subsection** (Plex 600, 16px, 1.45, -.015em): h3 inside cards and documents. Markdown h4 and h5 are 16px at 600; h6 is the same in muted ink.
 - **Body** (400, 16px, 1.65): scientific prose, held to a 36em measure (about 72 characters). Equations, tables, plots and code may use the full card width.
 - **Contribution** (400, 16px, 1.55): researcher writing in editable fields and saved contributions.
@@ -596,6 +596,39 @@ Detailed artwork appears only where a researcher enters (the crest), orients (th
 KaTeX renders all mathematics on plain panels. A display equation wider than its column scrolls inside its own block with a thin scrollbar and, where scroll-driven animation is supported, fades 32px at the hidden edge so a cut equation never reads as complete.
 
 ## Do's and Don'ts
+
+### Interface voice
+
+Use **you/your** for the researcher and **I/me** for the harness speaking. Say
+**What you told me**, **Your answers to my questions**, **Other information you
+gave me**, **Please check my interpretation**, and **Tell me what to do next**.
+The revision summary explains **What I’ll use in the next run**. Name individual
+team members where attribution matters. Stock choices say **Not sure yet**;
+never rewrite an authored or saved response to fit this convention.
+
+Count each answer once. Linked context copies are read-only; their links lead to
+the original answer editor. Additional-information counts include only separate
+notes or confirmed interpretations. Pending interpretation prompts are hidden
+when there is nothing to review. These rules apply across phases; the report
+keeps its existing section comment locations.
+
+The affected formulation stays visible when its decision row opens. Long supporting
+decision explanations use native disclosures, with their complete prose,
+mathematics and citations retained. Short consequence and recommendation
+statements stay visible. The disclosure threshold controls only
+presentation; it never trims or changes a research record. Numerical summary
+provenance is grouped under **Summary sources**, preserving each exact field link.
+
+Long project titles stay on one line in the sticky toolbar, with their full text
+kept in the heading and title attribute. Reading jumps use the measured toolbar
+height plus a small gap; resizing or polling updates that offset without moving
+the reader. Source-dialog anchors use the dialog's own smaller gap. Theory search
+selection focuses its inspector; Close returns focus to the original control.
+
+An indispensable report-specific editorial choice appears inside **Revise report**
+and in Next until answered. It uses one original answer editor, shares exact scope
+and version rules with the other phases, and never duplicates an active run pause.
+This does not reintroduce a general discussion card in Phase 5.
 
 ### Do:
 - **Do** keep reading surfaces Panel White (#ffffff; #161c25 in dark) on a 1px Card Line with a neutral Band Stone heading band and 8px corners; only the revision summary is violet and only history records are parchment.

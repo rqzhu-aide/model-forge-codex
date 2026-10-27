@@ -13,6 +13,14 @@ export function goalSource(basis) {
   if (!basis?.research_setting?.research_goal_markdown || !hasExactRef(basis.generation_ref)) return null;
   return { ...basis.generation_ref, kind: "research_goal", entry_pointer: GOAL_POINTER };
 }
+export function currentGoalSource(records = []) {
+  const current = records.find(record => record.branch === "trunk" && record.phase === "P1" && record.family === "research_basis");
+  if (!current) return null;
+  const reference = { branch: "trunk", phase: "P1", family: "research_basis", generation_id: current.generation_id,
+    sha256: current.content_sha256 ?? current.sha256 ?? "", run_id: current.run_id ?? current.source_run_id ?? "",
+    stage_id: current.stage_id, package_id: current.package_id };
+  return hasExactRef(reference) ? { ...reference, kind: "research_goal", entry_pointer: GOAL_POINTER } : null;
+}
 export function goalSourceKey(reference) {
   if (!reference) return "";
   return JSON.stringify([reference.branch, reference.phase, reference.family, reference.generation_id, reference.sha256,

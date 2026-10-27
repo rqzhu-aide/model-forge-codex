@@ -63,7 +63,7 @@
             "description": "Fuller exact relevant mathematical formulation in Markdown with LaTeX: definitions, assumptions, criterion, algorithm, result or derivations, expanding the source-specific method already explained in the visible explanation_markdown. Do not hide the method's defining mathematics only here. State unavailable information honestly; never invent mathematics."
           },
           "explanation_markdown": {
-            "description": "Visible paper summary in concise, connected methodology-style prose describing this source's actual model, formulation or method, not merely its broad family. Explain what it models or estimates and how it works, including the source-supported defining relationships, criterion, update or construction needed to understand it. Use LaTeX with symbols and decisive conditions interpreted in context. The visible summary must be understandable without opening formulation details; a method name, notation list or generic family description is insufficient. Full definitions and derivations remain in formulation_markdown, which must not be the only place containing the method's defining mathematics. Keep reported findings distinct from personal checks. For nonmethodological papers, explain the actual contribution and decisive statement or evidence without forcing an algorithm or equation. State inaccessible mathematics honestly and never invent it.",
+            "description": "Visible paper summary in concise, connected methodology-style prose describing this source's actual model, formulation or method, not merely its broad family. Explain what it models or estimates and how it works, including the source-supported defining relationships, criterion, update or construction needed to understand it. Use LaTeX with symbols and decisive conditions interpreted in context. The visible summary must be understandable without opening formulation details; a method name, notation list or generic family description is insufficient. Full definitions and derivations remain in formulation_markdown, which must not be the only place containing the method's defining mathematics. Keep reported findings distinct from personal checks. For nonmethodological papers, explain the actual contribution and decisive statement or evidence without forcing an algorithm or equation. State inaccessible mathematics honestly and never invent it. Start with the source's actual target and method; interpret its defining mathematics in the supplied study setting without assuming the reader's expertise from a field label.",
             "type": "string",
             "minLength": 1
           },
@@ -154,7 +154,7 @@
     },
     "proposed_questions": {
       "type": "array",
-      "description": "Propose only an unavailable study fact or unresolved researcher preference whose answer materially changes interpretation, inferential validity, data applicability or a meaningful resource compromise and cannot be established from supplied material. Mathematical alternatives alone are insufficient. Keep the exact premise, answer effect and sources concise for Lead consolidation. An empty array is valid.",
+      "description": "Propose only an unavailable study fact or unresolved researcher preference whose answer materially changes interpretation, inferential validity, data applicability or a meaningful resource compromise and cannot be established from supplied material. Mathematical alternatives alone are insufficient. Keep the exact premise, answer effect and sources concise for Lead consolidation. An empty array is valid. State the scientific meaning in the supplied setting and whether the invitation is optional for current work; match demonstrated expertise without assuming knowledge from a field label.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -174,7 +174,7 @@
             "type": "string",
             "minLength": 1,
             "pattern": "\\S",
-            "description": "Exact affected point or missing fact with the minimum necessary explanation, locally defined mathematics only when useful, and honest information limits. Do not repeat the answer effect."
+            "description": "Exact affected point or missing fact with sufficient formulation to understand the question when mathematics distinguishes the choices, locally defined symbols and any shared objective once, and honest information limits. Make mathematically distinct alternatives explicit for Lead consolidation. Plain study facts need no artificial equation. Do not repeat the answer effect. Explain what the quantities or assumption mean for the population, measurements and intended use. Keep review history and internal identifiers in source fields. Unknown facts remain unknown; an illustrative example is not study evidence."
           },
           "why_it_matters_markdown": {
             "type": "string",
@@ -186,7 +186,7 @@
             "type": "string",
             "minLength": 1,
             "pattern": "\\S",
-            "description": "What the answer changes in intended use, validity, applicability or resources, or what can proceed while a study fact stays unknown."
+            "description": "What the answer changes in intended use, validity, applicability or resources, or what can proceed while a study fact stays unknown. Keep distinct target revisions and identification limits explicit; unknown is legitimate and a proposed direction is not a saved preference."
           },
           "source_refs": {
             "type": "array",

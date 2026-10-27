@@ -1,5 +1,66 @@
 # Catalog adoption
 
+## Catalog 1.28.5: useful change accounts and precise observation assumptions
+
+P3 contract 2.11.5 gives the existing summary fields clearer duties: explain the
+scientific change or unchanged finding, state what an uncertainty prevents the
+researcher from concluding, and keep detailed verification work in its sources.
+Assumption explanations distinguish observed measurements from justified bounds
+on unobserved outcomes. Short handoffs retain exact references and issue objects.
+
+Shared decision and theory schema descriptions carry these duties into future
+writing. Record shapes, scientific conditions, output ownership, question policy
+and the shared writing core are unchanged. This adds no word limit or workflow
+stage. Existing projects and frozen runs retain their producing catalogs until
+explicit adoption; published scientific text is never rewritten by the renderer.
+
+## Catalog 1.28.4: reader tasks and field-specific scientific accounts
+
+P1-P5 executable objectives now place a concise shared writing core before the
+owned field duties and separate scientific and execution constraints. The
+guidance preserves scientific meaning, decisive conditions, unknowns, attribution,
+review status and existing question/pause authority. Matching schema changes are
+descriptions only; record shapes and output ownership are unchanged.
+
+Contract versions advance to P1 3.7.4, P2 3.11.4, P3 2.11.4, P4 3.4.4 and
+P5 3.3.4. The aggregate preserves its registry metadata. Existing projects and
+started runs retain their catalog and frozen instructions; this source update does
+not adopt the catalog for them. Exact current and previous canonical writing
+blocks suppress fallback insertion in pause and P4 briefs.
+
+## Catalog 1.28.3: questions with scientific meaning for the intended reader
+
+All phase objectives now connect mathematical representations to the supplied
+scientific setting and the researcher's demonstrated familiarity. Existing fields
+state the direct request, its scientific consequence and whether information is
+optional for current work. Unknowns remain legitimate. Internal IDs and review
+history stay in structured sources. P5 remains limited to editorial choices.
+
+This patch adds no question quota, audience profile, field, stage or validation
+gate. It retains exact mathematical distinctions, meaningful choices and Lead
+ownership of routine technical work. The shared language also covers runtime
+discussion, suggestion and pause briefs in the updated application. Catalog
+adoption affects future stage instructions; runtime prose follows the running
+application. Frozen runs and published questions retain their original bytes.
+The generic UI badges are unchanged. See
+[the writing guide](phases/researcher-question-language.md) for examples and limits.
+
+## Catalog 1.28.2: mathematical formulations in consequential choices
+
+Phase instructions now show the affected problem or equation when mathematics
+distinguishes an already qualifying researcher choice. Symbols and any shared
+objective are defined once in `context_markdown`; each option's existing
+`consequence` gives its formulation or changed equation and a concise practical
+effect. Pause requests use `reason` for the shared formulation. Plain study facts,
+budgets and choices without a mathematical distinction need no artificial equation.
+
+This patch adds no field, question quota, stage or validation gate. The Lead still
+handles routine scientific choices, and P5 remains limited to indispensable
+editorial choices about its retained sources. Full mathematics is not shortened to
+meet a rigid word cap. Existing project catalogs, frozen runs and published records
+retain their producing identities. Explicit catalog adoption applies these
+instructions to future runs without launching research or rewriting saved answers.
+
 ## Catalog 1.25.3: consistent P5 editorial attention purpose
 
 P5 contract 3.1.4 aligns the existing `p5.attention_items` output purpose with

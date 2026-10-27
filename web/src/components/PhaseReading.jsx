@@ -25,20 +25,23 @@ export function PhaseTabs({ tabs, label, heading, initialTab, selectedTab, onTab
 
 export function PhaseOverview({ phase, decision, summaries = [], methodLabel, reviewContext, onSource }) {
   const title = phase === "P3" ? "What is established about this model" : "Current report conclusion";
-  const account = decision?.conclusion || decision?.headline || summaries[0]?.evaluation_markdown || summaries[0]?.summary_markdown;
+  const accountSource = decision?.conclusion || decision?.headline ? decision : summaries[0];
+  const account = decision?.conclusion || decision?.headline || accountSource?.evaluation_markdown || accountSource?.summary_markdown;
+  const accountLink = accountSource && scientificDocumentLink(accountSource, onSource);
+  const decisionLink = decision && scientificDocumentLink(decision, onSource);
   return <section className="card phase-overview" data-card-role="summary"><div className="card-heading"><h2>{title}</h2></div><div className="body">
     {methodLabel && <p className="note">Model: {methodLabel}</p>}
-    {phase === "P3" && decision && account && <p className="note">Research Lead assessment</p>}
-    {account ? <ResearchDocument text={account} /> : <EmptyState><p className="note">{phase === "P3" ? "No theoretical account has been completed for this model yet." : "No technical report account has been completed for this model yet."}</p></EmptyState>}
-    {decision?.fundamental_contribution && <section><h3>Contribution</h3><ResearchDocument text={decision.fundamental_contribution} /></section>}
-    {decision?.principal_uncertainty && <section><h3>Main uncertainty</h3><ResearchDocument text={decision.principal_uncertainty} /></section>}
-    {decision?.principal_risk && <section><h3>Main risk or limitation</h3><ResearchDocument text={decision.principal_risk} /></section>}
-    {decision?.material_disagreement?.length > 0 && <section><h3>Unresolved differences</h3><ResearchDocument text={decision.material_disagreement} /></section>}
-    {phase === "P3" && decision?.what_changed && <section><h3>What changed</h3><ResearchDocument text={decision.what_changed} /></section>}
-    {decision?.smallest_decisive_result && <section><h3>What remains to be established</h3><ResearchDocument text={decision.smallest_decisive_result} /></section>}
+    {phase === "P3" && accountSource === decision && account && <p className="note">Research Lead assessment</p>}
+    {account ? <ResearchDocument text={account} renderSourceLink={accountLink} renderFileLink={accountLink} /> : <EmptyState><p className="note">{phase === "P3" ? "No theoretical account has been completed for this model yet." : "No technical report account has been completed for this model yet."}</p></EmptyState>}
+    {decision?.fundamental_contribution && <section><h3>Contribution</h3><ResearchDocument text={decision.fundamental_contribution} renderSourceLink={decisionLink} renderFileLink={decisionLink} /></section>}
+    {decision?.principal_uncertainty && <section><h3>Main uncertainty</h3><ResearchDocument text={decision.principal_uncertainty} renderSourceLink={decisionLink} renderFileLink={decisionLink} /></section>}
+    {decision?.principal_risk && <section><h3>Main risk or limitation</h3><ResearchDocument text={decision.principal_risk} renderSourceLink={decisionLink} renderFileLink={decisionLink} /></section>}
+    {decision?.material_disagreement?.length > 0 && <section><h3>Unresolved differences</h3><ResearchDocument text={decision.material_disagreement} renderSourceLink={decisionLink} renderFileLink={decisionLink} /></section>}
+    {phase === "P3" && decision?.what_changed && <section><h3>What changed</h3><ResearchDocument text={decision.what_changed} renderSourceLink={decisionLink} renderFileLink={decisionLink} /></section>}
+    {decision?.smallest_decisive_result && <section><h3>What remains to be established</h3><ResearchDocument text={decision.smallest_decisive_result} renderSourceLink={decisionLink} renderFileLink={decisionLink} /></section>}
     {phase === "P3" && account && <p className="note">The claims below retain their individual conditions, current assessments and attributed arguments.</p>}
     {phase === "P5" && reviewContext && <ManuscriptReviewStatus context={reviewContext} onSource={onSource} />}
-    <SourceRef reference={decision?.generation_ref || summaries[0]?.generation_ref} onOpen={onSource} />
+    <SourceRef reference={accountSource?.generation_ref || decision?.generation_ref} onOpen={onSource} />
   </div></section>;
 }
 
@@ -110,7 +113,7 @@ export function TheoryReading({ documents = [], assessments, onSource, reading =
 export function ManuscriptReviewStatus({ context, onSource }) {
   const record = Array.isArray(context) ? context[0] : context;
   const message = { not_reviewed: "This manuscript has not received an independent review.", reviewed: "The independent review assessed this exact draft.", revised_after_review: "This draft was revised in response to an independent review of the earlier draft linked below. The present revision has not itself been independently reviewed.", earlier_draft_review: "The available reviews concern an earlier draft. They do not establish that the current draft has been independently reviewed.", reviewed_draft_unavailable: "An independent review is recorded, but the draft it assessed could not be identified from the available sources." }[record?.status];
-  return <div className="manuscript-review-status"><p className="note">{message || record?.message || "Independent review of this draft has not been established by the available records."}</p>{record?.reviewed_manuscript_ref && <SourceRef reference={record.reviewed_manuscript_ref} onOpen={onSource} label="Read the reviewed draft" />}</div>;
+  return <div className="manuscript-review-status"><p className="note">{message || record?.message || "I can't confirm an independent review of this draft."}</p>{record?.reviewed_manuscript_ref && <SourceRef reference={record.reviewed_manuscript_ref} onOpen={onSource} label="Read the reviewed draft" />}</div>;
 }
 
 export function ManuscriptReading({ documents = [], traceability = [], decision, reviewContext, onSource, initialTab, selectedTab, onTabChange }) {

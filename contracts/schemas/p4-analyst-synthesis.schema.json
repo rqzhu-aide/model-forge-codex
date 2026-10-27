@@ -152,7 +152,7 @@
               "Illustrative partial result: The implementation reproduced the deterministic reference solution to the declared tolerance. Performance and tuning sensitivity were not run within the authorized budget, so implementation agreement provides no evidence of advantage over the baseline.",
               "Illustrative unassessed result: No computation was performed for the heavy-tail setting. Its effect on accuracy and uncertainty coverage remains unknown; the Gaussian comparison cannot answer this question."
             ],
-            "description": "Answer the question directly for the exact evaluated method and regime. State observed effect, usable repetitions and recorded uncertainty where available; distinguish observed ordering from reliable improvement.",
+            "description": "Answer the question directly for the exact evaluated method and regime. State observed effect, usable repetitions and recorded uncertainty where available; distinguish observed ordering from reliable improvement. Give units, attempted and returned denominators and relevant uncertainty beside the comparison. Equality observed in fitted synthetic cases is restricted to those cases; synthetic gain does not establish human benefit. Lack of demonstrated benefit is not demonstrated absence of benefit. Distinguish evidence against a benefit from an inconclusive comparison; do not claim equivalence or absence of benefit from nonsignificance. Retain the applicable uncertainty and tested scope.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"
@@ -176,7 +176,7 @@
             "pattern": "\\S"
           },
           "reliability_markdown": {
-            "description": "Explain usable, failed, invalidated and unrun observations and their reasons, and how those omissions affect the conclusion.",
+            "description": "Explain usable, failed, invalidated and unrun observations and their reasons, and how those omissions affect the conclusion. Keep unsuccessful fits and inconclusive sampled uncertainty visible, including the attempted versus returned denominator.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"

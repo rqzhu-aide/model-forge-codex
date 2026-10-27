@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://model-forge.local/architecture/schemas/handoff.schema.json",
   "title": "Role Handoff",
-  "description": "An immutable run-local research communication record that states what changed, what is supported, and what the next role must check.",
+  "description": "An immutable run-local research communication record that states what changed, what is supported, and what the next role must check. Carry findings, exact references, unresolved issue objects and next checks here; keep complete derivations and repeated statement or assumption inventories in their owned manuscript or audit rather than copying them into the packet.",
   "type": "object",
   "additionalProperties": true,
   "required": [

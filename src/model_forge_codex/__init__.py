@@ -3,4 +3,4 @@
 Normative design: architecture/design/. Key ADRs: architecture/decisions/.
 """
 
-__version__ = "0.9.2"
+__version__ = "0.9.3"

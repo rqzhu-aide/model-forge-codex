@@ -1,6 +1,6 @@
 # Phase 2: independent method proposals and cross-audit
 
-Contract version: 3.10.0. Catalog: 1.24.0.
+Contract version: 3.11.4. Catalog: 1.28.4.
 
 ## Scientific purpose
 
@@ -398,11 +398,17 @@ For each new `researcher_decision`, author `decision_priority` as `interpretatio
 `inference`, `data` or `resources`, using the highest material consequence in that
 order, and `response_kind` as `choice` or `study_fact`. Urgency and an actual pause
 remain separate. Keep `question` to one current choice or exact factual request.
-`context_markdown` identifies the affected point with the minimum useful mathematics
-and locally defined symbols; `likely_consequence` gives its practical effect once.
-For a choice, provide useful finite `options` when appropriate, usually two or three
-realistic alternatives as `{id, label, consequence}` with unique IDs and actual
-benefits/costs. `recommendation` is Markdown Lead advice with its reason, or a candid
+`context_markdown` identifies the affected point. When mathematics distinguishes
+the choices, show the affected problem or equation with enough formulation to
+understand the decision, defining symbols and any shared objective once in that
+context. For a choice, provide useful finite `options` when appropriate, usually
+two or three realistic alternatives as `{id, label, consequence}` with unique IDs.
+Each mathematically distinct option's `consequence` gives its formulation or changed
+equation under that shared context, followed by a concise practical effect and
+material benefits/costs. Prose-only options do not explain a mathematical distinction.
+`likely_consequence` gives the overall practical effect without repeating the option
+accounts. Plain study facts, budgets and choices without a mathematical distinction
+need no artificial equation. `recommendation` is Markdown Lead advice with its reason, or a candid
 statement of what is missing. Do not preselect, save a recommendation as an answer,
 or invent literal researcher responses. An open-ended choice need not have options.
 A study-fact request names the missing information, applicability limit and what
@@ -423,3 +429,24 @@ owned outputs; the Lead prioritizes and authors the final brief without another
 stage or writer.
 
 Use existing assumptions and data-requirement sections to explain target recovery and applicability in the described setting, including conditions unavailable data cannot check. Leave identification and applicability gaps explicit even when P3 is not requested.
+
+## Scientific meaning for the intended reader
+
+Apply the [shared question-language guidance](researcher-question-language.md) within this phase's existing output ownership and interaction rules. It refines the existing question, context, option consequences and recommendation; it adds no artifact, questionnaire or question quota.
+
+In P2, explain what each relevant method would estimate, predict or decide and how a consequential choice changes its scientific use. Algorithm design and technical verification within the agreed goal remain team work.
+
+## Writing duties in existing outputs
+
+The executable objectives give the task, shared writing core, owned output duties
+and separate scientific/execution constraints. Proposers explain purpose and
+mechanism in `method.summary`, retain the complete calculation and constraints in
+`mathematical_definition`, and keep cost, memory, scaling and honest unknowns in
+`computational_profile`. Assumptions, limitations and data requirements carry
+consequential premises for Lead consolidation. Review assessments state support
+and consequence, distinguishing an undefined procedure, lost identification,
+lost guarantee and observed failure. The Lead's `overview_markdown`, disposition
+`method_summary_markdown`, `rationale` and comparison/modification fields give the
+development recommendation and meaningful alternatives with decisive conditions,
+proposer attribution and independent disagreement. Advice does not adopt a target
+revision or invent a researcher risk preference.

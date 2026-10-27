@@ -918,3 +918,68 @@ test("returning from settings refreshes effective team credentials in the existi
     });
   } finally { Object.assign(globalThis, originals); }
 });
+
+test("P1 reading receives saved goal context while its existing editor retains the original published source", async () => {
+  const originals = { window: globalThis.window, document: globalThis.document, setInterval: globalThis.setInterval, clearInterval: globalThis.clearInterval };
+  globalThis.window = { addEventListener: noop, removeEventListener: noop };
+  globalThis.document = { hidden: false, addEventListener: noop, removeEventListener: noop };
+  globalThis.setInterval = () => 1; globalThis.clearInterval = noop;
+  const basis = { branch: "trunk", phase: "P1", generation_ref: { branch: "trunk", phase: "P1", family: "research_basis", generation_id: "goal.original", sha256: "a".repeat(64), run_id: "run.original", package_id: "package.original" }, research_setting: { research_goal_markdown: "Original Lead interpretation." } };
+  const goalRef = { ...basis.generation_ref, kind: "research_goal", entry_pointer: "/research_setting/research_goal_markdown" };
+  const problemContext = { revision: 2, dialogue_target: { kind: "project_context", project_id: "project.goal", context_revision: 2, brief_revision: 1, sha256: "b".repeat(64) }, items: [{ item_id: "context.goal", revision: 1, statement: "Current researcher clarification.", status: "confirmed", topic: "research_goal", scope: { kind: "project" }, source_refs: [goalRef] }] };
+  try {
+    await withApi({
+      project: async () => ({ project: {}, problem_context: problemContext }), branches: async () => ({ branches: [] }),
+      listRuns: async () => ({ runs: [] }), artifacts: async () => ({ research_bases: [basis] }),
+      decisionsPending: async () => ({}), readiness: async () => ({}), records: async () => ({ records: [] }),
+      assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [] }),
+    }, async () => {
+      const project = mount(ui.ProjectView, { projectId: "project.goal", context: { phase: "P1", branch: "trunk" }, onContextChange: noop });
+      try {
+        await project.settle();
+        const reading = find(project.tree, node => node.type.name === "PhaseOneWorkspace");
+        assert.strictEqual(reading.props.problemContext, problemContext);
+        reading.props.onGoal(); await project.settle();
+        const editors = nodes(project.tree).filter(node => node.type.name === "ResearchGoalEditor");
+        assert.equal(editors.length, 1);
+        assert.equal(editors[0].props.snapshot.paragraph, basis.research_setting.research_goal_markdown);
+        assert.deepEqual(editors[0].props.snapshot.target.goal_source_ref, goalRef);
+        assert.deepEqual(editors[0].props.snapshot.context, problemContext);
+      } finally { project.unmount(); }
+    });
+  } finally { Object.assign(globalThis, originals); }
+});
+
+test("non-P1 project previews use the same exact saved goal and retain the full-setting link", async () => {
+  const originals = { window: globalThis.window, document: globalThis.document, setInterval: globalThis.setInterval, clearInterval: globalThis.clearInterval };
+  globalThis.window = { addEventListener: noop, removeEventListener: noop };
+  globalThis.document = { hidden: false, addEventListener: noop, removeEventListener: noop };
+  globalThis.setInterval = () => 1; globalThis.clearInterval = noop;
+  const source = { branch: "trunk", phase: "P1", family: "research_basis", generation_id: "goal.original", sha256: "a".repeat(64), run_id: "run.original", package_id: "package.original" };
+  const goalRef = { ...source, kind: "research_goal", entry_pointer: "/research_setting/research_goal_markdown" };
+  const problemContext = { items: [{ item_id: "context.goal", revision: 2, statement: "Maximize reward with a separate new-patient cost constraint.\n\nFull defining mathematics stays in the setting.", status: "confirmed", topic: "research_goal", scope: { kind: "project" }, source_refs: [goalRef] }] };
+  const navigation = [];
+  try {
+    await withApi({
+      project: async () => ({ project: {}, problem_context: problemContext }), branches: async () => ({ branches: [] }),
+      listRuns: async () => ({ runs: [] }), artifacts: async () => ({}), decisionsPending: async () => ({}),
+      readiness: async () => ({ basis: { records: [source] } }),
+      records: async (_, __, phase) => ({ records: phase === "P1" ? [{ family: "research_basis", current: source }] : [] }),
+      recordBody: async () => ({ research_setting: { research_goal_markdown: "Earlier published target." } }),
+      assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [] }),
+    }, async () => {
+      const project = mount(ui.ProjectView, { projectId: "project.goal", context: { phase: "P2", branch: "trunk" }, onContextChange: change => navigation.push(change) });
+      try {
+        for (const phase of ["P2", "P3", "P4", "P5"]) {
+          project.update({ context: { phase, branch: "trunk" } }); await project.settle();
+          const preview = find(project.tree, node => node.type === "p" && node.props.className === "project-question");
+          assert.equal(preview.props.children.props.text, "Maximize reward with a separate new-patient cost constraint.", phase);
+          const fullSetting = nodes(project.tree).filter(node => node.type === "button" && node.props.children === "Read the full setting");
+          assert.equal(fullSetting.length, 1);
+          fullSetting[0].props.onClick();
+          assert.equal(navigation.at(-1).phase, "P1");
+        }
+      } finally { project.unmount(); }
+    });
+  } finally { Object.assign(globalThis, originals); }
+});

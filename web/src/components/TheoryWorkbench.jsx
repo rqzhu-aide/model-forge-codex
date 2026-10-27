@@ -61,6 +61,25 @@ export default function TheoryWorkbench({ claimMaps = [], falsificationLogs = []
   useEffect(() => { readingChange.current?.({ search, related: focus }); }, [search, focus]);
   const arrow = `theory-arrow-${useId().replace(/:/g, "")}`;
   const node = graph.nodes.find((n) => n.id === selected);
+  const inspector = useRef(null); const searchInput = useRef(null);
+  const selectionOrigin = useRef(null); const pendingInspection = useRef(null);
+  const selectNode = (id, origin, inspect = false) => {
+    const insideInspector = origin && inspector.current?.contains(origin);
+    if (!id) { selectionOrigin.current = null; pendingInspection.current = null; }
+    else {
+      if (!insideInspector) selectionOrigin.current = origin;
+      if (inspect || insideInspector) pendingInspection.current = id;
+    }
+    onSelect(id);
+  };
+  // Search results and inspector links can disappear as soon as they select a
+  // component. Focus its named account only after that account is committed.
+  useEffect(() => {
+    if (pendingInspection.current && pendingInspection.current === node?.id) {
+      pendingInspection.current = null;
+      inspector.current?.focus({ preventScroll: true });
+    }
+  }, [selected, search]);
   const statement = node && { ...node.claim, ...node };
   const reference = cm?.theory_generation_ref || cm?.generation_ref;
   const linked = hasExactRef(reference) && ["theory_record", "complete_theory"].includes(reference.family);
@@ -69,6 +88,13 @@ export default function TheoryWorkbench({ claimMaps = [], falsificationLogs = []
   // Wide graphs open centred on the main results; a selection made elsewhere
   // (search, attention chips, inspector links) scrolls its node into view.
   const scroller = useRef(null); const centred = useRef(null);
+  const closeInspector = () => {
+    const origin = selectionOrigin.current;
+    const target = origin?.isConnected && origin.getClientRects().length ? origin
+      : scroller.current?.querySelector('.theory-node[aria-pressed="true"]') || searchInput.current;
+    target?.focus({ preventScroll: true });
+    selectNode(null);
+  };
   const graphKey = `${branch}:${cm?.theory_generation_ref?.generation_id || cm?.generation_ref?.generation_id || ""}:${graph.nodes.length}`;
   useEffect(() => {
     const el = scroller.current; if (!el) return;
@@ -101,13 +127,13 @@ export default function TheoryWorkbench({ claimMaps = [], falsificationLogs = []
     <div className="body">
       {cm.source_warning && <p className="note warn">{cm.source_warning} Source browsing remains available. Publish a complete linked theory before requesting work on an individual component.</p>}
       {graph.issues.length > 0 && <div className="note warn" role="status"><b>Theory links need attention.</b><ul>{graph.issues.map((issue, i) => <li key={i}>{issue}</li>)}</ul></div>}
-      {needsAttention.length > 0 && <div className="attention-components"><span className="note">Needs a closer look</span>{needsAttention.map((n) => <button key={n.id} className="chip" onClick={() => onSelect(n.id)}>{n.label}</button>)}</div>}
+      {needsAttention.length > 0 && <div className="attention-components"><span className="note">Needs a closer look</span>{needsAttention.map((n) => <button key={n.id} className="chip" onClick={(event) => selectNode(n.id, event.currentTarget)}>{n.label}</button>)}</div>}
       <div className="graph-toolbar">
-        <label className="field"><span className="visually-hidden">Find a theory component</span><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Find a statement or assumption" type="search" /></label>
+        <label className="field"><span className="visually-hidden">Find a theory component</span><input ref={searchInput} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Find a statement or assumption" type="search" /></label>
         <label className="check-label"><input type="checkbox" checked={focus} disabled={!selected} onChange={(e) => setFocus(e.target.checked)} />Focus related components</label>
         <SourceRef reference={reference} onOpen={onSource} />
       </div>
-      {search && <div className="search-results">{graph.nodes.filter((n) => `${n.label} ${n.id}`.toLowerCase().includes(search.toLowerCase())).map((n) => <ActionButton action="details" key={n.id} onClick={() => { onSelect(n.id); setSearch(""); }}>{n.label}</ActionButton>)}</div>}
+      {search && <div className="search-results">{graph.nodes.filter((n) => `${n.label} ${n.id}`.toLowerCase().includes(search.toLowerCase())).map((n) => <ActionButton action="details" key={n.id} onClick={() => { selectNode(n.id, searchInput.current, true); setSearch(""); }}>{n.label}</ActionButton>)}</div>}
       <div className={`graph-and-inspector ${node ? "has-selection" : ""}`}>
         <div className="graph-column">
           <p className="note graph-help">Hover or focus to preview. Select a component to inspect it and request a closer look. Arrows point from supporting components to the claims that use them.</p>
@@ -124,7 +150,7 @@ export default function TheoryWorkbench({ claimMaps = [], falsificationLogs = []
                 const selectedHere = selected === n.id;
                 const statusColor = tone === "fail" ? "var(--danger)" : tone === "warn" ? "var(--warn)" : "var(--ink-soft)";
                 const probeLabel = !notices.length && probes.length && probes.every((probe) => probe.outcome === "holds") ? `${probes.length} recorded ${probes.length === 1 ? "probe held" : "probes held"}` : "";
-                return <g key={n.id} role="button" tabIndex={0} aria-pressed={selectedHere} aria-label={[n.label, kindLabel, ...notices, adverseProbe ? "A probe records a failure. Inspect its tested scope and assumptions" : probeLabel].filter(Boolean).join(". ")} onMouseEnter={() => setHover(n.id)} onMouseLeave={() => setHover(null)} onFocus={() => setHover(n.id)} onBlur={() => setHover(null)} onClick={() => onSelect(selectedHere ? null : n.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(selectedHere ? null : n.id); } }} className="theory-node" data-kind={n.kind} data-tone={tone}>
+                return <g key={n.id} role="button" tabIndex={0} aria-pressed={selectedHere} aria-label={[n.label, kindLabel, ...notices, adverseProbe ? "A probe records a failure. Inspect its tested scope and assumptions" : probeLabel].filter(Boolean).join(". ")} onMouseEnter={() => setHover(n.id)} onMouseLeave={() => setHover(null)} onFocus={() => setHover(n.id)} onBlur={() => setHover(null)} onClick={(event) => selectNode(selectedHere ? null : n.id, event.currentTarget)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectNode(selectedHere ? null : n.id, e.currentTarget); } }} className="theory-node" data-kind={n.kind} data-tone={tone}>
                   <rect className="theory-node-selection" x={p.x - 4} y={p.y - 4} width="208" height="80" rx={n.kind === "assumption" ? 27 : 10} fill="none" stroke={selectedHere || hover === n.id ? "var(--accent)" : "transparent"} strokeWidth={selectedHere ? 2.5 : 1.5} />
                   <rect className="theory-node-shape" x={p.x} y={p.y} width="200" height="72" rx={n.kind === "assumption" ? 23 : 6} fill={selectedHere ? "var(--panel-selected)" : "var(--panel)"} stroke={tone === "mut" ? "var(--graph-edge)" : statusColor} strokeWidth="1.5" strokeDasharray={n.kind === "claim" && proofStatus === "cited" ? "5 3" : undefined} />
                   <text className="theory-node-label" x={p.x + 100} y={p.y + 23} textAnchor="middle" fontSize="13" fill="var(--ink)">{n.label.length > 27 ? `${n.label.slice(0, 26)}…` : n.label}</text>
@@ -137,10 +163,10 @@ export default function TheoryWorkbench({ claimMaps = [], falsificationLogs = []
           <GraphLegend />
           {detailNode && <div className="graph-preview" role="status"><b>{detailNode.label}</b>{(detailNode.latex || detailNode.claim?.latex) && <MathText latex={detailNode.latex || detailNode.claim.latex} />}{(detailNode.text || detailNode.claim?.text) && <ResearchDocument text={detailNode.text || detailNode.claim.text} />}</div>}
         </div>
-        {node && <section className="tg-detail inspector" data-reading-anchor="theory-inspector" tabIndex={-1} aria-label={`Inspect ${node.label}`}>
+        {node && <section ref={inspector} className="tg-detail inspector" data-reading-anchor="theory-inspector" tabIndex={-1} aria-label={`Inspect ${node.label}`}>
           <div className="section-heading"><h3>{node.label}</h3><div className="assumption-heading-actions">
             {assumptionSource && onAssumptionConversation && <ActionButton action="ask" uiRole="research" className={`assumption-conversation-icon${conversationCount ? " has-history" : ""}`} title={conversationCount ? "Explain this assumption and view conversations" : "Explain this assumption"} aria-label={conversationCount ? `Explain this assumption. View assumption conversations (${conversationCount})` : "Explain this assumption"} aria-haspopup="dialog" onClick={() => onAssumptionConversation({ ...targetFor(node), label: node.label, statement: assumptionSource.text || assumptionSource.statement || node.text || node.statement, latex: assumptionSource.latex || node.latex })} />}
-            <ActionButton action="close" onClick={() => onSelect(null)}>Close</ActionButton></div></div>
+            <ActionButton action="close" onClick={closeInspector}>Close</ActionButton></div></div>
           {node.kind === "assumption" && !assumptionSource && <p className="note">A conversation needs this assumption's exact linked theory source. That source is not available for this graph item.</p>}
           {node.kind === "claim" ? !theorySupportPresentation(statement).reassessed && <TheorySupportBadge statement={statement} /> : <span className={`pill ${node.kind === "unresolved" ? "warn" : "mut"}`}>{humanLabel(node.kind)}</span>}
           {statement.status && <p className="note">Statement assessment: <span className={`pill ${theoryAssessmentTone(statement.status)}`}>{typeof statement.status === "string" ? humanLabel(statement.status) : JSON.stringify(statement.status)}</span></p>}
@@ -149,8 +175,8 @@ export default function TheoryWorkbench({ claimMaps = [], falsificationLogs = []
           <TheoryConditions statement={statement} />
           {node.kind !== "unresolved" && <div className="inspector-actions"><ActionButton action="check" uiRole="research" disabled={!linked || !onRequest} onClick={event => onRequest("assessment", targetFor(node), node.label, event?.currentTarget)}>Request an assessment</ActionButton><ActionButton action="repair" uiRole="research" disabled={!linked || !onRequest} onClick={event => onRequest("repair", targetFor(node), node.label, event?.currentTarget)}>Prepare theory revision</ActionButton><p className="note">{linked ? "An assessment saves a separate check without changing the published theory. Preparing a revision opens instructions and settings. Starting it can publish a changed account after the independent analyst audit and lead assessment." : "This component's exact theory source is unavailable. A linked theory generation is required before component work can be requested."}</p></div>}
           <TheoryAssessmentAccount statement={statement} onSource={onSource} />
-          {node.kind === "claim" && graph.edges.some((e) => e.to === node.id) && <div className="inspector-group"><h4>Rests on</h4>{graph.edges.filter((e) => e.to === node.id).map((e) => <button key={e.from} className="chip" onClick={() => onSelect(e.from)}>{graph.nodes.find((n) => n.id === e.from)?.label}</button>)}</div>}
-          {relatedNodes(graph, node.id, "downstream").size > 1 && <div className="inspector-group"><h4>Conclusions to reassess if this changes</h4>{graph.nodes.filter((n) => n.id !== node.id && relatedNodes(graph, node.id, "downstream").has(n.id)).map((n) => <button className="chip" key={n.id} onClick={() => onSelect(n.id)}>{n.label}</button>)}</div>}
+          {node.kind === "claim" && graph.edges.some((e) => e.to === node.id) && <div className="inspector-group"><h4>Rests on</h4>{graph.edges.filter((e) => e.to === node.id).map((e) => <button key={e.from} className="chip" onClick={(event) => selectNode(e.from, event.currentTarget)}>{graph.nodes.find((n) => n.id === e.from)?.label}</button>)}</div>}
+          {relatedNodes(graph, node.id, "downstream").size > 1 && <div className="inspector-group"><h4>Conclusions to reassess if this changes</h4>{graph.nodes.filter((n) => n.id !== node.id && relatedNodes(graph, node.id, "downstream").has(n.id)).map((n) => <button className="chip" key={n.id} onClick={(event) => selectNode(n.id, event.currentTarget)}>{n.label}</button>)}</div>}
           {node.claim?.novelty_refs?.length > 0 && <div className="inspector-group"><h4>Relation to the literature</h4><TheoryLiteratureLinks claim={node.claim} onSource={onSource} /></div>}
           <div className="inspector-group"><h4>Attempts to challenge this step</h4>{probesFor(node.id).length ? probesFor(node.id).map((probe) => <div className="probe-item" key={probe.probe_id}><span className={`pill ${probe.outcome === "fails_as_stated" ? "fail" : probe.outcome === "holds" ? "ok" : "mut"}`}>{humanLabel(probe.outcome)}</span><p><b>{probe.method}</b></p><ResearchDocument text={probe.detail} /></div>) : <p className="note">No targeted probes are recorded. This is not evidence that the step has been verified.</p>}</div>
           <SourceRef reference={reference} onOpen={onSource} />

@@ -12,7 +12,7 @@ const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.j
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-p3-sources-"));
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import {ScientificDocuments} from '${src}/components/PhaseReading.jsx'; export {ScientificDocuments}; export {ResearchDocument,SourceRef} from '${src}/components/Shared.jsx'; export const render=props=>renderToStaticMarkup(<ScientificDocuments {...props}/>);`, resolveDir: src, loader: "jsx" }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import {ScientificDocuments,PhaseOverview} from '${src}/components/PhaseReading.jsx'; export {ScientificDocuments,PhaseOverview}; export {ResearchDocument,SourceRef} from '${src}/components/Shared.jsx'; export const render=props=>renderToStaticMarkup(<ScientificDocuments {...props}/>); export const overview=props=>renderToStaticMarkup(<PhaseOverview {...props}/>);`, resolveDir: src, loader: "jsx" }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const ui = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
 const reference = { branch: "method.a", phase: "P4", family: "decision", generation_id: "generation.earlier", sha256: "a".repeat(64), run_id: "run.earlier", package_id: "package.earlier" };
 const candidate = "run://run.revision/outputs/p3.theorist/theory_candidate.json";
@@ -60,4 +60,53 @@ test("unverified and ambiguous bindings cannot become links or fall back to curr
     assert.doesNotMatch(html, /href=|run:\/\//);
   }
   assert.equal(documentLink(document)("https://example.org/paper", "Paper"), null);
+});
+
+test("overview proof citation uses the decision's exact published document and original label", () => {
+  const proof = { ...document.generation_ref, family: "theory_record" };
+  const decision = { phase: "P3", conclusion: `The bound requires the stated assumptions. See [full proof and interpretation](${artifact}).`,
+    generation_ref: { ...proof, family: "decision", generation_id: "generation.decision" },
+    inline_sources: [{ ...file(artifact, "original.md"), generation_ref: proof }] };
+  let opened;
+  const tree = ui.PhaseOverview({ phase: "P3", decision, onSource: ref => { opened = ref; } });
+  const account = find(tree, node => node.type === ui.ResearchDocument);
+  const link = account.props.renderSourceLink(artifact, "full proof and interpretation");
+  assert.equal(link.type, ui.SourceRef);
+  ui.SourceRef(link.props).props.onClick();
+  assert.deepEqual(opened, proof);
+  const html = ui.overview({ phase: "P3", decision, onSource() {} });
+  assert.match(html, /<button[^>]*data-action="source"[^>]*>[\s\S]*?full proof and interpretation<\/button>/);
+  assert.doesNotMatch(html, /artifact:\/\/|source unavailable|href=/);
+});
+
+test("overview summary fallback owns its citations and source reference even if an empty decision exists", () => {
+  const proof = document.generation_ref;
+  const summary = { phase: "P3", summary_markdown: `[Published summary proof](${artifact})`,
+    generation_ref: { ...proof, family: "phase_summary", generation_id: "generation.summary" },
+    inline_sources: [{ ...file(artifact, "original.md"), generation_ref: proof }] };
+  const emptyDecision = { phase: "P3", generation_ref: { ...proof, family: "decision", generation_id: "generation.empty" } };
+  const html = ui.overview({ phase: "P3", decision: emptyDecision, summaries: [summary], onSource() {} });
+  assert.match(html, /Published summary proof<\/button>/);
+  assert.match(html, /Phase summary · generation.summary/);
+  assert.doesNotMatch(html, /generation.empty|source unavailable/);
+  const missing = { ...emptyDecision, conclusion: `[Missing decision proof](${artifact})`, inline_sources: [] };
+  assert.match(ui.overview({ phase: "P3", decision: missing, summaries: [summary], onSource() {} }), /Missing decision proof \(source unavailable\)/);
+});
+
+test("canonical record JSON opens its verified original bytes while the full proof uses the readable viewer", () => {
+  const proof = document.generation_ref;
+  const canonical = file("complete_theory.json", "canonical-record.json");
+  const doc = { ...document, body_md: "[Full proof](artifact://proof) [Canonical JSON](complete_theory.json)", inline_sources: [
+    { ...file("artifact://proof", "proof.md"), generation_ref: proof }, canonical,
+  ] };
+  const resolve = documentLink(doc);
+  const proofLink = resolve("artifact://proof", "Full proof");
+  const recordLink = resolve("complete_theory.json", "Canonical JSON");
+  assert.equal(proofLink.type, ui.SourceRef);
+  assert.deepEqual(proofLink.props.reference, proof);
+  assert.equal(recordLink.type, "a");
+  assert.equal(recordLink.props.href, canonical.artifact_url);
+  assert.equal(recordLink.props.target, "_blank");
+  const html = ui.render({ documents: [doc], onSource() {} });
+  assert.match(html, /<a[^>]*href="\/api\/v1\/exact\/canonical-record.json\?sha256=b{64}"[^>]*>[\s\S]*?Canonical JSON<\/a>/);
 });

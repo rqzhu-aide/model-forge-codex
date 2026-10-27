@@ -1,5 +1,7 @@
 # Phase 4: Numerical Eval
 
+Contract version: 3.4.4. Catalog: 1.28.4.
+
 ## 1. Purpose
 
 Phase 4 builds and maintains the empirical and computational evidence base for one user-selected method. It evaluates implementation fidelity, statistical behavior, robustness, comparison with alternatives, and consistency between observed results and the method's stated claims.
@@ -568,11 +570,17 @@ For each new `researcher_decision`, author `decision_priority` as `interpretatio
 `inference`, `data` or `resources`, using the highest material consequence in that
 order, and `response_kind` as `choice` or `study_fact`. Urgency and an actual pause
 remain separate. Keep `question` to one current choice or exact factual request.
-`context_markdown` identifies the affected point with the minimum useful mathematics
-and locally defined symbols; `likely_consequence` gives its practical effect once.
-For a choice, provide useful finite `options` when appropriate, usually two or three
-realistic alternatives as `{id, label, consequence}` with unique IDs and actual
-benefits/costs. `recommendation` is Markdown Lead advice with its reason, or a candid
+`context_markdown` identifies the affected point. When mathematics distinguishes
+the choices, show the affected problem or equation with enough formulation to
+understand the decision, defining symbols and any shared objective once in that
+context. For a choice, provide useful finite `options` when appropriate, usually
+two or three realistic alternatives as `{id, label, consequence}` with unique IDs.
+Each mathematically distinct option's `consequence` gives its formulation or changed
+equation under that shared context, followed by a concise practical effect and
+material benefits/costs. Prose-only options do not explain a mathematical distinction.
+`likely_consequence` gives the overall practical effect without repeating the option
+accounts. Plain study facts, budgets and choices without a mathematical distinction
+need no artificial equation. `recommendation` is Markdown Lead advice with its reason, or a candid
 statement of what is missing. Do not preselect, save a recommendation as an answer,
 or invent literal researcher responses. An open-ended choice need not have options.
 A study-fact request names the missing information, applicability limit and what
@@ -627,3 +635,25 @@ are not an actual-study significance procedure. The team establishes the target,
 inferential unit, tuning/selection effects, censoring identification and relevant
 multiplicity. All-attempted, completion and successful-fit performance retain
 their distinct denominators and meanings.
+
+## Scientific meaning for the intended reader
+
+Apply the [shared question-language guidance](researcher-question-language.md) within this phase's existing output ownership and interaction rules. It refines the existing question, context, option consequences and recommendation; it adds no artifact, questionnaire or question quota.
+
+In P4, connect a consequential input to the interpretation of a result, realistic data conditions, intended-use criterion or meaningful resource tradeoff. Implementation, fair comparisons and routine diagnostics remain team work; simulated conditions are not observed study facts.
+
+## Writing duties in existing outputs
+
+The executable objectives give the task, shared writing core, owned output duties
+and separate scientific/execution constraints. Analyst `question_results[]` and
+exhibits give observed comparisons, units, attempted and returned denominators,
+relevant uncertainty and the synthetic/actual-data boundary. Captions explain
+direction and tested scope. The Lead's `decision_summary`, coverage and review
+fields explain implementation fidelity, evidence, usefulness and tradeoffs without
+repeating every table. Keep unsuccessful fits, computational burden and inconclusive
+sampled uncertainty visible. Equality in observed fitted synthetic cases stays
+within those cases; a synthetic gain does not establish human benefit. These
+interpretation examples do not require new experiments.
+A comparison that does not demonstrate benefit has not demonstrated its absence.
+Distinguish evidence against benefit from inconclusive evidence; nonsignificance
+does not establish equivalence. Retain the applicable uncertainty and tested scope.

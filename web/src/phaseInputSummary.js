@@ -1,6 +1,6 @@
 import { issueCardEntries, issueDisplayKind } from "./phaseUiState.js";
 import { issueIsOpen, issueKey, issueSourceIdentity, issueVersionKey } from "./phaseWorkflow.js";
-import { contextApplies } from "./researcherDialogue.js";
+import { answerContextOwner, contextApplies } from "./researcherDialogue.js";
 import { decisionDraft } from "./researcherDecisions.js";
 
 const ordered = (value) => value && typeof value === "object"
@@ -16,7 +16,11 @@ export const phaseQuestionKey = (issue) => identity([issueKey(issue), issueSourc
 export const phaseQuestionAnchor = (issue) => `issue:${issueVersionKey(issue)}`;
 export const phaseQuestionDraftKey = (projectId, issue) => `issue-response:${JSON.stringify([projectId, issueVersionKey(issue)])}`;
 
-function isCurrentQuestion(issue) {
+function isCurrentQuestion(issue, scope) {
+  // Report attention is only an editorial choice for this report's method.
+  // Scientific questions carried to an upstream phase keep their own editor.
+  if (scope.phase === "P5" && (issue.phase !== "P5" || (issue.branch || issue.branch_id) !== scope.branch
+      || issue.target_phase && issue.target_phase !== "P5")) return false;
   if (["research_task", "scientific_issue"].includes(issueDisplayKind(issue))) return false;
   if (["p4_pause", "researcher_pause", "project_context"].includes(issueSourceIdentity(issue)?.kind)) return false;
   if (issue.disposition === "superseded" || issue.status === "superseded") return false;
@@ -36,10 +40,10 @@ function hasUnsavedDraft(issue, answer, cached) {
 // assessment. Use the original editors' authoritative projection, including
 // saved question snapshots that have legitimately left the open inbox.
 // getDraft is injected so this projection never reads or changes browser state.
-export function phaseInputSummary({ projectId, problemContext, getDraft, ...scope }) {
+export function phaseInputSummary({ projectId, problemContext, contextAnswers, getDraft, ...scope }) {
   const projected = issueCardEntries(scope);
   const seen = new Set();
-  const items = projected.entries.filter(isCurrentQuestion).flatMap((issue) => {
+  const items = projected.entries.filter(issue => isCurrentQuestion(issue, scope)).flatMap((issue) => {
     const key = phaseQuestionKey(issue);
     if (seen.has(key)) return [];
     seen.add(key);
@@ -51,10 +55,12 @@ export function phaseInputSummary({ projectId, problemContext, getDraft, ...scop
     }];
   });
   const saved = (problemContext?.items || []).filter((item) => item.status === "confirmed"
+    && !answerContextOwner(item, contextAnswers ?? scope.answers)
     && contextApplies(item.scope, scope.branch, scope.modelRef)).map((item) => ({
     key: identity([item.item_id, item.revision]), item, anchor: `problem-context:${item.item_id}:${item.revision}`,
   }));
   const proposals = (problemContext?.proposals || []).filter((proposal) => proposal.status === "pending"
+    && !answerContextOwner(proposal.item, contextAnswers ?? scope.answers)
     && contextApplies(proposal.item?.scope, scope.branch, scope.modelRef)).map((proposal) => ({
     key: proposal.amendment_id, proposal, anchor: `proposed-understanding:${proposal.amendment_id}`,
   }));

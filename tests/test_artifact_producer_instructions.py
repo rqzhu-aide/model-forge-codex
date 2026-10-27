@@ -37,9 +37,14 @@ def test_frozen_member_briefs_deliver_reader_purpose_without_extra_stages(draft_
                 assert "Produce exactly" in brief
                 assert "methodology-style" in brief
                 assert "Do not generate UI or history prose" in brief or "Do not author the setting, cross-paper findings or run history" in brief
-            else:
+            elif phase == "P5":
+                # The retained manuscript fixture keeps its historical wording.
                 assert "Answer the section's research question first" in brief
                 assert "No extra summary artifacts" in brief
+            else:
+                assert "Start with the finding, recommendation, answer or request" in brief
+                assert "Keep decisive conditions beside their claims" in brief
+                assert "no new output duty, question quota or pause authority" in brief
             if phase == "P1" and stage.stage_id == "p1.discovery":
                 assert "Each `papers[i].source` follows its own linked source `schema_version` requirement" in brief
                 assert "do not inherit the collection version" in brief

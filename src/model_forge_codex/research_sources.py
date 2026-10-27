@@ -334,6 +334,91 @@ def scientific_document_sources(project_dir: Path, document: dict, meta: dict, t
     return links
 
 
+def scientific_account_sources(project_dir: Path, document: dict, meta: dict, text: str = "") -> list[dict]:
+    """Resolve account and document citations through their producing publication."""
+    from .records import _segment, committed_packages
+    from .research import _primary_document, _primary_document_pointer, source_ref
+
+    ref = meta["generation_ref"]
+    if ref.get("phase") != "P3":
+        return []
+    sources = []
+    if ref.get("package_id"):
+        try:
+            phase_dir = project_dir / "branches" / _segment(ref["branch"]) / "phases" / "p3"
+            package = next((item for item in committed_packages(phase_dir)
+                            if item.get("package_id") == ref["package_id"]), {})
+            original = package.get("records", {}).get(ref["family"])
+            if (original and source_ref(ref["branch"], "P3", ref["family"], original) == ref
+                    and package.get("run_id") == ref.get("run_id")
+                    and package.get("branch_id") == ref["branch"] and package.get("phase") == "P3"):
+                for family, pointer in package["records"].items():
+                    if pointer.get("package_id") != ref["package_id"] or pointer.get("run_id") != ref["run_id"]:
+                        continue
+                    try:
+                        source = read_generation(phase_dir, family, pointer)
+                    except ArtifactError:
+                        continue
+                    if not isinstance(source, dict):
+                        continue
+                    if (document.get("method_identity") and source.get("method_identity")
+                            and document["method_identity"] != source["method_identity"]):
+                        continue
+                    sources.append((source, source_ref(ref["branch"], "P3", family, pointer)))
+        except (ArtifactError, OSError, ValueError, KeyError):
+            pass
+    # A relative record filename is authoritative only when its sealed bytes
+    # equal a generation in this package. Family names do not supply filenames.
+    publication_files, file_references = [], {}
+    for _, reference in sources:
+        if not reference.get("stage_id"):
+            continue
+        try:
+            stage = project_dir / "runs" / _segment(reference["run_id"]) / "outputs" / _segment(reference["stage_id"])
+            seal = read_json(stage / "seal.json") or {}
+            if seal.get("stage_id") != reference["stage_id"]:
+                continue
+            for name, sealed in seal.get("outputs", {}).items():
+                if not isinstance(sealed, dict) or sealed.get("sha256") != reference["sha256"]:
+                    continue
+                target = (stage / name).resolve()
+                if not target.is_relative_to(stage.resolve()) or not target.is_file() or sha256_file(target) != reference["sha256"]:
+                    continue
+                pointer = {"path": name, "sha256": reference["sha256"]}
+                action = artifact_link(project_dir, reference, pointer)
+                if action.get("source_verified"):
+                    publication_files.append(pointer)
+                    file_references.setdefault((action["artifact_url"], reference["sha256"]), reference)
+        except (ArtifactError, OSError, ValueError):
+            continue
+    # Sibling declarations belong to this package, never to today's current
+    # theory or another publication from the same run.
+    requested = {source.split("#", 1)[0] for source in re.findall(
+        r"(?<!!)\[[^\]\n]+\]\(([^\s)]+)\)", text + "\n" + json.dumps(document))}
+    declarations = {"account": document, "publication_sources": [source for source, _ in sources],
+                    "publication_files": publication_files}
+    links = scientific_document_sources(project_dir, declarations, meta, text)
+    result = []
+    for link in links:
+        if link["uri"] not in requested:
+            continue
+        record_reference = file_references.get((link.get("artifact_url"), link.get("sha256")))
+        if record_reference:
+            # A link to this record's own JSON means its canonical bytes, not
+            # its primary manuscript rendered again through the document view.
+            same_record_bytes = record_reference["sha256"] == ref.get("sha256")
+            result.append(link if same_record_bytes else {**link, "generation_ref": record_reference})
+            continue
+        for source, reference in sources:
+            primary = _primary_document_pointer(source)
+            if (isinstance(primary, dict) and primary.get("sha256") == link.get("sha256")
+                    and link.get("artifact_url") and _primary_document(project_dir, reference, source).get("primary_artifact_url") == link["artifact_url"]):
+                link = {**link, "generation_ref": reference}
+                break
+        result.append(link)
+    return result
+
+
 def theory_statement_projection(project_dir: Path, ref: dict, statement: dict) -> dict:
     """Link retained arguments in a display copy of the exact theory component."""
     result = deepcopy(statement)

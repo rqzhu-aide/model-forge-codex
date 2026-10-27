@@ -76,14 +76,17 @@ export function MathText({ latex, display = true }) {
 // Disclosure labels keep authored inline mathematics without nested links or
 // block elements inside the keyboard-operable summary.
 export function ResearchLabel({ text, className }) {
-  return <span className={className}>{String(text || "").split(inlineTokens).map((part, index) => {
+  const content = (value) => value.split(inlineTokens).map((part, index) => {
     const math = index % 2 && mathBody(part);
     if (math?.latex) return <MathText key={index} latex={math.latex} display={false} />;
     if (index % 2 && part.startsWith("**")) return <strong key={index}>{part.slice(2, -2)}</strong>;
     if (index % 2 && part.startsWith("`")) return <code key={index}>{part.slice(1, -1)}</code>;
     const link = part.match(/^\[([^\]]+)\]\([^)]*\)$/);
     return link ? link[1] : part;
-  })}</span>;
+  });
+  return <span className={className}>{inlineStrongParts(String(text || "")).map((part, index) => part.strong
+    ? <strong key={index}>{content(part.text)}</strong>
+    : <React.Fragment key={index}>{content(part.text)}</React.Fragment>)}</span>;
 }
 
 const safeUrl = (url) => /^(https?:\/\/|\/api\/)/i.test(url) ? url : undefined;

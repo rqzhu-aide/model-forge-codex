@@ -193,8 +193,8 @@ export function ProviderFileEditorForm({ view, editor, onEditorChange, onSave, o
         <ActionButton action="retry" onClick={onRefresh} disabled={saving}>Refresh editor</ActionButton></div>}
       {!conflict && draftKept && <div className="note warn provider-conflict" role="alert">Provider settings changed
         outside this editor. Review the latest settings before saving; your unsaved edits were kept.{" "}
-        <button type="button" className="btn ghost" onClick={onReapplyDraft} disabled={saving}>Reapply my edits</button>{" "}
-        <button type="button" className="btn ghost" onClick={onDiscardDraft} disabled={saving}>Discard my edits</button></div>}
+        <button type="button" className="btn ghost" onClick={onReapplyDraft} disabled={saving}>Reapply your edits</button>{" "}
+        <button type="button" className="btn ghost" onClick={onDiscardDraft} disabled={saving}>Discard your edits</button></div>}
       {saveError && <div className="error" role="alert">{saveError}</div>}
       {savedNotice && <div className="banner" role="status">Saved. New turns read the updated settings; running turns keep their captured settings.</div>}
       <fieldset className="provider-editor-fields" disabled={saving}>

@@ -60,7 +60,7 @@ def test_frozen_p1_briefs_deliver_field_ownership_and_preserve_independent_roles
     directory = engine.run_dir(candidate.project_id, candidate.run_id)
     shutil.copytree(engine.project_dir(candidate.project_id) / "contracts", directory / "contracts")
     phase = read_json(directory / "contracts/contracts/phases/P1.json")
-    assert phase["contract_version"] == "3.7.0"
+    assert phase["contract_version"] == "3.7.4"
     assert [(stage.execution, len(stage.roles)) for stage in stages] == [("parallel", 3), ("serial", 1)]
     assert set(phase["role_stages"][0]["writes"]) == {
         "p1.lead_literature", "p1.theory_literature", "p1.empirical_literature",

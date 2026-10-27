@@ -118,8 +118,9 @@ export function TechnicalReportDocument({ document, onSource, showRecordSource =
   const reviewMessage = !hasExactRef(ref) ? "The report version is unidentified; independent review of this version cannot be established."
     : exactReview ? "This version was independently reviewed"
     : document.reviewed_report_ref && !hasExactRef(document.reviewed_report_ref) ? "The report version covered by review is unidentified; independent review of this version cannot be established."
-    : document.reviewed_report_ref && !sameRef(document.reviewed_report_ref, ref) ? "Review concerns an earlier version; this version has not been independently reviewed"
-    : "This version has not been independently reviewed";
+    : document.reviewed_report_ref && !sameRef(document.reviewed_report_ref, ref) ? "Review concerns an earlier version; it does not confirm independent review of this draft."
+    : document.review_status === "not_independently_reviewed" ? "This version has not been independently reviewed"
+    : "I can't confirm an independent review of this draft.";
   const portable = hasExactRef(ref) && usableArtifactUrl(document.portable_artifact_url) ? document.portable_artifact_url : null;
   const materials = document.report_materials || document.supplementary_artifacts || [];
   const readingAnchor = `technical-report:${ref?.generation_id || document.report_generation_id || "unavailable"}`;

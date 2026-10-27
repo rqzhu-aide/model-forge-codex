@@ -12,17 +12,23 @@ export function issueDisplayState(issue) {
   const open = issueIsOpen(issue);
   const kind = issueDisplayKind(issue);
   if (kind === "researcher_decision") {
-    if (issue.researcher_answer) return { state: "saved", label: issue.researcher_answer.origin === "unknown" ? "Response saved · remains unknown" : "Response saved" };
-    return open ? { state: "response", label: "Response needed" } : { state: "recorded", label: "Recorded decision" };
+    if (issue.researcher_answer) return { state: "saved", label: issue.researcher_answer.origin === "unknown" ? "Answer saved · still unknown" : "Answer saved" };
+    return open ? { state: "response", label: "Open question" } : { state: "recorded", label: "Closed question" };
   }
+  // Legacy rows keep their existing count category while showing response truth.
+  if (!kind) return { state: "recorded", label: issue.researcher_answer
+    ? issue.researcher_answer.origin === "unknown" ? "Answer saved · still unknown" : "Answer saved"
+    : open ? "Open question" : "Closed question" };
   if (["scientific_issue", "research_task"].includes(kind) && open) return { state: "science", label: "Open scientific work" };
   return { state: "recorded", label: "Recorded issue" };
 }
 
 export function issueUrgency(issue) {
-  if (issue.researcher_answer?.origin === "unknown") return { state: "unknown", label: "Still unknown" };
-  if (issue.researcher_answer) return { state: "saved", label: "Instruction saved" };
-  if (!issueIsOpen(issue)) return { state: "recorded", label: "Recorded" };
+  const question = !["research_task", "scientific_issue"].includes(issueDisplayKind(issue));
+  if (issue.researcher_answer?.origin === "unknown") return { state: "unknown", label: "Answer saved · still unknown" };
+  if (issue.researcher_answer) return { state: "saved", label: "Answer saved" };
+  if (!issueIsOpen(issue)) return { state: "recorded", label: question ? "Closed question" : "Recorded" };
+  if (question) return { state: "attention", label: "Open question" };
   if (issue.severity === "blocking") return { state: "blocking", label: "Blocking" };
   if (issue.severity === "reassessment_required") return { state: "reassess", label: "Reassess" };
   return { state: "attention", label: "Discuss" };
@@ -58,8 +64,8 @@ export function issueCardEntries({ issues = [], attention = [], answers = [], ph
 export function issueCardState({ entries = [], related = [], activePause = false, activePauseKind, savedPauseCount = 0, correctionCount = 0 }) {
   const responseCount = entries.filter((issue) => issueDisplayState(issue).state === "response").length;
   const scienceCount = entries.filter((issue) => issueDisplayState(issue).state === "science").length;
-  if (activePause) return { state: "waiting", label: activePauseKind === "researcher" ? "Work waiting for your response" : activePauseKind === "setup" ? "Experiment setup needs attention" : "Evaluation waiting for your direction" };
-  if (responseCount) return { state: "response", label: `${responseCount} ${responseCount === 1 ? "question needs" : "questions need"} your response` };
+  if (activePause) return { state: "waiting", label: activePauseKind === "setup" ? "Experiment setup needs attention" : "Work is paused" };
+  if (responseCount) return { state: "response", label: `${responseCount} unanswered ${responseCount === 1 ? "question" : "questions"}` };
   if (correctionCount) return { state: "correction", label: "Work needs correction before it can be completed" };
   if (scienceCount) return { state: "science", label: "Open scientific work remains for the team" };
   if (related.length) return { state: "related", label: related.every((issue) => ["scientific_issue", "research_task"].includes(issueDisplayKind(issue))) ? "Related scientific work is linked below" : "Related questions are linked below" };

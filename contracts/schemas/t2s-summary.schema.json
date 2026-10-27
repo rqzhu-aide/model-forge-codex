@@ -10,7 +10,7 @@
     "summary_id": {"type": "string", "minLength": 1},
     "phase": {"type": "string", "enum": ["P1", "P2", "P3", "P4", "P5"]},
     "headline": {"type": "string", "minLength": 1, "maxLength": 240},
-    "evaluation_markdown": {"type": "string", "minLength": 1, "description": "Explain what was established, its support and decisive limitation, and what subsequent work may rely on. For a P5 revision, state substantive changes with review issue references, preserve unresolved criticism, and distinguish the reviewed draft from the lead-checked revision."},
+    "evaluation_markdown": {"type": "string", "minLength": 1, "description": "Explain what was established, its support and decisive limitation, and what subsequent work may rely on. For a P5 revision, state substantive changes with review issue references, preserve unresolved criticism, and distinguish the reviewed draft from the lead-checked revision. Interpret the supported result and practical boundary for the researcher objective without rewriting audited statements, quantifiers, assumptions or proof support for brevity. For P3 next-work recommendations, keep proposed next work a conditional recommendation within the stated scope. Recommend what to prioritize if its conditions hold; do not turn that recommendation into an instruction to start or imply authorization for another run."},
     "method_scores": {
       "type": "array",
       "description": "Optional per-method scoring matrix (UI-facing only, mirrored from the decision record per D11).",

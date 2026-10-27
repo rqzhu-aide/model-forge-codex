@@ -26,6 +26,26 @@ const source = { kind: "phase_issue", branch: "trunk", phase: "P2", family: "att
 const question = { attention_id: source.object_id, phase: "P2", branch: "trunk", kind: "researcher_decision", disposition: "open", severity: "major", title: "How were observation times chosen?", question: "How were observation times chosen?", context_markdown: "The observation schedule determines which trajectories are available.", scope: { kind: "project" }, explanation_target: source, generation_ref: source };
 const props = { projectId: "project.compact-rows", phase: "P2", branch: "trunk", compact: true, onExplain() {} };
 const answerFor = (issue, note, revision) => ({ attention_id: issue.attention_id, attention: issue, question_ref: issue.explanation_target, scope: issue.scope, note, revision });
+const rewardObjective = String.raw`\max_{\pi\in\Pi} J_R(\pi),\qquad J_R(\pi)=\mathbb{E}_{\pi}\!\left[\sum_{t=0}^{H-1}\gamma^t R_t\right]`;
+const costReturn = String.raw`G_C=\sum_{t=0}^{H-1}\gamma^t C_t`;
+const chanceConstraint = String.raw`\Pr_{\pi}(G_C>B)\le\delta`;
+const meanConstraint = String.raw`\mathbb{E}_{\pi}[G_C]\le B`;
+const mathematicalChoice = {
+  ...populationChoice, question: "Which budget requirement matches the intended application?",
+  context_markdown: `Both alternatives maximize the same expected discounted reward over the policy class.\n\n$$\n${rewardObjective}\n$$\n\nThe random discounted cost is\n\n$$\n${costReturn}\n$$\n\nHere $\\pi$ is the policy, $\\Pi$ is the admissible policy class, $H$ is the finite number of decision times, $\\gamma$ is the discount factor, and $R_t$ and $C_t$ are the reward and cost at time $t$. The expectation and probability use the trajectory distribution induced by the policy. The budget $B$ is measured in discounted cost units, and $\\delta$ is the permitted probability of exceeding it. The alternatives below change the budget requirement while preserving this reward objective.`,
+  likely_consequence: "The choice determines whether the budget controls violation frequency or average discounted cost.",
+  options: [
+    { id: "chance", label: "Limit budget violation probability", consequence: `$$\n${chanceConstraint}\n$$\n\nControls how often discounted cost exceeds the budget; the size of an overrun is not bounded by this constraint.` },
+    { id: "mean", label: "Limit average discounted cost", consequence: `$$\n${meanConstraint}\n$$\n\nControls average discounted cost; an individual trajectory may still exceed the budget.` },
+  ],
+};
+const texAnnotations = html => [...html.matchAll(/<annotation encoding="application\/x-tex">([\s\S]*?)<\/annotation>/g)].map(([, value]) => value.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&quot;", '"').replaceAll("&#x27;", "'").trim());
+test("disclosure accessible name retains authored notation and citation labels without link targets", () => {
+  const html = ui.entry({ ...props, issue: { ...question, question: "Should **$C_t$** use [cost units](paper:cost-units)?" } });
+  assert.match(html, /aria-label="Should C_t use cost units\? Open question"/);
+  assert.match(html, /<math[\s>]/, "Heading still exposes structured mathematics.");
+  assert.doesNotMatch(html.match(/<summary\b[^>]*>/)[0], /paper:cost-units/);
+});
 const text = tree => Array.isArray(tree) ? tree.map(text).join("") : tree && typeof tree === "object" ? text(tree.props?.children) : String(tree ?? "");
 function all(tree, predicate) {
   if (Array.isArray(tree)) return tree.flatMap(item => all(item, predicate));
@@ -52,13 +72,14 @@ async function withStorage(action) {
   try { await action(); } finally { if (previous === undefined) delete globalThis.sessionStorage; else globalThis.sessionStorage = previous; }
 }
 
-test("row urgency follows recorded severity and saved input, never alarming wording", () => {
+test("researcher row urgency follows response state while team findings retain scientific severity", () => {
   for (const [severity, expected] of [["blocking", { state: "blocking", label: "Blocking" }], ["reassessment_required", { state: "reassess", label: "Reassess" }], ["major", { state: "attention", label: "Discuss" }], ["monitor", { state: "attention", label: "Discuss" }]]) {
-    assert.deepEqual(issueUrgency({ ...question, severity }), expected);
+    assert.deepEqual(issueUrgency({ ...question, severity }), { state: "attention", label: "Open question" });
+    assert.deepEqual(issueUrgency({ ...question, kind: "scientific_issue", severity }), expected);
   }
-  assert.deepEqual(issueUrgency({ ...question, severity: undefined, question: "URGENT: this is blocking" }), { state: "attention", label: "Discuss" });
-  assert.deepEqual(issueUrgency({ ...question, severity: "blocking", disposition: "resolved" }), { state: "recorded", label: "Recorded" });
-  assert.deepEqual(issueUrgency({ ...question, severity: "blocking", researcher_answer: answerFor(question, "Keep the schedule unknown.", 1) }), { state: "saved", label: "Instruction saved" });
+  assert.deepEqual(issueUrgency({ ...question, severity: undefined, question: "URGENT: this is blocking" }), { state: "attention", label: "Open question" });
+  assert.deepEqual(issueUrgency({ ...question, severity: "blocking", disposition: "resolved" }), { state: "recorded", label: "Closed question" });
+  assert.deepEqual(issueUrgency({ ...question, severity: "blocking", researcher_answer: answerFor(question, "Keep the schedule unknown.", 1) }), { state: "saved", label: "Answer saved" });
   assert.equal(issueDisplayState({ ...question, kind: "scientific_issue", researcher_answer: answerFor(question, "Investigate this next.", 1) }).state, "science");
 });
 
@@ -71,7 +92,9 @@ test("a row uses a closed native disclosure with title and textual status in its
   const summary = html.match(/<summary\b[^>]*>([\s\S]*?)<\/summary>/)?.[1];
   assert.ok(summary);
   assert.match(summary, /How were observation times chosen\?/);
-  assert.match(summary, /Blocking/);
+  assert.match(summary, /Open question/);
+  assert.match(summary, /<h3 class="issue-row-title">/);
+  assert.doesNotMatch(summary, /data-urgency="blocking"|data-urgency="reassess"/);
   assert.doesNotMatch(summary, /<button|Discuss<\/button>|Lead suggestions/);
   assert.match(html.slice(html.indexOf("</summary>")), /Discuss|Lead suggestions/);
   assert.match(html, /The observation schedule determines which trajectories are available/);
@@ -87,6 +110,40 @@ test("a mathematical row label remains inline and its cited text does not become
   assert.match(summary, /class="katex"/);
   assert.match(summary, /observation schedule/);
   assert.doesNotMatch(summary, /<a\b|<p\b|class="math-block"|katex-display|katex-error/);
+});
+
+test("researcher rows show one stable full question heading and retain a distinct authored title in details", () => {
+  const item = { ...populationChoice, title: "Donor and cell weighting change the population target", question: "Should every donor receive the same weight when donors contribute different numbers of observed cells, conditional on the supplied sampling design?" };
+  const before = structuredClone(item);
+  for (const compact of [false, true]) {
+    const html = ui.entry({ ...props, issue: item, compact });
+    const summary = html.match(/<summary\b[^>]*>([\s\S]*?)<\/summary>/)[1];
+    assert.match(summary, /<h3 class="issue-row-title">/);
+    assert.ok(summary.includes(item.question));
+    const visibleText = html.replace(/<[^>]+>/g, "");
+    assert.equal(visibleText.split(item.question).length - 1, 1);
+    assert.ok(visibleText.indexOf(item.title) > visibleText.indexOf("Context and sources"));
+    assert.equal((html.match(/Researcher choice · Interpretation/g) || []).length, 1);
+    assert.doesNotMatch(html, /role="heading"|title="Should every donor/);
+  }
+  const render = hookHarness(ui.IssueEntry);
+  let tree = render({ ...props, issue: item });
+  const label = find(tree, node => node.props?.text === item.question);
+  tree.props.onToggle({ currentTarget: { open: true } }); tree = render({ ...props, issue: item });
+  assert.equal(find(tree, node => node.props?.text === item.question).props.text, label.props.text);
+  assert.equal(tree.props["data-reading-anchor"], `issue:${issueVersionKey(item)}`);
+  assert.deepEqual(item, before);
+});
+
+test("standalone and embedded cards keep question and section headings below their card heading", () => {
+  for (const compact of [false, true]) {
+    for (const embedded of [false, true]) {
+      const html = ui.issues({ ...props, issues: [populationChoice], questionsOnly: compact, embedded });
+      assert.match(html, new RegExp(`<h${embedded ? 3 : 2}>Issues and decisions<`));
+      assert.match(html, new RegExp(`<h${embedded ? 4 : 3} class="issue-row-title">`));
+      assert.match(html, new RegExp(`<h${embedded ? 5 : 4}>What this choice changes<`));
+    }
+  }
 });
 
 test("all questions remain individual rows in authored order after a current instruction is saved", () => {
@@ -120,7 +177,7 @@ test("an authored scientific kind remains a source-linked finding rather than a 
   assert.match(html, /Scientific findings \(1\)/);
   assert.ok(html.indexOf(statement) > html.indexOf("Scientific findings (1)"));
   assert.match(html, /Read the scientific context/);
-  assert.doesNotMatch(html, /<textarea|Your instruction|Save instruction|Edit instruction|Your input needed|Your information or preference is needed|data-issue-state="response"/);
+  assert.doesNotMatch(html, /<textarea|Your answer<\/label>|Save your answer|Edit your answer|I need your answer|Your information or preference is needed|data-issue-state="response"/);
   const summary = html.match(/class="issue-row-summary"[^>]*>([\s\S]*?)<\/summary>/)?.[1];
   assert.ok(summary?.includes("Original enrollment offers"));
   assert.ok(!summary?.includes(object_id));
@@ -147,10 +204,10 @@ test("scientific findings retain saved instructions read-only and ignore cached 
   const explanations = []; const preparations = [];
   const input = { ...props, phase: "P3", branch: findingSource.branch, issue: { ...finding, researcher_answer: answer }, onExplain: target => explanations.push(target), onPrepare: (issue, origin) => preparations.push([issue, origin]) };
   const html = ui.entry(input);
-  assert.match(html, /Saved researcher instruction/);
+  assert.match(html, /Your saved answer/);
   assert.match(html, /Keep the actual allocation unknown\./);
   for (const label of ["Discuss", "Read the scientific context", "Prepare further work"]) assert.ok(html.includes(label));
-  assert.doesNotMatch(html, /<textarea|<form|Your instruction|Edit instruction|Save instruction|An older unfinished answer draft/);
+  assert.doesNotMatch(html, /<textarea|<form|Your answer<\/label>|Edit your answer|Save your answer|An older unfinished answer draft/);
   const tree = hookHarness(ui.IssueEntry)(input);
   button(tree, "Discuss").props.onClick();
   assert.deepEqual(explanations[0].researcherNote, { note: answer.note, revision: 2 });
@@ -182,7 +239,7 @@ test("four P3 research tasks remain readable P4 team work with their exact sourc
   assert.equal((html.match(/class="issue-row-summary"/g) || []).length, 4);
   assert.equal((html.match(/Read the scientific context/g) || []).length, 4);
   for (const statement of statements) assert.ok(html.includes(statement));
-  assert.doesNotMatch(html, /<textarea|Your instruction|Your input needed|Your information or preference is needed|Their responses stay|Questions carried/);
+  assert.doesNotMatch(html, /<textarea|Your answer<\/label>|I need your answer|Your information or preference is needed|Their responses stay|Questions carried/);
   assert.equal(ui.issues({ ...input, questionsOnly: true }), "");
   const projected = issueCardEntries(input);
   assert.deepEqual(projected.related.map(issue => issue.explanation_target), tasks.map(issue => issue.explanation_target));
@@ -198,8 +255,8 @@ test("readable labels preserve authored precedence, mathematical prose and legac
   const html = ui.issues({ ...props, issues: [legacy], questionsOnly: true });
   assert.match(html, /class="katex"/);
   assert.match(html, /the observation process/);
-  assert.doesNotMatch(html, /Scientific findings|Your input needed|katex-error/);
-  assert.match(ui.issues({ ...props, issues: [question], questionsOnly: true }), /Your input needed/);
+  assert.doesNotMatch(html, /Scientific findings|I need your answer|katex-error/);
+  assert.match(ui.issues({ ...props, issues: [question], questionsOnly: true }), /Open question/);
   assert.equal(issueLabel({ title: source.object_id, object_id: source.object_id }), "Research issue");
 });
 
@@ -215,7 +272,7 @@ test("only the newest instruction for the exact question becomes current", () =>
   const html = ui.entry({ ...props, issue: projected.entries[0] });
   assert.match(html, /Current instruction only\./);
   assert.doesNotMatch(html, /Instruction for the earlier question|Earlier edit for the current question/);
-  assert.equal((html.match(/Edit instruction/g) || []).length, 1);
+  assert.equal((html.match(/Edit your answer/g) || []).length, 1);
 });
 
 test("earlier question history keeps one editable instruction and saves to its original source", async () => withStorage(async () => {
@@ -239,7 +296,7 @@ test("earlier question history keeps one editable instruction and saves to its o
     assert.equal(historical.props.issue.researcher_answer, latest);
     const renderRow = hookHarness(ui.IssueEntry); let row = renderRow(historical.props);
     button(row, "Discuss").props.onClick(); assert.equal(targets[0].generation_id, earlierSource.generation_id);
-    button(row, "Edit instruction").props.onClick(); row = renderRow(historical.props);
+    button(row, "Edit your answer").props.onClick(); row = renderRow(historical.props);
     find(row, node => node.type === "textarea").props.onChange({ target: { value: "Revised historical instruction." } }); row = renderRow(historical.props);
     await find(row, node => node.type === "form").props.onSubmit({ preventDefault() {} });
     assert.equal(saves.length, 1); assert.deepEqual(saves[0][3].expected_source, earlierSource); assert.equal(saves[0][3].expected_revision, 2);
@@ -248,7 +305,7 @@ test("earlier question history keeps one editable instruction and saves to its o
     assert.equal(updated[0].props.issue.researcher_answer, undefined);
     assert.equal(updated[1].props.issue.researcher_answer.note, "Revised historical instruction.");
     const html = ui.issues(input);
-    assert.equal((html.match(/Edit instruction/g) || []).length, 1);
+    assert.equal((html.match(/Edit your answer/g) || []).length, 1);
     assert.doesNotMatch(html, /First historical instruction/);
   } finally { Object.assign(ui.api, previousApi); }
 }));
@@ -277,7 +334,7 @@ test("editing an authored carried instruction starts a current-source answer bef
   try {
     const render = hookHarness(ui.IssueEntry); const input = { ...props, issue: projected };
     for (const [expectedRevision, note] of [[0, "Instruction for this successor."], [5, "Updated successor instruction."]]) {
-      let tree = render(input); button(tree, "Edit instruction").props.onClick(); tree = render(input);
+      let tree = render(input); button(tree, "Edit your answer").props.onClick(); tree = render(input);
       find(tree, node => node.type === "textarea").props.onChange({ target: { value: note } }); tree = render(input);
       await find(tree, node => node.type === "form").props.onSubmit({ preventDefault() {} });
       assert.equal(saves.at(-1)[3].expected_revision, expectedRevision);
@@ -305,9 +362,43 @@ test("a cached instruction draft opens only its exact row and keeps one editor",
   assert.equal(tree.type, "details"); assert.equal(tree.props.open, true);
   const editors = all(tree, node => node.type === "textarea");
   assert.equal(editors.length, 1); assert.equal(editors[0].props.value, "Check who selected the visit times.");
+  assert.match(text(tree), /You haven't saved an answer to this question yet\./);
+  assert.doesNotMatch(text(tree), /Your latest saved answer|Save to use this update/);
   const revised = { ...question, explanation_target: { ...source, generation_id: "generation.revised", sha256: "d".repeat(64) } };
   assert.notEqual(hookHarness(ui.IssueEntry)({ ...props, issue: revised }).props.open, true);
 }));
+
+test("a restored edit draft acknowledges the applicable saved answer without claiming the draft is saved", async () => withStorage(async () => {
+  const saved = answerFor(question, "The saved sampling account.", 3);
+  const key = `issue-response:${JSON.stringify([props.projectId, issueVersionKey(question)])}`;
+  ui.saveConversationDraft(key, { text: "A retained unsaved correction.", origin: "researcher_reported" });
+  const tree = hookHarness(ui.IssueEntry)({ ...props, issue: { ...question, researcher_answer: saved } });
+  assert.equal(tree.props.open, true);
+  assert.equal(all(tree, node => node.type === "textarea").length, 1);
+  assert.equal(find(tree, node => node.type === "textarea").props.value, "A retained unsaved correction.");
+  assert.match(text(tree), /Save to use this update in future work\. Work already started keeps its original answer\./);
+  assert.doesNotMatch(text(tree), /You haven't saved an answer/);
+  assert.ok(button(tree, "Save answer"));
+  assert.ok(button(tree, "Cancel edit"));
+  assert.equal(saved.note, "The saved sampling account.");
+}));
+
+test("general and distinct answer consequences retain their final qualifiers before the response controls", () => {
+  const general = "This changes the interpretation of the supplied comparison, only under the stated observational conditions.";
+  const expected = "Equal donor weights target the donor population, provided that donor selection supports that population.";
+  const answerSpecific = "Cell weights target the observed cell distribution, without identifying unobserved cells or a donor-level effect.";
+  const item = { ...populationChoice, likely_consequence: undefined, why_it_matters: general, expected_consequence: expected, answer_consequences_markdown: answerSpecific };
+  const before = structuredClone(item);
+  const html = ui.entry({ ...props, issue: item });
+  const sourcesAt = html.indexOf("Context and sources"), controlsAt = html.indexOf('<fieldset class="decision-options"');
+  for (const value of [general, expected, answerSpecific]) {
+    assert.equal(html.split(value).length - 1, 1);
+    assert.ok(html.indexOf(value) < sourcesAt && html.indexOf(value) < controlsAt);
+  }
+  const repeated = ui.entry({ ...props, issue: { ...item, expected_consequence: general, answer_consequences_markdown: general } });
+  assert.equal(repeated.split(general).length - 1, 1);
+  assert.deepEqual(item, before);
+});
 
 test("editing an instruction replaces the current text against its saved revision without starting work", async () => withStorage(async () => {
   const previousApi = { ...ui.api }; const saves = []; const runs = []; const saved = answerFor(question, "Use only scheduled observations.", 3);
@@ -315,20 +406,20 @@ test("editing an instruction replaces the current text against its saved revisio
   try {
     const render = hookHarness(ui.IssueEntry); const input = { ...props, issue: { ...question, researcher_answer: saved } };
     let tree = render(input); assert.equal(all(tree, node => node.type === "textarea").length, 0);
-    button(tree, "Edit instruction").props.onClick(); tree = render(input);
+    button(tree, "Edit your answer").props.onClick(); tree = render(input);
     const editors = all(tree, node => node.type === "textarea");
     assert.equal(editors.length, 1); assert.equal(editors[0].props.value, saved.note);
-    assert.ok(find(tree, node => node.type === "label" && text(node.props.children) === "Your instruction"));
+    assert.ok(find(tree, node => node.type === "label" && text(node.props.children) === "Your answer"));
     editors[0].props.onChange({ target: { value: "  Keep event-triggered observations separate.  " } }); tree = render(input);
-    assert.ok(button(tree, "Save instruction"));
+    assert.ok(button(tree, "Save answer"));
     await find(tree, node => node.type === "form").props.onSubmit({ preventDefault() {} });
     assert.equal(saves.length, 1); assert.equal(runs.length, 0);
     assert.equal(saves[0][2], "Keep event-triggered observations separate.");
     assert.equal(saves[0][3].expected_revision, 3); assert.deepEqual(saves[0][3].expected_source, source);
     tree = render(input); assert.equal(all(tree, node => node.type === "textarea").length, 0);
     assert.equal(all(tree, node => node.type === "section" && node.props.className?.split(" ").includes("issue-answer")).length, 1);
-    assert.ok(button(tree, "Edit instruction"));
-    button(tree, "Edit instruction").props.onClick(); tree = render(input);
+    assert.ok(button(tree, "Edit your answer"));
+    button(tree, "Edit your answer").props.onClick(); tree = render(input);
     assert.equal(find(tree, node => node.type === "textarea").props.value, "Keep event-triggered observations separate.");
   } finally { Object.assign(ui.api, previousApi); }
 }));
@@ -341,7 +432,7 @@ test("Edit focuses the instruction field and Cancel returns to its saved instruc
     const render = hookHarness(ui.IssueEntry); const input = { ...props, issue: { ...question, researcher_answer: saved } };
     let tree = render(input); tree.props.onToggle({ currentTarget: { open: true } }); tree = render(input);
     const savedSection = find(tree, node => node.type === "section" && node.props.className?.split(" ").includes("issue-answer"));
-    button(tree, "Edit instruction").props.onClick();
+    button(tree, "Edit your answer").props.onClick();
     assert.equal(focused.length, 0, "Focus must wait until the editor has mounted.");
     savedSection.ref.current = null; tree = render(input);
     const editor = find(tree, node => node.type === "textarea");
@@ -356,8 +447,8 @@ test("Edit focuses the instruction field and Cancel returns to its saved instruc
     assert.equal(frames.length, 1); frames.shift()();
     assert.deepEqual(focused, [["editor", { preventScroll: true }], ["edit", { preventScroll: true }]]);
     assert.equal(tree.props.open, true);
-    assert.ok(button(tree, "Edit instruction")); assert.equal(all(tree, node => node.type === "textarea").length, 0);
-    button(tree, "Edit instruction").props.onClick(); tree = render(input);
+    assert.ok(button(tree, "Edit your answer")); assert.equal(all(tree, node => node.type === "textarea").length, 0);
+    button(tree, "Edit your answer").props.onClick(); tree = render(input);
     assert.equal(find(tree, node => node.type === "textarea").props.value, saved.note);
   } finally { if (previousFrame === undefined) delete globalThis.requestAnimationFrame; else globalThis.requestAnimationFrame = previousFrame; }
 }));
@@ -366,13 +457,29 @@ test("authored choice briefs lead with the affected point, consequence and advic
   const html = ui.entry({ ...props, issue: populationChoice });
   assert.match(html, /Researcher choice · Interpretation/);
   assert.match(html, /class="katex"/);
-  assert.ok(html.indexOf("Affected point") < html.indexOf("Practical consequence"));
+  assert.ok(html.indexOf("What this choice changes") < html.indexOf("Why your answer matters"));
   assert.ok(html.indexOf("Lead recommendation") < html.indexOf("Context and sources"));
   assert.equal((html.match(/Neither choice establishes/g) || []).length, 1);
   assert.match(html, /<fieldset class="decision-options"/);
   assert.equal((html.match(/type="radio"/g) || []).length, 4);
   assert.doesNotMatch(html, /checked=""/);
-  assert.match(html, /I am unsure|Give a different response|Add a note \(optional\)|Save choice/);
+  assert.match(html, /Not sure yet|Give a different response|Add a note \(optional\)|Save answer/);
+});
+
+test("a complete shared objective stays visible with distinct chance and mean budget alternatives", () => {
+  assert.ok(mathematicalChoice.context_markdown.trim().split(/\s+/).length > 60);
+  const before = structuredClone(mathematicalChoice);
+  const html = ui.entry({ ...props, issue: mathematicalChoice });
+  assert.match(html, /<section[^>]*><h4>What this choice changes<\/h4>/);
+  assert.doesNotMatch(html, /<details[^>]*decision-rationale|katex-error/);
+  const equations = texAnnotations(html);
+  for (const equation of [rewardObjective, costReturn, chanceConstraint, meanConstraint]) assert.ok(equations.includes(equation), equation);
+  assert.equal(equations.filter(equation => equation === rewardObjective).length, 1);
+  assert.equal((html.match(/class="katex-display"/g) || []).length, 4);
+  assert.match(html, /Controls how often discounted cost exceeds the budget/);
+  assert.match(html, /Controls average discounted cost/);
+  assert.doesNotMatch(html, /checked=""/);
+  assert.deepEqual(mathematicalChoice, before);
 });
 
 test("raw published attention uses its exact generation reference for discussion and choice saves", async () => withStorage(async () => {
@@ -381,7 +488,7 @@ test("raw published attention uses its exact generation reference for discussion
   try {
     const raw = { ...populationChoice, explanation_target: undefined };
     const render = hookHarness(ui.IssueEntry); const input = { ...props, projectId: "project.raw-published-choice", issue: raw, onExplain: target => discussions.push(target) };
-    let tree = render(input); button(tree, "Discuss").props.onClick(); button(tree, "Lead suggestions").props.onClick();
+    let tree = render(input); button(tree, "Discuss").props.onClick(); button(tree, "Get the Lead's advice").props.onClick();
     assert.deepEqual(discussions.map(target => target.entry_pointer), [populationChoice.generation_ref.entry_pointer, populationChoice.generation_ref.entry_pointer]);
     assert.equal(discussions[0].generation_id, populationChoice.generation_ref.generation_id);
     assert.equal(discussions[0].responsible_role, "research_lead"); assert.equal(discussions[1].assessmentPurpose, "issue_suggestions");
@@ -397,10 +504,10 @@ test("historical prose stays display-only and study facts never turn into option
   const historical = { ...question, options: ["Keep the existing target.", "Use a narrower population."], recommendation: "The original advice remains readable." };
   const html = ui.entry({ ...props, issue: historical });
   assert.match(html, /Keep the existing target|Use a narrower population|original advice/);
-  assert.doesNotMatch(html, /type="radio"|Save choice/);
+  assert.doesNotMatch(html, /type="radio"/);
   const factual = ui.entry({ ...props, issue: { ...studyFact, options: populationChoice.options, recommendation: "Do not make a preference out of a study fact." } });
-  assert.match(factual, /Study information · Data applicability|Your study information|This remains unknown/);
-  assert.doesNotMatch(factual, /type="radio"|Save choice|Do not make a preference/);
+  assert.match(factual, /Study information · Data applicability|Your answer|This remains unknown/);
+  assert.doesNotMatch(factual, /type="radio"|Do not make a preference/);
 });
 
 test("legacy context remains whole inside supporting disclosure and retains recommendation attribution", () => {
@@ -422,9 +529,9 @@ test("a choice and optional note save once for the exact question and restore as
   };
   try {
     const input = { ...props, projectId: "project.choice-save", issue: populationChoice }; const render = hookHarness(ui.IssueEntry);
-    let tree = render(input); assert.equal(button(tree, "Save choice").props.disabled, true);
+    let tree = render(input); assert.equal(button(tree, "Save answer").props.disabled, true);
     find(tree, node => node.type === "input" && node.props.value === "option:survivors").props.onChange(); tree = render(input);
-    assert.equal(button(tree, "Save choice").props.disabled, false);
+    assert.equal(button(tree, "Save answer").props.disabled, false);
     find(tree, node => node.type === "textarea").props.onChange({ target: { value: "  Match the cohort-wide use case.  " } }); tree = render(input);
     await find(tree, node => node.type === "form").props.onSubmit({ preventDefault() {} });
     assert.equal(saves.length, 1); assert.equal(starts.length, 0);
@@ -432,13 +539,48 @@ test("a choice and optional note save once for the exact question and restore as
     assert.deepEqual(saves[0][3].selection, { option_id: "survivors", note: "Match the cohort-wide use case." });
     assert.deepEqual(saves[0][3].expected_source, populationChoice.explanation_target); assert.equal(saves[0][3].expected_revision, 0);
     tree = render(input); assert.equal(all(tree, node => node.type === "textarea").length, 0);
-    button(tree, "Edit instruction").props.onClick(); tree = render(input);
+    button(tree, "Edit your answer").props.onClick(); tree = render(input);
     assert.equal(find(tree, node => node.type === "input" && node.props.value === "option:survivors").props.checked, true);
     assert.equal(find(tree, node => node.type === "textarea").props.value, "Match the cohort-wide use case.");
     find(tree, node => node.type === "input" && node.props.value === "option:observed").props.onChange(); tree = render(input);
     await find(tree, node => node.type === "form").props.onSubmit({ preventDefault() {} });
     assert.equal(saves[1][3].expected_revision, 1); assert.equal(saves[1][3].selection.option_id, "observed");
     assert.equal(starts.length, 0);
+  } finally { Object.assign(ui.api, originalApi); }
+}));
+
+test("mathematical choices retain the saved formulation while editing only the optional researcher note", async () => withStorage(async () => {
+  const originalApi = { ...ui.api }; const saves = []; const answers = [];
+  ui.api.startRun = () => assert.fail("Saving or editing a choice must not start research.");
+  ui.api.resolveAttention = async (...args) => {
+    saves.push(args);
+    const option = mathematicalChoice.options.find(item => item.id === args[3].selection.option_id);
+    const note = args[3].selection.note || "";
+    const answer = { ...answerFor(mathematicalChoice, `Selected option: ${option.label}\n\n${option.consequence}${note ? `\n\nYour note: ${note}` : ""}`, saves.length), selection: { option_id: option.id, label: option.label, consequence: option.consequence, note } };
+    answers.push(answer); return { answer };
+  };
+  try {
+    const input = { ...props, projectId: "project.mathematical-choice-save", issue: mathematicalChoice };
+    const render = hookHarness(ui.IssueEntry);
+    let tree = render(input);
+    find(tree, node => node.type === "input" && node.props.value === "option:chance").props.onChange(); tree = render(input);
+    find(tree, node => node.type === "textarea").props.onChange({ target: { value: "  Keep the declared budget and tolerance.  " } }); tree = render(input);
+    await find(tree, node => node.type === "form").props.onSubmit({ preventDefault() {} });
+    assert.deepEqual(saves[0][3].selection, { option_id: "chance", note: "Keep the declared budget and tolerance." });
+    assert.equal(answers[0].selection.consequence, mathematicalChoice.options[0].consequence);
+    const savedHtml = ui.entry({ ...input, issue: { ...mathematicalChoice, researcher_answer: answers[0] } });
+    assert.ok(texAnnotations(savedHtml).includes(chanceConstraint)); assert.doesNotMatch(savedHtml, /katex-error/);
+    tree = render(input); button(tree, "Edit your answer").props.onClick(); tree = render(input);
+    assert.equal(find(tree, node => node.type === "textarea").props.value, "Keep the declared budget and tolerance.");
+    assert.equal(find(tree, node => node.type === "input" && node.props.value === "option:chance").props.checked, true);
+    find(tree, node => node.type === "input" && node.props.value === "option:mean").props.onChange(); tree = render(input);
+    await find(tree, node => node.type === "form").props.onSubmit({ preventDefault() {} });
+    assert.deepEqual(saves[1][3].selection, { option_id: "mean", note: "Keep the declared budget and tolerance." });
+    assert.equal(saves[1][3].expected_revision, 1);
+    assert.ok(answers[1].note.includes(meanConstraint)); assert.ok(!answers[1].note.includes(chanceConstraint));
+    assert.equal(answers[1].note.split(meanConstraint).length - 1, 1);
+    tree = render(input); button(tree, "Edit your answer").props.onClick(); tree = render(input);
+    assert.equal(find(tree, node => node.type === "textarea").props.value, "Keep the declared budget and tolerance.");
   } finally { Object.assign(ui.api, originalApi); }
 }));
 
@@ -455,7 +597,7 @@ test("unsaved choices survive remounts without saving, and uncertainty remains a
     find(tree, node => node.type === "input" && node.props.value === "unknown").props.onChange(); tree = render(input);
     await find(tree, node => node.type === "form").props.onSubmit({ preventDefault() {} });
     assert.equal(saves[0][3].origin, "unknown"); assert.equal(saves[0][3].selection, undefined);
-    assert.match(saves[0][2], /unsure/); tree = render(input);
+    assert.equal(saves[0][2], "This choice remains unresolved."); tree = render(input);
     assert.match(text(tree), /Still unknown/);
   } finally { Object.assign(ui.api, originalApi); }
 }));
@@ -466,7 +608,7 @@ test("a custom response requires text and does not claim an authored selection",
   try {
     const input = { ...props, projectId: "project.choice-custom", issue: populationChoice }; const render = hookHarness(ui.IssueEntry);
     let tree = render(input); find(tree, node => node.type === "input" && node.props.value === "custom").props.onChange(); tree = render(input);
-    assert.equal(button(tree, "Save choice").props.disabled, true);
+    assert.equal(button(tree, "Save answer").props.disabled, true);
     find(tree, node => node.type === "textarea").props.onChange({ target: { value: "Predict only for the prespecified clinic population." } }); tree = render(input);
     await find(tree, node => node.type === "form").props.onSubmit({ preventDefault() {} });
     assert.equal(saves[0][3].selection, undefined); assert.equal(saves[0][3].origin, "researcher_reported");

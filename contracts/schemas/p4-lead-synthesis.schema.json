@@ -126,13 +126,13 @@
           "pattern": "\\S"
         },
         "conclusion_markdown": {
-          "description": "Explain whether the exact evaluated method serves the researcher intent, supported by the principal quantitative findings and their decisive qualification. Execution success is not scientific support.",
+          "description": "Explain whether the exact evaluated method serves the researcher intent, supported by the principal quantitative findings and their decisive qualification. Execution success is not scientific support. Lead with the supported result and decisive condition. Retain unsuccessful fits and inconclusive comparisons, and keep observed fitted synthetic equality within its tested scope. Lack of demonstrated benefit is not demonstrated absence of benefit. Distinguish evidence against a benefit from an inconclusive comparison; do not claim equivalence or absence of benefit from nonsignificance. Retain the applicable uncertainty and tested scope.",
           "type": "string",
           "minLength": 1,
           "pattern": "\\S"
         },
         "tradeoff_markdown": {
-          "description": "Explain benefits and costs relevant to the researcher, distinguishing method runtime or memory from total evaluation budget.",
+          "description": "Explain benefits and costs relevant to the researcher, distinguishing method runtime or memory from total evaluation budget. Preserve computational burden and uncertainty; a synthetic gain does not establish human benefit.",
           "type": "string",
           "minLength": 1,
           "pattern": "\\S"
@@ -249,7 +249,7 @@
             "pattern": "\\S"
           },
           "review_markdown": {
-            "description": "Assess the analyst answer against evidence available in this evaluation, retaining uncertainty and limitations and attributing disagreements.",
+            "description": "Assess the analyst answer against evidence available in this evaluation, retaining uncertainty and limitations and attributing disagreements. State the assessment, support and consequence without repeating every table or implying independent review of another version.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"

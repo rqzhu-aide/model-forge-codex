@@ -79,7 +79,7 @@ def frozen_run(engine, project, branch, report_case, mode='p5.review_revision', 
 def test_p5_update_keeps_review_scope_and_writers_exact():
     current = read_json(REPO / 'contracts/contracts/phases/P5.json')
     previous = read_json(OLD_PHASE)
-    assert current['contract_version'] == '3.3.0'
+    assert current['contract_version'] == '3.3.4'
     assert current['capabilities'] == [*previous['capabilities'], NATIVE,
                                       'consequential_researcher_decisions_v1', 'p5.reader_report.v1']
     for stage, old in zip(current['role_stages'], previous['role_stages']):
@@ -204,7 +204,8 @@ def test_frozen_report_lead_briefs_deliver_concise_statistical_authoring(workben
     assert 'section_anchors.references as a distinct trailing bibliography boundary' in brief
     assert 'Put all proofs, proof sketches, proof-only derivations and auxiliary lemmas in a separate declared appendix' in brief
     assert 'Checked local expansions of supplied algebra or conditional reasoning are allowed' in brief
-    assert "Follow this run's exact p5.instructions for page budget" in brief
+    assert "Follow this run's exact p5.instructions for reading scope and appendix organization" in brief
+    assert 'Do not require PDF creation, print layout or page-count checks unless the researcher explicitly requests them later' in brief
     assert frozen_phase == read_json(directory / 'contracts/contracts/phases/P5.json')
     assert len(stages) == (1 if mode == 'p5.assembly' else 2)
     assert engine.bridge.turns == []

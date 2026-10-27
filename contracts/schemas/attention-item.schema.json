@@ -43,7 +43,7 @@
     "question": {
       "type": "string",
       "minLength": 1,
-      "description": "One concise current choice, exact factual request or team task; mathematical notation is allowed."
+      "description": "One direct current choice, exact factual request or team task, understandable in the researcher's scientific setting. Mathematical notation is allowed. Make optional status visible for a nonblocking invitation; do not imply that every unanswered item prevents progress. One direct request for the current decision or study fact; a neutral unanswered state does not establish that work is paused or that the answer is required."
     },
     "severity": {
       "$ref": "common-definitions.schema.json#/$defs/attentionLevel"
@@ -51,7 +51,7 @@
     "likely_consequence": {
       "type": "string",
       "minLength": 1,
-      "description": "Practical effect on the target, intended conclusion, applicability or resources. Do not repeat the affected point or supporting derivation."
+      "description": "Practical effect on the target, intended conclusion, applicability or resources. Do not repeat the affected point or supporting derivation. Retain the conditions that determine this consequence and state what can proceed while unknown; scientific importance alone does not establish a pause."
     },
     "affected_record_ids": {
       "type": "array",
@@ -137,7 +137,7 @@
       "type": "string",
       "minLength": 1,
       "pattern": "\\S",
-      "description": "The exact affected target, model component, assumption or missing study fact, with only the explanation needed to understand it. Use the smallest useful mathematical expression and define its symbols locally. Preserve unknowns; do not invent mathematics. Full derivations and prior context remain available through exact source references rather than repeated in each brief."
+      "description": "The exact affected target, model component, assumption or missing study fact. When mathematics distinguishes the choices, show the affected problem or equation with enough formulation to understand the decision, defining symbols and any shared objective once. Preserve unknowns; do not invent mathematics. Full derivations and prior context remain available through exact source references rather than repeated in each brief. State whether input is optional for the present work or needed before a named action, based on what can responsibly proceed. For an optional invitation, say so near the question and state what can proceed while the answer is unknown. Do not use required or approval wording for a nonblocking fact. Explain the scientific meaning in the actual setting, without repeating saved preferences, review history or internal identifiers. Match explanation to demonstrated expertise, not a profession stereotype; connect notation to the actual scientific quantities and intended use."
     },
     "scope": {
       "type": "object",
@@ -297,7 +297,7 @@
     },
     "options": {
       "type": "array",
-      "description": "Authored alternatives for a genuine choice, usually two or three when useful, with benefits/costs in their consequences. New options use unique id, label and consequence; never fabricate researcher answers or preselect the recommendation. Legacy string and label-only alternatives remain readable. Omit for study facts and when no useful finite set exists.",
+      "description": "Authored alternatives for a genuine choice, usually two or three when useful. Each mathematically distinct option gives its formulation or changed equation and concise practical effect in consequence, under the shared context. New options use unique id, label and consequence; never fabricate researcher answers or preselect the recommendation. Legacy string and label-only alternatives remain readable. Omit for study facts and when no useful finite set exists.",
       "items": {
         "anyOf": [
           {
@@ -320,7 +320,8 @@
               },
               "consequence": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "description": "Markdown giving this option's mathematical formulation or changed equation when it differs mathematically under the shared context, followed by its concise practical effect and material benefits/costs. Plain facts, budgets and choices without a mathematical distinction need no artificial equation. Explain the scientific interpretation for this study and what the researcher gains or gives up. Define shared notation once instead of repeating the whole model."
               }
             },
             "additionalProperties": true
@@ -331,7 +332,7 @@
     "recommendation": {
       "type": "string",
       "minLength": 1,
-      "description": "Lead advice in Markdown with its reason, or what evidence is missing if no advice is justified. This is never a researcher answer or a preselection. Omit for study facts."
+      "description": "Lead advice in Markdown with its reason, or what evidence is missing if no advice is justified. This is never a researcher answer or a preselection. Omit for study facts. Give conditional advice about answering when justified; advice does not select or save the researcher's preference."
     }
   },
   "allOf": [

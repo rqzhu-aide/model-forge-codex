@@ -90,7 +90,9 @@ test("discussion and suggestions keep distinct histories and unsent drafts for t
   assert.notEqual(ui.conversationDraftKey("project.modes", ordinary), ui.conversationDraftKey("project.modes", suggestions));
   assert.equal(ui.conversationPurpose(source, history[1]), "issue_suggestions");
   assert.equal(ui.defaultConversationQuestion(ordinary), "");
-  assert.match(ui.defaultConversationQuestion(suggestions), /alternatives and tradeoffs/);
+  assert.match(ui.defaultConversationQuestion(suggestions), /If it asks for a choice.*alternatives, their consequences/);
+  assert.match(ui.defaultConversationQuestion(suggestions), /If it asks for a study fact.*what can remain unknown/);
+  assert.match(ui.defaultConversationQuestion(suggestions), /Do not infer my preference or a missing study fact/);
   const run = { assessment_purpose: "issue_suggestions", branch_id: "trunk", phase: "P2", mode: "p3.assessment", intent: "assessment", state: "running" };
   assert.equal(ui.explanationRun(run), true);
   assert.equal(ui.activePhaseRun([run], "P2", "trunk"), null);
@@ -100,10 +102,10 @@ test("item actions retain the exact question, distinguish the unsaved note, and 
   const targets = []; const saved = { note: "The sample comes from participating clinics.", revision: 2 };
   const props = { issue: { ...issue, researcher_answer: saved }, projectId: "project.item-actions", phase: "P2", branch: "trunk", compact: true, onExplain: target => targets.push(target) };
   const render = hookHarness(ui.IssueEntry);
-  button(render(props), "Edit instruction").props.onClick();
+  button(render(props), "Edit your answer").props.onClick();
   textarea(render(props)).props.onChange({ target: { value: "  Clinics opt in; follow-up may be incomplete.  " } });
   const tree = render(props);
-  button(tree, "Discuss").props.onClick(); button(tree, "Lead suggestions").props.onClick();
+  button(tree, "Discuss").props.onClick(); button(tree, "Get the Lead's advice").props.onClick();
   assert.equal(starts.length, 0); assert.equal(saves.length, 0);
   assert.equal(targets.length, 2);
   for (const target of targets) {
@@ -116,7 +118,7 @@ test("item actions retain the exact question, distinguish the unsaved note, and 
   assert.equal(saves.length, 1); assert.equal(starts.length, 0);
   assert.equal(saves[0][1], issue.attention_id); assert.equal(saves[0][2], "Clinics opt in; follow-up may be incomplete.");
   assert.deepEqual(saves[0][3].expected_source, source); assert.equal(saves[0][3].expected_revision, 2);
-  const after = render(props); button(after, "Lead suggestions").props.onClick();
+  const after = render(props); button(after, "Get the Lead's advice").props.onClick();
   assert.equal(targets.at(-1).researcherNote.note, "Clinics opt in; follow-up may be incomplete.");
   assert.equal(targets.at(-1).researcherNote.revision, 3);
   assert.ok(!targets.at(-1).researcherNoteDraft);

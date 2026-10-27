@@ -396,7 +396,7 @@ test("P2 launch uses one optional lead instruction field and preserves a recorde
 test("non-P2 launch keeps the existing instruction and work mode controls", () => {
   const html = render.launchRun({ projectId: "project.test", request: { phase: "P4", branch: "method.a", instructions: "Check simulation performance." }, onClose: noop, onStarted: noop });
   assert.match(html, /Choose the work/);
-  assert.match(html, /Your instruction/);
+  assert.match(html, /Tell me what to do next/);
   assert.match(html, /Check simulation performance/);
   assert.doesNotMatch(html, /These additions go only|Additional instructions or ideas for Phase 2/);
 });
@@ -505,7 +505,7 @@ test("P2 keeps selected-model questions and proposed work in the following two c
   assert.match(html, /review your instructions before starting the run/);
   assert.match(html, /Method A&#x27;s simulation choice/);
   assert.match(html, /The researcher&#x27;s saved method A answer/);
-  assert.match(html, /Edit instruction/);
+  assert.match(html, /Edit your answer/);
   assert.match(html, /Issues and decisions/);
   assert.doesNotMatch(html, /Your call: choose a method|Needs your decision|Method landscape|Method B&#x27;s question|Shared project question|Choose a method to develop|Read a proposal/);
   assert.match(html, /class="katex/);
@@ -591,17 +591,17 @@ test("P1 clarification follows the two scientific cards before papers with exact
     onSource: noop, onSaved: noop, onLaunch: noop, onResolved: noop,
   });
   assert.match(html, /Decisions to Discuss/);
-  assert.match(html, /Practical consequence/);
+  assert.match(html, /Why your answer matters/);
   assert.equal((html.match(/<(?:section|details)\b[^>]*class="card(?: |")/g) || []).length, 5);
   assert.ok(html.indexOf("Decisions to Discuss") > html.indexOf("Main Findings"));
   assert.ok(html.indexOf("Decisions to Discuss") < html.indexOf("Explore Individual Papers"));
   assert.ok(html.indexOf("Explore Individual Papers") < html.indexOf("Instructions and run settings"));
   assert.match(html, /<details[^>]*data-reading-anchor="issue-context:[^"]+"><summary>Context and sources<\/summary>/);
-  assert.match(html, /Practical consequence/);
+  assert.match(html, /Why your answer matters/);
   assert.match(html, /\\sum_\{t=0\}\^\{\\infty\}\\gamma\^t/);
   assert.match(html, /<details class="phase-issue issue-row"[^>]*><summary class="issue-row-summary"/);
   assert.doesNotMatch(html, /<details class="phase-issue issue-row"[^>]*\sopen(?:=|\s|>)/);
-  assert.ok(buttonNamed(html, "Save instruction"));
+  assert.ok(buttonNamed(html, "Save answer"));
   assert.equal((renderedText(html).match(/May a policy depend/g) || []).length, 1); // The compact row summary names the question once.
   assert.ok(html.indexOf("Earlier open questions") > html.indexOf("Instructions and run settings"));
   assert.match(html, /Earlier unresolved wording/);
@@ -660,12 +660,12 @@ test("saved clarification remains in collapsed Decisions to Discuss after the op
   assert.match(html, /data-issue-state="saved"/);
   assert.match(html, /<details class="phase-issue issue-row answered"[^>]*><summary class="issue-row-summary"/);
   assert.doesNotMatch(html, /<details class="phase-issue issue-row answered"[^>]*\sopen(?:=|\s|>)/);
-  assert.ok(html.indexOf("Your instruction</h3>") > html.indexOf("Decisions to Discuss"));
-  assert.match(html, /Edit instruction/);
+  assert.ok(html.indexOf("Your saved answer</h4>") > html.indexOf("Decisions to Discuss"));
+  assert.match(html, /Edit your answer/);
   assert.doesNotMatch(html, /We need your clarifications on:|Needs your input/);
   assert.match(html, /Use the augmented policy class/);
   assert.match(html, /Saved for future work/);
-  assert.match(html, /Practical consequence/);
+  assert.match(html, /Why your answer matters/);
   assert.match(html, /class="katex/);
   assert.equal((renderedText(html).match(/May a policy depend/g) || []).length, 1); // The compact row summary names the question once.
   assert.doesNotMatch(html, /Earlier open questions|P2-only directions|Save clarification<\/button>|Clarify this setting/);
@@ -853,7 +853,7 @@ test("a retained method from an earlier run keeps the same exploration capabilit
   assert.match(html, /Earlier authored mechanism/);
   assert.match(html, /Earlier lead rationale/);
   assert.match(html, /Retained method&#x27;s open question/);
-  assert.match(html, /Save instruction/);
+  assert.match(html, /Save answer/);
   assert.match(html, /Run this Method in Phase 3 - Theory<\/button>/);
   assert.match(html, /Run this Method in Phase 4 - Numerical Eval<\/button>/);
   assert.match(html, /One pass costs/);
@@ -989,7 +989,7 @@ test("P2 disclosures preserve authored material while decisions and proposed stu
   assert.doesNotMatch(html, /STALE APPLICABILITY|role="tablist"|role="tabpanel"/);
   assert.equal((html.match(/<section\b[^>]*class="card(?: |")/g) || []).length, 4);
   const saved = render.methods({ ...props, researcherAnswers: [{ attention_id: question.attention_id, attention: question, note: "Use my saved choice", resolved_at: "2026-09-22T12:00:00Z" }] });
-  assert.doesNotMatch(saved, /unanswered question/); assert.match(saved, /Use my saved choice/); assert.match(saved, /Edit instruction/);
+  assert.doesNotMatch(saved, /unanswered question/); assert.match(saved, /Use my saved choice/); assert.match(saved, /Edit your answer/);
 });
 
 test("P2 uses native disclosure controls and reports actual open-state changes", () => {

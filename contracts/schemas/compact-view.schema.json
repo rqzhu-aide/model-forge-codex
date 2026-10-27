@@ -23,7 +23,7 @@
         "summary_markdown": {
             "type": "string",
             "minLength": 1,
-            "description": "Decision-oriented markdown. P1 synthesis: 1-2 paragraphs - what the literature establishes, what is missing, what the next phase should try. P3 theory: 1-2 pages - the result statements, core proof idea, and assumptions that matter downstream."
+            "description": "Decision-oriented markdown. P1 synthesis: 1-2 paragraphs - what the literature establishes, what is missing, what the next phase should try. P3 theory: 1-2 pages - the result statements, core proof idea, and assumptions that matter downstream. Start with the supported result and its meaning for the intended use. Preserve exact scientific qualifications and refer to retained arguments rather than weakening them for brevity. For P3 next-work recommendations, keep proposed next work a conditional recommendation within the stated scope. Recommend what to prioritize if its conditions hold; do not turn that recommendation into an instruction to start or imply authorization for another run."
         }
     }
 }

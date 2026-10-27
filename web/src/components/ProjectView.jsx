@@ -4,7 +4,7 @@ import { sameMethodIdentity } from "../methodWorkspace";
 import ResearcherDialogue from "./ResearcherDialogue";
 import ResearchGoalEditor from "./ResearchGoalEditor";
 import IssuesCard from "./IssuesCard";
-import { goalContextTarget, goalCorrections, goalSource } from "../phaseOneReader";
+import { currentGoalSource, goalContextTarget, goalSource } from "../phaseOneReader";
 import FurtherWorkCard from "./FurtherWorkCard";
 import { PhaseOverview, TheoryReading, ManuscriptReading, ScientificDocuments } from "./PhaseReading";
 import TechnicalReportReading, { TechnicalReportDocument } from "./TechnicalReportReading";
@@ -29,11 +29,16 @@ import { currentCorrectionsForScope } from "../contextualRequests";
 import { selectResearchDocuments, sourceEntry } from "../researchContent";
 import { activePhaseRun, latestScientificAttempt, methodPhaseContexts, phaseNavigationState, singleEvaluatedMethod } from "../phaseUiState";
 import { empiricalDialogueItems, savedDecisionHistory } from "../empiricalProgress";
+import { sequentialDialogueItems } from "../researcherPauseOwnership";
+import { answerSourceNavigation } from "../researcherAnswerNavigation";
+import { phaseInputDestination } from "../phaseInputNavigation";
 import ResearchProgress from "./ResearchProgress";
 import { preserveReadingUpdate, restoreReadingPosition } from "../readingPosition";
-import { goalExcerpt, p2DecisionContexts, waitingDecisions } from "../projectResume";
+import { sharedGoalExcerpt, p2DecisionContexts, waitingDecisions } from "../projectResume";
+import ReportEditorialQuestions from "./ReportEditorialQuestions";
+import { useReaderOffset } from "../useReaderOffset";
 
-const sourceDocumentFamilies = new Set(["manuscript", "manuscript_candidate", "technical_report", "technical_report_candidate", "implementation_record", "implementation_record_candidate", "analyst_synthesis"]);
+const sourceDocumentFamilies = new Set(["manuscript", "manuscript_candidate", "technical_report", "technical_report_candidate", "implementation_record", "implementation_record_candidate", "analyst_synthesis", "theory_record", "complete_theory", "theory_candidate", "analyst_audit"]);
 
 const evidenceContextLabel = (state) => ({
   current: "Recorded theory context", unchanged: "Linked theory is unchanged",
@@ -43,10 +48,10 @@ const evidenceContextLabel = (state) => ({
 
 // A "Next" jump lands on the questions it named. Once scrolling settles, the
 // destination is outlined and the outline fades, so the eye finds it.
-function markArrival(root, targetId = "phase-issues") {
-  const target = root?.querySelector(`#${targetId}`);
-  if (!target) return;
-  for (let parent = target.parentElement; parent && parent !== root; parent = parent.parentElement) {
+function markArrival(root, targetId = "phase-issues", anchors) {
+  const target = anchors?.length ? anchors.map(anchor => phaseInputDestination(root, anchor)).find(Boolean) : root?.querySelector(`#${targetId}`);
+  if (!target) return false;
+  for (let parent = target; parent && parent !== root; parent = parent.parentElement) {
     if (parent.tagName === "DETAILS") parent.open = true;
   }
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -67,19 +72,21 @@ function markArrival(root, targetId = "phase-issues") {
     target.addEventListener("animationend", clear, { once: true });
     setTimeout(clear, reduce ? 1600 : 1000);
   };
-  if (Math.abs(window.scrollY - top) < 2) { start(); return; }
+  if (Math.abs(window.scrollY - top) < 2) { start(); return true; }
   // A short hop glides so its direction reads; a long one jumps and the outline orients.
   const glide = !reduce && Math.abs(window.scrollY - top) < window.innerHeight * 1.5;
   window.scrollTo({ top, behavior: glide ? "smooth" : "instant" });
-  if (!glide) { start(); return; }
+  if (!glide) { start(); return true; }
   window.addEventListener("scrollend", start, { once: true });
   setTimeout(start, 900);
+  return true;
 }
 
 export default function ProjectView({ projectId, context, reading = {}, onReadingChange, restorationKey = 0, focusReading = false, runReturn, returnScope, onReadingRestored, onContextChange, onOpenRun, onProjectUpdated, settingsRevision = 0, onTeamSettings, onOpenAIAccount }) {
   const { branch = "trunk", phase = "P1" } = context;
   const selectedNode = reading.selectedNode || null;
   const readerRoot = useRef(null); const readingRef = useRef(reading); readingRef.current = reading;
+  useReaderOffset(readerRoot);
   const scopeBranch = phase === "P1" || phase === "P2" ? "trunk" : branch;
   const scope = `${projectId}:${scopeBranch}:${phase}`;
   const [snapshot, setSnapshot] = useState(null); const [error, setError] = useState(null); const [loading, setLoading] = useState(true);
@@ -118,10 +125,14 @@ export default function ProjectView({ projectId, context, reading = {}, onReadin
         // not yet observed it. Opening Next must display that same request.
         const pendingPause = (attention.runs_awaiting_direction || []).find((run) => run.state === "awaiting_user" && run.phase === phase && run.branch_id === scopeBranch);
         const progressRun = pendingPause || (newest && (phase === "P4" || newest.state === "awaiting_user") ? await api.run(projectId, newest.run_id, options).catch(() => null) : null);
+        // Method artifacts omit the shared P1 basis. Readiness already carries
+        // its current trunk source alongside the selected method's inputs.
+        const goalReference = goalSource(scoped(artifacts.research_bases, "trunk", "P1")[0])
+          || currentGoalSource(readiness.basis?.records);
         if (active) {
           readingUpdate.current?.dispose();
           readingUpdate.current = snapshotRef.current?.scope === scope ? preserveReadingUpdate(readerRoot.current) : null;
-          setSnapshot({ scope, progressRun, project, branches: branches.branches || [], runs: runs.runs || [], artifacts, pending: attention, readiness, records: records.records || [], assessments: assessments.assessments || [], methods: methods.methods || [], methodDiagnostics: methods.diagnostics || [] }); setError(null);
+          setSnapshot({ scope, progressRun, goalReference, project, branches: branches.branches || [], runs: runs.runs || [], artifacts, pending: attention, readiness, records: records.records || [], assessments: assessments.assessments || [], methods: methods.methods || [], methodDiagnostics: methods.diagnostics || [] }); setError(null);
         }
       } catch (e) {
         controller.abort();
@@ -154,7 +165,7 @@ export default function ProjectView({ projectId, context, reading = {}, onReadin
     return restoreReadingPosition(readerRoot.current, readingRef.current.position, focusReading, (root) => {
       runReturn?.finish(root, returnScope); onReadingRestored?.();
       const destination = arrival.current;
-      if (destination?.scope === scope && destination.afterRestore) { arrival.current = null; markArrival(root, destination.targetId); }
+      if (destination?.scope === scope && destination.afterRestore) { arrival.current = null; if (!markArrival(root, destination.targetId, destination.anchors) && destination.anchors) setNotice("This exact answer is not displayed in the current model or report version. Return to What you told me in the phase you came from to read its saved copy."); }
     });
   }, [scope, Boolean(data), restorationKey]);
   useLayoutEffect(() => {
@@ -164,7 +175,7 @@ export default function ProjectView({ projectId, context, reading = {}, onReadin
     const destination = arrival.current;
     const frame = requestAnimationFrame(() => {
       if (arrival.current !== destination) return;
-      arrival.current = null; markArrival(readerRoot.current, destination.targetId);
+      arrival.current = null; if (!markArrival(readerRoot.current, destination.targetId, destination.anchors) && destination.anchors) setNotice("This exact answer is not displayed in the current model or report version. Return to What you told me in the phase you came from to read its saved copy.");
     });
     return () => cancelAnimationFrame(frame);
   }, [scope, Boolean(data), context.p2ProposalKey]);
@@ -258,7 +269,15 @@ export default function ProjectView({ projectId, context, reading = {}, onReadin
     : launch(phase, { context_refs: issue?.explanation_target ? [issue.explanation_target] : [], instructions: issue ? `Investigate this recorded issue: ${issue.question || issue.title || "Research question"}` : "" });
   const projectSaved = (updated) => { setSnapshot((current) => current ? { ...current, project: { ...current.project, project: updated } } : current); onProjectUpdated?.(updated); refresh(); };
   const explain = (target) => setConversationTarget({ ...target, methodLabel, methodVersion: method?.version });
-  const navigate = (destination) => {
+  const navigate = (destination, answerSource) => {
+    if (answerSource) {
+      const route = answerSourceNavigation({ projectId, source: answerSource, answers: pending.researcher_answers || [], proposals: artifacts.method_proposals || [] });
+      if (!route) return false;
+      if (route.scope === scope && (!route.change.p2ProposalKey || route.change.p2ProposalKey === context.p2ProposalKey)) return markArrival(readerRoot.current, undefined, route.anchors);
+      arrival.current = { scope: route.scope, anchors: route.anchors, p2ProposalKey: route.change.p2ProposalKey, afterRestore: route.scope !== scope };
+      onContextChange(route.change);
+      return true;
+    }
     const proposal = destination === "P2" && method ? (artifacts.method_proposals || []).find((item) => item.method?.identity?.stable_id === method.method_id && item.method?.identity?.version === (method.identity?.version || method.version)) : null;
     onContextChange({ phase: destination, ...(proposal ? { p2ProposalKey: (proposal.generation_ref?.run_id || "") + ":" + proposal.proposal_id } : {}) });
   };
@@ -266,7 +285,7 @@ export default function ProjectView({ projectId, context, reading = {}, onReadin
   const activePause = phase === "P4" && progressRun?.state === "awaiting_user" && Boolean(progressRun.p4_progress?.pause_request);
   const sequentialPause = phase !== "P4" && progressRun?.state === "awaiting_user" && Boolean(progressRun.researcher_pause?.pending_request);
   const savedPauseCount = phase === "P4" ? savedDecisionHistory(progressRun?.p4_progress, activePause).length : 0;
-  const dialogueItems = phase === "P4" ? empiricalDialogueItems(progressRun, pending.attention || [], pending.researcher_answers || []) : { attention: pending.attention || [], answers: pending.researcher_answers || [] };
+  const dialogueItems = phase === "P4" ? empiricalDialogueItems(progressRun, pending.attention || [], pending.researcher_answers || []) : sequentialDialogueItems(progressRun, pending.attention || [], pending.researcher_answers || []);
   const showIssues = () => { const recovery = phase === "P5" || ["P1", "P2"].includes(phase) && !activePause && !sequentialPause; if (recovery) { const card = document.getElementById(`${phase.toLowerCase()}-additional-work`); if (card) card.open = true; } const target = document.getElementById(recovery ? `${phase.toLowerCase()}-recovery` : "phase-issues"); target?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); target?.focus({ preventScroll: true }); };
   const correctionRows = currentCorrectionsForScope(pending.runs_needing_correction, runs, scopeBranch, phase);
   const corrections = correctionRows.length > 0 && <div className="execution-concerns" id={["P1", "P2"].includes(phase) ? `${phase.toLowerCase()}-recovery` : undefined} tabIndex={-1}><h3>Work that could not be completed</h3>{correctionRows.map((run) => <div className="inbox-row" key={run.run_id}><span>{modeLabel(run.mode)}</span><ActionButton action="details" data-run-origin={`ProjectView:1:${run.run_id}`} onClick={(event) => onOpenRun(run.run_id, event.currentTarget)}>Review what happened</ActionButton></div>)}</div>;
@@ -277,7 +296,7 @@ export default function ProjectView({ projectId, context, reading = {}, onReadin
   });
   const explainSelection = (selection, target) => setConversationTarget({ ...target, assessmentPurpose: target.assessmentPurpose || (project.workflow_capabilities?.researcher_dialogue && target.kind === "phase_issue" ? "model_dialogue" : undefined), methodLabel: selection.method?.title || methodLabel, methodVersion: selection.method?.identity?.version || method?.version });
   const researcherPause = sequentialPause ? <ResearcherPause key={progressRun.run_id + ":" + progressRun.researcher_pause.pending_request.request_id + ":" + progressRun.researcher_pause.pending_request.revision} projectId={projectId} run={progressRun} onSaved={refresh} onDiscuss={explain} onPrepare={event => phase === "P3" ? setPreparedTheory({ origin: event.currentTarget, returnLabel: "Back to paused work" }) : launch(phase)} onSource={openSource} /> : null;
-  const issues = (selection = {}) => <ResearcherDialogue problemContext={project.problem_context} project={project.project || project} catalogPreview={project.catalog} conversations={assessments} activeWork={runs.some((run) => !explanationRun(run) && !TERMINAL.has(run.state))} onDiscuss={setConversationTarget} modelRef={selection.method?.identity || method?.identity || method?.current_identity} onPrepare={prepareIssue} goalReference={goalSource(researchBasis)} projectId={projectId} phase={phase} branch={selection.methodBranch || scopeBranch} methodId={selection.methodId || (phase === "P2" ? undefined : method?.method_id)} methodLabel={selection.method?.title || (phase === "P1" ? null : methodLabel)} {...selectionIssues(selection)} onSaved={refresh} onSource={openSource} onExplain={(target) => explainSelection(selection, target)} corrections={["P1", "P2"].includes(phase) ? undefined : corrections} correctionCount={["P1", "P2"].includes(phase) ? 0 : correctionRows.length} activePause={activePause || sequentialPause} activePauseKind={sequentialPause ? "researcher" : progressRun?.p4_progress?.attention_kind} savedPauseCount={savedPauseCount} onNavigate={navigate}
+  const issues = (selection = {}) => <ResearcherDialogue problemContext={project.problem_context} contextAnswers={pending.researcher_answers || []} project={project.project || project} catalogPreview={project.catalog} conversations={assessments} activeWork={runs.some((run) => !explanationRun(run) && !TERMINAL.has(run.state))} onDiscuss={setConversationTarget} modelRef={selection.method?.identity || method?.identity || method?.current_identity} onPrepare={prepareIssue} goalReference={data.goalReference} projectId={projectId} phase={phase} branch={selection.methodBranch || scopeBranch} methodId={selection.methodId || (phase === "P2" ? undefined : method?.method_id)} methodLabel={selection.method?.title || (phase === "P1" ? null : methodLabel)} {...selectionIssues(selection)} onSaved={refresh} onSource={openSource} onExplain={(target) => explainSelection(selection, target)} corrections={["P1", "P2"].includes(phase) ? undefined : corrections} correctionCount={["P1", "P2"].includes(phase) ? 0 : correctionRows.length} activePause={activePause || sequentialPause} activePauseKind={sequentialPause ? "researcher" : progressRun?.p4_progress?.attention_kind} savedPauseCount={savedPauseCount} onNavigate={navigate}
     pause={researcherPause || (activePause || savedPauseCount ? <>{activePause ? <EmpiricalPause key={progressRun.p4_progress.pause_request.request_id + ":" + progressRun.p4_progress.pause_request.revision} projectId={projectId} run={progressRun} request={progressRun.p4_progress.pause_request} onChanged={refresh} onNavigate={navigate} onSource={openSource} onExplain={explain} /> : null}<EmpiricalSavedDecisions projectId={projectId} run={progressRun} onChanged={refresh} onNavigate={navigate} onSource={openSource} onExplain={explain} /></> : null)} />;
   const p1WorkDetails = phase === "P1" && <><details className="research-details" data-reading-anchor="team-work"><summary>Team work and scientific review</summary><IssuesCard embedded workOnly title="Team work" projectId={projectId} phase="P1" branch="trunk" issues={artifacts.issues || []} attention={dialogueItems.attention} answers={dialogueItems.answers} onSaved={refresh} onSource={openSource} onExplain={explain} onPrepare={prepareIssue} /></details>{corrections}</>;
   const p5WorkDetails = phase === "P5" && (sequentialPause || correctionRows.length > 0) && <div id="p5-recovery" tabIndex={-1}>{researcherPause}{corrections}</div>;
@@ -300,8 +319,8 @@ export default function ProjectView({ projectId, context, reading = {}, onReadin
     const summaryContext = { projectId, phase, branch: selection.methodBranch || scopeBranch,
       methodId: selection.methodId || (phase === "P2" ? undefined : method?.method_id),
       modelRef: selection.method?.identity || method?.identity || method?.current_identity,
-      problemContext: project.problem_context, activePause: Boolean(activePause || sequentialPause), ...selectionIssues(selection) };
-    return <FurtherWorkCard setupProject={project} onTeamSettings={onTeamSettings} onOpenAIAccount={onOpenAIAccount} hasRun={Boolean(phaseState.latest_attempt || phaseState.retained)} summaryContext={summaryContext} defaultOpen={phase === "P2" && selection.emptyState} preparedIssue={["P1", "P4"].includes(phase) ? preparedIssue : undefined} preparedTheory={phase === "P3" ? preparedTheory : undefined} currentTheoryRef={phase === "P3" ? currentTheoryRef : undefined} currentTheoryAligned={phase === "P3" ? currentTheoryAligned : undefined} onPrepared={() => { setPreparedIssue(null); setPreparedTheory(null); }} history={phase === "P1" ? history() : phase === "P2" ? history(selection.modelHistory) : phase === "P4" ? history() : undefined} workDetails={phase === "P2" ? p2WorkDetails : p1WorkDetails} status={phase === "P1" && latestScientificAttempt(runs, "P1", "trunk") ? <RunState state={latestScientificAttempt(runs, "P1", "trunk").state} /> : undefined} workflowRevision={project.catalog?.version} readinessRevision={readinessRevision} technicalReport={Boolean(project.workflow_capabilities?.technical_report)} projectId={projectId} phase={phase} branch={phase === "P2" && !selected ? "trunk" : selection.methodBranch || scopeBranch} methodId={(selected ? selection.methodId : undefined) || (phase === "P2" ? undefined : method?.method_id)} modelRef={selected?.identity || method?.identity || method?.current_identity} methodLabel={selected?.title || (phase === "P1" ? null : phase === "P2" ? "New model proposals" : methodLabel)} suppliedMethod={seed} onSource={openSource} issues={artifacts.issues || []} recommendations={suggestions?.length ? suggestions : null} onStarted={started} onNavigate={navigate} activeRun={activePhaseRun(runs, phase, scopeBranch)}>
+      problemContext: project.problem_context, contextAnswers: pending.researcher_answers || [], activePause: Boolean(activePause || sequentialPause), ...selectionIssues(selection) };
+    return <FurtherWorkCard setupProject={project} onTeamSettings={onTeamSettings} onOpenAIAccount={onOpenAIAccount} hasRun={Boolean(phaseState.latest_attempt || phaseState.retained)} summaryContext={summaryContext} editorialQuestions={phase === "P5" ? <ReportEditorialQuestions context={summaryContext} onSaved={refresh} onSource={openSource} onExplain={explain} /> : undefined} defaultOpen={phase === "P2" && selection.emptyState} preparedIssue={["P1", "P4"].includes(phase) ? preparedIssue : undefined} preparedTheory={phase === "P3" ? preparedTheory : undefined} currentTheoryRef={phase === "P3" ? currentTheoryRef : undefined} currentTheoryAligned={phase === "P3" ? currentTheoryAligned : undefined} onPrepared={() => { setPreparedIssue(null); setPreparedTheory(null); }} history={phase === "P1" ? history() : phase === "P2" ? history(selection.modelHistory) : phase === "P4" ? history() : undefined} workDetails={phase === "P2" ? p2WorkDetails : p1WorkDetails} status={phase === "P1" && latestScientificAttempt(runs, "P1", "trunk") ? <RunState state={latestScientificAttempt(runs, "P1", "trunk").state} /> : undefined} workflowRevision={project.catalog?.version} readinessRevision={readinessRevision} technicalReport={Boolean(project.workflow_capabilities?.technical_report)} projectId={projectId} phase={phase} branch={phase === "P2" && !selected ? "trunk" : selection.methodBranch || scopeBranch} methodId={(selected ? selection.methodId : undefined) || (phase === "P2" ? undefined : method?.method_id)} modelRef={selected?.identity || method?.identity || method?.current_identity} methodLabel={selected?.title || (phase === "P1" ? null : phase === "P2" ? "New model proposals" : methodLabel)} suppliedMethod={seed} onSource={openSource} issues={artifacts.issues || []} recommendations={suggestions?.length ? suggestions : null} onStarted={started} onNavigate={navigate} activeRun={activePhaseRun(runs, phase, scopeBranch)}>
       {p5WorkDetails}
       {phase === "P2" && (selection.modificationOptions || selection.proposedWork) ? <details className="research-details" data-reading-anchor="proposed-next-work"><summary>Modification options and proposed next work</summary>{selection.modificationOptions}{selection.proposedWork}</details> : <>{selection.modificationOptions}{selection.proposedWork}{selection.exploreActions}</>}
       {phase === "P2" && !selected && researchBasis?.phase2_preparation && <details className="research-details"><summary>Ideas carried from the literature study</summary><ResearchDocument text={researchBasis.phase2_preparation} /><SourceRef reference={researchBasis.generation_ref} onOpen={openSource} /></details>}
@@ -319,30 +338,39 @@ export default function ProjectView({ projectId, context, reading = {}, onReadin
       {modelHistory}
       <h3>Original research sources</h3>{records.map((record) => <div key={record.family} className="inbox-row"><span className="inbox-q">{humanLabel(record.family)}</span><ActionButton action="source" onClick={() => openSource({ branch: scopeBranch, phase, family: record.family, ...record.current })}>Read complete source</ActionButton></div>)}
     </details>;
-  // Waiting questions mark their phase in the stepper too, so it never disagrees with the Next line.
+  // Questions remain visible, while an actual pause takes precedence in navigation.
   const p2Proposals = scoped(artifacts.method_proposals, "trunk", "P2");
   const p2Contexts = p2DecisionContexts({ methods, proposals: p2Proposals });
   const selectedP2Key = (p2Contexts.find((item) => item.p2ProposalKey === context.p2ProposalKey) || p2Contexts[0])?.p2ProposalKey;
   const waiting = waitingDecisions({ attention: pending.attention || [], answers: pending.researcher_answers || [], branches, methods, runs, proposals: p2Proposals, p2ProposalKey: selectedP2Key });
-  const questionCount = (count) => `${count} question${count === 1 ? "" : "s"}`;
-  const phaseSteps = PHASES.map(([p, label]) => { const status = phaseNavigationState({ phase: p, branch, branches, runs, methods, outputStatuses }); const asks = waiting.filter((item) => item.phase === p && (["P1", "P2"].includes(p) || item.branch === "trunk" || branch === "trunk" || item.branch === branch)).reduce((sum, item) => sum + item.count, 0); const runCue = status.state === "interrupted" ? status.latest_attempt?.state === "failed" ? "Failed" : status.latest_attempt?.state === "cancelled" ? "Stopped" : "Interrupted" : status.state === "running" ? status.latest_attempt?.state === "requested" ? "Queued" : "Running" : null; const attention = !runCue && (asks > 0 || status.state === "waiting"); const cue = runCue || (asks ? questionCount(asks) : status.state === "waiting" ? "Needs input" : status.state === "outdated" ? "Outdated" : null); return { p, label, status, cue, asks, attention }; });
+  const questionCount = (count) => `${count} unanswered question${count === 1 ? "" : "s"}`;
+  const pausedRuns = [...new Map([...runs, ...(pending.runs_awaiting_direction || []), ...(progressRun ? [progressRun] : [])]
+    .map((run) => [run.run_id, run])).values()].filter((run) => run.state === "awaiting_user");
+  const phaseSteps = PHASES.map(([p, label]) => {
+    const navigation = phaseNavigationState({ phase: p, branch, branches, runs, methods, outputStatuses });
+    const paused = pausedRuns.some(run => run.phase === p && (["P1", "P2"].includes(p) ? run.branch_id === "trunk" : branch === "trunk" || run.branch_id === branch));
+    const status = paused ? { ...navigation, state: "waiting", label: "Work is paused" } : navigation;
+    const asks = waiting.filter((item) => item.phase === p && (["P1", "P2"].includes(p) || item.branch === "trunk" || branch === "trunk" || item.branch === branch)).reduce((sum, item) => sum + item.count, 0);
+    const runCue = status.state === "interrupted" ? status.latest_attempt?.state === "failed" ? "Failed" : status.latest_attempt?.state === "cancelled" ? "Stopped" : "Interrupted" : status.state === "running" ? status.latest_attempt?.state === "requested" ? "Queued" : "Running" : null;
+    const attention = !runCue && (asks > 0 || status.state === "waiting");
+    const cue = status.state === "waiting" ? "Paused" : runCue || (asks ? questionCount(asks) : status.state === "outdated" ? "Outdated" : null);
+    return { p, label, status, cue, asks, attention };
+  });
   const currentStep = phaseSteps.find((step) => step.p === phase);
   // Where the project stands: its question, then the one thing waiting on the researcher.
   const goalText = researchBasis ? researchBasis.research_setting?.research_goal_markdown : trunkGoal?.projectId === projectId ? trunkGoal.text : undefined;
-  const question = phase !== "P1" && goalText !== undefined && goalExcerpt(goalText || project.project?.research_instructions || project.research_instructions);
+  const question = phase !== "P1" && goalText !== undefined && sharedGoalExcerpt(goalText || project.project?.research_instructions || project.research_instructions, project.problem_context, goalSource(researchBasis) || data.goalReference);
   const hereGroup = waiting.find((item) => item.phase === phase && (phase === "P2" ? !item.p2ProposalKey || item.p2ProposalKey === selectedP2Key : item.branch === "trunk" || item.branch === scopeBranch));
   const nextGroup = hereGroup || waiting[0];
-  const laterGroups = waiting.filter((item) => item !== nextGroup);
-  const pausedRuns = [...new Map([...runs.filter((run) => run.state === "awaiting_user"), ...(pending.runs_awaiting_direction || [])]
-    .filter((run) => run.state === "awaiting_user").map((run) => [run.run_id, run])).values()];
   const pausedRun = pausedRuns.find((run) => run.phase === phase && run.branch_id === scopeBranch) || pausedRuns[0];
+  const laterGroups = pausedRun ? waiting : waiting.filter((item) => item !== nextGroup);
   const runningStep = phaseSteps.find((step) => step.status.state === "running");
   const groupPlace = (item) => `${phaseLabel(item.phase)}${item.methodLabel ? ` · ${item.methodLabel}` : ""}`;
   const openGroup = (item) => {
     const trunkPhase = ["P1", "P2"].includes(item.phase);
     const target = `${projectId}:${trunkPhase ? "trunk" : item.branch}:${item.phase}`;
-    if (target === scope && (!item.p2ProposalKey || item.p2ProposalKey === selectedP2Key)) { markArrival(readerRoot.current); return; }
-    arrival.current = { scope: target, p2ProposalKey: item.p2ProposalKey, afterRestore: target !== scope };
+    if (target === scope && (!item.p2ProposalKey || item.p2ProposalKey === selectedP2Key)) { markArrival(readerRoot.current, undefined, item.anchors); return; }
+    arrival.current = { scope: target, p2ProposalKey: item.p2ProposalKey, anchors: item.anchors, afterRestore: target !== scope };
     onContextChange(trunkPhase ? { phase: item.phase, ...(item.p2ProposalKey ? { p2ProposalKey: item.p2ProposalKey } : {}) } : { phase: item.phase, branch: item.branch });
   };
   const openPause = () => {
@@ -355,19 +383,19 @@ export default function ProjectView({ projectId, context, reading = {}, onReadin
   const pausedMethod = pausedRun && methods.find((item) => item.branch_id === pausedRun.branch_id || item.method_id === pausedRun.branch_id);
   const pauseHere = pausedRun?.phase === phase && pausedRun.branch_id === scopeBranch;
   const pausePlace = pausedRun && `${phaseLabel(pausedRun.phase)}${!["P1", "P2"].includes(pausedRun.phase) ? ` · ${pausedMethod?.title || pausedMethod?.name || humanLabel(pausedRun.branch_id)}` : ""}`;
-  const next = nextGroup ? { state: "decision", text: <><b>{questionCount(nextGroup.count)}</b> {nextGroup.count === 1 ? "needs" : "need"} your response {nextGroup === hereGroup ? "in this phase" : `in ${groupPlace(nextGroup)}`}.</>, action: nextGroup === hereGroup ? "Go to the questions" : `Open ${phaseLabel(nextGroup.phase)}`, onAction: () => openGroup(nextGroup) }
-    : pausedRun ? { state: "decision", text: `${pausePlace} is waiting for your direction.`, action: pauseHere ? "Show what is waiting" : `Open ${phaseLabel(pausedRun.phase)}`, onAction: openPause }
+  const next = pausedRun ? { state: "decision", text: `Work is paused in ${pausePlace}.`, action: pauseHere ? "Review the current pause" : `Open ${phaseLabel(pausedRun.phase)}`, onAction: openPause }
+    : nextGroup ? { state: "decision", text: <><b>{questionCount(nextGroup.count)}</b> {nextGroup === hereGroup ? "in this phase" : `in ${groupPlace(nextGroup)}`}.</>, action: nextGroup === hereGroup ? "Go to the questions" : `Open ${phaseLabel(nextGroup.phase)}`, onAction: () => openGroup(nextGroup) }
     : correctionRows.length ? { state: "decision", text: "Work in this phase could not be completed.", action: "Review what stopped", onAction: showIssues }
     : runningStep ? { state: "running", text: `The team is working in ${phaseLabel(runningStep.p)}. Nothing needs your decision right now.` }
     : { state: "clear", text: "Nothing needs your decision right now." };
   return <div ref={readerRoot} data-reader-ready="true">
-    <header className="page project-toolbar"><h1>{project.project?.name || project.name || projectId}</h1>
+    <header className="page project-toolbar"><h1 title={project.project?.name || project.name || projectId}>{project.project?.name || project.name || projectId}</h1>
     {!needsMethod && progress}
-    <nav className="phase-stepper" aria-label="Research phases"><ol>{phaseSteps.map(({ p, label, status, cue, asks, attention }, index) => <li key={p} className={`phase-step ${status.state}${attention ? " asks" : ""}${p === phase ? " current" : ""}`}><button type="button" className={`phase-tab ${status.state}${p === phase ? " active" : ""}`} data-phase-state={status.state} aria-label={`${label}: ${status.label}${asks ? `, ${questionCount(asks)} waiting` : ""}`} aria-current={p === phase ? "page" : undefined} onClick={() => navigate(p)}><span className="phase-node" aria-hidden="true">{attention ? <svg viewBox="0 0 12 12"><path d="M6 2.7v4.1M6 9.3v.1" /></svg> : status.state === "done" ? <svg viewBox="0 0 12 12"><path d="M2.5 6.2l2.2 2.2 4.8-4.9" /></svg> : status.state === "running" ? <i /> : index + 1}</span><span className="pname">{label}</span>{cue ? <span className="phase-status-label">{cue}</span> : <span className="sr-only">{status.label}</span>}</button></li>)}</ol>
+    <nav className="phase-stepper" aria-label="Research phases"><ol>{phaseSteps.map(({ p, label, status, cue, asks, attention }, index) => <li key={p} className={`phase-step ${status.state}${attention ? " asks" : ""}${p === phase ? " current" : ""}`}><button type="button" className={`phase-tab ${status.state}${p === phase ? " active" : ""}`} data-phase-state={status.state} aria-label={`${label}: ${status.label}${asks ? `, ${questionCount(asks)}` : ""}`} aria-current={p === phase ? "page" : undefined} onClick={() => navigate(p)}><span className="phase-node" aria-hidden="true">{attention ? <svg viewBox="0 0 12 12"><path d="M6 2.7v4.1M6 9.3v.1" /></svg> : status.state === "done" ? <svg viewBox="0 0 12 12"><path d="M2.5 6.2l2.2 2.2 4.8-4.9" /></svg> : status.state === "running" ? <i /> : index + 1}</span><span className="pname">{label}</span>{cue ? <span className="phase-status-label">{cue}</span> : <span className="sr-only">{status.label}</span>}</button></li>)}</ol>
     {currentStep && <p className={`phase-stepper-current ${currentStep.status.state}${currentStep.attention ? " asks" : ""}`} data-step={phaseSteps.indexOf(currentStep)} aria-hidden="true"><span>{currentStep.label}{currentStep.cue && <span className="phase-status-label">{currentStep.cue}</span>}</span></p>}</nav></header>
     <div className="project-resume" role="region" aria-label="Where this project stands">
       {question && <div className="project-question-row"><p className="project-question"><ResearchLabel text={question} /></p><button type="button" className="project-setting-link" onClick={() => navigate("P1")}>Read the full setting</button></div>}
-      <div className="project-next" data-next={next.state}><span className="project-next-label">Next</span><span className="project-next-text">{next.text}{laterGroups.length > 0 && <span className="project-next-more">Also waiting: {laterGroups.map((item) => `${questionCount(item.count)} in ${groupPlace(item)}`).join("; ")}.</span>}</span>{next.action && <ActionButton action="forward" variant="primary" onClick={next.onAction}>{next.action}</ActionButton>}</div>
+      <div className="project-next" data-next={next.state}><span className="project-next-label">Next</span><span className="project-next-text">{next.text}{laterGroups.length > 0 && <span className="project-next-more">{pausedRun ? "Unanswered questions: " : "More unanswered questions: "}{laterGroups.map((item) => `${item.count} in ${groupPlace(item)}`).join("; ")}.</span>}</span>{next.action && <ActionButton action="forward" variant="primary" onClick={next.onAction}>{next.action}</ActionButton>}</div>
       <ForgeLibraryArt />
     </div>
     {error && <div className="error" role="alert">Updates could not be loaded: {error} <ActionButton action="retry" onClick={refresh}>Retry</ActionButton></div>}
@@ -379,7 +407,7 @@ export default function ProjectView({ projectId, context, reading = {}, onReadin
     {needsMethod && phase !== "P5" && issues()}
     {!needsMethod && <>
     {outputStatus && <MethodStatusNote status={outputStatus} onOpen={openSource} />}
-    {phase === "P1" && <PhaseOneWorkspace onGoal={openGoal} goalCorrectionCount={goalCorrections(project.problem_context, goalSource(researchBasis)).length} key={projectId} project={project.project || project} basis={researchBasis} reading={reading} onReadingChange={onReadingChange} artifacts={artifacts} cards={cards} attentionItems={pending.attention} researcherAnswers={pending.researcher_answers} activeRunCount={activeRuns.length} onSaved={projectSaved} onSource={openSource} issues={issues()} furtherWork={furtherWork()} />}
+    {phase === "P1" && <PhaseOneWorkspace onGoal={openGoal} problemContext={project.problem_context} key={projectId} project={project.project || project} basis={researchBasis} reading={reading} onReadingChange={onReadingChange} artifacts={artifacts} cards={cards} attentionItems={pending.attention} researcherAnswers={pending.researcher_answers} activeRunCount={activeRuns.length} onSaved={projectSaved} onSource={openSource} issues={issues()} furtherWork={furtherWork()} />}
     {phase === "P2" && <MethodProposals key={projectId} methods={methods} cards={cards} proposals={scoped(artifacts.method_proposals, "trunk", "P2")} reviews={scoped(artifacts.method_reviews, "trunk", "P2")} comparisons={scoped(artifacts.catalog_assessments, "trunk", "P2")} publicationHistory={scoped(artifacts.publication_history, "trunk", "P2")} onOpenRun={onOpenRun} literatureSources={scoped(artifacts.literature_libraries, "trunk", "P1")[0]?.sources || []} diagnostics={methodDiagnostics} legacyScores={scores} onSource={openSource} projectId={projectId} attentionItems={pending.attention || []} researcherAnswers={pending.researcher_answers || []} onResolved={refresh} onContinue={continueMethod} busy={busy} reading={reading} onReadingChange={onReadingChange} initialPick={context.p2ProposalKey} initialSharedPreparation={context.p2SharedPreparation} onPreparationScopeChange={(p2SharedPreparation) => onContextChange({ p2SharedPreparation })} onPick={(p2ProposalKey) => onContextChange({ p2ProposalKey })} issues={issues} furtherWork={furtherWork} />}
     {phase === "P3" && <><PhaseOverview phase={phase} decision={decision} summaries={summaries} methodLabel={methodLabel} onSource={openSource} /><TheoryReading key={scopeBranch} reading={reading} onReadingChange={onReadingChange} claimMaps={artifacts.claim_maps} falsificationLogs={artifacts.falsification_logs} glossaries={artifacts.glossaries} documents={documents} branch={scopeBranch} selected={selectedNode} onSelect={(selectedNode) => onReadingChange?.({ selectedNode })} onRequest={requestComponent} onSource={openSource} conversations={assessments} onAssumptionConversation={explain} assessments={<Assessments embedded projectId={projectId} assessments={assessments.filter((a) => !a.target?.branch || a.target.branch === scopeBranch)} selectedNode={selectedNode} onStarted={started} onSource={openSource} onRepair={(assessment, origin) => { const request = assessmentRepairRequest(assessment); if (request) prepareTheory(request, origin); }} />} />{issues()}{furtherWork()}</>}
     {phase === "P4" && <EmpiricalWorkbench key={scopeBranch} {...empiricalProps} reading={reading} onReadingChange={onReadingChange} awaitingDirection={progressRun?.state === "awaiting_user"} progressData={progressRun?.p4_progress} progressState={progressRun?.state} issues={issues()} furtherWork={furtherWork()} />}

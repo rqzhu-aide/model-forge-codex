@@ -57,12 +57,25 @@ test("history matching excludes other branches, record families, assumption IDs 
 
 test("dialog has a labeled question form, exact source, separate histories and enabled Close", () => {
   const html = render.conversations({ projectId: "project.a", target, conversations, onClose: noop, onSource: noop });
-  for (const text of ["About this assumption", "Your question", "Open exact assumption source", "This source version", "Earlier source versions", "New conversation", "What happens without this assumption?", "Could this assumption be weakened?"]) assert.ok(html.includes(text), text);
+  for (const text of ["About this assumption", "Your question", "Open exact assumption source", "This source version", "Earlier source versions", "New conversation", "Ask what happens without this assumption.", "Could this assumption be weakened?"]) assert.ok(html.includes(text), text);
   assert.match(html, /class="katex/);
   assert.match(html, /aria-label="Close dialog"[^>]*>[\s\S]*?<\/svg>Close<\/button>/);
   assert.doesNotMatch(html, /aria-label="Close dialog"[^>]*disabled/);
   assert.match(html, /<label for="[^"]+">Your question<\/label>/);
   assert.match(html, /<button(?=[^>]*disabled="")(?=[^>]*type="submit")(?=[^>]*data-action="ask")[^>]*><svg[^>]*aria-hidden="true"[\s\S]*?<\/svg>Discuss<\/button>/);
+});
+
+test("Lead advice describes answering without turning a factual draft into a saved answer", () => {
+  const source = { ...target, kind: "phase_issue", entry_pointer: "/0", assessmentPurpose: "issue_suggestions", researcherNoteDraft: "The recruitment mechanism is still unknown." };
+  const before = structuredClone(source);
+  const html = render.conversations({ projectId: "project.advice-copy", target: source, conversations: [], onClose: noop, onSource: noop });
+  assert.match(html, /<h2[^>]*>Get the Lead&#x27;s advice<\/h2>/);
+  assert.match(html, /type="submit"[^>]*>[\s\S]*?Get the Lead&#x27;s advice<\/button>/);
+  assert.match(html, /will advise you on answering this question/);
+  assert.match(html, /Advice does not save an answer or change the model/);
+  assert.match(html, /Use Save answer on the question/);
+  assert.doesNotMatch(html, /recommend options|Save instruction/);
+  assert.deepEqual(source, before);
 });
 
 test("pending and failed first questions render durably alongside previous successful answers", () => {

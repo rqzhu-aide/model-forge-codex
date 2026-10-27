@@ -58,7 +58,7 @@
    "maxLength": 500
   },
   "current_conclusion": {
-   "description": "The scope-calibrated answer for the researcher, including its strongest support and decisive qualification. For P5 distinguish the exact draft reviewed from any later lead revision.",
+   "description": "The scope-calibrated answer for the researcher, including its strongest support and decisive qualification. For P5 distinguish the exact draft reviewed from any later lead revision. State the supported result and practical boundary for the supplied problem, preserving exact statement meaning, assumptions and uncertainty.",
    "type": "string",
    "minLength": 1
   },
@@ -68,7 +68,10 @@
    "minLength": 1
   },
   "what_changed": {
-   "description": "Substantive changes and practical consequences, or the first account. Briefly record consequential Lead-owned choices and reasons, including evaluation and declared failure handling, in this existing summary. Refer to exact findings or sources instead of repeating their reasoning.",
+   "description": "Lead with the substantive scientific change and its consequence, or state that the scientific conclusion is unchanged. Distinguish a new result or changed assessment from rechecking existing support and clarifying its explanation. Include consequential Lead-owned choices and reasons, including evaluation and declared failure handling, when they change what the researcher can conclude or do. Keep object counts, empty change arrays and revision bookkeeping in structured records; refer to exact findings or sources for detail.",
+   "examples": [
+    "The conditional guarantee is unchanged; this revision clarifies its population meaning without adding a proof or an implementation certificate. A concrete numerical calculation still needs verification before the guarantee can support a deployed policy."
+   ],
    "type": "string",
    "minLength": 1
   },
@@ -80,7 +83,10 @@
    "uniqueItems": true
   },
   "principal_uncertainty": {
-   "description": "The most consequential unresolved scientific obligation or unavailable fact and its applicability limit. Distinguish team work, missing information, untested scope and observed failure; this field does not itself require a researcher question.",
+   "description": "Start with what remains unknown and how it limits the present conclusion or use, then explain the decisive obligation or unavailable fact. Put a detailed verification checklist in its owned source and link it when useful. Distinguish team work, missing information, untested scope and observed failure; unavailable evidence does not establish failure. This field does not itself require a researcher question.",
+   "examples": [
+    "It remains unknown whether a numerical implementation can meet the theorem's exact requirements, so the mathematical result does not yet certify an executable recommendation. The remaining work is to verify the complete calculation and the policy it actually deploys."
+   ],
    "type": "string",
    "minLength": 1
   },

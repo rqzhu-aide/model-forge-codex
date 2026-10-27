@@ -395,6 +395,23 @@ def save_scoped_answer(project_dir, question, note, *, expected_revision=None, s
     if context is not None:
         reference = answer_reference(result)
         item_id = context_item_id or "context.answer." + digest({"attention_id": identifier, "question_ref": question_ref})[:24]
+        if context_item_id is None:
+            # Reuse only this exact question's mirror. Adopted answers and
+            # explicit custom IDs need not use the current default identity.
+            versions = [row for row in [previous, *reversed(previous.get("history") or [])]
+                        if stored_source(row) == question_ref]
+            prior_refs = [answer_reference({**row, "attention_id": identifier}) for row in versions]
+            items = {row["item_id"]: row for row in context["items"]}
+            linked_ids = [(row.get("context_ref") or {}).get("item_id") for row in versions]
+            mirror = next((items[key] for key in linked_ids if key in items
+                           and (not items[key].get("answer_refs") or any(ref in prior_refs for ref in items[key]["answer_refs"]))), None)
+            if mirror is None:
+                mirror = next((row for row in context["items"] if row["item_id"].startswith("context.answer.")
+                               and any(ref in prior_refs for ref in row.get("answer_refs", []))), None)
+            if mirror is not None:
+                item_id = mirror["item_id"]
+            elif item_id in items:
+                raise ValueError("This context item belongs to a different answer. Edit your answer at its original question.")
         existing_item = next((row for row in context["items"] if row["item_id"] == item_id), {})
         context_amends = list(amends if amends is not None else existing_item.get("amends") or [])
         for link in question.get("answer_applicability_refs", []) or []:
@@ -412,7 +429,8 @@ def save_scoped_answer(project_dir, question, note, *, expected_revision=None, s
         # stores link exact revisions. Replacing an explicitly carried answer
         # supersedes its original mirror without removing its context history.
         context = save_context_item(project_dir, note, expected_revision=context["revision"], item_id=item_id,
-                                    origin=origin, scope=scope, answer_refs=[reference], amends=context_amends, topic=topic)
+                                    origin=origin, scope=scope, answer_refs=[reference], amends=context_amends, topic=topic,
+                                    _answer_sync=True)
         answer["context_ref"] = {"item_id": item_id, "revision": next(row["revision"] for row in context["items"] if row["item_id"] == item_id),
                                  "context_revision": context["revision"]}
         result["context_ref"] = answer["context_ref"]
@@ -427,11 +445,27 @@ def deepcopy_question(question):
 
 
 def answers_with_usage(project_dir):
+    """UI answers, including minimal retained links to their context copies."""
+    from copy import deepcopy
     from .cumulative_attention import current_researcher_answers, retained_researcher_answers, versioned_question
     answers = current_researcher_answers(project_dir)
     if any(versioned_question(row.get("attention") or {}) for row in answers):
         answers = sorted(retained_researcher_answers(project_dir), key=lambda row: (row["attention_id"], -row.get("revision", 0)))
+    stored = read_json(Path(project_dir) / "researcher" / "attention_resolutions.json") or {}
     for answer in answers:
+        # Keep ownership visible after a later edit stops saving context.
+        # These links belong only to the UI projection, not routed research
+        # inputs, and retain no earlier answer text or question content.
+        current = stored.get(answer["attention_id"]) or {}
+        source = answer.get("question_ref") or issue_source_identity(answer.get("attention") or {})
+        ownership = [{"revision": row.get("revision", 0), "question_ref": deepcopy(source),
+                      "context_ref": deepcopy(row["context_ref"])}
+                     for row in current.get("history", []) if isinstance(row, dict)
+                     and isinstance(row.get("context_ref"), dict) and row["context_ref"].get("item_id")
+                     and row.get("revision", 0) != answer.get("revision", 0)
+                     and (row.get("question_ref") or issue_source_identity(row.get("attention") or {})) == source]
+        if ownership:
+            answer["history"] = ownership
         answer["applied_to"] = []
         answer["previously_applied_to"] = []
     for basis_path in (project_dir / "runs").glob("*/basis.json"):

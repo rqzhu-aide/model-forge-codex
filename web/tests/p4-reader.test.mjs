@@ -29,6 +29,27 @@ const request = { request_id: "direction.one", revision: 1, question: "Which tra
 const saved = { request_id: request.request_id, request_revision: request.revision, revision: 2, note: "Preserve the estimand and compare both methods.", applied_to: [] };
 const pauseProps = { projectId: "p", run: { run_id: "r", state: "awaiting_user", p4_progress: progress }, request };
 
+test("paused evaluation alternatives render inline labels and complete display equations", () => {
+  const chance = String.raw`\Pr_{\pi}(G_C>B)\le\delta`;
+  const mean = String.raw`\mathbb{E}_{\pi}[G_C]\le B`;
+  const value = { ...request, options: [
+    { label: "Limit violation probability $\\delta$", consequence: `$$\n${chance}\n$$\n\nControls the frequency of budget overruns.` },
+    { label: "Limit average cost $B$", consequence: `$$\n${mean}\n$$\n\nControls mean cost while allowing individual overruns.` },
+  ] };
+  const before = structuredClone(value);
+  const html = render.pause({ ...pauseProps, request: value });
+  const options = html.match(/<ul class="direction-options">([\s\S]*?)<\/ul>/)?.[1];
+  assert.ok(options);
+  assert.equal((options.match(/class="katex-display"/g) || []).length, 2);
+  assert.match(options, /<b><span>Limit violation probability <span class="math-inline"/);
+  const equations = [...options.matchAll(/<annotation encoding="application\/x-tex">([\s\S]*?)<\/annotation>/g)].map(([, equation]) => equation.replaceAll("&gt;", ">").replaceAll("&lt;", "<").replaceAll("&amp;", "&").trim());
+  assert.deepEqual(equations, [String.raw`\delta`, chance, "B", mean]);
+  assert.match(options, /Controls the frequency of budget overruns/);
+  assert.match(options, /Controls mean cost while allowing individual overruns/);
+  assert.doesNotMatch(options, /katex-error|\$\$/);
+  assert.deepEqual(value, before);
+});
+
 test("question source control names the declared full Analyst account while preserving authored shorthand", () => {
   const value = { ...question, result: { ...question.result, has_full_analyst_account: true, comparison_markdown: "Full Q4." } };
   const before = structuredClone(value);
@@ -310,7 +331,8 @@ test("answered evaluation questions stay editable with their original source and
   assert.match(old, /Legacy direction already used/); assert.match(old, /Edit response/); assert.match(old, /This response was used by the evaluation/);
   assert.match(old, /^<details[^>]*><summary>Saved evaluation decisions \(1\)<\/summary>/);
   const active = render.pause({ projectId: "p", run: { run_id: "r", state: "awaiting_user", p4_progress: p4 }, request: nextRequest, onExplain: noop });
-  assert.match(active, /^<section class="evaluation-pause" data-card-role="attention"/);
+  assert.match(active, /^<section class="evaluation-pause"(?=[^>]*data-card-role="attention")[^>]*>/);
+  assert.match(active, /data-reading-anchor="evaluation-pause:r:direction\.two:1"/);
   assert.match(active, /Which setting should come next\?/);
   assert.match(active, /<textarea/);
   assert.match(active, /Continue with instructions/);

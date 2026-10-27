@@ -57,6 +57,37 @@ def test_selected_answer_is_canonical_editable_and_preserves_prior_scope(project
     assert not (project / "runs").exists()
 
 
+def test_mathematical_options_survive_answer_edit_and_context_mirroring(project):
+    options = [
+        {"id": "chance", "label": "Limit excessive-cost probability",
+         "consequence": r"$$\mathbb{P}_{\pi}(G_C>b)\le\alpha.$$"
+                        "\n\nBounds how often cumulative cost exceeds the threshold."},
+        {"id": "mean", "label": "Limit average cost",
+         "consequence": r"$$\mathbb{E}_{\pi}[G_C]\le B.$$"
+                        "\n\nBounds average cumulative cost; it does not fix the tail probability."},
+    ]
+    question = publish_question(project, 1, **{key: value for key, value in choice(options=options,
+        context_markdown=r"With cumulative reward $G_R$ and cost $G_C$, maximize $\mathbb{E}_{\pi}[G_R]$ over policies $\pi\in\Pi$.").items()
+        if key != "attention_version_id"})
+    first = save_scoped_answer(project, question, "", expected_revision=0, save_to_context=True,
+                              selection={"option_id": "chance", "note": "Threshold not yet chosen."})
+    second = save_scoped_answer(project, question, "", expected_revision=1, save_to_context=True,
+                               selection={"option_id": "mean", "note": "Use the average-cost target instead."})
+    assert first["selection"]["consequence"] == options[0]["consequence"]
+    assert second["selection"]["consequence"] == options[1]["consequence"]
+    assert second["selection"]["note"] == "Use the average-cost target instead."
+    assert second["note"].count(options[1]["consequence"]) == 1
+    assert options[0]["consequence"] not in second["note"]
+    assert second["context_ref"]["item_id"] == first["context_ref"]["item_id"]
+    from model_forge_codex.problem_context import load_problem_context
+    context = load_problem_context(project)
+    mirror = next(row for row in context["items"] if row["item_id"] == second["context_ref"]["item_id"])
+    assert mirror["statement"] == second["note"]
+    stored = read_json(project / "researcher/attention_resolutions.json")[question["attention_id"]]
+    assert stored["history"][0]["selection"]["consequence"] == options[0]["consequence"]
+    assert not (project / "runs").exists()
+
+
 @pytest.mark.parametrize("in_history", [False, True])
 def test_legacy_answer_without_top_level_source_remains_editable(project, in_history):
     question = publish_question(project, 1, **{key: value for key, value in choice().items()

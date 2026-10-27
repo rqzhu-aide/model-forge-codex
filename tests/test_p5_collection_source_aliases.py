@@ -9,7 +9,7 @@ import pytest
 from model_forge_codex.domain import MemberRole
 from model_forge_codex.runs import owned_writes
 from model_forge_codex.storage import read_json, sha256_file, write_json_atomic
-from model_forge_codex.technical_reports import derive_report_completion, export_technical_report, report_required_artifacts, resolve_report_artifact
+from model_forge_codex.technical_reports import CONTENT_SECTIONS, derive_report_completion, export_technical_report, report_required_artifacts, resolve_report_artifact
 from test_p5_owned_questions_preflight import frozen_run
 from test_researcher_workbench_engine import scientific_output_documents, workbench
 from test_technical_reports import report_case
@@ -45,6 +45,12 @@ async def test_actual_member_collection_preserves_owned_snapshot_and_single_alia
         report['artifact_authored_paths']['artifact.owned-trace'] = deepcopy(alias)
     expected_alias = alias if isinstance(alias, str) else 'claim_traceability.json'
     primary_name = report['report_artifact']['path']
+    files[primary_name] = '\n\n'.join(
+        f'<a id="{report["section_anchors"][section]}"></a>\n'
+        f'## {section.replace("_", " ").capitalize()}\n\n'
+        'Synthetic report content for the collection fixture.'
+        for section in (*CONTENT_SECTIONS, 'references')
+    )
     files[primary_name] += '\n\n[Claim trace](' + expected_alias + ')\n'
     for pointer in engine._artifact_pointers(report):
         if pointer.get('path') == primary_name:

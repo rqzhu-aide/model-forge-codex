@@ -362,12 +362,35 @@ def _validate_goal_references(project_dir, item):
         item["topic"] = "research_goal"
 
 
+def _require_original_answer_edit(project_dir, item_id):
+    """Mirrors are edited with their answer, not as independent context notes.
+
+    Answer citations can also support genuine interpretations. Only the
+    reserved mirror identity or an explicit saved answer link owns the row.
+    Earlier links still apply when a later answer no longer saves context.
+    """
+    if not isinstance(item_id, str):
+        return
+    mirrored = item_id.startswith("context.answer.")
+    if not mirrored:
+        answers = read_json(Path(project_dir) / "researcher" / "attention_resolutions.json") or {}
+        mirrored = isinstance(answers, dict) and any(
+            (row.get("context_ref") or {}).get("item_id") == item_id
+            for current in answers.values() if isinstance(current, dict)
+            for row in [*(current.get("history") or []), current] if isinstance(row, dict))
+    if mirrored:
+        raise ValueError("This context item is saved from a researcher answer. Edit your answer at its original question.")
+
+
 def save_context_item(project_dir, statement, *, expected_revision, item_id=None,
-                      origin="researcher_reported", scope=None, answer_refs=None, source_refs=None, amends=None, topic=None):
+                      origin="researcher_reported", scope=None, answer_refs=None, source_refs=None, amends=None, topic=None,
+                      _answer_sync=False):
     previous = load_problem_context(project_dir)
     _expected(previous, expected_revision)
     updated = deepcopy(previous)
     item_id = item_id or "context.item." + str(previous["revision"] + 1)
+    if not _answer_sync:
+        _require_original_answer_edit(project_dir, item_id)
     old = next((item for item in previous["items"] if item["item_id"] == item_id), None)
     item = _item(statement, item_id=item_id, origin=origin, scope=scope or (old or {}).get("scope") or {"kind": "project"},
                  revision=(old or {}).get("revision", 0) + 1, answer_refs=answer_refs,
@@ -418,6 +441,7 @@ def confirm_context_amendment(project_dir, amendment_id, *, expected_revision, s
     if not proposal or proposal["status"] != "pending":
         raise ValueError("This context amendment is unavailable or has already been dispositioned")
     item = deepcopy(proposal["item"])
+    _require_original_answer_edit(project_dir, item["item_id"])
     if statement is not None:
         if not isinstance(statement, str) or not statement.strip():
             raise ValueError("A confirmed context statement must not be blank")

@@ -705,8 +705,8 @@ def _document_projection(project_dir: Path, document, meta: dict) -> dict:
               "method_identity": document.get("method_identity") if isinstance(document, dict) else None,
               **_primary_document(project_dir, meta["generation_ref"], document)}
     if meta.get("phase") == "P3" and isinstance(document, dict):
-        from .research_sources import scientific_document_sources
-        result["inline_sources"] = scientific_document_sources(project_dir, document, meta, result["body_md"])
+        from .research_sources import scientific_account_sources
+        result["inline_sources"] = scientific_account_sources(project_dir, document, meta, result["body_md"])
     if kind in {"manuscript", "manuscript_candidate", "technical_report", "technical_report_candidate"} and isinstance(document, dict):
         from .research_sources import artifact_link, authored_pointer
         ref = meta["generation_ref"]
@@ -901,9 +901,17 @@ def _theory_assessment_projection(project_dir: Path, records: dict, theory: dict
     return projected, dispositions
 
 
-def _decision_projection(document: dict, meta: dict) -> dict:
+def _account_projection(project_dir: Path, document: dict, meta: dict) -> dict:
+    result = {**document, **meta}
+    if meta.get("phase") == "P3":
+        from .research_sources import scientific_account_sources
+        result["inline_sources"] = scientific_account_sources(project_dir, document, meta)
+    return result
+
+
+def _decision_projection(project_dir: Path, document: dict, meta: dict) -> dict:
     outcome = document.get("scientific_outcome") or {}
-    return {**document, **meta, "outcome": outcome.get("state", ""),
+    return {**_account_projection(project_dir, document, meta), "outcome": outcome.get("state", ""),
             "conclusion": document.get("current_conclusion") or outcome.get("conclusion", ""),
             "material_disagreement": document.get("material_disagreement", outcome.get("material_disagreement", []))}
 
@@ -935,7 +943,7 @@ def current_decisions_view(project_dir: Path) -> list[dict]:
                 meta = {"branch": branch_dir.name, "phase": phase_dir.name.upper(), "family": family,
                         "generation_ref": ref, "source_url": record_url(project_dir.name, ref),
                         "published_at": pointer.get("published_at", "")}
-                decisions.append(_decision_projection(document, meta))
+                decisions.append(_decision_projection(project_dir, document, meta))
     return decisions
 
 
@@ -983,7 +991,7 @@ def artifacts_view(project_dir: Path, branch: str | None = None, *, _p4_records:
                     result["cards"].extend({**card, **meta, "kind": "paper" if suffix.endswith("paper_cards") else "method"}
                                            for card in doc if isinstance(card, dict))
                 elif suffix in ("phase_summary", "revision_account") and isinstance(doc, dict):
-                    result["summaries"].append({**doc, **meta})
+                    result["summaries"].append(_account_projection(project_dir, doc, meta))
                 elif suffix == "exhibits" and isinstance(doc, list):
                     for exhibit in doc:
                         if isinstance(exhibit, dict):
@@ -996,7 +1004,7 @@ def artifacts_view(project_dir: Path, branch: str | None = None, *, _p4_records:
                     if suffix == "protocol" and isinstance(doc.get("cases"), list):
                         result["case_manifests"].append({"cases": effective_protocol(doc)["cases"], **meta})
                 elif suffix in ("decision", "phase_decision") and isinstance(doc, dict):
-                    result["decisions"].append(_decision_projection(doc, meta))
+                    result["decisions"].append(_decision_projection(project_dir, doc, meta))
                     result["scores"].extend({**score, **meta} for score in doc.get("method_scores", []) if isinstance(score, dict))
     # Derive the graph from the complete theory, with the candidate as an explicit legacy fallback.
     status_catalog: dict | None = None

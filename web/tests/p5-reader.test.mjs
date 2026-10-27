@@ -13,7 +13,7 @@ const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.j
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-p5-reader-"));
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Reading,{TechnicalReportDocument} from '${src}/components/TechnicalReportReading.jsx'; import {ScientificDocuments} from '${src}/components/PhaseReading.jsx'; import {ResearchDocument,SourceRef,MethodStatusNote} from '${src}/components/Shared.jsx'; const draw=C=>props=>renderToStaticMarkup(React.createElement(C,props)); export const document=draw(TechnicalReportDocument); export const scientific=draw(ScientificDocuments); export const reading=draw(Reading); export const research=draw(ResearchDocument); export const documentTree=props=>TechnicalReportDocument(props); export const scientificTree=props=>ScientificDocuments(props); export const reviewTree=props=>Reading(props).props.children.props.tabs.find(tab=>tab.id==='reviews').content; export const sourceRef=SourceRef; export const statusNote=MethodStatusNote;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Reading,{TechnicalReportDocument} from '${src}/components/TechnicalReportReading.jsx'; import {ScientificDocuments,ManuscriptReviewStatus} from '${src}/components/PhaseReading.jsx'; import {ResearchDocument,SourceRef,MethodStatusNote} from '${src}/components/Shared.jsx'; const draw=C=>props=>renderToStaticMarkup(React.createElement(C,props)); export const document=draw(TechnicalReportDocument); export const manuscriptStatus=draw(ManuscriptReviewStatus); export const scientific=draw(ScientificDocuments); export const reading=draw(Reading); export const research=draw(ResearchDocument); export const documentTree=props=>TechnicalReportDocument(props); export const scientificTree=props=>ScientificDocuments(props); export const reviewTree=props=>Reading(props).props.children.props.tabs.find(tab=>tab.id==='reviews').content; export const sourceRef=SourceRef; export const statusNote=MethodStatusNote;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const ui = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
 const ref = { branch: "method.conditional", phase: "P5", family: "technical_report", generation_id: "report.current", sha256: "a".repeat(64), run_id: "run.report", package_id: "package.report" };
 const document = { kind: "technical_report", title: "Conditional technical report", generation_ref: ref, body_md: "## Scientific conclusion\n\nThe synthetic ordering is inconclusive; clinical benefit was not assessed. Use $n=90$.", completion: { status: "interim", missing_work: ["Numerical coverage remains conditional."] }, method_identity: { stable_id: "method.conditional", version: 2 }, problem_context_ref: { revision: 4 }, review_status: "not_independently_reviewed", portable_artifact_url: "/api/v1/report?view=portable" };
@@ -28,6 +28,23 @@ function disclosuresAt(html, passage) {
   return stack;
 }
 const bodyDocument = (body_md, report_materials = [material]) => ({ ...document, body_md, report_materials });
+
+test("missing review evidence stays distinct from confirmed absence and review of another version", () => {
+  for (const review_status of [undefined, "unknown", "unrecognized-historical-status"]) {
+    const retained = { ...document, review_status }, before = structuredClone(retained);
+    const html = ui.document({ document: retained });
+    assert.match(html, /I can&#x27;t confirm an independent review of this draft/);
+    assert.doesNotMatch(html, /This version has not been independently reviewed|This version was independently reviewed/);
+    assert.deepEqual(retained, before);
+  }
+  assert.match(ui.document({ document }), /This version has not been independently reviewed/);
+  const earlier = ui.document({ document: { ...document, review_status: "independently_reviewed", reviewed_report_ref: { ...ref, generation_id: "earlier", sha256: "b".repeat(64) } } });
+  assert.match(earlier, /Review concerns an earlier version/);
+  assert.doesNotMatch(earlier, /This version has not been independently reviewed|This version was independently reviewed/);
+  assert.match(ui.manuscriptStatus({}), /I can&#x27;t confirm an independent review of this draft/);
+  assert.match(ui.manuscriptStatus({ context: { status: "not_reviewed" } }), /has not received an independent review/);
+  assert.match(ui.manuscriptStatus({ context: { status: "reviewed" } }), /assessed this exact draft/);
+});
 
 test("Analyst source reader renders complete primary prose and math with an exact original link", () => {
   const account = { title: "Complete Analyst account", conclusion: "Qualified result.", questions: [{ key: "unmatched.key", title: "Authored question title", outcome: "mixed", answer_markdown: "The full answer uses $x=1$.", comparison_markdown: "Complete comparison.", reliability_markdown: "Complete reliability.", uncertainty_markdown: "Complete uncertainty.", limitations_markdown: "Full limits.", decision_implication_markdown: "Full implication.", next_steps_markdown: "Full next step." }], implementation_summary: { verification: "Exact implementation verification." } };

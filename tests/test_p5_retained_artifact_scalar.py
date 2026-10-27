@@ -144,4 +144,4 @@ def test_current_lead_briefs_describe_unique_material_aliases_and_explicit_scala
     assert engine.bridge.turns == []
     catalog = Catalog(REPO / 'contracts')
     assert catalog.verify_manifest() == []
-    assert read_json(REPO / 'contracts/contracts/phases/P5.json')['contract_version'] == '3.3.0'
+    assert read_json(REPO / 'contracts/contracts/phases/P5.json')['contract_version'] == '3.3.4'

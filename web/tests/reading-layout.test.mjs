@@ -64,7 +64,7 @@ test("rerun summary and collapsed instructions share one card with mounted recom
   const settings = html.match(/<details[^>]*data-reading-anchor="further-work"[^>]*>/)?.[0];
   assert.ok(settings); assert.doesNotMatch(settings, /\bopen=/);
   assert.match(html, /<h2>Revise and rerun<\/h2>/);
-  assert.match(html, /<summary>Edit instructions and settings<\/summary>/);
+  assert.match(html, /<summary>Tell me what to do next<\/summary>/);
   assert.equal((html.match(/class="card(?:\s|")/g) || []).length, 1);
   assert.equal((html.match(/<h2>/g) || []).length, 1);
   assert.match(html, /A uniform remainder bound remains open/);
@@ -77,7 +77,7 @@ test("P5 report revision keeps its native settings disclosure and addressable re
   const settings = html.match(/<details[^>]*id="p5-additional-work"[^>]*data-reading-anchor="further-work"[^>]*>/)?.[0];
   assert.ok(settings); assert.doesNotMatch(settings, /\bopen=/);
   assert.match(html, /<h2>Revise report<\/h2>/);
-  assert.match(html, /<summary>Edit instructions and settings<\/summary>/);
+  assert.match(html, /<summary>Tell me what to do next<\/summary>/);
   assert.doesNotMatch(html, /Research questions|Study understanding|Discuss your problem/);
 });
 
@@ -87,7 +87,7 @@ test("a first run has one instructions card and an immediately available form in
     assert.equal((html.match(/class="card(?:\s|")/g) || []).length, 1);
     assert.match(html, /<h2>Instructions and run settings<\/h2>/);
     assert.match(html.match(/<details[^>]*data-reading-anchor="further-work"[^>]*>/)?.[0] || "", /\bopen=/);
-    assert.match(html, /<summary hidden="">Edit instructions and settings<\/summary>/);
+    assert.match(html, /<summary hidden="">Tell me what to do next<\/summary>/);
     assert.doesNotMatch(html, /Revise and rerun|Revise report|Research questions|Study understanding/);
   }
 });

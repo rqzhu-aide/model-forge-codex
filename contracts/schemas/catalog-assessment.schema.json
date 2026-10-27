@@ -71,7 +71,7 @@
       "type": "string",
       "minLength": 1,
       "pattern": "\\S",
-      "description": "A concise lead-authored conditional comparative conclusion shown once: the decisive recommendation and limitation, consequential differences in the actual candidates' targets or computations, and the next scientific check or genuinely needed researcher choice. Do not replay each candidate account. Keep detailed comparison in comparison_markdown. Distinguish checked algebra, proposed guarantees and demonstrated results. Reference the original proposals and audits; do not rewrite their definitions or select a method for the researcher."
+      "description": "A concise lead-authored conditional comparative conclusion shown once: the decisive recommendation and limitation, consequential differences in the actual candidates' targets or computations, and the next scientific check or genuinely needed researcher choice. Do not replay each candidate account. Keep detailed comparison in comparison_markdown. Distinguish checked algebra, proposed guarantees and demonstrated results. Reference the original proposals and audits; do not rewrite their definitions or select a method for the researcher. A negative or inconclusive recommendation may lead. Keep its decisive condition beside it and do not invent a researcher risk preference."
     },
     "modification_options": {
       "type": "array",
@@ -103,7 +103,7 @@
             "type": "string",
             "minLength": 1,
             "pattern": "\\S",
-            "description": "The exact mathematical change to the candidate's own design choices, with defined symbols. An option is not a new method and never silently edits the proposal's attributed mathematics."
+            "description": "The exact mathematical change to the candidate's own design choices, with defined symbols. An option is not a new method and never silently edits the proposal's attributed mathematics. Preserve each option's different target revision and any noisy-audit identification limit; explaining a modification does not adopt it."
           },
           "when_preferable_markdown": {
             "type": "string",

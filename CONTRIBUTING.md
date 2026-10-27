@@ -16,7 +16,7 @@ Read the [README](README.md), [development guide](docs/development.md), and rele
 | `docs/` | Public setup and development guidance |
 | `architecture/`, `design-system/` | Workflow design, responsibilities, and interface specifications |
 
-The application release version and workflow catalog version have different meanings. Application 0.9.2 includes catalog 1.28.1, recorded in `contracts/VERSION`. A catalog update is not an automatic migration of existing projects. Do not move or reseal catalog files as part of unrelated cleanup. Historical fixtures can remain necessary even when their format is older.
+The application release version and workflow catalog version have different meanings. The current source tree prepares application version 0.9.3; its workflow catalog version is recorded in `contracts/VERSION`. Source changes do not change an already published package. A catalog update is not an automatic migration of existing projects. Do not move or reseal catalog files as part of unrelated cleanup. Historical fixtures can remain necessary even when their format is older.
 
 ## Keep private and generated files local
 
@@ -28,6 +28,6 @@ Never commit populated provider files, API keys, account caches, tokens, raw res
 
 Use focused checks from the [development guide](docs/development.md). For a workflow change, check the executable contracts and the researcher-facing projection together. Preserve frozen sources, method lineage, and the distinction between discussion, published scientific changes, and researcher decisions. A passing build establishes neither scientific validity nor live model reliability.
 
-For interface changes, verify the affected interaction in a browser, including keyboard use and relevant viewport sizes. For model behavior claims, state the provider, scope, and limits of any live evaluation separately from deterministic tests.
+For interface changes, verify the affected interaction in a browser, including keyboard use and relevant viewport sizes. For any change to text a researcher reads, fill in the reader acceptance block in [AGENTS.md](AGENTS.md) and include it with the change. For model behavior claims, state the provider, scope, and limits of any live evaluation separately from deterministic tests.
 
 Before proposing a change, run `git diff --check`, inspect `git status --short`, and review the diff and file list. Explain the problem, the researcher-facing result, relevant verification, and any remaining limitation. Packaging and publication follow the [repository release guide](https://github.com/rqzhu-aide/model-forge-codex/blob/main/architecture/npm-release.md); rebuilding and testing a tarball do not publish it.

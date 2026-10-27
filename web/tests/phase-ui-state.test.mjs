@@ -24,10 +24,10 @@ test("P2 response helper follows the recorded destination rather than the displa
   for (const target_phase of ["P2", "P3", "P4", undefined]) {
     const html = render.issues({ projectId: "test", phase: "P2", branch: "trunk", issues: [{ ...question, phase: "P2", branch: "trunk", target_phase }] });
     assert.match(html, /<textarea/);
-    if (!target_phase || target_phase === "P2") assert.match(html, /Saved for the lead&#x27;s next model development work/);
+    if (!target_phase || target_phase === "P2") assert.match(html, /After you save, the Lead can use it for the next model development work/);
     else {
-      assert.match(html, /Saved for the next work you explicitly start/);
-      assert.doesNotMatch(html, /Saved for the lead&#x27;s next model development work/);
+      assert.match(html, /After you save, it is available to the next work you start/);
+      assert.doesNotMatch(html, /After you save, the Lead can use it for the next model development work/);
       assert.match(html, target_phase === "P3" ? /intended for theory development/ : /intended for numerical evaluation/);
     }
   }
@@ -41,6 +41,38 @@ test("request urgency comes from responsibility and disposition, never from ques
   assert.equal(issueDisplayState({ ...question, researcher_answer: answer }).state, "saved");
 });
 
+test("unanswered researcher questions remain neutral while scientific severity stays authored", () => {
+  for (const severity of ["blocking", "reassessment_required", undefined]) {
+    const issue = { ...question, severity };
+    const before = structuredClone(issue);
+    assert.deepEqual(issueDisplayState(issue), { state: "response", label: "Open question" });
+    assert.deepEqual(issueUrgency(issue), { state: "attention", label: "Open question" });
+    assert.equal(issueCardState({ entries: [issue] }).label, "1 unanswered question");
+    const html = render.issues({ ...props, issues: [issue] });
+    assert.match(html, /data-urgency="attention"/);
+    assert.doesNotMatch(html, /data-urgency="blocking"|data-urgency="reassess"|I need your answer/);
+    assert.deepEqual(issue, before);
+  }
+  for (const [severity, state] of [["blocking", "blocking"], ["reassessment_required", "reassess"]]) {
+    assert.equal(issueUrgency({ ...question, kind: "scientific_issue", severity }).state, state);
+  }
+});
+
+test("saved unknown, closed unanswered and active pause states make separate claims", () => {
+  const unknown = { ...question, researcher_answer: { ...answer, origin: "unknown" } };
+  assert.deepEqual(issueDisplayState(unknown), { state: "saved", label: "Answer saved · still unknown" });
+  assert.deepEqual(issueUrgency(unknown), { state: "unknown", label: "Answer saved · still unknown" });
+  const closed = { ...question, disposition: "resolved" };
+  assert.deepEqual(issueDisplayState(closed), { state: "recorded", label: "Closed question" });
+  assert.deepEqual(issueUrgency(closed), { state: "recorded", label: "Closed question" });
+  const legacy = { ...question, kind: undefined };
+  assert.deepEqual(issueDisplayState(legacy), { state: "recorded", label: "Open question" });
+  assert.deepEqual(issueDisplayState({ ...legacy, researcher_answer: unknown.researcher_answer }), { state: "recorded", label: "Answer saved · still unknown" });
+  assert.equal(issueCardState({ entries: [legacy] }).state, "history", "A copy change does not reclassify legacy counts.");
+  assert.equal(issueCardState({ entries: [unknown] }).state, "history");
+  assert.equal(issueCardState({ entries: [question, unknown], activePause: true, activePauseKind: "researcher" }).label, "Work is paused");
+});
+
 test("saved responses do not resolve scientific work or claim the researcher owes an answer", () => {
   const finding = { ...question, kind: "scientific_issue", researcher_answer: answer };
   const before = JSON.stringify(finding);
@@ -48,9 +80,9 @@ test("saved responses do not resolve scientific work or claim the researcher owe
   assert.equal(issueCardState({ entries: [finding] }).state, "science");
   const html = render.issues({ ...props, issues: [finding] });
   assert.match(html, /data-attention-state="science"/);
-  assert.match(html, /Saved researcher instruction/);
+  assert.match(html, /Your saved answer/);
   assert.match(html, /Earlier work used your previous response/);
-  assert.doesNotMatch(html, /data-issue-state="response"|<textarea|Edit instruction|Save instruction/);
+  assert.doesNotMatch(html, /data-issue-state="response"|<textarea|Edit your answer|Save your answer/);
   assert.equal(JSON.stringify(finding), before);
 });
 
@@ -75,7 +107,7 @@ test("partial shared team work reaches other models in the same phase with its e
     assert.match(html, /data-attention-state="science"/);
     assert.match(html, /Team assessment: Partially fixed/);
     assert.match(html, /Applies across models/);
-    assert.doesNotMatch(html, /data-issue-state="response"|<textarea|Save instruction|Save choice|Your input needed/);
+    assert.doesNotMatch(html, /data-issue-state="response"|<textarea|Save your answer|Save choice|I need your answer/);
     assert.equal(render.issues({ ...input, questionsOnly: true }), "");
   }
   assert.equal(JSON.stringify(shared), before);
@@ -165,7 +197,7 @@ test("project questions raised on a model branch reach their named shared phase 
     const html = render.issues(input);
     assert.match(html, /Which survival horizon matters\?/);
     assert.match(html, /Raised during Phase 5 - Report/);
-    assert.match(html, /<textarea/); assert.match(html, /Save instruction/);
+    assert.match(html, /<textarea/); assert.match(html, /Save answer/);
     assert.deepEqual(issueCardEntries({ ...input, phase: "P3" }).entries, []);
   }
   assert.equal(JSON.stringify(shared), before);
@@ -208,7 +240,7 @@ test("carried project answers remain editable at their destination without reusi
     assert.equal(entries[0].researcher_answer, saved); assert.deepEqual(earlierAnswers, [earlier]);
     assert.equal(issueDisplayState(entries[0]).state, "saved");
     const html = render.issues(input);
-    assert.match(html, /Edit instruction/); assert.match(html, /Responses to earlier question versions/);
+    assert.match(html, /Edit your answer/); assert.match(html, /Responses to earlier question versions/);
     if (origin === "unknown") assert.match(html, /Still unknown\. This response does not settle the question/);
     const stale = issueCardEntries({ ...input, answers: [earlier] });
     assert.equal(stale.entries[0].researcher_answer, undefined);

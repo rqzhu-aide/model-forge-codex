@@ -4,7 +4,7 @@ import { GOAL_POINTER, goalSourceKey } from "./phaseOneReader.js";
 export const conversationPurpose = (target, conversation) => conversation?.assessment_purpose || target?.assessmentPurpose
   || (target?.kind === "report_section" ? "model_dialogue" : target?.kind === "project_context" ? "project_context" : target?.kind === "assumption" ? "explanation" : "issue_explanation");
 export const defaultConversationQuestion = target => conversationPurpose(target) === "issue_suggestions"
-  ? "Suggest how I could answer this question. Recommend a direction, explain the alternatives and tradeoffs, and identify what information would change your advice." : "";
+  ? "Help me answer this question using its context and my note. If it asks for a choice, explain the alternatives, their consequences and what information would change your advice. If it asks for a study fact, explain what information would answer it and what can remain unknown. Do not infer my preference or a missing study fact." : "";
 
 export function isConversationTarget(target) {
   if (target?.kind === "researcher_pause") return Boolean(target.branch && target.phase && target.run_id && target.request_id && target.revision != null && target.sha256);

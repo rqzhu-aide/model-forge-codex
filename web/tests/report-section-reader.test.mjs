@@ -75,7 +75,7 @@ test("section affordances preserve one complete Markdown document, display math,
 
 test("report tools and source identities collapse while the report and its exact review status remain visible", () => {
   const html = ui.document({ document: { ...document, reviewed_report_ref: { ...ref, sha256: "b".repeat(64) }, review_status: "independently_reviewed" } });
-  assert.match(html, /Review concerns an earlier version; this version has not been independently reviewed/);
+  assert.match(html, /Review concerns an earlier version; it does not confirm independent review of this draft/);
   assert.match(html, /<details class="research-details report-tools"[^>]*><summary>Report tools<\/summary>[\s\S]*Download offline HTML/);
   assert.match(html, /<details class="research-details report-source-details"[^>]*><summary>Source details<\/summary>[\s\S]*Model version/);
   assert.ok(html.indexOf("</details>", html.indexOf("report-tools")) < html.indexOf("Investigation summary"));

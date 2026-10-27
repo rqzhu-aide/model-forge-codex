@@ -1,6 +1,8 @@
 import { issueCardEntries, issueDisplayState, methodPhaseContexts } from "./phaseUiState.js";
 import { catalogMethodForProposal, catalogOnlyMethods, catalogSelectionKey, orderedProposals, proposalKey } from "./methodWorkspace.js";
 import { issueKey } from "./phaseWorkflow.js";
+import { phaseInputSummary } from "./phaseInputSummary.js";
+import { goalCorrections } from "./phaseOneReader.js";
 
 // The project header restates the research question in its opening sentences.
 // Display equations and later paragraphs stay in the complete setting.
@@ -10,7 +12,7 @@ export function goalExcerpt(markdown, limit = 320) {
   const first = text.split(/\n\s*\n|\$\$|\\\[/)[0];
   const paragraph = first.replace(/\s+/g, " ").trim();
   // The paragraph is unfinished only when a display equation interrupts it.
-  const continues = /^(\$\$|\\\[)/.test(text.slice(first.length));
+  const continues = /^(\$\$|\\\[)/.test(text.slice(first.length).trimStart());
   const complete = (piece) => /[.!?]["')\]]?$/.test(piece);
   if (paragraph.length <= limit && (!continues || complete(paragraph))) return paragraph;
   // Whole sentences only: a sentence that runs into a display equation is left out.
@@ -27,9 +29,16 @@ export function goalExcerpt(markdown, limit = 320) {
   return `${cut.trimEnd()}…`;
 }
 
+export function sharedGoalExcerpt(markdown, context, reference) {
+  const clarifications = reference ? goalCorrections(context, reference) : [];
+  // Separate excerpts preserve multiple saved accounts without selecting or
+  // synthesizing one. The existing resume surface keeps its visual line limit.
+  return clarifications.length ? clarifications.map(item => goalExcerpt(item.statement)).filter(Boolean).join(" · ") : goalExcerpt(markdown);
+}
+
 // Questions waiting for the researcher, grouped where they are answered. Each
-// count follows the same projection as that phase's decision card. Phase 5 has
-// no decision card: its clarification happens in report section discussions.
+// count follows the same projection as that phase's answer surface. Phase 5
+// adds only indispensable editorial choices inside the report revision card.
 export function p2DecisionContexts({ methods = [], proposals = [] }) {
   const direct = proposals.filter((proposal) => proposal.method && !proposal.no_method_proposed);
   const selections = [...orderedProposals(direct.filter((proposal) => proposal.is_current_package !== false)),
@@ -76,5 +85,11 @@ export function waitingDecisions({ attention = [], answers = [], branches = [], 
     const count = responses({ phase: "P2", branch: "trunk" }).length;
     if (count) p2.push({ phase: "P2", branch: "trunk", count, methodLabel: null });
   }
-  return [...groups.filter((item) => item.phase === "P1"), ...p2, ...groups.filter((item) => item.phase !== "P1")];
+  const editorial = methodBranches.flatMap(({ branch, label }) => {
+    const method = methods.find((item) => item.branch_id === branch || item.method_id === branch);
+    const questions = phaseInputSummary({ attention, answers, phase: "P5", branch, methodId: method?.method_id,
+      modelRef: method?.identity || method?.current_identity }).questions.items.filter(item => item.state === "unanswered");
+    return questions.length ? [{ phase: "P5", branch, count: questions.length, methodLabel: label, anchors: questions.map(item => item.anchor) }] : [];
+  });
+  return [...groups.filter((item) => item.phase === "P1"), ...p2, ...groups.filter((item) => item.phase !== "P1"), ...editorial];
 }

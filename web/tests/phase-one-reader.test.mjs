@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { hasConciseP1Account, goalSource, goalContextTarget, goalCorrections } from "../src/phaseOneReader.js";
+import { hasConciseP1Account, currentGoalSource, goalSource, goalSourceKey, goalContextTarget, goalCorrections } from "../src/phaseOneReader.js";
 import { isConversationTarget, conversationDraftKey, conversationsForTarget, isEarlierConversation, assumptionSource } from "../src/assumptionConversations.js";
 
 const basis = { generation_ref: { branch: "trunk", phase: "P1", family: "research_basis", generation_id: "goal.one", sha256: "a".repeat(64), run_id: "run.one", package_id: "package.one" }, research_setting: { research_goal_markdown: "Estimate survival under each monitoring policy." } };
@@ -29,4 +29,18 @@ test("only confirmed corrections for this exact goal count as saved", () => {
   const item={item_id:"one",status:"confirmed",topic:"research_goal",scope:{kind:"project"},source_refs:[goalSource(basis)]};
   const items=[item,{...item,status:"proposed"},{...item,source_refs:[{...goalSource(basis),generation_id:"other"}]},{...item,topic:"expectation"}];
   assert.deepEqual(goalCorrections({items},goalSource(basis)),[item]);
+});
+
+test("current goal provenance uses the shared P1 readiness record with its exact publication metadata", () => {
+  const pointer = { ...basis.generation_ref, content_sha256: basis.generation_ref.sha256, sha256: "wrong" };
+  const unrelated = [
+    { ...pointer, branch: "method.other" },
+    { ...pointer, phase: "P2" },
+    { ...pointer, family: "literature_synthesis" },
+  ];
+  assert.equal(goalSourceKey(currentGoalSource([...unrelated, pointer])), goalSourceKey(goalSource(basis)));
+  assert.equal(goalSourceKey(currentGoalSource([{ ...basis.generation_ref, run_id: undefined, source_run_id: "run.one" }])), goalSourceKey(goalSource(basis)));
+  assert.equal(currentGoalSource(unrelated), null);
+  assert.equal(currentGoalSource([{ ...pointer, content_sha256: "" }]), null);
+  assert.equal(currentGoalSource(), null);
 });

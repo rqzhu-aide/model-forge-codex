@@ -125,7 +125,7 @@ export function readDecisionDraft(key, saved, storage) {
     try { parsed = JSON.parse(raw); } catch { parsed = raw; }
     const draft = typeof parsed === "string" ? { note: parsed, base_revision: 0 }
       : typeof parsed?.note === "string" && Number.isInteger(parsed.base_revision) && parsed.base_revision >= 0 ? parsed : fallback;
-    return saved && draft.note.trim() === saved.note.trim() ? fallback : draft;
+    return saved && draft.note.trim() === saved.note.trim() && (draft.origin || "researcher_reported") === (saved.origin || "researcher_reported") ? fallback : draft;
   } catch { return fallback; }
 }
 

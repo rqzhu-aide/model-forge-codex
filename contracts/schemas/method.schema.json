@@ -65,9 +65,10 @@
     "summary": {
       "type": "string",
       "minLength": 1,
-      "description": "A concise account of this candidate's purpose and mechanism, with mathematics when needed to explain its target or mechanism. Use proper Markdown/LaTeX and define notation where introduced. There is no fixed sentence, line or equation count. The full calculation-defining mathematics, constraints, ordered algorithm and tuning remain in mathematical_definition, which stays canonical and complete. Distinguish a sufficient surrogate or approximation from the exact target. Do not force a novelty claim or say the method proves, certifies or solves a problem unless the supporting result is established."
+      "description": "A concise account of this candidate's purpose and mechanism, with mathematics when needed to explain its target or mechanism. Use proper Markdown/LaTeX and define notation where introduced. There is no fixed sentence, line or equation count. The full calculation-defining mathematics, constraints, ordered algorithm and tuning remain in mathematical_definition, which stays canonical and complete. Distinguish a sufficient surrogate or approximation from the exact target. Do not force a novelty claim or say the method proves, certifies or solves a problem unless the supporting result is established. Explain purpose before mechanism, retaining decisive conditions and the distinction between the intended target and an established result."
     },
     "mathematical_definition": {
+      "description": "Retain the complete calculation and constraints; a clearer summary cannot change this canonical definition.",
       "type": "object",
       "additionalProperties": true,
       "required": [
