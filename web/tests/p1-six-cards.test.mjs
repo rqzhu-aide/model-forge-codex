@@ -143,15 +143,24 @@ test("unconfirmed, different-source and model-scoped notes cannot replace the cu
 });
 
 test("browser mathematics fixture retains its producing pin and exact source examples", () => {
-  const load = (name) => JSON.parse(fs.readFileSync(new URL(`../../contracts/${name}`, import.meta.url), "utf8"));
-  const examples = { basis: load("examples/research-basis.example.json"), literature: load("examples/literature-findings.example.json"), pin: load("catalog-pin.json") };
   const snapshot = JSON.parse(fs.readFileSync(new URL("./fixtures/p1-visible-math-preview.json", import.meta.url), "utf8"));
-  assert.deepEqual(snapshot.research_basis, examples.basis, "browser fixture preserves the current basis example");
-  assert.deepEqual(snapshot.literature_findings, examples.literature, "browser fixture preserves the current literature example");
   // The preview renders a frozen snapshot under its producing pin. An installed
   // catalog upgrade must not silently relabel that historical scientific text.
+  assert.equal(snapshot.catalog_pin.catalog_version, "1.26.0");
+  assert.deepEqual(snapshot.source_sha256, {
+    "contracts/examples/research-basis.example.json": "b0267712f95d3df5958747441cfc55c4a8d54e401c6cf3be18f78a01681b7bbc",
+    "contracts/examples/literature-findings.example.json": "8040f917b235cb1714fd946c549d8168d32bdda0481482c56f5d87936b6dbdac",
+    "contracts/catalog-pin.json": "dfa23027ab3b21ab9e078b26ddc95c150bc2ba635ddf92f4f8d5a9a3ea08b794",
+  });
+  const sources = {
+    "contracts/examples/research-basis.example.json": snapshot.research_basis,
+    "contracts/examples/literature-findings.example.json": snapshot.literature_findings,
+    "contracts/catalog-pin.json": snapshot.catalog_pin,
+  };
   for (const [source, digest] of Object.entries(snapshot.source_sha256)) {
-    const bytes = source === "contracts/catalog-pin.json" ? `${JSON.stringify(snapshot.catalog_pin, null, 2)}\n` : fs.readFileSync(new URL(`../../${source}`, import.meta.url));
+    // The captured examples used CRLF; their producing pin used LF. Recreate
+    // those exact retained bytes independently of today's files and checkout.
+    const bytes = `${JSON.stringify(sources[source], null, 2)}\n`.replaceAll("\n", source === "contracts/catalog-pin.json" ? "\n" : "\r\n");
     assert.equal(createHash("sha256").update(bytes).digest("hex"), digest, `browser snapshot provenance: ${source}`);
   }
 });

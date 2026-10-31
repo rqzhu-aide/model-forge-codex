@@ -102,7 +102,8 @@ test("eligible provider interruption stays visible and retries only an explicit 
     const fixture = mount(ui.RunDetail, { projectId: "p", runId: failed.run_id, onBack: noop });
     try {
       await fixture.settle(); const html = ui.html(fixture.tree).split('<details class="drawer"')[0];
-      assert.match(html, /Selected model is at capacity/); assert.match(html, /Saved work and your evaluation direction are retained/);
+      assert.match(html, /Selected model is at capacity/); assert.match(html, /Completed stages stay saved/);
+      assert.match(html, /remaining experiment budget is unchanged/);
       assert.doesNotMatch(html, /Correction is not eligible|correction budget.*spent|Authorize correction/);
       assert.equal(calls.length, 0, "Loading and rendering do not retry work.");
       const retry = button(fixture.tree, "Retry interrupted step"); assert.ok(retry); assert.equal(retry.props.disabled, false);
@@ -113,6 +114,26 @@ test("eligible provider interruption stays visible and retries only an explicit 
       assert.equal(button(fixture.tree, "Retry interrupted step"), undefined);
     } finally { fixture.unmount(); }
   });
+});
+
+test("capacity retry in other phases explains retained work without inventing an experiment budget", async () => {
+  for (const phase of ["P1", "P2", "P3", "P5"]) {
+    let calls = 0;
+    const value = { ...failed, phase, p4_progress: null, provider_retry: { eligible: true, failure_code: "provider.capacity" } };
+    await withHost({ run: async () => value, correctionPreview: async () => ({ eligible: true, attempts_remaining: 2 }), retryProvider: async () => { calls++; } }, async () => {
+      const fixture = mount(ui.RunDetail, { projectId: "p", runId: value.run_id, onBack: noop });
+      try {
+        await fixture.settle();
+        const html = ui.html(fixture.tree).split('<details class="drawer"')[0];
+        assert.match(html, /same inputs and model settings/);
+        assert.match(html, /Completed stages stay saved/);
+        assert.doesNotMatch(html, /experiment budget|evaluation direction|Authorize correction/);
+        assert.equal(calls, 0);
+        await button(fixture.tree, "Retry interrupted step").props.onClick();
+        assert.equal(calls, 1);
+      } finally { fixture.unmount(); }
+    });
+  }
 });
 
 test("a rejected retry reports the error and refreshes eligibility without another provider call", async () => {

@@ -45,6 +45,45 @@ below only for projects that explicitly adopt the revised catalog. The
 
 ## Researcher-facing delivery across phases
 
+### Shared notation and neutral references, catalog 1.30.0
+
+`research_presentation_v2` delivers the five existing neutral authoring references
+according to phase, role, stage and discussion authority. Phase objectives retain
+field-specific duties and numerical permissions. Independent P5 review captures
+the neutral editorial references in its immutable submission packet;
+report-section discussion receives explanation/evidence guidance without upstream
+elicitation. Frozen v1 catalogs keep their original routing and reference bytes.
+
+`project_notation_v1` requires presentation v2. The existing P1 research basis,
+P2 catalog assessment, P3 complete theory, P4 empirical synthesis and P5 report
+candidate carry small Lead `notation_updates`. The harness merges only notation
+views from admitted scientific inputs, after alignment, and freezes the matching
+structured/readable files with the run. Shared study and admitted method entries
+also appear as required brief context. Other members define new symbols in their
+normal scientific fields; there is no second glossary writer or new stage.
+
+P1 owns study definitions; P2 owns exact method/candidate definitions by stable
+identity and mathematical-definition digest; later phases own their account
+additions or explicit translations. Source-local paper and proof meanings remain
+intact. The harness generates the complete final view, including synthesis
+additions, before sealing it with the account. The scientific package and its
+`notation_snapshot` pointer own that view. Older accounts retain their original
+local fields without a guessed current glossary.
+
+Account lookup, selected-source discussion, P5 review and offline export resolve
+the exact retained view. A notation-row explanation is read-only; one existing
+context item owns an editable correction request for the quantity and scoped
+definition. Account-local ownership includes its exact initial source-account
+anchor, preserved through inherited mirrors and explicit clarification. Published
+dispositions name the saved correction revision they actually address. Saving or
+omitting a correction never adopts or rejects a scientific change.
+
+Source admission also applies to correction text and definition references,
+including source audiences. A later P4 definition cannot enter P2 through a saved
+comment. These are input-routing rules, not operating-system read isolation.
+See [shared notation](shared-notation-plan.md) for source shapes, compatibility
+and verification limits. The existing card locations below are unchanged.
+
 P1 uses Research Setting, Main Findings, Decisions to Discuss, Explore Individual
 Papers, and Additional Runs and History, in that order. P2 separates Proposed
 Methods from Select a Method to Explore, followed by decisions and further work.

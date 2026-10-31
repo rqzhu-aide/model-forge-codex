@@ -1,5 +1,6 @@
 import { explanationRun, issueSourceIdentity, issueIsOpen } from "./phaseWorkflow.js";
 import { compareDecisionPriority, decisionPriorityLabel } from "./researcherDecisions.js";
+import { researchTaskAppliesToMethod } from "./researchTaskScope.js";
 
 // Responsibility and destination come from the author, never from question wording.
 const kinds = new Set(["researcher_decision", "research_task"]);
@@ -22,6 +23,7 @@ export function requestsForScope(items, branch, phase) {
   const result = { decisions: [], tasks: [], earlier: [] };
   for (const item of Array.isArray(items) ? items : []) {
     if (!item || !issueIsOpen(item)) continue;
+    if (!researchTaskAppliesToMethod(item, undefined, branch)) continue;
     const itemBranch = branchOf(item);
     if (isContextualRequest(item)) {
       // A trunk request is shared project work in this phase, including when

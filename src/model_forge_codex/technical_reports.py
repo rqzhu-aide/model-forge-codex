@@ -15,6 +15,7 @@ import re
 import subprocess
 from copy import deepcopy
 from pathlib import Path
+from urllib.parse import quote
 
 from .alignment import method_identity
 from .domain import Finding
@@ -138,6 +139,24 @@ def _pointer(document, pointer):
         raise ArtifactError("An exact report source locator does not resolve") from exc
 
 
+class _ReportProjectionBasis(dict):
+    """Verified snapshots and derived indexes owned by one projection call."""
+    def __init__(self, basis):
+        super().__init__(basis)
+        self.verified_sources = {}
+        self.source_materials = {}
+
+
+def report_projection_basis(basis: dict) -> dict:
+    """Reuse exact source bytes while projecting one report, never across requests."""
+    return _ReportProjectionBasis(basis)
+
+
+def _source_identity(reference):
+    return tuple(reference.get(key) for key in ("phase", "branch", "family", "generation_id", "content_sha256",
+                                               "run_id", "stage_id", "package_id", "snapshot_path", "format"))
+
+
 def resolve_report_source(reference: dict, basis: dict):
     """Resolve only captured bytes, never the live current slot."""
     fields = ("phase", "branch", "family", "generation_id", "content_sha256")
@@ -146,12 +165,19 @@ def resolve_report_source(reference: dict, basis: dict):
         raise ArtifactError("A report source does not name one exact frozen source generation and digest")
     ref = candidates[0]
     path = Path(ref.get("snapshot_path", ""))
-    if not path.is_file() or sha256_file(path) != ref.get("content_sha256"):
-        raise ArtifactError("A report's frozen source changed or disappeared")
-    if ref.get("format") == "jsonl":
-        document = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    cache = getattr(basis, "verified_sources", None)
+    key = _source_identity(ref)
+    if cache is not None and key in cache:
+        document = cache[key]
     else:
-        document = read_json(path)
+        if not path.is_file() or sha256_file(path) != ref.get("content_sha256"):
+            raise ArtifactError("A report's frozen source changed or disappeared")
+        if ref.get("format") == "jsonl":
+            document = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        else:
+            document = read_json(path)
+        if cache is not None:
+            cache[key] = document
     return _pointer(document, reference.get("pointer")), ref, document
 
 
@@ -215,6 +241,9 @@ def _artifact_pointers(value):
 def report_required_artifacts(document: dict, basis: dict) -> list[dict]:
     """Every cited exhibit and its declared data dependencies travel to review."""
     result = [document.get("report_artifact"), *document.get("supplementary_artifacts", [])]
+    notation = document.get("notation_snapshot")
+    if isinstance(notation, dict):
+        result.extend(({key: value for key, value in notation.items() if key != "markdown"}, notation.get("markdown")))
     for analysis in _rows(document.get("numerical_analysis")):
         for reference in [*analysis.get("evidence_refs", []), *analysis.get("exhibit_refs", []), *analysis.get("implementation_refs", [])]:
             source, ref, full = resolve_report_source(reference, basis)
@@ -249,6 +278,49 @@ def report_required_artifacts(document: dict, basis: dict) -> list[dict]:
             material = {**pointer, **({"authored_path": authored} if authored else {})}
             unique.setdefault((pointer.get("sha256") or pointer.get("artifact_sha256"), pointer.get("artifact_id")), material)
     return list(unique.values())
+
+
+def report_material_notation_source(project_dir, document, material, basis):
+    """A retained proof uses the notation of its declared exact source account."""
+    from .notation import account_notation_source, _committed
+    expected = material.get("sha256") or material.get("artifact_sha256")
+    if not expected:
+        return None
+    references = [reference for group in ("claims", "numerical_analysis", "prose_values")
+                  for row in _rows(document.get(group))
+                  for field in ("source_refs", "evidence_refs", "exhibit_refs", "implementation_refs")
+                  for reference in row.get(field, [])]
+    matches = {}
+    cache = getattr(basis, "source_materials", None)
+    for reference in references:
+        try:
+            _, source, full = resolve_report_source(reference, basis)
+            key = _source_identity(source)
+            indexed = cache.get(key) if cache is not None else None
+            if indexed is None:
+                indexed = {"digests": {pointer.get("sha256") or pointer.get("artifact_sha256")
+                                       for pointer in _artifact_pointers(full)}}
+                if cache is not None:
+                    cache[key] = indexed
+            if expected not in indexed["digests"]:
+                continue
+            if "notation" not in indexed:
+                notation = None
+                owner = account_notation_source(project_dir, source)
+                if owner is not None:
+                    retained, _ = _committed(Path(project_dir), owner)
+                    pointer = retained.get("notation_snapshot")
+                    if pointer:
+                        from .research import source_ref
+                        exact = source_ref(owner["branch"], owner["phase"], owner["family"], owner)
+                        notation = {"notation_source_ref": exact, "notation_snapshot": deepcopy(pointer)}
+                indexed["notation"] = notation
+            notation = indexed["notation"]
+            if notation:
+                matches[notation["notation_snapshot"]["sha256"]] = deepcopy(notation)
+        except (ArtifactError, ValueError, KeyError):
+            continue
+    return next(iter(matches.values())) if len(matches) == 1 else None
 
 
 _SUBMITTED_SOURCE_FIELDS = {
@@ -651,8 +723,9 @@ def completed_report_review_packets(project_dir: Path) -> list[dict]:
 
 def export_technical_report(document: dict, basis: dict, *, generation_ref: dict, artifact_roots: dict,
                             exported_at: str, review_packets: list[dict] | None = None, node_executable: str | None = None,
-                            print_material_id: str | None = None, validate_materials: bool = False) -> bytes:
-    """Return standalone HTML from immutable bytes, with inline math and figures."""
+                            print_material_id: str | None = None, validate_materials: bool = False,
+                            html_download_base_url: str | None = None) -> bytes:
+    """Render immutable sources; only the hosted view uses HTTP HTML downloads."""
     basis = report_context_basis(basis, document)
     roots = list(artifact_roots.values())
     primary = resolve_report_artifact(document.get("report_artifact") or {}, basis, roots=roots)
@@ -690,12 +763,23 @@ def export_technical_report(document: dict, basis: dict, *, generation_ref: dict
                     report_pointer.get("authored_path"), report_pointer.get("path"),
                     report_pointer.get("artifact_path"), report_pointer.get("uri"),
                     report_pointer.get("artifact_id"), primary.name) if isinstance(value, str) and value))}
+    notation_pointer = document.get("notation_snapshot")
+    if isinstance(notation_pointer, dict):
+        from .notation import render_notation
+        notation_path = resolve_report_artifact(notation_pointer, basis, roots=roots)
+        notation_view = read_json(notation_path)
+        notation_markdown = resolve_report_artifact(notation_pointer.get("markdown") or {}, basis, roots=roots).read_text(encoding="utf-8")
+        if not isinstance(notation_view, dict) or render_notation(notation_view) != notation_markdown:
+            raise ArtifactError("The report's readable notation differs from its retained definitions")
+        request["notation_markdown"] = notation_markdown
     for pointer in materials:
         path = resolve_report_artifact(pointer, basis, roots=roots)
         media = pointer.get("media_type") or mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         source = {"path": str(path.resolve()), "media_type": media, "artifact_id": pointer.get("artifact_id"),
                   "sha256": pointer.get("sha256") or pointer.get("artifact_sha256"),
                   "authored_path": pointer.get("authored_path") or pointer.get("path")}
+        if html_download_base_url and media == "text/html" and pointer.get("artifact_id"):
+            source["download_url"] = html_download_base_url + "&material_id=" + quote(pointer["artifact_id"], safe="")
         for key in (pointer.get("authored_path"), pointer.get("path"), pointer.get("artifact_path"), pointer.get("uri"), pointer.get("artifact_id")):
             if key:
                 if not isinstance(key, str):
@@ -715,6 +799,8 @@ def export_technical_report(document: dict, basis: dict, *, generation_ref: dict
                 "report_artifact_sha256": digest, "method_identity": document.get("method_identity"), "completion": completion,
                 "review_status": review_status, "exported_at": exported_at,
                 "print_material_id": print_material_id, "print_scopes": rendered.get("print_scopes")}
+    if isinstance(notation_pointer, dict):
+        metadata["notation"] = {"snapshot_sha256": notation_pointer["sha256"], "snapshot": notation_view}
     identity = method_identity(document)
     banner = (f"<aside><strong>{html.escape(completion['status'].capitalize())} technical report</strong>"
               f"<p>This version {'has' if reviewed else 'has not'} been independently reviewed.</p>"

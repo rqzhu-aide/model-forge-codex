@@ -152,13 +152,13 @@
               "Illustrative partial result: The implementation reproduced the deterministic reference solution to the declared tolerance. Performance and tuning sensitivity were not run within the authorized budget, so implementation agreement provides no evidence of advantage over the baseline.",
               "Illustrative unassessed result: No computation was performed for the heavy-tail setting. Its effect on accuracy and uncertainty coverage remains unknown; the Gaussian comparison cannot answer this question."
             ],
-            "description": "Answer the question directly for the exact evaluated method and regime. State observed effect, usable repetitions and recorded uncertainty where available; distinguish observed ordering from reliable improvement. Give units, attempted and returned denominators and relevant uncertainty beside the comparison. Equality observed in fitted synthetic cases is restricted to those cases; synthetic gain does not establish human benefit. Lack of demonstrated benefit is not demonstrated absence of benefit. Distinguish evidence against a benefit from an inconclusive comparison; do not claim equivalence or absence of benefit from nonsignificance. Retain the applicable uncertainty and tested scope.",
+            "description": "Start with the direct finding for this exact test and regime, including observed magnitude/unit, usable counts, applicable uncertainty and decisive boundary. Follow the supplied scientific-explanation and claims-and-evidence references. Link the compact exhibit as the primary numerical comparison without copying all rows. Preserve attempted/returned denominators, inconclusive or negative evidence, and synthetic/actual-data scope; absent demonstrated benefit or nonsignificance does not establish no benefit or equivalence.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"
           },
           "comparison_markdown": {
-            "description": "Compare named alternatives with the recorded estimates, units and uncertainty, and explain the practical implication. Cite exact cases and metrics; do not imply unmeasured dominance.",
+            "description": "Explain the recorded comparison and its practical meaning, linking the primary compact table rather than replaying its full rows. Preserve the named alternatives, conditions, units and applicable paired or independent uncertainty. Exact source links do not authorize unmeasured dominance or a newly calculated contrast.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"
@@ -194,7 +194,7 @@
             "pattern": "\\S"
           },
           "decision_implication_markdown": {
-            "description": "Explain what this evidence changes for developing or using the method under the researcher objective, without inventing a researcher preference.",
+            "description": "State the concise consequence for development or use under the researcher objective, without repeating the primary answer or assigning a preference. Preserve source-backed scientific conditions; advice does not authorize another run.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"

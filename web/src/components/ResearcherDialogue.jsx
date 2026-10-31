@@ -13,12 +13,20 @@ import IssuesCard from "./IssuesCard";
 import WorkflowAdoption from "./WorkflowAdoption";
 import { ResearchDocument, SourceRef } from "./Shared";
 import { ActionButton } from "./Visuals";
+import { NotationLookup } from "./SharedNotation";
+import { notationCorrectionApplies, notationCorrectionSource } from "../sharedNotation";
 
 const origins = { researcher_reported: "Researcher reported", evidence_supported: "Evidence supported", proposed_assumption: "Proposed assumption", unknown: "Unknown" };
 
 function ContextStatement({ item, owner, onReviewAnswer, onSource, projectId, context, target, onSaved, onDiscuss, activeWork, goalReference }) {
   const [editing, setEditing] = useState(false);
   const savedGoal = item.source_refs?.find(ref => ref.kind === "research_goal");
+  const notationSource = notationCorrectionSource(item);
+  if (notationSource) return <div className="dialogue-context-item contribution-surface" data-reading-anchor={`problem-context:${item.item_id}:${item.revision}`}>
+    <ResearchDocument text={item.statement} />
+    <p className="note">Saved notation correction for future work. The account retains its original definition.</p>
+    <NotationLookup record={{ generation_ref: notationSource, _notation_available: true }} entryId={notationSource.entry_id} onSource={onSource} label="Review notation correction" />
+  </div>;
   if (owner) return <div className="dialogue-context-item" data-reading-anchor={`problem-context:${item.item_id}:${item.revision}`}>
     {owner.question_ref?.phase && <ActionButton action="details" uiRole="research" onClick={event => onReviewAnswer(owner, event.currentTarget)}>Review your answer{item.topic ? `: ${item.topic}` : ""}</ActionButton>}
     <details className="research-details"><summary>View the saved copy of your answer</summary><ResearchDocument text={item.statement} /><p className="note">Your answer is edited at its original question.{!owner.question_ref?.phase && " Its original question link is unavailable; this copy remains available to read."}</p></details>
@@ -86,7 +94,7 @@ function ProposedUnderstanding({ projectId, proposal, revision, onSaved }) {
   </form>;
 }
 
-export default function ResearcherDialogue({ problemContext, contextAnswers, project, catalogPreview, modelRef, conversations = [], activeWork = false, onDiscuss, onSaved, onSource, goalReference, ...issueProps }) {
+export default function ResearcherDialogue({ problemContext, contextAnswers, project, catalogPreview, modelRef, admittedRecords, admittedNotation, conversations = [], activeWork = false, onDiscuss, onSaved, onSource, goalReference, ...issueProps }) {
   const [notice, setNotice] = useState(null);
   const [answerVisit, setAnswerVisit] = useState(null);
   const answerVisitRef = useRef(null);
@@ -101,7 +109,8 @@ export default function ResearcherDialogue({ problemContext, contextAnswers, pro
   if (target && (!editorBasis.current || !previousDraft?.text?.trim())) editorBasis.current = { target, context };
   const editor = editorBasis.current;
   const changedWhileWriting = editor && target && conversationDraftKey(issueProps.projectId, editor.target) !== conversationDraftKey(issueProps.projectId, target);
-  const items = (context?.items || []).filter((item) => item.status === "confirmed" && contextApplies(item.scope, issueProps.branch, modelRef));
+  const notationScope = { phase: issueProps.phase, branch: issueProps.branch, modelRef, admittedRecords, admittedNotation };
+  const items = (context?.items || []).filter((item) => item.status === "confirmed" && contextApplies(item.scope, issueProps.branch, modelRef) && notationCorrectionApplies(item, notationScope));
   const ownerAnswers = contextAnswers ?? issueProps.answers;
   const copies = items.filter(item => answerContextOwner(item, ownerAnswers));
   const notes = items.filter(item => !answerContextOwner(item, ownerAnswers));
@@ -118,7 +127,7 @@ export default function ResearcherDialogue({ problemContext, contextAnswers, pro
       answerVisitRef.current = visit; setAnswerVisit(visit);
     } else if (!source?.phase || !issueProps.onNavigate?.(source.phase, source)) setNotice("This answer belongs to an earlier question or run. Its saved copy is available below; open that phase’s run history to review the original request.");
   };
-  const proposals = (context?.proposals || []).filter((item) => item.status === "pending" && contextApplies(item.item?.scope, issueProps.branch, modelRef));
+  const proposals = (context?.proposals || []).filter((item) => item.status === "pending" && contextApplies(item.item?.scope, issueProps.branch, modelRef) && notationCorrectionApplies(item.item, notationScope));
   const history = conversations.filter((item) => item.assessment_purpose === "project_context");
   const earlierDrafts = conversationDrafts("problem-response:").filter(({ draft }) => draft.projectId === issueProps.projectId && draft.text?.trim() && draft.target?.sha256 !== target?.sha256 && conversationDraftKey(issueProps.projectId, draft.target) !== (editor && conversationDraftKey(issueProps.projectId, editor.target)));
   const content = <div className="researcher-dialogue" data-reading-anchor="researcher-dialogue">

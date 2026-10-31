@@ -133,6 +133,7 @@ class RunRecord:
     assessment_id: str | None = None
     assessment_purpose: str = "assessment"
     researcher_note_draft: str | None = None
+    researcher_response_draft: dict | None = None
     retry_run_id: str | None = None
     assessment_turn_index: int = 0
     responsible_role: str | None = None

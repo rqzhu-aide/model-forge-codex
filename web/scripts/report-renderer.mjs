@@ -91,6 +91,16 @@ function inlineContent(text, nested) {
       const match = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
       const url = linkTarget(match[2]);
       if (!/^(?:https?:\/\/|data:|#)/.test(url)) throw new Error(`The report link ${url} has no portable target (from ${current.path || "primary report"})`);
+      const file = input.asset_files?.[retainedKey(match[2].split("#")[0])];
+      if (file && /^data:text\/html(?:;|,)/i.test(url)) {
+        // Hosted views use a verified attachment endpoint. Standalone files
+        // retain the original bytes without introducing a network dependency.
+        const filename = (file.authored_path || file.path).split(/[\\/]/).at(-1);
+        const label = /^proof$/i.test(match[1].trim()) ? "proof appendix" : match[1];
+        const fragment = url.includes("#") ? url.slice(url.indexOf("#")) : "";
+        const download = file.download_url ? file.download_url + fragment : url;
+        return `<a href="${escape(download)}" download="${escape(filename)}">Download ${escape(label)} (HTML)</a>`;
+      }
       return `<a href="${escape(url)}">${escape(match[1])}</a>`;
   }).join("");
 }
@@ -112,6 +122,11 @@ const boundary = reportReferenceBoundary(input.markdown, input.section_anchors, 
 let html = boundary
   ? `<section class="report-body" aria-label="Scientific report">${blocks(parsed.slice(0, boundary.startIndex))}</section>\n<section class="report-references" aria-label="References">${blocks(parsed.slice(boundary.startIndex))}</section>`
   : blocks(parsed);
+if (typeof input.notation_markdown === "string" && input.notation_markdown.trim()) {
+  const notationErrors = validateMathText(katex, input.notation_markdown, false, input.validate_materials === true);
+  if (notationErrors.length) throw new Error(`The report notation: ${notationErrors[0].message}`);
+  html += `<section class="report-notation" id="report-notation" aria-label="Notation for this report">${blocks(researchBlocks(input.notation_markdown))}</section>`;
+}
 if (input.print_document) registerDocument(input.print_document, input.print_document.path);
 if (input.validate_materials === true) {
   for (const [key, file] of Object.entries(input.asset_files || {})) {

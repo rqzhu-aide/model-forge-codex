@@ -1,6 +1,6 @@
 {
   "name": "@rqzhu-aide/model-forge-codex",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "A local research workspace for developing and evaluating scientific methods with a coordinated AI team.",
   "type": "module",
   "license": "MIT",

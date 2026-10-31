@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://model-forge.local/architecture/schemas/notation-updates.schema.json",
+  "title": "Source-backed notation updates",
+  "description": "Small Lead-authored additions and explicit mappings for this scientific account. The harness retains the complete admitted view and generates the readable notation file. Omission from entries never deletes inherited notation. A mathematical change follows scientific revision, not a notation clarification.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["incoming_sources", "entries", "retirements", "correction_dispositions"],
+  "properties": {
+    "incoming_sources": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/sourceRef"},
+      "uniqueItems": true,
+      "description": "Exact admitted notation or scientific sources used by these updates. Preserve incoming definition references and audience restrictions. Empty is legitimate on the first study account."
+    },
+    "entries": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/entry"},
+      "description": "Only adopted additions, clarifications or explicit translations in the Lead's owned scope. Define symbols used substantively in the account; keep performance-measure labels and computational cost beside their results."
+    },
+    "retirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entry_ref", "reason_markdown"],
+        "properties": {
+          "entry_ref": {"$ref": "#/$defs/entryRef"},
+          "reason_markdown": {"$ref": "#/$defs/nonblank"}
+        }
+      },
+      "description": "Explicit retirement from this new account's active view within the Lead's scope. Historical definitions remain retained."
+    },
+    "correction_dispositions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["correction_ref", "disposition", "reason_markdown"],
+        "properties": {
+          "correction_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["context_id", "revision", "sha256"],
+            "properties": {
+              "context_id": {"$ref": "#/$defs/nonblank"},
+              "revision": {"type": "integer", "minimum": 1},
+              "sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"}
+            }
+          },
+          "disposition": {"enum": ["adopted", "unchanged", "scientific_revision"]},
+          "reason_markdown": {
+            "$ref": "#/$defs/nonblank",
+            "description": "State the outcome first and give the short reason. A request changing the mathematical object is referred to scientific revision. Omission records no disposition; later saved revisions remain distinct."
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "snapshotPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "media_type", "markdown"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+        "media_type": {"const": "application/json"},
+        "markdown": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256", "media_type"],
+          "properties": {
+            "path": {"type": "string", "minLength": 1},
+            "sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+            "media_type": {"const": "text/markdown"}
+          }
+        }
+      },
+      "description": "Harness-owned exact final account view and matching readable file. Added after collection, not a second model-authored output."
+    },
+    "nonblank": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "pointer": {"type": "string", "pattern": "^(|/.*)$"},
+    "sourceRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["phase", "branch", "family", "generation_id", "content_sha256", "pointer"],
+          "properties": {
+            "phase": {"enum": ["P1", "P2", "P3", "P4", "P5"]},
+            "branch": {"$ref": "#/$defs/nonblank"},
+            "family": {"$ref": "#/$defs/nonblank"},
+            "generation_id": {"$ref": "#/$defs/nonblank"},
+            "content_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+            "pointer": {"$ref": "#/$defs/pointer"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["output_id", "pointer"],
+          "properties": {
+            "output_id": {"type": "string", "pattern": "^p[1-5]\\.[A-Za-z0-9_.-]+$"},
+            "pointer": {"$ref": "#/$defs/pointer"}
+          },
+          "description": "An exact field in a sealed member output or this existing Lead output. Publication binds it to the committed account; do not invent a future generation ID."
+        }
+      ]
+    },
+    "entryRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshot_sha256", "entry_id"],
+      "properties": {
+        "snapshot_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"},
+        "entry_id": {"$ref": "#/$defs/nonblank"}
+      }
+    },
+    "methodIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stable_id", "definition_sha256"],
+      "properties": {
+        "stable_id": {"$ref": "#/$defs/nonblank"},
+        "definition_sha256": {"$ref": "common-definitions.schema.json#/$defs/sha256"}
+      },
+      "description": "Stable candidate or method identity and exact mathematical definition digest. An editorial version can retain this scope; changed mathematics cannot inherit it by title or branch."
+    },
+    "scope": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {"kind": {"const": "study"}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "method_identity"],
+          "properties": {
+            "kind": {"const": "method"},
+            "method_identity": {"$ref": "#/$defs/methodIdentity"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "phase", "branch", "account_family"],
+          "properties": {
+            "kind": {"const": "account"},
+            "phase": {"enum": ["P1", "P2", "P3", "P4", "P5"]},
+            "branch": {"$ref": "#/$defs/nonblank"},
+            "account_family": {"$ref": "#/$defs/nonblank"},
+            "section": {"$ref": "#/$defs/nonblank"},
+            "method_identity": {"$ref": "#/$defs/methodIdentity"}
+          }
+        }
+      ]
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quantity_key", "symbol_latex", "definition_markdown", "meaning_markdown", "scope", "source_refs"],
+      "properties": {
+        "quantity_key": {"$ref": "#/$defs/nonblank"},
+        "symbol_latex": {
+          "$ref": "#/$defs/nonblank",
+          "description": "Mathematical symbol without delimiters, used substantively in this account. Reuse the adopted symbol for the same quantity and scope."
+        },
+        "definition_markdown": {
+          "$ref": "#/$defs/nonblank",
+          "description": "State the mathematical object and its defining relation or type, preserving conditions, population, denominator and uncertainty. A label alone is insufficient."
+        },
+        "meaning_markdown": {
+          "$ref": "#/$defs/nonblank",
+          "description": "Explain what the defined object means in the supplied scientific problem, with units or domain when relevant. Unknown units stay unknown."
+        },
+        "scope": {"$ref": "#/$defs/scope"},
+        "source_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/sourceRef"}, "uniqueItems": true},
+        "replaces": {"$ref": "#/$defs/entryRef"},
+        "source_symbol_mapping": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_entry_ref", "source_symbol_latex", "explanation_markdown"],
+          "properties": {
+            "source_entry_ref": {"$ref": "#/$defs/entryRef"},
+            "source_symbol_latex": {"$ref": "#/$defs/nonblank"},
+            "explanation_markdown": {
+              "$ref": "#/$defs/nonblank",
+              "description": "Explain the genuine translation in this account while retaining the exact source-local meaning. A transformed variable or changed target is a distinct object, not an alias."
+            }
+          }
+        }
+      }
+    }
+  }
+}

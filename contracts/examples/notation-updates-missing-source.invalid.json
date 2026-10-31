@@ -1,0 +1,17 @@
+{
+  "incoming_sources": [],
+  "entries": [
+    {
+      "quantity_key": "study.population_mean",
+      "symbol_latex": "\\mu",
+      "definition_markdown": "$\\mu=\\mathbb E[Y]$ for the stated target population.",
+      "meaning_markdown": "The population mean of the outcome; the outcome units are unspecified.",
+      "scope": {
+        "kind": "study"
+      },
+      "source_refs": []
+    }
+  ],
+  "retirements": [],
+  "correction_dispositions": []
+}

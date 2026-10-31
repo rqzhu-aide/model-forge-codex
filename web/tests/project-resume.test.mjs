@@ -120,6 +120,17 @@ test("Next keeps an origin destination when the named phase has no answer card o
   ]);
 });
 
+test("model-scoped questions targeted at a shared phase count only at their reachable model editor", () => {
+  const modelRef = { stable_id: "method.a", version: 2, definition_sha256: "a".repeat(64) };
+  const localMethods = [{ ...methods[0], identity: modelRef }];
+  for (const phase of ["P3", "P4"]) {
+    for (const target_phase of ["P1", "P2"]) {
+      const question = ask("model-upstream", phase, "method.a", { target_phase, scope: { kind: "model", branch: "method.a", model_ref: modelRef } });
+      assert.deepEqual(waitingDecisions({ attention: [question], methods: localMethods, branches }), [{ phase, branch: "method.a", count: 1, methodLabel: "Method A" }]);
+    }
+  }
+});
+
 const identity = (id, version = 1) => ({ stable_id: `method.${id}`, version, definition_sha256: id.repeat(64) });
 const catalog = (id, version = 1) => ({ method_id: `method.${id}`, branch_id: `method.${id}`, title: `Method ${id.toUpperCase()}`, identity: identity(id, version) });
 const reference = (run) => ({ phase: "P2", branch: "trunk", family: "attention_items", generation_id: `attention.${run}`, sha256: "f".repeat(64), run_id: run, package_id: `package.${run}` });

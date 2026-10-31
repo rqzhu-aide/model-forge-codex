@@ -167,7 +167,7 @@ def source_artifact_path(project_dir: Path, record_pointer: dict, artifact: dict
             path = (root / relative).resolve()
             if path.is_relative_to(outputs) and path.is_file() and sha256_bytes(path.read_bytes()) == expected:
                 return path
-    raise ArtifactError(f"Artifact {relative} is missing or its digest differs in source run {run_id}")
+    raise ArtifactError(f"The supporting file could not be verified from the retained outputs (file: {relative}; source run {run_id})")
 
 
 def publish_package(

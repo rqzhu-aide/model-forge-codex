@@ -4,13 +4,14 @@ import json
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 
 import pytest
 
 from model_forge_codex.empirical_targets import effective_protocol
 from model_forge_codex.p4_execution import (
-    ManagedPythonRunner, P4Controller, P4ExecutionError, shared_rscript_executable, setup_attention,
+    ManagedPythonRunner, P4Controller, P4ExecutionError, _R_SANDBOX_ENTRY, shared_rscript_executable, setup_attention,
 )
 from model_forge_codex.storage import sha256_file, write_json_atomic
 from test_p4_execution import local_runner, make_controller, queue
@@ -325,6 +326,38 @@ async def test_missing_configured_r_is_honest_and_never_falls_back_to_python(tmp
     assert (output / "launch.json").is_file()
 
 
+@pytest.mark.skipif(shared_rscript_executable() is None, reason="R is not installed")
+@pytest.mark.parametrize("arguments", [[], ["argument with spaces", "--args", "--file=user.R", ""], ["--vanilla", "--no-echo"]])
+def test_r_wrapper_preserves_script_identity_and_ordinary_arguments(tmp_path, arguments):
+    runtime = shared_rscript_executable()
+    sources = tmp_path / "source with spaces"
+    sources.mkdir()
+    (sources / "helper.R").write_text("value <- 42\n")
+    script = sources / "compute.R"
+    script.write_text(
+        "entry <- grep('^--file=', commandArgs(FALSE), value=TRUE)[[1]]\n"
+        "source(file.path(dirname(sub('--file=', '', entry, fixed=TRUE)), 'helper.R'))\n"
+        "writeLines(as.character(value), 'value.txt')\n"
+        "writeLines(commandArgs(FALSE), 'full.txt')\n"
+        "writeLines(commandArgs(TRUE), 'trailing.txt')\n")
+    direct = subprocess.run([str(runtime), "--vanilla", str(script), *arguments], cwd=tmp_path,
+                            stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
+    assert direct.returncode == 0, direct.stderr
+    expected = {name: (tmp_path / name).read_text() for name in ("value.txt", "full.txt", "trailing.txt")}
+    for name in expected:
+        (tmp_path / name).unlink()
+    wrapper = tmp_path / ".p4-runner" / "entry.R"
+    wrapper.parent.mkdir()
+    wrapper.write_text(_R_SANDBOX_ENTRY)
+    environment = {**os.environ, "MODEL_FORGE_P4_STARTED_PATH": str(wrapper.parent / "runtime.json"),
+                   "MODEL_FORGE_P4_RUNTIME_PATH": str(runtime), "MODEL_FORGE_P4_R_DEPENDENCIES": "stats"}
+    wrapped = subprocess.run([str(runtime), "--vanilla", str(wrapper), str(script), *arguments], cwd=tmp_path,
+                             env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
+    assert wrapped.returncode == 0, wrapped.stderr
+    assert {name: (tmp_path / name).read_text() for name in expected} == expected
+    assert json.loads((wrapper.parent / "runtime.json").read_text())["computation_started"] is True
+
+
 managed = pytest.mark.skipif(os.environ.get("MF_P4_SANDBOX_TEST") != "1", reason="Explicit real managed-runtime acceptance")
 
 
@@ -396,13 +429,19 @@ async def test_missing_shared_dependency_is_setup_before_computation(tmp_path, l
 @pytest.mark.asyncio
 async def test_real_managed_r_uses_ordinary_arguments_and_shared_stats_package(tmp_path):
     controller, workspace, _ = make_controller(tmp_path)
-    (workspace / "compute.R").write_text("writeLines(as.character(mean(c(2,4,6))),commandArgs(trailingOnly=TRUE)[[1]])\n")
-    queue(controller, script_path="compute.R", language="r", support_files=[], dependencies=["stats"],
-          args=["mean.txt"], result_paths=["mean.txt"], timeout_seconds=30)
+    (workspace / "helper.R").write_text("values <- c(2,4,6)\n")
+    (workspace / "compute.R").write_text(
+        "entry <- grep('^--file=',commandArgs(FALSE),value=TRUE)[[1]]\n"
+        "source(file.path(dirname(sub('--file=','',entry,fixed=TRUE)),'helper.R'))\n"
+        "writeLines(as.character(mean(values)),commandArgs(trailingOnly=TRUE)[[1]])\n"
+        "writeLines(commandArgs(TRUE)[-1],'args.txt')\n")
+    queue(controller, script_path="compute.R", language="r", support_files=["helper.R"], dependencies=["stats"],
+          args=["mean.txt", "argument with spaces", "--file=user.R"], result_paths=["mean.txt", "args.txt"], timeout_seconds=30)
     attempt = await controller.execute_pending()
     assert attempt["status"] == "completed", (Path(attempt["output_dir"]) / "stderr.log").read_text(errors="replace")
     assert attempt["runtime"]["language"] == "r" and "R version" in attempt["runtime"]["r_version"]
     assert (workspace / "mean.txt").read_text().strip() == "4"
+    assert (workspace / "args.txt").read_text().splitlines() == ["argument with spaces", "--file=user.R"]
     assert setup_attention(controller.snapshot()) is None
 
 

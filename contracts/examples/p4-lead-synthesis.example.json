@@ -172,5 +172,11 @@
       "theorist_findings_markdown": "No completed computation was available to audit.",
       "next_steps_markdown": "Carry out the declared check if authorized."
     }
-  ]
+  ],
+  "notation_updates": {
+    "incoming_sources": [],
+    "entries": [],
+    "retirements": [],
+    "correction_dispositions": []
+  }
 }

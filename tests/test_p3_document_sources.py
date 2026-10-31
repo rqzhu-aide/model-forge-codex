@@ -119,10 +119,11 @@ def test_p3_saved_document_keeps_original_bindings_after_new_publications(tmp_pa
 
 
 @pytest.mark.parametrize("structured_only", [False, True])
-def test_p3_audit_binds_exact_declared_current_run_uri_alias(tmp_path, structured_only):
+@pytest.mark.parametrize("alias_path", ["p3.theorist/revision.md", "revision.md"])
+def test_p3_audit_binds_exact_declared_current_run_uri_alias(tmp_path, structured_only, alias_path):
     run, _, _, _, _, _ = retained_sources(tmp_path)
     manuscript = run / "outputs/p3.theorist/working/theorist/revision.md"
-    uri = f"run://{run.name}/p3.theorist/revision.md"
+    uri = f"run://{run.name}/{alias_path}"
     text = " ".join(f"[{name}]({uri}#statement.{name})" for name in ("likelihood", "bellman", "tolerance", "knowledge"))
     document = {"reviewed_sources": [
         {"artifact_id": "artifact.revision", "uri": uri, "path": "revision.md", "sha256": sha256_file(manuscript),
@@ -149,20 +150,21 @@ def test_p3_audit_binds_exact_declared_current_run_uri_alias(tmp_path, structure
 
 @pytest.mark.parametrize("damage", ["cross_run", "undeclared", "ambiguous", "changed", "missing",
                                     "unsafe_stage", "unsafe_path", "unsealed_outputs", "malformed_outputs"])
-def test_p3_declared_run_alias_preserves_exact_source_boundaries(tmp_path, damage):
+@pytest.mark.parametrize("alias_path", ["p3.theorist/revision.md", "revision.md"])
+def test_p3_declared_run_alias_preserves_exact_source_boundaries(tmp_path, damage, alias_path):
     run, _, meta, _, _, _ = retained_sources(tmp_path)
     manuscript = run / "outputs/p3.theorist/working/theorist/revision.md"
-    uri = f"run://{run.name}/p3.theorist/revision.md"
+    uri = f"run://{run.name}/{alias_path}"
     if damage == "cross_run":
         uri = uri.replace(run.name, "run.other")
     elif damage == "unsafe_stage":
-        uri = uri.replace("/p3.theorist/", "/../")
+        uri = f"run://{run.name}/../revision.md"
     elif damage == "unsafe_path":
-        uri = uri.replace("/revision.md", "/../revision.md")
+        uri = f"run://{run.name}/p3.theorist/../revision.md"
     elif damage == "unsealed_outputs":
-        uri = uri.replace("/p3.theorist/", "/outputs/p3.theorist/")
+        uri = f"run://{run.name}/outputs/p3.theorist/revision.md"
     elif damage == "malformed_outputs":
-        uri = uri.replace("/p3.theorist/", "/outputs/")
+        uri = f"run://{run.name}/outputs/revision.md"
     pointer = {"artifact_id": "artifact.revision", "uri": uri, "path": "revision.md", "sha256": sha256_file(manuscript)}
     document = {"reviewed_sources": [pointer]}
     if damage == "undeclared":

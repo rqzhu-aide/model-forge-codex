@@ -25,6 +25,9 @@ export const api = {
   createProject: (name, research_instructions) =>
     req("/projects", { method: "POST", body: JSON.stringify({ name, research_instructions }) }),
   problemContext: (pid) => req(`/projects/${pid}/problem-context`),
+  notation: (pid, source) => req(`/projects/${pid}/notation?source=${encodeURIComponent(JSON.stringify(source))}`),
+  notationCorrection: (pid, target) => req(`/projects/${pid}/notation/correction?target=${encodeURIComponent(JSON.stringify(target))}`),
+  saveNotationCorrection: (pid, body) => req(`/projects/${pid}/notation/correction`, { method: "PUT", body: JSON.stringify(body) }),
   saveProblemContext: (pid, body) => req(`/projects/${pid}/problem-context`, { method: "PUT", body: JSON.stringify(body) }),
   confirmProblemContext: (pid, proposalId, body) => req(`/projects/${pid}/problem-context/proposals/${encodeURIComponent(proposalId)}/confirm`, { method: "POST", body: JSON.stringify(body) }),
   updateProject: (pid, body) => req(`/projects/${pid}`, { method: "PATCH", body: JSON.stringify(body) }),

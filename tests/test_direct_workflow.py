@@ -67,6 +67,9 @@ def p1_documents(source_ids=("citation.first",)):
     }
     collections["p1.research_basis"] = {
         "schema_version": "1.3.0", "title": "Research setting and landscape",
+        # This common current-catalog fixture tests scientific orchestration;
+        # notation lifecycle tests supply their own source-backed additions.
+        "notation_updates": {"incoming_sources": [], "entries": [], "retirements": [], "correction_dispositions": []},
         "research_setting": {"statement_markdown": r"$$\max_{\pi\in\Pi}J(\pi)\quad\mathrm{s.t.}\quad \rho(\pi)\leq\varepsilon.$$",
                              "component_interpretations": [], "research_goal_markdown": "Develop a constrained control model and describe it in a technical report."},
         "phase2_preparation": {"instructions_markdown": "Propose methods within this setting.", "supplied_method": SEED},
@@ -119,6 +122,7 @@ def p2_documents(with_seed, *, include_lead=True):
         }
     outputs["p2.catalog_assessment"] = {
         "schema_version": "1.3.0", "title": "Method comparison",
+        "notation_updates": {"incoming_sources": [], "entries": [], "retirements": [], "correction_dispositions": []},
         "overview_markdown": "The candidates remain distinct; their assumptions need investigation before claims can be assessed.",
         "comparison_markdown": "The proposals remain distinct mathematical candidates.",
         "method_dispositions": [{"proposal_id": "proposal." + role, "status": "retain",

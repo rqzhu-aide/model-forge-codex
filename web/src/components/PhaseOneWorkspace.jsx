@@ -3,6 +3,7 @@ import { ActionButton } from "./Visuals";
 import { ProjectBriefEditor } from "./ProjectBrief";
 import LiteratureWorkspace from "./LiteratureWorkspace";
 import { goalCorrections, goalSource, hasConciseP1Account } from "../phaseOneReader";
+import { hasSharedNotation } from "../sharedNotation";
 
 export default function PhaseOneWorkspace({ project, basis, problemContext, artifacts = {}, activeRunCount, onSaved, onSource, onGoal, issues, furtherWork, progress, reading, onReadingChange }) {
   const id = useId();
@@ -16,7 +17,7 @@ export default function PhaseOneWorkspace({ project, basis, problemContext, arti
     return <section className="card research-setting" data-card-role="summary" data-reading-anchor="research-setting" aria-labelledby={`${id}-setting`}>
       <div className="card-heading"><h2 id={`${id}-setting`}>Research Setting</h2><ActionButton action="edit" uiRole="research" onClick={() => setEditing(true)}>Project instructions</ActionButton></div><div className="body">
         {clarifications.length ? <>{goal}{description}</> : <>{description}{goal}</>}
-        {basis?.research_setting?.component_interpretations?.length > 0 && <div className="btnrow setting-footer"><ActionButton action="details" aria-haspopup="dialog" onClick={onNotation}>Notation</ActionButton></div>}
+        {(hasSharedNotation(basis) || basis?.research_setting?.component_interpretations?.length > 0) && <div className="btnrow setting-footer"><ActionButton action="details" aria-haspopup="dialog" onClick={onNotation}>Notation</ActionButton></div>}
     </div></section>;
   };
   return <div className="phase-one-workspace">

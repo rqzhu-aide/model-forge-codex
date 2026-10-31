@@ -5,7 +5,7 @@
 const standaloneDollar = String.raw`(?<![^\n])[ \t]*\$(?!\$)[ \t]*\r?\n[\s\S]*?(?<![^\n])[ \t]*\$(?!\$)[ \t]*(?=\r?\n|$)`;
 const mathPattern = String.raw`(?<!\\)\$\$[\s\S]*?(?<!\\)\$\$|(?<!\\)\\\[[\s\S]*?(?<!\\)\\\]|${standaloneDollar}|(?<![$\\])\$(?!\$)(?:\\.|[^$\n])+\$(?!\$)|(?<!\\)\\\([^\n]*?\\\)`;
 const opaquePattern = String.raw`\x60{3,}[^\n]*\n[\s\S]*?(?:\x60{3,}|$)|~{3,}[^\n]*\n[\s\S]*?(?:~{3,}|$)|\x60+[^\x60]*\x60+|https?:\/\/[^\s<>]+`;
-export const inlineTokens = new RegExp(`(\x60[^\x60]+\x60|${mathPattern}|\\*\\*[^*]+\\*\\*|\\[[^\\]]+\\]\\([^\\s)]+\\))`, "g");
+export const inlineTokens = new RegExp(`(\x60[^\x60]+\x60|${mathPattern}|\\*\\*[^*]+\\*\\*|\\[[^\\]]+\\]\\((?:<[^<>\\n]+>|[^\\s)]+)\\))`, "g");
 
 export function mathBody(token) {
   if (token.startsWith("$$") || token.startsWith("\\[")) return { latex: token.slice(2, -2), display: true };
@@ -17,17 +17,22 @@ export function mathBody(token) {
   return null;
 }
 
+export function opaqueInlineRanges(text) {
+  const code = /(?<!`)(`+)(?!`)[\s\S]*?(?<!`)\1(?!`)/;
+  return [...String(text).matchAll(new RegExp(`${code.source}|${mathPattern}|!?\\[[^\\]]*\\]\\((?:<[^<>\\n]+>|[^\\s)]+)\\)`, "g"))]
+    .map((token) => [token.index, token.index + token[0].length]);
+}
+
 // Bold can contain code, mathematics and links. Their own asterisks cannot
 // close the surrounding emphasis or create emphasis inside an opaque token.
 export function inlineStrongParts(text) {
   const source = String(text);
-  const code = /(?<!`)(`+)(?!`)[\s\S]*?(?<!`)\1(?!`)/;
   // The first opening token owns its contents, including literal math/code
   // delimiters, rather than allowing overlapping opaque spans to hide prose.
-  const opaque = [...source.matchAll(new RegExp(`${code.source}|${mathPattern}|!?\\[[^\\]]*\\]\\([^\\s)]+\\)`, "g"))];
+  const opaque = opaqueInlineRanges(source);
   const parts = []; let opened = null, at = 0;
   for (const marker of source.matchAll(/(?<!\\)\*\*/g)) {
-    if (opaque.some((token) => marker.index >= token.index && marker.index < token.index + token[0].length)) continue;
+    if (opaque.some(([start, end]) => marker.index >= start && marker.index < end)) continue;
     if (opened === null) opened = marker.index;
     else {
       parts.push({ text: source.slice(at, opened), strong: false },

@@ -23,6 +23,28 @@ test("a changed question ID keeps its previous source and history destination se
   assert.notDeepEqual(result.anchors, [phaseQuestionAnchor(current.attention)]);
 });
 
+test("refreshed questions and saved copies route to their answer phase with the exact current source", () => {
+  const ref = { ...source, phase: "P2", branch: "trunk" };
+  const question = { ...issue, phase: "P2", target_phase: "P1", branch: "trunk", explanation_target: ref };
+  const saved = { ...answer, question_ref: ref, attention: question };
+  const expected = { change: { phase: "P1" }, scope: "project.one:trunk:P1", anchors: [phaseQuestionAnchor(question)] };
+  assert.deepEqual(answerSourceNavigation({ projectId: "project.one", question }), expected);
+  assert.deepEqual(answerSourceNavigation({ projectId: "project.one", source: ref, answers: [saved] }), expected);
+  const legacy = { ...question, explanation_target: undefined };
+  assert.deepEqual(answerSourceNavigation({ projectId: "project.one", question: legacy }).change, { phase: "P1" });
+});
+
+test("historical answer routes follow the current history owner without changing their question source", () => {
+  const old = { ...issue, target_phase: "P4" };
+  const saved = { ...answer, attention: old };
+  const current = { ...old, target_phase: "P3", explanation_target: { ...source, generation_id: "generation.current" } };
+  const before = structuredClone({ source, saved, current });
+  const route = answerSourceNavigation({ projectId: "project.one", source, questions: [current], answers: [saved] });
+  assert.deepEqual(route.change, { phase: "P3", branch: "method.original" });
+  assert.deepEqual(route.anchors, [phaseQuestionAnchor(old)]);
+  assert.deepEqual({ source, saved, current }, before);
+});
+
 test("P2 routes select the original proposal by producing run and model identity", () => {
   const ref = { ...source, phase: "P2", branch: "trunk", package_id: "package.original" };
   const original = { ...answer, question_ref: ref, attention: { ...issue, phase: "P2", branch: "trunk", explanation_target: ref,

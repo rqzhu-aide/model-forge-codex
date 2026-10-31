@@ -418,6 +418,50 @@ async def test_ordinary_error_allows_one_correction_but_repeated_failure_pauses(
     assert Path(first["code_path"]).read_text() == code
 
 
+@pytest.mark.asyncio
+async def test_success_after_repeated_failures_keeps_remaining_budget_available(tmp_path):
+    controller, workspace, _ = make_controller(tmp_path, runner=local_runner())
+    (workspace / "compute.py").write_text("raise ValueError('ordinary coding error')")
+    queue(controller)
+    await controller.execute_pending()
+    queue(controller, batch_id="batch.retry")
+    await controller.execute_pending()
+    failed_attempts = controller.snapshot()["ledger"]
+    assert controller.snapshot()["pause_request"]
+
+    controller.resume("Retry the corrected script.", {"action": "continue", "revision": 1})
+    (workspace / "compute.py").write_text("print(sum(range(10)))")
+    queue(controller, batch_id="batch.corrected")
+    successful = await controller.execute_pending()
+
+    state = controller.snapshot()
+    assert successful["status"] == "completed"
+    assert [attempt["status"] for attempt in state["ledger"]] == ["failed", "failed", "completed"]
+    assert state["ledger"][:2] == failed_attempts
+    assert state["budget"]["remaining_seconds"] > 0
+    assert state["pause_request"] is None
+    assert state["pending_batch"] is None
+
+
+@pytest.mark.asyncio
+async def test_successful_batch_still_pauses_when_authorized_budget_is_exhausted(tmp_path, monkeypatch):
+    class CompletedRunner:
+        async def execute(self, *args, **kwargs):
+            return {"status": "completed"}
+
+    controller, _, _ = make_controller(tmp_path, budget_seconds=20, runner=CompletedRunner())
+    queue(controller)
+    clock = iter([0, 21])
+    monkeypatch.setattr("model_forge_codex.p4_execution.time", SimpleNamespace(monotonic=lambda: next(clock)))
+    successful = await controller.execute_pending()
+
+    state = controller.snapshot()
+    assert successful["status"] == "completed"
+    assert state["budget"]["used_seconds"] == 21
+    assert state["budget"]["remaining_seconds"] == 0
+    assert state["pause_request"]["reason"] == "The authorized computation budget is exhausted."
+
+
 def test_explicit_shared_interpreter_configuration_takes_precedence(monkeypatch, tmp_path):
     configured = tmp_path / "shared-python.exe"
     monkeypatch.setenv("MF_P4_PYTHON", str(configured))

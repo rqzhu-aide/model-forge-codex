@@ -109,6 +109,24 @@ def test_correction_and_changed_current_settings_reuse_original_bytes(prepared):
     assert "LATER_UNDELIVERED_FOCUS" not in review_packet_brief(directory)
 
 
+def test_v2_review_packet_freezes_neutral_references_without_private_context(tmp_path):
+    run_dir = tmp_path / "run.presentation"
+    basis = packet_basis(run_dir)
+    catalog = Catalog(REPO / "contracts")
+    packet = prepare_review_packet(run_dir, basis=basis, instructions=FOCUS,
+                                   run_id="run.presentation", catalog=catalog)
+    text = Path(packet["instructions"]["path"]).read_text(encoding="utf-8")
+    for name in ("scientific-explanation", "claims-and-evidence", "summary", "tables-and-figures"):
+        reference = (catalog.root / "references/research-presentation" / f"{name}.md").read_text(encoding="utf-8").strip()
+        assert text.count(reference) == 1
+    inquiry = (catalog.root / "references/research-presentation/user-inquiry.md").read_text(encoding="utf-8").strip()
+    assert inquiry not in text
+    assert "PRIVATE" not in text
+    before = Path(packet["instructions"]["path"]).read_bytes()
+    prepare_review_packet(run_dir, basis={}, instructions="LATER FOCUS", run_id="run.presentation", catalog=catalog)
+    assert Path(packet["instructions"]["path"]).read_bytes() == before
+
+
 @pytest.mark.parametrize("target", ["instructions.md", "manuscript-0.md", "manuscript-1.bib"])
 def test_changed_delivery_bytes_are_rejected(prepared, target):
     run_dir, _, _ = prepared
@@ -271,6 +289,7 @@ def test_report_packet_reader_directions_follow_captured_catalog_and_stay_frozen
 def test_report_schema_keeps_references_optional_and_seven_scientific_sections():
     catalog = Catalog(REPO / "contracts")
     example = read_json(REPO / "contracts/examples/technical-report.example.json")
+    example["notation_updates"] = {"incoming_sources": [], "entries": [], "retirements": [], "correction_dispositions": []}
     assert catalog.validate_output("p5.technical_report_candidate", example) == []
     assert example["section_anchors"].pop("references") == "report-references"
     assert catalog.validate_output("p5.technical_report_candidate", example) == []

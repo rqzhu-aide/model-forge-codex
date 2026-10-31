@@ -93,6 +93,32 @@ test("overview summary fallback owns its citations and source reference even if 
   assert.match(ui.overview({ phase: "P3", decision: missing, summaries: [summary], onSource() {} }), /Missing decision proof \(source unavailable\)/);
 });
 
+test("overview leads with a distinct authored headline and keeps the complete qualified conclusion", () => {
+  const headline = "Safety is conditional; useful returns remain unmeasured.";
+  const conclusion = `The retained theorem permits no recommendation and requires the stated sampling premises. See [full proof](${artifact}).`;
+  const decision = { phase: "P3", headline, conclusion, principal_uncertainty: "Actual-study applicability remains unknown.", generation_ref: { ...document.generation_ref, family: "decision" }, inline_sources: [{ ...file(artifact, "original.md"), generation_ref: document.generation_ref }] };
+  const before = structuredClone(decision);
+  for (const phase of ["P3", "P5"]) {
+    const html = ui.overview({ phase, decision, onSource() {} });
+    assert.match(html, /class="phase-overview-headline"/);
+    assert.ok(html.indexOf(headline) < html.indexOf("The retained theorem permits no recommendation"));
+    assert.match(html, /requires the stated sampling premises/);
+    assert.match(html, /full proof<\/button>/);
+    assert.match(html, /Actual-study applicability remains unknown/);
+    assert.equal((html.match(/Safety is conditional; useful returns remain unmeasured\./g) || []).length, 1);
+  }
+  assert.deepEqual(decision, before);
+});
+
+test("overview does not repeat an identical headline or change the single-field fallback", () => {
+  const statement = "The result remains conditional on the recorded premises.";
+  for (const decision of [{ headline: statement, conclusion: statement }, { headline: ` ${statement} `, conclusion: statement }, { headline: statement }, { conclusion: statement }, { headline: "", conclusion: statement }]) {
+    const html = ui.overview({ phase: "P3", decision });
+    assert.equal((html.match(/The result remains conditional on the recorded premises\./g) || []).length, 1);
+    assert.doesNotMatch(html, /phase-overview-headline/);
+  }
+});
+
 test("canonical record JSON opens its verified original bytes while the full proof uses the readable viewer", () => {
   const proof = document.generation_ref;
   const canonical = file("complete_theory.json", "canonical-record.json");

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "catalog_version": "1.28.5",
+  "catalog_version": "1.30.2",
   "source": {
     "repository": "model-forge",
     "commit": "33d21a27f4fc4351e43c45298a7766d1699ebd10",
@@ -98,7 +98,8 @@
     "p4-result-exhibits.example.json": "exhibit-collection.schema.json",
     "implementation-record.example.json": "implementation-record.schema.json",
     "exhibit-collection.example.json": "exhibit-collection.schema.json",
-    "p4-lead-synthesis-portable.example.json": "p4-lead-synthesis.schema.json"
+    "p4-lead-synthesis-portable.example.json": "p4-lead-synthesis.schema.json",
+    "notation-updates.example.json": "notation-updates.schema.json"
   },
   "invalid_examples": {
     "authority-replay-existing-evidence-reset.invalid.json": "semantic:authority_prior_state",
@@ -139,7 +140,8 @@
     "method-proposal-missing-profile.invalid.json": "method-proposal.schema.json",
     "catalog-assessment-unknown-modification-target.invalid.json": "semantic:catalog_modification_target",
     "research-basis-missing-goal.invalid.json": "research-basis.schema.json",
-    "research-basis-missing-components.invalid.json": "research-basis.schema.json"
+    "research-basis-missing-components.invalid.json": "research-basis.schema.json",
+    "notation-updates-missing-source.invalid.json": "notation-updates.schema.json"
   },
   "notes": "invalid_examples values are schema filenames, except the prefix 'semantic:' which marks fixtures requiring the originating product's semantic replay harness (validated there, not by schema checks).",
   "contract_documents": {

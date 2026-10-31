@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
-  "catalog_version": "1.28.5",
-  "catalog_manifest_sha256": "1ab3ed20b3b5932afcc44de93db75119197d35d298177803ba69927ce5d43382",
+  "catalog_version": "1.30.2",
+  "catalog_manifest_sha256": "c40169235b3b83e96d53f12a12838c2ce1668d906281f687ef46149cb3f2a14a",
   "synced_at": "2026-10-14T15:44:31.193928Z",
   "synced_from": "model-forge-codex/contracts"
 }

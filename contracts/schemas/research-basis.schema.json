@@ -13,6 +13,13 @@
     "coverage_limits"
   ],
   "properties": {
+    "notation_snapshot": {
+      "$ref": "notation-updates.schema.json#/$defs/snapshotPointer"
+    },
+    "notation_updates": {
+      "$ref": "notation-updates.schema.json",
+      "description": "Lead-adopted notation changes for this exact account under project_notation_v1. The harness generates the complete lookup from the frozen incoming view and these additions; do not author a second glossary. Historical records may omit this field."
+    },
     "schema_version": {
       "enum": [
         "1.0.0",
@@ -77,7 +84,7 @@
               }
             }
           },
-          "description": "Optional-lookup notation glossary, using only symbols needed for this setting. Short mathematical-role and problem-meaning phrases; the required array may be empty."
+          "description": "Historical optional lookup, using only symbols needed for this setting. Under project_notation_v1, use notation_updates for adopted study definitions and leave this legacy array empty when present; the harness generates the shared view. Do not author a competing glossary or infer one from historical prose."
         },
         "research_goal_markdown": {
           "type": "string",

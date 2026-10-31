@@ -203,7 +203,25 @@ def check_progressive_evaluation(outputs: dict, findings: list[Finding], *, ques
                            and row.get("metric") in set(result.get("metric_ids", [])) & standard_metrics
                            and isinstance(row.get("estimate"), (int, float)) and not isinstance(row.get("estimate"), bool)
                            and math.isfinite(row["estimate"])]
-            if counts["completed"] and result.get("outcome") != "not_evaluated" and not result.get("exhibit_ids") and not inline_rows:
+            comparison_cases = {row.get("case_id") for row in observed
+                                if tests.get(qid, {}).get("category") == "performance"
+                                and row.get("status") == "completed"
+                                and cases[row["case_id"]].get("comparator_id") == "selected_method"
+                                and cases[row["case_id"]].get("replication_unit") == "independent_dataset"
+                                and row.get("replicate_id") in {item.get("replicate_id")
+                                    for item in cases[row["case_id"]].get("replicates", [])}}
+            linked_exhibit = bool(result.get("exhibit_ids"))
+            if comparison_cases:
+                # Generic supplementary sources do not supply an inline result.
+                # Exact diagnostic rows already checked against observations do.
+                linked_exhibit = any(exhibits.get(eid, {}).get("kind") in {"table", "figure"}
+                                     and (not exhibits[eid].get("case_ids")
+                                          or bool(set(exhibits[eid]["case_ids"]) & comparison_cases))
+                                     for eid in result.get("exhibit_ids", []))
+                inline_rows = [row for row in (outputs.get("p4.diagnostics") or {}).get("headline_numbers", [])
+                               if isinstance(row, dict) and row.get("case_id") in comparison_cases
+                               and row.get("metric") in set(result.get("metric_ids", [])) & standard_metrics]
+            if counts["completed"] and result.get("outcome") != "not_evaluated" and not linked_exhibit and not inline_rows:
                 problem("question_exhibit_missing", "A completed quantitative answer needs a linked verified exhibit or an exact independently recomputed inline result table.", family, pointer + "/exhibit_ids")
 
     lead = outputs.get("p4.empirical_synthesis_candidate")

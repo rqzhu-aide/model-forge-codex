@@ -56,8 +56,8 @@ def test_frozen_member_briefs_deliver_reader_purpose_without_extra_stages(draft_
         analyst = engine._render_brief(candidate, stages[0], MemberRole.DATA_ANALYST,
                                       engine.member_workspace(candidate, stages[0].stage_id, MemberRole.DATA_ANALYST))
         assert "implementation_summary five sections" in analyst
-        assert "Figures explicitly link to authoritative source tables" in analyst
-        assert "Illustrative inconclusive result" in analyst
+        assert "Figures declare data_exhibit_ids for their actual verified underlying tables" in analyst
+        assert "inconclusive or negative evidence" in analyst
         assert "timing and stopping/resource allocation" in analyst
         assert "question_id is the exact effective protocol test_id" in analyst
         assert "test_ids=[test_id]" in analyst
@@ -65,14 +65,18 @@ def test_frozen_member_briefs_deliver_reader_purpose_without_extra_stages(draft_
         assert "native_tool_preflight_v1" in read_json(
             run_dir / "contracts/contracts/phases/P4.json")["capabilities"]
         for stage in stages:
-            assert "actual data origin" in stage.objective or "data origin/conditions" in stage.objective
-            assert "Planned checks are not observations" in stage.objective
             for role in stage.roles:
                 delivered = engine._render_brief(candidate, stage, role,
                                                 engine.member_workspace(candidate, stage.stage_id, role))
+                # Neutral evidence guidance is delivered once; phase-specific
+                # field and computation duties remain in the owned objective.
+                evidence = (run_dir / "contracts/references/research-presentation/claims-and-evidence.md").read_text(encoding="utf-8").strip()
+                assert delivered.count(evidence) == 1
+                assert "proposal, assumption, diagnostic, mathematical result, observed finding and researcher-reported fact" in evidence
+                assert "Report unsuccessful, incomplete and administratively unstarted procedures according to their saved states" in evidence
                 if stage.stage_id == "p4.lead":
-                    assert "one question_reviews entry per effective protocol.claim_tests[].test_id" in delivered
-                    assert "Decision_summary.coverage[].question_ids" in delivered
+                    assert "one question_reviews entry for each exact effective protocol.claim_tests[].test_id" in delivered
+                    assert "question_id and coverage[].question_ids use those exact Analyst identifiers" in delivered
                     assert "Every new attention item uses schema_version 1.2.0" in delivered
                     assert "Consolidate nonblocking researcher questions" in delivered
                     assert "schema_version 1.1.0 with kind researcher_decision" not in delivered
@@ -102,13 +106,17 @@ def test_project_contract_edits_do_not_replace_frozen_explanation_instructions(d
     schema = read_json(project_contracts / "schemas/p4-analyst-synthesis.schema.json")
     schema["properties"]["question_results"]["items"]["properties"]["answer_markdown"]["description"] = "LATER_SCHEMA_INSTRUCTIONS"
     write_json_atomic(project_contracts / "schemas/p4-analyst-synthesis.schema.json", schema)
+    (project_contracts / "references/research-presentation/scientific-explanation.md").write_text("LATER_PRESENTATION_INSTRUCTIONS", encoding="utf-8")
     stage = engine._stages(candidate)[0]
     brief = engine._render_brief(candidate, stage, MemberRole.DATA_ANALYST,
                                  engine.member_workspace(candidate, stage.stage_id, MemberRole.DATA_ANALYST))
     assert stages[0].objective in brief
     assert "LATER_PROJECT_INSTRUCTIONS" not in brief
     assert "LATER_SCHEMA_INSTRUCTIONS" not in brief
-    assert "usable repetitions and recorded uncertainty" in brief
+    frozen_schema = read_json(run_contracts / "schemas/p4-analyst-synthesis.schema.json")
+    assert frozen_schema["properties"]["question_results"]["items"]["properties"]["answer_markdown"]["description"] in brief
+    assert (run_contracts / "references/research-presentation/scientific-explanation.md").read_text(encoding="utf-8").strip() in brief
+    assert "LATER_PRESENTATION_INSTRUCTIONS" not in brief
 
 
 def test_outside_review_receives_frozen_reader_objective_without_internal_accounts(legacy_p5_workbench):

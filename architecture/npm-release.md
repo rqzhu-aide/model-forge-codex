@@ -1,10 +1,10 @@
 # Preparing an npm prerelease
 
-This guide prepares the Model Forge 0.9.3 prerelease artifact. It includes
-researcher-communication improvements, clearer saved and paused states, and
-verified source links for theory overviews. Preparation does not imply that
+This guide prepares the Model Forge 0.9.4 prerelease artifact. It includes
+shared project notation, scientific presentation guidance, compact results,
+report appendix delivery improvements, and a worn silver frame. Preparation does not imply that
 the npm package or a GitHub release has been published.
-The application version is 0.9.3. The workflow catalog has its own version,
+The application version is 0.9.4. The workflow catalog has its own version,
 pinned in `contracts/catalog-pin.json`.
 
 The package uses existing shared Python 3.11+ and Node.js 22+ installations.
@@ -26,7 +26,7 @@ From the repository root, using the shared runtimes:
 mkdir -p dist
 npm pack --pack-destination dist
 npm run test:npm
-"$MF_PYTHON" -B scripts/smoke_npm_release.py dist/rqzhu-aide-model-forge-codex-0.9.3.tgz
+"$MF_PYTHON" -B scripts/smoke_npm_release.py dist/rqzhu-aide-model-forge-codex-0.9.4.tgz
 ```
 
 `npm pack` runs `scripts/prepare_npm_package.mjs`. It verifies catalog hashes,
@@ -83,7 +83,7 @@ After explicit publication authorization, an npm maintainer with access to the
 `@rqzhu-aide` scope can publish the exact reviewed tarball under `next`:
 
 ```sh
-npm publish ./dist/rqzhu-aide-model-forge-codex-0.9.3.tgz --access public --tag next
+npm publish ./dist/rqzhu-aide-model-forge-codex-0.9.4.tgz --access public --tag next
 ```
 
 The prerelease launch command then becomes:

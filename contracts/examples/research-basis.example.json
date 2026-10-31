@@ -3,18 +3,7 @@
   "title": "Orthogonal estimation research basis",
   "research_setting": {
     "statement_markdown": "The study concerns inference for a scientific parameter $\\theta_0$ from observations $W_i$ when auxiliary functions $\\eta_0$, such as conditional means, must also be learned from data. The substantive variables, collection process and sample dependence are not yet specified in this structural example.",
-    "component_interpretations": [
-      {
-        "symbol_latex": "W",
-        "mathematical_role_markdown": "Observed random vector.",
-        "problem_meaning_markdown": "Observed or envisioned study information; dataset columns unspecified."
-      },
-      {
-        "symbol_latex": "\\theta_0",
-        "mathematical_role_markdown": "Scientific target parameter.",
-        "problem_meaning_markdown": "Requested scientific quantity; substantive interpretation unresolved."
-      }
-    ],
+    "component_interpretations": [],
     "research_goal_markdown": "The interpreted goal is to estimate $\\theta_0$ and quantify uncertainty while allowing flexible learning of $\\eta_0$. A useful result would explain when that learning still permits reliable inference for the scientific target. The substantive meaning of $\\theta_0$ remains to be clarified; a particular score, learner and estimator will be developed in P2."
   },
   "phase2_preparation": {
@@ -188,5 +177,57 @@
     "limitations": [
       "Schema example only; source support for the comparisons has not been independently checked."
     ]
+  },
+  "notation_updates": {
+    "incoming_sources": [],
+    "entries": [
+      {
+        "quantity_key": "study.observation",
+        "symbol_latex": "W_i",
+        "definition_markdown": "$W_i$ is the random observation indexed by $i$; its components, distribution and dependence structure are unspecified.",
+        "meaning_markdown": "The observed or envisioned study information for one observation; its substantive unit and measurement units are unspecified.",
+        "scope": {
+          "kind": "study"
+        },
+        "source_refs": [
+          {
+            "output_id": "p1.research_basis",
+            "pointer": "/research_setting/statement_markdown"
+          }
+        ]
+      },
+      {
+        "quantity_key": "study.scientific_parameter",
+        "symbol_latex": "\\theta_0",
+        "definition_markdown": "$\\theta_0$ is the scientific target parameter; its parameter space and identifying relationship remain unspecified.",
+        "meaning_markdown": "The quantity whose estimation and uncertainty motivate the stated goal; its substantive interpretation remains unresolved.",
+        "scope": {
+          "kind": "study"
+        },
+        "source_refs": [
+          {
+            "output_id": "p1.research_basis",
+            "pointer": "/research_setting/statement_markdown"
+          }
+        ]
+      },
+      {
+        "quantity_key": "study.auxiliary_functions",
+        "symbol_latex": "\\eta_0",
+        "definition_markdown": "$\\eta_0$ denotes the auxiliary functions needed for the target, such as conditional means; their precise arguments and functional class are unspecified.",
+        "meaning_markdown": "Unknown functions that must be learned from the study observations; they remain distinct from their fitted estimates.",
+        "scope": {
+          "kind": "study"
+        },
+        "source_refs": [
+          {
+            "output_id": "p1.research_basis",
+            "pointer": "/research_setting/statement_markdown"
+          }
+        ]
+      }
+    ],
+    "retirements": [],
+    "correction_dispositions": []
   }
 }

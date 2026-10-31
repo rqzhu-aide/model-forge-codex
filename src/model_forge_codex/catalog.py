@@ -48,6 +48,11 @@ OUTPUT_SCHEMA_BINDINGS = {
     "falsification_log": "falsification-log.schema.json",
 }
 
+NOTATION_LEAD_OUTPUTS = {
+    "p1.research_basis", "p2.catalog_assessment", "p3.complete_theory",
+    "p4.empirical_synthesis_candidate", "p5.technical_report_candidate",
+}
+
 
 class CatalogError(ValueError):
     pass
@@ -75,6 +80,13 @@ class Catalog:
         self._validators: dict[str, Draft202012Validator] = {}
         self._registry = registry
         self._definitions: dict[str, dict] | None = None
+        for path in (root / "contracts" / "phases").glob("P*.json"):
+            contract = json.loads(path.read_text(encoding="utf-8"))
+            capabilities = contract.get("capabilities", [])
+            if "project_notation_v1" in capabilities and "research_presentation_v2" not in capabilities:
+                raise CatalogError(
+                    f"Unsupported catalog capabilities in {path.stem}: "
+                    "project_notation_v1 requires research_presentation_v2")
 
     @property
     def scientific_validation_enabled(self) -> bool:
@@ -177,6 +189,8 @@ class Catalog:
             return None
         schema = self.schema_doc(name)
         definition = self.output_definitions().get(contract_output_id, {})
+        if self._notation_output_required(contract_output_id):
+            schema.setdefault("required", []).append("notation_updates")
         if self.scientific_validation_enabled and definition.get("schema_application") == "each_item":
             return {"type": "array", "items": {"$ref": schema.get("$id", name)}}
         return schema
@@ -230,7 +244,19 @@ class Catalog:
                 findings.append(Finding(f"schema.{error.validator}", error.message,
                                         contract_output_id, pointer))
         findings.extend(self._validate_researcher_decisions(contract_output_id, document, schema_name))
+        if (self._notation_output_required(contract_output_id) and isinstance(document, dict)
+                and "notation_updates" not in document):
+            findings.append(Finding("notation.updates_required", "The Lead account must record its adopted notation updates, including empty arrays when there are no additions.",
+                                    contract_output_id, "/notation_updates"))
         return findings
+
+    def _notation_output_required(self, output_id: str) -> bool:
+        if output_id not in NOTATION_LEAD_OUTPUTS:
+            return False
+        phase = output_id.split(".", 1)[0].upper()
+        path = self.root / "contracts" / "phases" / f"{phase}.json"
+        contract = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+        return "project_notation_v1" in contract.get("capabilities", [])
 
     def _validate_researcher_decisions(self, output_id, document, schema_name):
         """Enforce new authoring only under the run's adopted capability."""
@@ -261,7 +287,7 @@ class Catalog:
                 flag("response_kind", "Distinguish a researcher choice from a request for study information.", "response_kind")
             options = item.get("options")
             if item.get("response_kind") == "study_fact":
-                if options or item.get("recommendation"):
+                if options or item.get("recommendation") or item.get("recommended_option_id"):
                     flag("study_fact", "Request the missing fact and its consequence; do not prescribe an answer or offer preference options.", "response_kind")
             elif item.get("response_kind") == "choice":
                 if not isinstance(item.get("recommendation"), str) or not item["recommendation"].strip():
@@ -274,4 +300,11 @@ class Catalog:
                         flag("options", "Each selectable alternative needs an authored id, label and practical consequence. Omit options for an open-ended choice.", "options")
                     elif len({option["id"] for option in options}) != len(options):
                         flag("option_ids", "Selectable alternatives need distinct option IDs within this exact question.", "options")
+                recommended = item.get("recommended_option_id")
+                if recommended is not None:
+                    option_ids = [option.get("id") for option in options if isinstance(option, dict)] if isinstance(options, list) else []
+                    if recommended not in option_ids:
+                        flag("recommended_option", "The suggested option must name an option in this exact question.", "recommended_option_id")
+                    elif ({"research_presentation_v1", "research_presentation_v2"} & set(contract.get("capabilities", []))) and option_ids[0] != recommended:
+                        flag("recommended_option_order", "Place the suggested option first while retaining its authored ID.", "recommended_option_id")
         return findings

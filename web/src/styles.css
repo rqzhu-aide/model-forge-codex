@@ -84,7 +84,9 @@
   --modal-shadow: 0 10px 34px rgba(11, 26, 49, .22);
   --preview-shadow: 0 3px 18px rgba(11, 26, 49, .08);
   --figure-canvas: #ffffff;
-  /* The forge: navy iron for the frame, stone for plaques, heat for one place at a time. */
+  /* Silver wall surfaces stay separate from the navy controls and brand. */
+  --wall-top:#bdc3c8; --wall-mid:#aab3bb; --wall-bottom:#9ca7b0;
+  --wall-ink:#1d2935; --wall-muted:#243342;
   --forge-0:#0b1a31; --forge-1:#0f2140; --forge-2:#13294B; --forge-3:#1b355d; --forge-4:#24426f; --forge-5:#3a5786;
   --forge-steel:#9db4d8; --forge-text:#e8edf5; --forge-text-soft:#b4c0d3; --forge-title:#f6f1e7;
   --heat:#FF5F05; --heat-deep:#C2410C; --heat-soft:#FFB27A; --heat-pale:#FFE3C8;
@@ -94,7 +96,7 @@
   --art-paper:#fbf8f1; --art-paper-line:#cfc6b6; --art-ink:#8b8f98;
   --shell-shadow:0 12px 24px -16px rgba(8, 18, 36, .6);
   --forge-bracket:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Cpath d='M0 3L5 0V18L12 25H27L30 30H12L0 18Z' fill='%23081326'/%3E%3Cpath d='M5.5 .8V17.8L12.2 24.5H27.2' fill='none' stroke='%239db4d8' stroke-opacity='.42'/%3E%3Ccircle cx='2.6' cy='9' r='1.4' fill='%234f6c98'/%3E%3Ccircle cx='20' cy='27.6' r='1.4' fill='%234f6c98'/%3E%3C/svg%3E");
-  --forge-plating:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='96'%3E%3Cdefs%3E%3ClinearGradient id='f' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23b8cce8' stop-opacity='.07'/%3E%3Cstop offset='.55' stop-color='%23b8cce8' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23020814' stop-opacity='.12'/%3E%3C/linearGradient%3E%3CradialGradient id='r' cx='.35' cy='.32' r='.75'%3E%3Cstop offset='0' stop-color='%23c9d7ec'/%3E%3Cstop offset='.45' stop-color='%2356719c'/%3E%3Cstop offset='1' stop-color='%2313294B'/%3E%3C/radialGradient%3E%3Cfilter id='n' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006 .9' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .72  0 0 0 0 .8  0 0 0 0 .91  1.4 1.4 1.4 0 -.72'/%3E%3C/filter%3E%3Cfilter id='m' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006 .9' numOctaves='2' seed='18' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .01  0 0 0 0 .03  0 0 0 0 .08  1.4 1.4 1.4 0 -.72'/%3E%3C/filter%3E%3C/defs%3E%3Cg fill='none'%3E%3Crect width='192' height='96' filter='url(%23n)' opacity='.11'/%3E%3Crect width='192' height='96' filter='url(%23m)' opacity='.3'/%3E%3Crect x='1' y='1' width='95' height='47' fill='url(%23f)'/%3E%3Cpath d='M0 0.5H96M0.5 0V48' stroke='%23030a16' stroke-opacity='.5'/%3E%3Cpath d='M1 1.5H95M1.5 1V47' stroke='%239db4d8' stroke-opacity='.16'/%3E%3Cpath d='M1 47.5H96M95.5 1V48' stroke='%23020814' stroke-opacity='.4'/%3E%3Ccircle cx='6.5' cy='6.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='6' cy='6' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='90.5' cy='6.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='90' cy='6' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='6.5' cy='42.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='6' cy='42' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='90.5' cy='42.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='90' cy='42' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Crect x='97' y='1' width='95' height='47' fill='url(%23f)'/%3E%3Cpath d='M96 0.5H192M96.5 0V48' stroke='%23030a16' stroke-opacity='.5'/%3E%3Cpath d='M97 1.5H191M97.5 1V47' stroke='%239db4d8' stroke-opacity='.16'/%3E%3Cpath d='M97 47.5H192M191.5 1V48' stroke='%23020814' stroke-opacity='.4'/%3E%3Ccircle cx='102.5' cy='6.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='102' cy='6' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='186.5' cy='6.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='186' cy='6' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='102.5' cy='42.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='102' cy='42' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='186.5' cy='42.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='186' cy='42' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Crect x='-47' y='49' width='95' height='47' fill='url(%23f)'/%3E%3Cpath d='M-48 48.5H48M-47.5 48V96' stroke='%23030a16' stroke-opacity='.5'/%3E%3Cpath d='M-47 49.5H47M-46.5 49V95' stroke='%239db4d8' stroke-opacity='.16'/%3E%3Cpath d='M-47 95.5H48M47.5 49V96' stroke='%23020814' stroke-opacity='.4'/%3E%3Ccircle cx='-41.5' cy='54.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='-42' cy='54' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='42.5' cy='54.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='42' cy='54' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='-41.5' cy='90.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='-42' cy='90' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='42.5' cy='90.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='42' cy='90' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Crect x='49' y='49' width='95' height='47' fill='url(%23f)'/%3E%3Cpath d='M48 48.5H144M48.5 48V96' stroke='%23030a16' stroke-opacity='.5'/%3E%3Cpath d='M49 49.5H143M49.5 49V95' stroke='%239db4d8' stroke-opacity='.16'/%3E%3Cpath d='M49 95.5H144M143.5 49V96' stroke='%23020814' stroke-opacity='.4'/%3E%3Ccircle cx='54.5' cy='54.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='54' cy='54' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='138.5' cy='54.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='138' cy='54' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='54.5' cy='90.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='54' cy='90' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='138.5' cy='90.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='138' cy='90' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Crect x='145' y='49' width='95' height='47' fill='url(%23f)'/%3E%3Cpath d='M144 48.5H240M144.5 48V96' stroke='%23030a16' stroke-opacity='.5'/%3E%3Cpath d='M145 49.5H239M145.5 49V95' stroke='%239db4d8' stroke-opacity='.16'/%3E%3Cpath d='M145 95.5H240M239.5 49V96' stroke='%23020814' stroke-opacity='.4'/%3E%3Ccircle cx='150.5' cy='54.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='150' cy='54' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='234.5' cy='54.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='234' cy='54' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='150.5' cy='90.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='150' cy='90' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3Ccircle cx='234.5' cy='90.6' r='1.8' fill='%23020814' fill-opacity='.5'/%3E%3Ccircle cx='234' cy='90' r='1.5' fill='url(%23r)' fill-opacity='.5'/%3E%3C/g%3E%3C/svg%3E");
+  --forge-plating:url("./assets/worn-silver-plates.svg");
   --card-fit-tl:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232c4a78'/%3E%3Cstop offset='1' stop-color='%2313294B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg%3E%3Cpath d='M23 1H24L21 6H11L6 11V21L5 22V11L10.5 5.5H20Z' fill='rgba(11,26,49,.16)'/%3E%3Cpath d='M0 0H23L20 5H10.5L5 10.5V20L0 23Z' fill='url(%23g)'/%3E%3Cpath d='M20 5H10.5L5 10.5V20' fill='none' stroke='%2306101f' stroke-opacity='.55'/%3E%3Cpath d='M.6 21.8V.6H21.8' fill='none' stroke='%239db4d8' stroke-opacity='.55' stroke-width='.9'/%3E%3Ccircle cx='5.6' cy='5.6' r='1.75' fill='%236f8cb8'/%3E%3Ccircle cx='5.15' cy='5.15' r='.7' fill='%23e3ebf6'/%3E%3C/g%3E%3C/svg%3E");
   --card-fit-tr:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232c4a78'/%3E%3Cstop offset='1' stop-color='%2313294B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg transform='translate(24 0) scale(-1 1)'%3E%3Cpath d='M23 1H24L21 6H11L6 11V21L5 22V11L10.5 5.5H20Z' fill='rgba(11,26,49,.16)'/%3E%3Cpath d='M0 0H23L20 5H10.5L5 10.5V20L0 23Z' fill='url(%23g)'/%3E%3Cpath d='M20 5H10.5L5 10.5V20' fill='none' stroke='%2306101f' stroke-opacity='.55'/%3E%3Cpath d='M.6 21.8V.6H21.8' fill='none' stroke='%239db4d8' stroke-opacity='.55' stroke-width='.9'/%3E%3Ccircle cx='5.6' cy='5.6' r='1.75' fill='%236f8cb8'/%3E%3Ccircle cx='5.15' cy='5.15' r='.7' fill='%23e3ebf6'/%3E%3C/g%3E%3C/svg%3E");
   --card-fit-bl:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232c4a78'/%3E%3Cstop offset='1' stop-color='%2313294B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg transform='translate(0 24) scale(1 -1)'%3E%3Cpath d='M23 1H24L21 6H11L6 11V21L5 22V11L10.5 5.5H20Z' fill='rgba(11,26,49,.16)'/%3E%3Cpath d='M0 0H23L20 5H10.5L5 10.5V20L0 23Z' fill='url(%23g)'/%3E%3Cpath d='M20 5H10.5L5 10.5V20' fill='none' stroke='%2306101f' stroke-opacity='.55'/%3E%3Cpath d='M.6 21.8V.6H21.8' fill='none' stroke='%239db4d8' stroke-opacity='.55' stroke-width='.9'/%3E%3Ccircle cx='5.6' cy='5.6' r='1.75' fill='%236f8cb8'/%3E%3Ccircle cx='5.15' cy='5.15' r='.7' fill='%23e3ebf6'/%3E%3C/g%3E%3C/svg%3E");
@@ -716,6 +718,7 @@ main, .body, .grid > *, .card { min-width: 0; }
 .empirical-setup-fields dd { margin:4px 0 12px; }
 .empirical-result-conditions, .empirical-review-note { border-left:1px solid var(--research-line); padding:4px 14px; margin:14px 0; }
 .phase-overview .body > section { margin-top:18px; }
+.phase-overview-headline { font-weight:600; }
 .phase-issues, #p1-recovery, #p2-recovery, #p5-recovery { scroll-margin-top:var(--reader-scroll-offset, 160px); }
 .assumption-conversations-dialog { margin-left:auto; margin-right:0; width:min(760px,95vw); }
 @media (max-width:600px) {
@@ -1286,7 +1289,13 @@ td { padding:8px 10px; font-size:14px; line-height:1.55; font-variant-numeric:ta
 .artifact-table > .table-scroll { max-height:30rem; overflow:auto; }
 .research-document th, .research-record th, .empirical-case-table th, .artifact-table thead th,
 .theory-workspace th, .complete-evaluation th { background:var(--team-heading); color:var(--team-ink); }
+.empirical-notation .research-document th { overflow-wrap:normal; word-break:normal; }
 .artifact-table thead th { position:sticky; top:0; z-index:1; }
+@media (min-width:900px) {
+  .artifact-table :is(th, td):first-child { position:sticky; left:0; max-width:16rem; overflow-wrap:break-word; }
+  .artifact-table thead th:first-child { z-index:3; }
+  .artifact-table tbody td:first-child { z-index:2; background:var(--panel); }
+}
 .empirical-figure-button { display:block; width:100%; border:1px solid var(--line); padding:0; background:#fff; border-radius:10px; overflow:hidden; cursor:zoom-in; }
 .empirical-figure-button .source-link { display:flex; justify-content:center; margin:0; padding:8px; background:var(--panel); }
 .empirical-figure-button img { display:block; width:100%; height:auto; object-fit:contain; }
@@ -1559,7 +1568,7 @@ details[data-arrival="true"] { border-radius:var(--radius-inner); }
   [data-arrival="true"] { animation:none; outline:2px solid var(--system-active); outline-offset:3px; }
 }
 
-/* Ironforge: the shell is worked navy iron, riveted brushed plates under a broad
+/* Ironforge: the wall is brushed silver steel, riveted plates under a broad
    sheen, with heat in one place at a time.
    The reading room inside stays white, still and plain; ornament lives on the
    frame: sidebar, project lintel, record and major titles. */
@@ -1569,16 +1578,16 @@ details[data-arrival="true"] { border-radius:var(--radius-inner); }
   --control-fill:rgba(4, 11, 24, .32); --control-hover:rgba(157, 180, 216, .1); --control-ink:var(--forge-text);
   --control-border:rgba(157, 180, 216, .34); --control-line:rgba(157, 180, 216, .55);
   --tab-selected:rgba(4, 11, 24, .4); --on-tab:#ffffff; --tab-selected-line:rgba(157, 180, 216, .3);
-  --panel-hover:rgba(157, 180, 216, .1); --disabled-ink:#8796ad; --system-focus:var(--heat);
+  --panel-hover:rgba(157, 180, 216, .1); --disabled-ink:#8796ad; --system-focus:var(--forge-2);
   --system-active:var(--forge-5); --system-on-active:#ffffff;
   --role-team:#8fb3e6; --role-system:#6fc2ae; --role-you:#ff9a5c;
   color-scheme:dark; color:var(--forge-text); border-right:0; scrollbar-color:var(--forge-5) transparent;
   background:
     radial-gradient(130% 28% at 50% 100%, rgba(255, 95, 5, .13), transparent 72%),
-    linear-gradient(270deg, #081427 0 3px, rgba(157, 180, 216, .16) 3px 4px, transparent 4px 9px, rgba(4, 11, 24, .38) 9px 10px, transparent 10px),
-    linear-gradient(90deg, transparent, rgba(184, 204, 232, .07) 30%, rgba(184, 204, 232, .02) 52%, transparent 70%),
+    linear-gradient(270deg, #1b1d20 0 3px, rgba(210, 210, 210, .16) 3px 4px, transparent 4px 9px, rgba(12, 12, 12, .38) 9px 10px, transparent 10px),
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, .16) 30%, rgba(255, 255, 255, .06) 52%, transparent 70%),
     var(--forge-plating),
-    linear-gradient(180deg, var(--forge-3), var(--forge-2) 42%, var(--forge-1));
+    linear-gradient(180deg, var(--wall-top), var(--wall-mid) 42%, var(--wall-bottom));
   box-shadow:inset -16px 0 18px -16px rgba(0, 0, 0, .55);
 }
 .app-sidebar > .brand {
@@ -1588,14 +1597,19 @@ details[data-arrival="true"] { border-radius:var(--radius-inner); }
     linear-gradient(90deg, transparent, rgba(4, 11, 24, .75) 14%, rgba(4, 11, 24, .75) 86%, transparent) 0 calc(100% - 7px) / 100% 1px no-repeat,
     linear-gradient(90deg, transparent, rgba(157, 180, 216, .24) 14%, rgba(157, 180, 216, .24) 86%, transparent) 0 calc(100% - 6px) / 100% 1px no-repeat;
 }
-.app-sidebar .brand-word { font:400 20px/1.15 var(--font-display); letter-spacing:.03em; color:var(--forge-title); }
-.app-sidebar .brand small { margin-top:3px; color:var(--forge-text-soft); }
+.app-sidebar .brand-word { font:400 20px/1.15 var(--font-display); letter-spacing:.03em; color:var(--wall-ink); }
+.app-sidebar .brand small { margin-top:3px; color:var(--wall-muted); }
+.app-sidebar :is(.side-label, .theme-label, .role-legend) { color:var(--wall-muted); }
+.app-sidebar .sidebar-workspace > button.side-item:not(.active),
+.app-sidebar .sidebar-workspace > button.side-item:not(.active):not(:disabled):hover,
+.app-sidebar .mobile-navigation-toggle { color:var(--wall-ink); }
+.app-sidebar .mobile-navigation-toggle { border-color:var(--wall-muted); }
 .app-sidebar .brand-mark { filter:drop-shadow(0 2px 3px rgba(0, 0, 0, .45)); }
 .app-sidebar button.side-item { color:var(--forge-text-soft); transition:background-color .15s, color .15s, box-shadow .15s; }
 .app-sidebar button.side-item:not(.active):not(:disabled):hover { background:rgba(157, 180, 216, .09); color:var(--forge-text); }
 .app-sidebar button.side-item.active, .app-sidebar button.side-item.active:hover {
   position:relative; padding-left:24px; color:#ffffff; border-radius:var(--radius-control); corner-shape:bevel;
-  background:radial-gradient(64px 150% at 0 50%, rgba(255, 95, 5, .2), transparent 72%), linear-gradient(180deg, rgba(4, 11, 24, .62), rgba(4, 11, 24, .34));
+  background:radial-gradient(64px 150% at 0 50%, rgba(255, 95, 5, .2), transparent 72%), linear-gradient(180deg, rgba(4, 11, 24, .62), rgba(4, 11, 24, .34)), var(--forge-2);
   box-shadow:inset 0 1px 3px rgba(0, 0, 0, .5), inset 0 -1px 1px rgba(157, 180, 216, .16);
 }
 .app-sidebar button.side-item.active::before { content:""; position:absolute; left:9px; top:50%; width:6px; height:10px; margin-top:-5px; background:var(--heat); clip-path:polygon(0 0, 100% 50%, 0 100%); }
@@ -1610,9 +1624,9 @@ details[data-arrival="true"] { border-radius:var(--radius-inner); }
 }
 .app-sidebar .sidebar-projects button.side-item:not(.active):not(:disabled):hover { box-shadow:inset 0 1px 0 rgba(203, 216, 236, .24), inset 0 -1px 0 rgba(2, 8, 20, .3), inset 0 0 0 100px rgba(157, 180, 216, .07), 0 0 0 1px rgba(2, 8, 20, .38), 0 1px 3px rgba(2, 8, 20, .5); }
 .app-sidebar .sidebar-projects button.side-item:not(.active):not(:disabled):active { box-shadow:inset 0 2px 4px rgba(0, 0, 0, .5), inset 0 -1px 0 rgba(203, 216, 236, .12), 0 0 0 1px rgba(2, 8, 20, .38); }
-.app-sidebar .new-project { border-color:var(--control-border); background:rgba(4, 11, 24, .24); color:var(--forge-text); corner-shape:bevel; }
-.app-sidebar .new-project:not(:disabled):hover { border-color:var(--forge-steel); background:rgba(157, 180, 216, .12); }
-.app-sidebar .theme-options { border-color:rgba(157, 180, 216, .2); background:rgba(4, 11, 24, .42); box-shadow:inset 0 1px 3px rgba(0, 0, 0, .45); corner-shape:bevel; }
+.app-sidebar .new-project { border-color:var(--control-border); background:linear-gradient(rgba(4, 11, 24, .24), rgba(4, 11, 24, .24)), var(--forge-2); color:var(--forge-text); corner-shape:bevel; }
+.app-sidebar .new-project:not(:disabled):hover { border-color:var(--forge-steel); background:linear-gradient(rgba(157, 180, 216, .12), rgba(157, 180, 216, .12)), var(--forge-2); }
+.app-sidebar .theme-options { --system-focus:var(--heat); border-color:rgba(157, 180, 216, .2); background:linear-gradient(rgba(4, 11, 24, .42), rgba(4, 11, 24, .42)), var(--forge-2); box-shadow:inset 0 1px 3px rgba(0, 0, 0, .45); corner-shape:bevel; }
 .app-sidebar .theme-option { color:var(--forge-text-soft); corner-shape:bevel; }
 .app-sidebar .theme-option:hover { background:rgba(157, 180, 216, .1); }
 .app-sidebar .theme-option[aria-pressed="true"] { border-color:rgba(157, 180, 216, .32); color:#ffffff; background:linear-gradient(180deg, var(--forge-5), var(--forge-4)); box-shadow:inset 0 1px 1px rgba(157, 180, 216, .3), 0 1px 2px rgba(0, 0, 0, .4); }
@@ -1624,19 +1638,19 @@ details[data-arrival="true"] { border-radius:var(--radius-inner); }
 
 /* Focus in the reading room stays blue, even on a white panel opened inside the iron frame. */
 :root { --reading-focus:var(--system-focus); }
-/* The project lintel: a navy band hung from the top of the workspace, lit from
+/* The project lintel: a silver steel band at the top of the workspace, lit from
    below by the forge, held at its corners by two iron brackets. */
 #app > main > :first-child > header.project-toolbar:first-child { margin-top:-16px; }
 header.page.project-toolbar {
-  --system-focus:var(--heat);
+  --system-focus:var(--forge-2);
   margin:0 -20px var(--section-gap); padding:12px 28px 15px; gap:8px 16px;
   border:0; border-radius:0 0 14px 14px; corner-shape:bevel; color:var(--forge-text);
   background:
     radial-gradient(40% 2px at 50% 100%, rgba(255, 95, 5, .7), transparent),
     radial-gradient(48% 40px at 50% 100%, rgba(255, 95, 5, .12), transparent),
-    linear-gradient(104deg, transparent 8%, rgba(184, 204, 232, .075) 30%, transparent 50%, rgba(184, 204, 232, .04) 72%, transparent 86%),
+    linear-gradient(104deg, transparent 8%, rgba(255, 255, 255, .18) 30%, transparent 50%, rgba(255, 255, 255, .08) 72%, transparent 86%),
     var(--forge-plating),
-    linear-gradient(180deg, var(--forge-3), var(--forge-2) 58%, var(--forge-1));
+    linear-gradient(180deg, var(--wall-top), var(--wall-mid) 58%, var(--wall-bottom));
   box-shadow:var(--shell-shadow), inset 0 -10px 14px -10px rgba(0, 0, 0, .45);
 }
 header.page.project-toolbar::before, header.page.project-toolbar::after {
@@ -1645,8 +1659,8 @@ header.page.project-toolbar::before, header.page.project-toolbar::after {
 }
 header.page.project-toolbar::before { left:8px; }
 header.page.project-toolbar::after { right:8px; transform:scaleX(-1); }
-header.page.project-toolbar > h1 { flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:400 26px/1.25 var(--font-display); letter-spacing:.01em; color:var(--forge-title); text-shadow:0 1px 2px rgba(0, 0, 0, .35); }
-.project-toolbar > .research-progress-strip { border-color:rgba(157, 180, 216, .3); background:rgba(4, 11, 24, .3); corner-shape:bevel; }
+header.page.project-toolbar > h1 { flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:400 26px/1.25 var(--font-display); letter-spacing:.01em; color:var(--wall-ink); text-shadow:0 1px 1px rgba(255, 255, 255, .5); }
+.project-toolbar > .research-progress-strip { border-color:rgba(157, 180, 216, .3); background:linear-gradient(rgba(4, 11, 24, .3), rgba(4, 11, 24, .3)), var(--forge-2); corner-shape:bevel; }
 .project-toolbar > .research-progress-strip > summary {
   --ink:var(--forge-text); --ink-soft:var(--forge-text-soft);
   --ok:#8fd3a8; --run:#9cc3f2; --warn:#f2c879; --danger:#f5a39c;
@@ -1657,6 +1671,10 @@ header.page.project-toolbar > h1 { flex:1 1 0; min-width:0; overflow:hidden; tex
 .project-toolbar .phase-stepper {
   --ink:var(--forge-title); --ink-soft:var(--forge-text-soft); --muted:var(--forge-text-soft);
   --run:#9cc3f2; --warn:#f2c879; --attention-ink:#ffcf8a; --attention-soft:#3d2a12;
+}
+.project-toolbar .phase-stepper-current {
+  --ink:var(--wall-ink); --ink-soft:var(--wall-muted);
+  --run:#234b75; --warn:#704911; --attention-ink:#70340c;
 }
 /* Each phase is a raised iron tab plate with a recessed well for its state. The current phase is the plate in the fire:
    Illini Orange, hottest at its foot, heat rising off it. It holds still so it never pulls at a long read. */
@@ -1781,7 +1799,7 @@ article.technical-report > h3:first-child { padding-bottom:10px; margin-bottom:1
   .project-resume:has(> .project-question-row) > .forge-hall { display:block; grid-column:2; grid-row:1 / span 2; align-self:stretch; width:184px; height:auto; contain:size; }
 }
 @media (max-width:800px) {
-  .app-sidebar { box-shadow:none; background:radial-gradient(70% 140% at 50% 100%, rgba(255, 95, 5, .1), transparent 72%), var(--forge-plating), linear-gradient(180deg, var(--forge-3), var(--forge-1)); }
+  .app-sidebar { box-shadow:none; background:radial-gradient(70% 140% at 50% 100%, rgba(255, 95, 5, .1), transparent 72%), var(--forge-plating), linear-gradient(180deg, var(--wall-top), var(--wall-bottom)); }
   .app-sidebar > .brand { margin:0; padding:0; background:none; }
   .app-sidebar .brand-word { font-size:18px; }
   #app > main > :first-child > header.project-toolbar:first-child { margin-top:-12px; }

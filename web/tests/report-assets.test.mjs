@@ -194,3 +194,39 @@ test("a historical plain-text Markdown path stays readable without advertising a
   assert.ok(!rendered.print_scopes.some(scope => scope.material_id === "artifact.support"));
   assert.throws(() => reportAssetInput({ ...input, print_material_id: "artifact.support" }, () => bytes), /not a retained Markdown/);
 });
+
+test("portable HTML proof links explicitly download the exact retained appendix bytes and original filename", () => {
+  const bytes = Buffer.from('<!doctype html><title>Exact proof</title><a id="proof-safety"></a><p>Retained $x=1$.</p>\r\n');
+  const file = { ...descriptor("sealed/appendix.html", bytes, "text/html"), artifact_id: "artifact.proof-html", authored_path: "proofs/appendix.html" };
+  const input = { markdown: '[Proof](proofs/appendix.html#proof-safety) [Details](artifact.proof-html#proof-safety) [Web](https://example.org/proof.html)',
+    asset_files: { "proofs/appendix.html": file, "artifact.proof-html": file } };
+  const original = JSON.stringify(input); let reads = 0;
+  const rendered = renderReport(katex, "", reportAssetInput(input, () => { reads++; return bytes; }));
+  assert.match(rendered.html, /download="appendix\.html">Download proof appendix \(HTML\)<\/a>/);
+  assert.match(rendered.html, /download="appendix\.html">Download Details \(HTML\)<\/a>/);
+  const links = [...rendered.html.matchAll(/href="(data:text\/html;base64,([^"]+))" download="appendix\.html"/g)];
+  assert.equal(links.length, 2); assert.equal(reads, 1);
+  for (const [, href] of links) {
+    assert.equal(href.endsWith("#proof-safety"), true);
+    assert.deepEqual(Buffer.from(href.split(",")[1].split("#")[0], "base64"), bytes);
+  }
+  assert.match(rendered.html, /<a href="https:\/\/example\.org\/proof\.html">Web<\/a>/);
+  assert.equal(rendered.print_scopes.length, 1, "Downloading HTML does not create a guessed Markdown rendition or print scope.");
+  assert.equal(JSON.stringify(input), original);
+  assert.throws(() => renderReport(katex, "", reportAssetInput(input, () => Buffer.from("changed proof"))), /changed after source verification/);
+});
+
+test("hosted HTML proof links use the verified generation attachment while retaining exact offline bytes", () => {
+  const bytes = Buffer.from('<!doctype html><title>Exact proof</title><p id="proof">Retained proof.</p>\r\n');
+  const file = { ...descriptor("sealed/appendix.html", bytes, "text/html"), artifact_id: "artifact.proof-html",
+    authored_path: "proofs/appendix.html",
+    download_url: "/api/v1/projects/project.a/branches/method.a/phases/P5/records/technical_report/generation.a?view=attachment&material_id=artifact.proof-html" };
+  const source = { markdown: "[Proof](proofs/appendix.html#proof) [Details](artifact.proof-html#proof)",
+    asset_files: { "proofs/appendix.html": file, "artifact.proof-html": file } };
+  const prepared = reportAssetInput(source, () => bytes);
+  const rendered = renderReport(katex, "", prepared);
+  assert.equal((rendered.html.match(/href="\/api\/v1\/projects\/project\.a\/branches\/method\.a\/phases\/P5\/records\/technical_report\/generation\.a\?view=attachment&amp;material_id=artifact\.proof-html#proof" download="appendix\.html"/g) || []).length, 2);
+  assert.doesNotMatch(rendered.html, /data:text\/html/);
+  assert.deepEqual(Buffer.from(prepared.assets["artifact.proof-html"].split(",")[1], "base64"), bytes);
+  assert.throws(() => renderReport(katex, "", reportAssetInput(source, () => Buffer.from("changed proof"))), /changed after source verification/);
+});

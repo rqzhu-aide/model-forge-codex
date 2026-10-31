@@ -8,6 +8,7 @@ import { catalogMethodForProposal, catalogOnlyMethods, catalogSelectionKey, comp
 import { methodStartingPointSource } from "../methodSeed";
 import { ActionButton, ActionIcon, EmptyState } from "./Visuals";
 import { phaseInputStickyOffset } from "../phaseInputNavigation";
+import { NotationLookup } from "./SharedNotation";
 
 export function proposalReviews(proposal, reviews) {
   const runId = proposal.generation_ref?.run_id;
@@ -60,6 +61,7 @@ function MethodComparison({ comparison, proposals, reviews = [], onSource }) {
   return <div className="p2-comparison" data-reading-anchor="p2-comparison">
       <p className="note">Research Lead's comparison of the proposed methods</p>
       {overview && <ResearchDocument text={overview} renderInternalLink={renderInternalLink} />}
+      <NotationLookup record={comparison} onSource={onSource} label="Notation for all methods" />
       {excluded.length > 0 && <details className="research-details"><summary>Not retained in this catalog update ({excluded.length})</summary>
         {excluded.map(({ disposition, proposal }) => <div key={proposalKey(proposal)}>
           <h4>{proposal.method?.title || disposition.proposal_id} · {perspective(proposal)}</h4>
@@ -300,6 +302,7 @@ function ExploreMethod({ methods = [], cards = [], proposals = [], reviews = [],
         {staleOutputs.map((output) => <div className="method-dependent-status" key={output.phase}><p className="note">{phaseLabel(output.phase)} results for this method</p><MethodStatusNote status={output} onOpen={onSource} /></div>)}
         <ReaderSection title="Methodological account" author={conciseLead ? "Research Lead" : author}>
           <ResearchDocument text={summaryForDisplay(conciseLead ? reviewed.disposition.method_summary_markdown : method.summary || method.scientific_question || method.rationale)} renderInternalLink={conciseLead ? leadInternalLink : undefined} />
+          <NotationLookup record={conciseLead ? reviewed.comparison : selected || catalogMethod} methodScope={method.identity} onSource={onSource} />
           {!conciseLead && selected && <p className="note">The original proposal summary is shown in full. This saved record has no verified concise Lead account. Read its complete mathematics under Computation and full formulation.</p>}
           <div className="p2-reader-sources"><SourceRef reference={conciseLead ? leadSummarySource : source} onOpen={onSource} label={conciseLead ? "Lead methodological account source" : selected ? "Original proposal summary source" : "Catalog definition source"} /></div>
         </ReaderSection>
@@ -318,6 +321,7 @@ function ExploreMethod({ methods = [], cards = [], proposals = [], reviews = [],
           </> : <p className="note">No computational profile was recorded for this {selected ? "proposal" : "catalog definition"}.</p>}</ReaderSection>
           {selected && <ReaderSection title="Data requirements" author={author}>{selected.data_requirements_markdown ? <ResearchDocument text={selected.data_requirements_markdown} /> : <p className="note">No separate data requirements were recorded.</p>}</ReaderSection>}
           <ReaderSection title="Full original formulation and algorithm" author={author}>
+            <NotationLookup record={selected || catalogMethod} methodScope={method.identity} onSource={onSource} />
             <ResearchDocument text={method.scientific_question} /><CompleteFormulation definition={method.mathematical_definition} /><SourceRef reference={source} onOpen={onSource} label="Original formulation source" />
           </ReaderSection>
           {selected?.researcher_origin && <ReaderSection title={startingPoint ? "Selected model starting point and source" : "Your supplied method and source"} className={startingPoint ? "" : "contribution-surface"}>

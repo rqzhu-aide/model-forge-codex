@@ -187,6 +187,9 @@ def published_issues(project_dir, branch=None):
 
 def resolve_issue(project_dir, target):
     """Resolve a permitted historical entry, with exact source and entry identity."""
+    if target.get("kind") == "notation_entry":
+        from .notation_interactions import notation_issue
+        return notation_issue(project_dir, target)
     if target.get("kind") != "phase_issue":
         raise ValueError("Select an identified scientific issue")
     branch, phase, family = (target.get(key, "") for key in ("branch", "phase", "family"))
@@ -308,6 +311,31 @@ def selected_response(question, selection, *, origin="researcher_reported"):
     if extra:
         note += f"\n\nYour note: {extra}"
     return note, snapshot
+
+
+def normalize_response_draft(question, draft):
+    """Bind discussion-only input to its resolved question without saving it.
+
+    The caller resolves the exact target first. Choice prose comes only from
+    that source, while custom text and uncertainty remain researcher input.
+    """
+    if not isinstance(draft, dict) or set(draft) - {"kind", "option_id", "note"}:
+        raise ValueError("A response draft needs its response kind and optional note")
+    kind, note = draft.get("kind"), draft.get("note", "")
+    if kind not in ("choice", "custom", "unknown") or not isinstance(note, str):
+        raise ValueError("A response draft must be a choice, custom response or unknown")
+    if question.get("kind") in ("research_task", "scientific_issue"):
+        raise ValueError("A researcher response draft belongs to a researcher question")
+    if issue_source_identity(question) is None:
+        raise ValueError("A response draft needs its exact original question target")
+    if kind == "choice":
+        _, snapshot = selected_response(question, {"option_id": draft.get("option_id"), "note": note})
+        return {"kind": kind, **snapshot}
+    if "option_id" in draft:
+        raise ValueError("Only a selected choice can name an option")
+    if kind == "custom" and not note.strip():
+        raise ValueError("Write your alternative response before including it in discussion")
+    return {"kind": kind, "note": note.strip()}
 
 
 def save_scoped_answer(project_dir, question, note, *, expected_revision=None, save_to_context=False,

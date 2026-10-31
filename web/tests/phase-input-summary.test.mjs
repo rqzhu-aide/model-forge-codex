@@ -112,6 +112,23 @@ test("phase and exact model scope stay aligned with the original question projec
   assert.equal(summarize({ issues: [exact], modelRef: undefined }).questions.total, 0);
 });
 
+test("publication refreshes count a question only in its answer phase, independently of matching prose", () => {
+  const cost = question("cost", { phase: "P2", target_phase: "P1", branch: "trunk", question: "What study information is available?" });
+  const logging = question("logging", { phase: "P2", target_phase: "P2", branch: "trunk", question: cost.question });
+  const options = { branch: "trunk", methodId: undefined, modelRef: undefined, attention: [cost, logging] };
+  for (const origin of [undefined, "unknown", "researcher_reported"]) {
+    const answers = origin ? [answerFor(cost, { origin })] : [];
+    const p1 = summarize({ ...options, phase: "P1", answers });
+    const p2 = summarize({ ...options, phase: "P2", answers });
+    assert.deepEqual(p1.questions.items.map(item => item.issue.attention_id), ["cost"]);
+    assert.deepEqual(p2.questions.items.map(item => item.issue.attention_id), ["logging"]);
+    assert.equal(p1.questions.total, 1); assert.equal(p2.questions.total, 1);
+    assert.equal(p1.questions.items[0].state, origin === "unknown" ? "unknown" : origin ? "answered" : "unanswered");
+    assert.equal(p2.questions.unanswered, 1);
+    assert.equal(p1.questions.items[0].source.generation_id, cost.explanation_target.generation_id);
+  }
+});
+
 test("P5 editorial summaries stay with their report method and exclude upstream questions and pause editors", () => {
   const editorial = question("editorial", { phase: "P5", target_phase: "P5", scope: { kind: "model", branch: scope.branch, model_ref: modelRef } });
   const projectEditorial = question("project-editorial", { phase: "P5", target_phase: "P5" });
@@ -137,7 +154,7 @@ test("P2 selected candidates include shared and intended questions, with exact i
 });
 
 test("merely editing an existing saved response is clean; changed text or choices are unsaved", () => {
-  const item = { ...populationChoice, phase: "P4", branch: scope.branch };
+  const item = { ...populationChoice, phase: "P4", target_phase: "P4", branch: scope.branch };
   const answer = answerFor(item, { selection: { option_id: "survivors", note: "For the cohort." }, note: "A persisted rendering of the answer." });
   const project = (draft) => summarize({ issues: [item], answers: [answer], getDraft: () => draft });
   assert.equal(project({ text: "For the cohort.", origin: "researcher_reported", choice: "option:survivors", editing: true }).questions.unsaved, 0);

@@ -70,6 +70,15 @@ def load_evaluation_basis(project_dir: Path, reference: dict) -> dict:
             raise ArtifactError(f"The evaluation's frozen {family} changed or disappeared.")
         original["cumulative_inputs"][family] = {
             **{key: value for key, value in ref.items() if key != "snapshot_path"}, "document": document}
+    if "notation" in basis:
+        from .notation import frozen_notation
+        notation = basis["notation"]
+        if not isinstance(notation, dict):
+            raise ArtifactError("The evaluation's frozen notation reference is malformed.")
+        for field in ("snapshot_path", "markdown_path"):
+            if notation.get(field) and not Path(notation[field]).resolve().is_relative_to((run_dir / "inputs").resolve()):
+                raise ArtifactError("The evaluation's notation is outside its frozen sources.")
+        original["notation"] = {"document": frozen_notation(basis), "sha256": notation.get("sha256")}
     digest = sha256_bytes(json.dumps(original, sort_keys=True).encode())
     # start_run adds this manifest after authorization and wraps the research
     # digest only when inputs were selected. Paths are runtime metadata; the

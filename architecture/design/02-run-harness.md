@@ -249,6 +249,15 @@ publication. The researcher still chooses preliminary or comprehensive scope.
 
 ## 8. Stall detection and recovery
 
+- A confirmed provider-capacity interruption in a single-member sequential
+  P1, P2, P3 or P5 scientific stage can be retried explicitly in the same run.
+  Completed stages and the original failure receipt remain saved; the retry
+  does not consume a scientific-correction attempt. The interrupted member
+  receives the saved brief, with unchanged inputs, instructions and model
+  settings. A changed research context, later thread work or publication, or
+  damaged retained source requires inspection or a new run. Parallel-stage
+  recovery is not implied. Progressive P4 retains its separate checks for
+  pending computation, saved direction and remaining experiment budget.
 - Repeating a failing artifact check with unchanged declared files, explicit
   supporting files and permitted evidence returns a stop diagnostic. Repeated
   unchanged rejected P4 requests and checkpoint-only calls use the same turn

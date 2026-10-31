@@ -22,7 +22,8 @@ test("npm release includes its runtime and complete catalog, and excludes local 
   assert.deepEqual(manifest, createReleaseManifest(appRoot, packed));
   assert.equal(manifest.files["npm-release-manifest.json"], undefined);
   assert.deepEqual(Object.keys(manifest.files).sort(), packed.filter((name) => name !== "npm-release-manifest.json").sort());
-  for (const unexpected of [".env", "config/providers.toml", "src/model_forge_codex/__pycache__/api.pyc", "architecture/evidence/screenshot.png", "web/runtime/.env"]) {
+  assert.ok(packed.some((name) => /^web\/dist\/assets\/worn-silver-plates-[\w-]+\.svg$/u.test(name)), "the built wall texture must ship with the interface");
+  for (const unexpected of [".env", "config/providers.toml", "src/model_forge_codex/__pycache__/api.pyc", "architecture/evidence/screenshot.png", "web/runtime/.env", "web/dist/assets/private-research.svg", "output/documents/report.docx"]) {
     assert.throws(() => verifyPackageContents([...packed, unexpected], catalogPaths), /Unexpected file/u);
   }
   assert.throws(() => verifyPackageContents(packed.filter((name) => name !== "web/runtime/validate-math.mjs"), catalogPaths), /Required npm release file/u);

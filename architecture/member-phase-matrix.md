@@ -25,6 +25,34 @@ questions. No extra author, summarizing stage or decision artifact is introduced
 Delivery classes: **I** = inline in brief · **I\*** = mention + instructed
 open · **M** = mention (T0) · **N** = never delivered.
 
+## Shared notation and presentation, catalog 1.30.0
+
+The existing five neutral references reach relevant P1-P5 authors through
+`research_presentation_v2`, within their current scientific and inquiry duties.
+P5 reviewers and the revision Lead read neutral editorial guidance from the
+frozen submission packet; report-section discussion gains no upstream inquiry.
+The [presentation matrix](research-presentation.md#delivery-and-ownership)
+supersedes the earlier v1 P4-only scientific-guidance routing for adopted v2 runs.
+
+`project_notation_v1` requires v2. Members receive the admitted frozen notation
+and define additions in existing scientific fields. Only the existing Lead
+outputs below adopt `notation_updates`; the harness generates the complete final
+lookup and seals its supporting files. No output family or stage is added.
+
+| Existing Lead output | Owned notation |
+| --- | --- |
+| P1 research basis | Shared study definitions |
+| P2 catalog assessment | Exact method/candidate definitions and mappings |
+| P3 complete theory | Recurring theory-account definitions, retaining proof-local exceptions |
+| P4 empirical synthesis | Evaluation-account additions, retaining method/theory definitions |
+| P5 technical report candidate/revision | Report exposition and explicit source-symbol mappings |
+
+P2 keeps independent candidate and Lead-only input boundaries. Later phases do
+not rewrite upstream canonical mathematics. Independent reviewers receive the
+submitted report's notation only; targeted discussions use the selected source's
+final account view. Historical records retain their own local notation. See the
+[source and scope design](shared-notation-plan.md).
+
 ## P1 literature_update (trunk)
 
 | Stage and role | Produces | Reads |

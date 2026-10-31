@@ -343,6 +343,7 @@
           "minLength": 1
         },
         "sample_sizes": {
+          "description": "Scientific sample sizes: numbers of the declared sampling units within a dataset. Keep independent dataset repetitions, internal resamples and computational-check draws separate in their existing case or check descriptions; they are not additional scientific sample sizes.",
           "type": "array",
           "minItems": 1,
           "items": {

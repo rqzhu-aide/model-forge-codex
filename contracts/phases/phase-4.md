@@ -1,6 +1,6 @@
 # Phase 4: Numerical Eval
 
-Contract version: 3.4.4. Catalog: 1.28.4.
+Contract version: 3.6.2. Catalog: 1.30.2.
 
 ## 1. Purpose
 
@@ -149,9 +149,9 @@ These are the existing three stages, not additional agents or approval gates.
    analyst must not depend on later reviewer outputs. The theorist separately
    checks mathematical fidelity, source/code correspondence, design,
    denominators and interpretation, preserving disagreement and unassessed work.
-6. **Consolidate results and researcher decisions.** The lead first recaps the
-   exact implemented mathematical method, then briefly describes what was
-   developed and tested on synthetic and supplied actual data. Topical accounts
+6. **Consolidate results and researcher decisions.** The lead starts with the
+   consequential supported finding and scope, then recaps the exact implemented
+   method and what was developed/tested on synthetic and supplied actual data. Topical accounts
    compose existing analyst answers and verified exhibits without changing the
    results. `headline_exhibit_ids` gives preferred exhibit order within Experiments
    and Results; Summary contains no exhibits. Consolidate consequential questions
@@ -163,18 +163,12 @@ These are the existing three stages, not additional agents or approval gates.
 
 ### Result templates and denominators
 
-Use these concrete columns where relevant, explicitly omitting inapplicable
-ones. Choose the evidence needed for the question; no plot or prose quota applies.
-
-| Template | Table columns |
-| --- | --- |
-| Implementation | Check; independent reference/expected behavior; observed discrepancy; tolerance; pass/fail/not run |
-| Estimation | Scenario; target/unit; method; independent datasets attempted/usable; bias; empirical SD; RMSE or declared error; Monte Carlo uncertainty; full-procedure failure rate |
-| Prediction | Dataset/scenario; method; target/horizon; split design; held-out metric/unit; uncertainty; usable test units |
-| Uncertainty | Scenario; method; datasets; interval-return rate; coverage among returns; joint return-and-cover; interval width |
-| Computation | Scenario/size; method; repetitions; recorded preprocessing/point-fit/tuning/uncertainty/full-procedure time; unit/timing boundary; recorded solver convergence |
-| Tuning | Allowed parameters; selection rule; observed selections; actually assessed parameter sensitivity; target metric/uncertainty; usable repetitions/failures |
-| Robustness | Changed DGP or observation mechanism; method; target metric/uncertainty; usable repetitions/failures; consequence for the intended use |
+Use the delivered frozen [tables-and-figures reference](../references/research-presentation/tables-and-figures.md)
+for concrete compact display patterns, common caption/precision/source rules and
+separate figure guidance. The Analyst generates supported flat `kind=table`
+artifacts from saved result rows through the authorized script and managed route,
+before handoff; a multi-section result JSON is supplementary material. Keep the
+scientific denominator and uncertainty distinctions below.
 
 For independent generated datasets, known-truth scalar estimation may report
 
@@ -217,14 +211,10 @@ Robustness changes the DGP or observation mechanism in a problem-relevant way;
 repeating one fixed DGP does not establish it. An unperformed sensitivity or
 robustness study remains unassessed.
 
-Choose a figure answering the question: target error or coverage versus sample
-size/scenario, metric versus allowed tuning, runtime versus size, fitted function
-against simulation truth, or observed-data calibration/residual diagnostics.
-Define curves/horizons/units and name repetitions, uncertainty and scope in the
-caption. Each figure declares `data_exhibit_ids` for the actual underlying verified
-table; do not infer a relationship from filenames or fabricate a curve from prose.
-The source examples include a portable Python mean-model bundle and a linked
-analytic table/SVG demonstrating this contract, explicitly labeled illustrative.
+Figures answer a useful pattern or relationship under the delivered reference;
+there is no plot quota. Their `data_exhibit_ids` identify actual verified underlying
+tables. Exact source identity never grants permission to fabricate a comparison.
+The source examples remain explicitly illustrative.
 
 ### Sources and portable delivery
 
@@ -432,8 +422,8 @@ Publication of a new Phase 4 record appends an authority event that marks the cu
 The reader has five cards in this order, with results available before a
 researcher has manually selected the only evaluated method:
 
-1. Summary: concise mathematical formulation of the implemented method, then a
-   brief account of what was developed and tested on synthetic and actual data.
+1. Summary: decisive finding and scope, short authored method recap and what was
+   developed/tested on synthetic and actual data, with notation available separately.
 2. Implementation and Code: compact fidelity, consequential issues and shareable
    code; expandable original correspondence, dependencies, checks and same-run audit.
 3. Experiments and Results: Synthetic example (DGP and simulation setup),
@@ -449,7 +439,7 @@ researcher has manually selected the only evaluated method:
 5. Additional Runs and History: research direction, user-controlled run action,
    previous evaluations and retained execution details.
 
-Remove the All data/Synthetic/Checks selector. Preserve valid explicit
+Label actual data origins beside complete results. Preserve valid explicit
 method/reader choices and deliberate empty topics during polling.
 When no choice exists and exactly one method has published P4 evidence, select
 it only for viewing. Never activate a method or start work. Mixed-source questions
@@ -539,66 +529,28 @@ Saved responses do not start work, revise a model or establish a guarantee.
 
 ### Consequential input under the revised catalog
 
-Invite researcher input when plausible answers materially change the target or
-interpretation, validity of the intended claim, data applicability or a meaningful
-resource compromise, and the missing input is an unresolved researcher preference
-or study fact the team cannot establish from available material. When that input is
-useful now, the Lead consolidates and invites it through the existing owned attention
-output at its designated stage even if conditional work can proceed; members propose
-it in their existing owned outputs for consolidation. Explain the proposed
-conditional direction, plausible alternatives and what the answer would change,
-keeping any proposed default provisional until adopted. An intended use, claim to
-support first or reference standard for judging success can warrant this
-nonblocking invitation. Do not omit such an invitation merely because it is not a
-blocker. In an eligible stage, use the existing phase mechanism to pause only when
-missing input makes the next authorized action unjustified; otherwise continue
-justified work with explicit conditions.
+Use the catalog's [user-inquiry reference](../references/research-presentation/user-inquiry.md)
+for consequential filtering, overlap consolidation, concise mathematical choices,
+the new primary inquiry ceilings and suggestion-first options. The reference bytes
+are delivered from the frozen catalog; this link is not a substitute for delivery.
+The designated Lead consolidates member proposals against open items and exact
+applicable saved answers. Keep independently answerable inputs, source history and
+one effective-answer location. Zero new inquiries is valid.
 
-Different mathematical definitions or defensible alternatives alone are insufficient.
-The Lead uses the stated goal and scientific judgment to select routine details
-within the authorized scope and budget, briefly recording consequential choices and
-reasons in the existing phase summary. Counting all attempted developments and
-reporting declared failures is Lead-owned evaluation work. Proofs, implementation
-defects, scientific justification and uncertainty procedures remain team work.
+New researcher items retain `decision_priority`, `response_kind`, exact scope and
+audience. A justified choice suggestion is first, with `recommended_option_id`
+bound to its stable option ID and a short reason in `recommendation`; nothing is
+preselected. Study facts use free text/unknown without options or recommendation.
+The ceilings apply to new inquiry prose only, not scientific accounts, user answers,
+requested discussions or old records. Rewrite rather than truncate or split a
+decision. Actual run/request state determines optionality and pauses. This adds no
+stage, output duty or pause authority.
 
-Preserve saved preferences and the requested inferential claim. A prediction goal
-does not waive valid uncertainty claims or appropriate censoring assumptions.
-The researcher chooses the intended claim and acceptable scope, but cannot certify
-statistical assumptions by preference. Empty attention output is valid.
-
-For each new `researcher_decision`, author `decision_priority` as `interpretation`,
-`inference`, `data` or `resources`, using the highest material consequence in that
-order, and `response_kind` as `choice` or `study_fact`. Urgency and an actual pause
-remain separate. Keep `question` to one current choice or exact factual request.
-`context_markdown` identifies the affected point. When mathematics distinguishes
-the choices, show the affected problem or equation with enough formulation to
-understand the decision, defining symbols and any shared objective once in that
-context. For a choice, provide useful finite `options` when appropriate, usually
-two or three realistic alternatives as `{id, label, consequence}` with unique IDs.
-Each mathematically distinct option's `consequence` gives its formulation or changed
-equation under that shared context, followed by a concise practical effect and
-material benefits/costs. Prose-only options do not explain a mathematical distinction.
-`likely_consequence` gives the overall practical effect without repeating the option
-accounts. Plain study facts, budgets and choices without a mathematical distinction
-need no artificial equation. `recommendation` is Markdown Lead advice with its reason, or a candid
-statement of what is missing. Do not preselect, save a recommendation as an answer,
-or invent literal researcher responses. An open-ended choice need not have options.
-A study-fact request names the missing information, applicability limit and what
-can proceed while unknown, without options or recommendation.
-
-Inspect supplied material before asking. Unknown patient/event counts, encoded
-feature dimension, collection and ascertainment facts remain unknown; synthetic
-settings never establish them. Retain unknown facts with their applicability limits.
-Defer questions without a useful current consequence; do not repeatedly request
-unavailable facts. Reuse exact applicable saved answers, and reopen an answered
-question only when its premise materially changes. There is no question quota.
-Consolidate duplicates without merging independently answerable premises, exact
-question IDs, model versions, audiences or saved answers. Carry forward only materially new
-consequences in the brief; preserve full derivations and prior context through
-exact sources. Legacy rationale fields need no separate repetition, and no rigid
-word cap applies. Specialists propose only qualifying items in their existing
-owned outputs; the Lead prioritizes and authors the final brief without another
-stage or writer.
+The Lead owns routine scientific choices, all-attempted accounting and failure
+handling within the agreed target and budget. Scientific defects, proofs and
+diagnostics remain team work; a researcher cannot verify assumptions by preference.
+Preserve the requested claim and applicable saved answers. Useful optional input
+can be invited while justified conditional work proceeds.
 
 Author comparison_applicability in the protocol with required, reason and relevant comparative claim or expectation references. Distinguish researcher observations, external/proxy data, synthetic mechanisms and computational checks. Retain exact data/simulation identity and scope. Actual relevant analysis, including negative or inconclusive findings, supports a completed report; execution completion alone does not.
 
@@ -657,3 +609,38 @@ interpretation examples do not require new experiments.
 A comparison that does not demonstrate benefit has not demonstrated its absence.
 Distinguish evidence against benefit from inconclusive evidence; nonsignificance
 does not establish equivalence. Retain the applicable uncertainty and tested scope.
+
+## Delivered presentation references
+
+The run's frozen catalog supplies five short references under
+`references/research-presentation/`. P4 Lead receives all five; Analyst receives
+scientific explanation, claims/evidence, tables/figures and inquiry; Theorist
+receives the same four for its existing meaning/fidelity audit and authorized
+questions. The four scientific modules start in P4; inquiry reaches eligible
+P1-P5 authors and targeted discussion/advice without expanding authority.
+
+The Lead authors optional `decision_summary.method_recap_markdown` for the visible
+target/mechanism/output recap and `notation_markdown` for a separately reachable
+table of recurring mathematical symbols, definitions, scientific meanings and
+relevant units. Ordinary metric names, abbreviations and computational cost do
+not belong in notation. Spell out measures and explain their definitions beside
+the results; report elapsed time, processor time or memory use under computational
+cost with the actual units and measured operations. Essential definitions stay
+visible at first use; `method_formulation_markdown` retains the fuller formulation.
+The existing scientific outcome conclusion states the decisive observation and
+boundary. No glossary or recap is inferred for historical records.
+
+The Analyst owns calculations and numerical artifacts, Theorist owns the existing
+independent fidelity audit, and Lead selects whole existing exhibits and composes
+the account. The Lead may quote/round supported values, but cannot invent a
+denominator, interval or contrast or replace numerical artifacts. Each exhibit
+has one primary topic home; required review/implication fields remain complete
+without replaying the same answer. Preserve all exact per-test reviews, unique
+qualifications and attributed disagreement. These P4 rules leave P5's existing
+checked proof exposition and exact-value figure permissions intact.
+
+## Shared notation and presentation (catalog 1.30.0)
+
+The existing Lead empirical synthesis adopts evaluation additions through `notation_updates`. The harness generates the complete lookup; new-capability authors omit legacy `decision_summary.notation_markdown`. Analyst numerical ownership, Theorist fidelity review and Lead selection of existing displays are unchanged.
+
+The five neutral presentation references apply through `research_presentation_v2`; shared notation is separately gated by `project_notation_v1`, which requires v2. Keep full measure definitions beside results and actual resource measurements outside mathematical notation. This adds no stage, output family or scientific authority. Retained catalogs preserve their original routing and historical local fields.

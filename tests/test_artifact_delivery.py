@@ -245,8 +245,88 @@ async def test_svg_response_is_isolated_for_embedding_and_original_navigation(ap
         assert response.status_code == 200 and response.content == svg
         policy = response.headers["content-security-policy"]
         assert "sandbox" in policy and "default-src 'none'" in policy
-        assert "allow-scripts" not in policy and "allow-same-origin" not in policy
+        assert "allow-scripts" not in policy and "allow-same-origin" not in policy and "allow-downloads" not in policy
         assert response.headers["x-content-type-options"] == "nosniff"
+
+
+async def test_portable_report_allows_explicit_downloads_without_relaxing_other_sandbox_restrictions(api, monkeypatch):
+    from model_forge_codex import technical_reports
+
+    client, _, project, branch = api
+    pointer, _ = saved_file(project, branch, "run.report", "report.md", b"# Exact report", "P5", "p5.assembly_lead")
+    package = publish(project, branch, "P5", {"technical_report": {"report_artifact": pointer}}, "run.report")
+    generation = package["records"]["technical_report"]["generation_id"]
+    payload = b'<a href="data:text/html;base64,PGgxPlByb29mPC9oMT4=" download="appendix.html">Download proof appendix (HTML)</a>'
+    exports = []
+    def export(*args, **kwargs):
+        exports.append(kwargs)
+        return payload
+    monkeypatch.setattr(technical_reports, "export_technical_report", export)
+    url = f"/api/v1/projects/project.test/branches/{branch}/phases/P5/records/technical_report/{generation}?view=portable"
+    for query, disposition in (("", "inline"), ("&download=1", "attachment")):
+        response = await client.get(url + query)
+        assert response.status_code == 200 and response.content == payload
+        assert response.headers["content-type"].startswith("text/html")
+        assert response.headers["content-disposition"] == disposition + '; filename="technical-report.html"'
+        assert response.headers["content-security-policy"] == (
+            "sandbox allow-downloads; default-src 'none'; style-src 'unsafe-inline'; "
+            "img-src data:; font-src data:; base-uri 'none'; form-action 'none'"
+        )
+        assert response.headers["x-content-type-options"] == "nosniff"
+    assert exports[0]["html_download_base_url"] == url.replace("?view=portable", "?view=attachment")
+    assert exports[1]["html_download_base_url"] is None
+
+
+async def test_hosted_report_material_download_uses_only_its_exact_committed_html(api):
+    client, _, project, branch = api
+    report, _ = saved_file(project, branch, "run.download-report", "report.md", b"# Exact report", "P5", "p5.assembly")
+    content = b'<!doctype html><title>Original proof</title><p id="proof">Exact retained bytes.</p>\r\n'
+    appendix, path = saved_file(project, branch, "run.download-report", "sealed-proof.html", content, "P5", "p5.assembly")
+    appendix["media_type"] = "text/html"
+    package = publish(project, branch, "P5", {"technical_report": {"report_artifact": report,
+        "supplementary_artifacts": [appendix],
+        "artifact_authored_paths": {appendix["artifact_id"]: "proofs/appendix.html"}}}, "run.download-report")
+    generation = package["records"]["technical_report"]["generation_id"]
+    url = f"/api/v1/projects/project.test/branches/{branch}/phases/P5/records/technical_report/{generation}?view=attachment"
+    response = await client.get(url, params={"view": "attachment", "material_id": appendix["artifact_id"]})
+    assert response.status_code == 200 and response.content == content, response.text
+    assert response.headers["content-disposition"] == 'attachment; filename="appendix.html"'
+    assert response.headers["content-type"] == "application/octet-stream"
+    assert response.headers["x-content-type-options"] == "nosniff"
+    for selector in (None, "../sealed-proof.html", str(path), report["artifact_id"], "unknown"):
+        response = await client.get(url, params={"view": "attachment", **({"material_id": selector} if selector is not None else {})})
+        assert response.status_code == 400
+    # Another generation cannot borrow a material just because the run or basename matches.
+    later = publish(project, branch, "P5", {"technical_report": {"report_artifact": report}}, "run.download-report")
+    later_url = url.replace(generation, later["records"]["technical_report"]["generation_id"])
+    assert (await client.get(later_url, params={"view": "attachment", "material_id": appendix["artifact_id"]})).status_code == 400
+    assert (await client.get(url, params={"view": "attachment", "material_id": appendix["artifact_id"]})).content == content
+    path.write_bytes(b"changed proof")
+    assert (await client.get(url, params={"view": "attachment", "material_id": appendix["artifact_id"]})).status_code == 400
+    path.unlink()
+    assert (await client.get(url, params={"view": "attachment", "material_id": appendix["artifact_id"]})).status_code == 400
+
+
+async def test_hosted_report_material_download_resolves_retained_inputs_and_rejects_ambiguous_ids(api):
+    client, _, project, branch = api
+    report, _ = saved_file(project, branch, "run.reused-report", "report.md", b"# Exact report", "P5", "p5.assembly_lead")
+    content = b"<!doctype html><title>Frozen proof</title>"
+    frozen = project / "runs/run.reused-report/inputs/proof.html"
+    frozen.parent.mkdir(parents=True)
+    frozen.write_bytes(content)
+    appendix = {"artifact_id": "artifact.frozen-proof", "path": "appendix.html", "sha256": sha256_bytes(content), "media_type": "text/html"}
+    write_json_atomic(project / "runs/run.reused-report/basis.json", {"artifacts": [{"artifact_id": appendix["artifact_id"],
+        "path": str(frozen), "original_path": "appendix.html", "content_sha256": appendix["sha256"]}]})
+    package = publish(project, branch, "P5", {"technical_report": {"report_artifact": report,
+        "supplementary_artifacts": [appendix]}}, "run.reused-report")
+    generation = package["records"]["technical_report"]["generation_id"]
+    url = f"/api/v1/projects/project.test/branches/{branch}/phases/P5/records/technical_report/{generation}?view=attachment"
+    assert (await client.get(url, params={"view": "attachment", "material_id": appendix["artifact_id"]})).content == content
+    duplicate = {**appendix, "sha256": "d" * 64, "path": "other.html"}
+    ambiguous = publish(project, branch, "P5", {"technical_report": {"report_artifact": report,
+        "supplementary_artifacts": [appendix, duplicate]}}, "run.reused-report")
+    ambiguous_url = url.replace(generation, ambiguous["records"]["technical_report"]["generation_id"])
+    assert (await client.get(ambiguous_url, params={"view": "attachment", "material_id": appendix["artifact_id"]})).status_code == 400
 
 
 async def test_verified_table_pages_keep_labels_units_and_all_values(api):

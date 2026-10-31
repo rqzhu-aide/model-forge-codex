@@ -61,40 +61,26 @@ project catalog adoption remain separate.
 
 ## Write one useful invitation
 
-Use the existing fields rather than adding a second explanation artifact:
+The canonical inquiry authoring guidance is the catalog's
+[user-inquiry reference](../references/research-presentation/user-inquiry.md).
+It owns consequential filtering, semantic overlap consolidation, primary field
+ceilings, useful mathematics and scientific meaning, justified suggestion-first
+options, custom/unknown responses and one editable answer. New briefs deliver its
+exact frozen bytes to eligible authors and targeted discussion/advice routes.
+Historical records and started runs retain their original instructions and text.
 
-- `question`: one direct choice or factual request. Make optional status visible
-  when work can responsibly continue.
-- `context_markdown`: the affected scientific point and relevant formulation,
-  with local symbols interpreted in the study. Give only the context needed now.
-- `options[].consequence`: the changed target, constraint or condition, followed
-  by its scientific meaning and material benefit or cost. Define common notation
-  once. Usually two or three alternatives are enough when a useful finite set
-  exists; open-ended preferences need no artificial list.
-- `likely_consequence`: what the answer changes in the intended result or use,
-  without repeating all option accounts.
-- `recommendation`: Lead advice with its reason, when justified. It is not a saved
-  answer. Study-fact requests have neither invented alternatives nor a recommendation.
-- Exact sources, identities and answer revisions stay in their structured fields.
-  Do not replay review history or internal identifiers in the visible explanation.
+Use the existing question/context/consequence fields and stable authored option
+IDs. Optionality and actual pauses come from run/request state; an unanswered
+invitation alone does not block work. Preserve the existing phase authority:
+members propose in their owned outputs, the designated Lead consolidates, and
+P5 remains section/editorial work. This guidance creates no output quota, new
+writer, automatic follow-up or additional pause authority.
 
-For an actual pause, `reason` gives the shared scientific context and names the
-specific action that cannot responsibly proceed. Optional applicability details
-say what can proceed and what remains conditional. Scientific importance does not
-by itself make a missing answer a blocker. Unknown and unavailable are legitimate.
-
-Address the researcher as **you** and the harness as **I** when useful. Name study
-participants, experimental units and intended beneficiaries explicitly so that
-they are not confused with the reader.
-
-The Lead owns routine scientific and implementation choices within the agreed
-goal. Missing proofs, numerical defects and diagnostics remain team work. Do not
-ask a researcher to certify an assumption by accepting it. Preserve settled
-answers. Retain earlier or alternative-method work in its proper scope rather
-than listing it as a new obligation for the selected method.
-
-Write as briefly as scientific completeness allows. There is no word or equation
-quota, required question count, extra writer or automatic follow-up run.
+Full scientific accounts and requested explanations have no inquiry word cap.
+For P4, the delivered scientific-explanation, claims-and-evidence, summary and
+tables-and-figures references govern the existing owned account and displays.
+The illustrative cases below explain meaning; they are not full inquiry templates
+or a reason to repeat already settled questions.
 
 ## Examples for different research contexts
 

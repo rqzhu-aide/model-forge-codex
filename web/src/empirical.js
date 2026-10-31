@@ -32,7 +32,7 @@ function mentionsExhibit(text, id) {
   const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`(^|[^A-Za-z0-9_.-])${escaped}(?=$|[^A-Za-z0-9_.-]|[.]?(?:\\s|$))`).test(text);
 }
-export const referencedCoverageExhibits = (entry, exhibits = []) => exhibits.filter((exhibit) => ids(entry.exhibit_ids).includes(exhibit.exhibit_id) || mentionsExhibit(entry.summary, exhibit.exhibit_id));
+export const referencedCoverageExhibits = (entry, exhibits = [], summary) => exhibits.filter((exhibit) => (!summary || sameEvaluation(summary, exhibit)) && (ids(entry.exhibit_ids).includes(exhibit.exhibit_id) || mentionsExhibit(entry.summary, exhibit.exhibit_id)));
 // Give each saved exhibit one location. Author-declared topic links outrank a
 // broad test/case relationship. Figures inherit only explicit data links.
 export function routeEmpiricalExhibits(exhibits = [], questions = [], coverage = [], summary) {

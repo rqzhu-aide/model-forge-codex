@@ -37,7 +37,7 @@ def test_workflow_keeps_existing_roles_outputs_and_publication_families():
     contract = read_json(CONTRACTS / "contracts/phases/P4.json")
     registry = read_json(CONTRACTS / "contracts/phases.json")
     assert next(phase for phase in registry["contracts"] if phase["phase_id"] == "P4") == contract
-    assert contract["contract_version"] == "3.4.4"
+    assert contract["contract_version"] == "3.6.2"
     assert {"p4.workflow_templates.v1", "p4.declared_source_snapshots.v1"} <= set(contract["capabilities"])
     assert [stage["roles"] for stage in contract["role_stages"]] == [["data_analyst"], ["theorist"], ["research_lead"]]
     assert [len(stage["writes"]) for stage in contract["role_stages"]] == [8, 2, 5]
@@ -190,8 +190,9 @@ def test_p4_accounts_keep_method_math_and_topical_evidence_in_their_owned_fields
     contract = read_json(CONTRACTS / "contracts/phases/P4.json")
     analyst, _, lead = contract["role_stages"]
     assert "method_formulation_markdown" in lead["objective"]
-    assert "a target equation alone is insufficient" in lead["objective"].lower()
-    assert "All quantitative tables and figures belong in Experiments and Results" in lead["objective"]
+    explanation = (CONTRACTS / "references/research-presentation/scientific-explanation.md").read_text(encoding="utf-8")
+    assert "A target equation or list of symbols alone does not explain a method" in explanation
+    assert "Keep Summary and Implementation and Code free of quantitative tables/figures" in lead["objective"]
     assert "tuning selections alone are not a tuning-sensitivity experiment" in analyst["objective"]
     assert "empirical standard deviation" in analyst["objective"]
     assert "Robustness changes a problem-relevant DGP" in analyst["objective"]
@@ -260,7 +261,7 @@ def test_explicit_historical_protocol_fixture_stays_on_its_producing_schema():
 
 def test_catalog_version_and_manifest_are_coherent():
     catalog = Catalog(CONTRACTS)
-    assert catalog.version == (CONTRACTS / "VERSION").read_text().strip() == "1.28.5"
+    assert catalog.version == (CONTRACTS / "VERSION").read_text().strip() == "1.30.2"
     assert read_json(CONTRACTS / "catalog-index.json")["catalog_version"] == catalog.version
     assert not catalog.verify_manifest()
 

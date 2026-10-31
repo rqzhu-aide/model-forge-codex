@@ -206,6 +206,46 @@ def test_context_basis_applies_only_accepted_expectations_and_preserves_frozen_p
     assert read_basis_unchanged(store) == basis
 
 
+def test_continuation_excludes_later_source_correction_and_preserves_original_notation(pause):
+    from model_forge_codex.notation import digest as notation_digest
+
+    store, record, stage, basis, authored, request = pause
+    notation = {"schema_version": "1.0.0", "sources": [], "entries": []}
+    basis["notation"] = {"document": notation, "sha256": notation_digest(notation)}
+    basis["problem_context"].update(sha256="context.original", effective_account={"items": []})
+    basis["problem_context"]["brief"]["instructions"] = "Original problem."
+    write_json_atomic(store.run_dir / "basis.json", basis)
+    answer_ref = {"kind": "researcher_answer", "attention_id": request["request_id"], "answer_revision": 1}
+    original_source = {key: value for key, value in basis["records"][0].items() if key != "snapshot_path"}
+    admitted = {"item_id": "context.notation.admitted", "revision": 2,
+                "statement": "Explain the retained candidate parameter.", "topic": "notation_correction",
+                "status": "confirmed", "origin": "researcher_reported", "scope": {"kind": "project"},
+                "answer_refs": [answer_ref], "source_refs": [{"kind": "notation_entry", **original_source}]}
+    excluded = {**deepcopy(admitted), "item_id": "context.notation.p4",
+                "statement": "Private later bandwidth excerpt.",
+                "source_refs": [{"kind": "notation_entry", "phase": "P4", "branch": "method.one",
+                                 "family": "empirical_synthesis", "generation_id": "later.p4", "sha256": "b" * 64}]}
+    ordinary = {**deepcopy(admitted), "item_id": "context.ordinary", "topic": "constraint",
+                "statement": "Preserve the authorized patient population.", "source_refs": []}
+    items = [admitted, excluded, ordinary]
+    answer = store.save_answer(request["request_id"], 1, "Continue with retained inputs.", answer_ref=answer_ref,
+                               context_refs=[{"item_id": item["item_id"], "revision": item["revision"]} for item in items])
+    current = deepcopy(basis)
+    current["problem_context"]["items"] = items
+    store.continue_work(request["request_id"], 1, answer["revision"], current_basis=current)
+
+    delivered = store.context_basis(record)
+    context = delivered["problem_context"]
+    assert context["authorized_context_items"] == [admitted, ordinary]
+    assert context["notation_correction_refs"] == [{"context_id": admitted["item_id"], "revision": 2,
+                                                   "sha256": notation_digest(admitted)}]
+    assert context["sha256"] == "context.original" and context["revision"] == basis["problem_context"]["revision"]
+    assert delivered["notation"] == basis["notation"] and delivered["sha256"] == basis["sha256"]
+    assert "Private later bandwidth excerpt" not in store.brief(record, stage, MemberRole.RESEARCH_LEAD)
+    assert ordinary["statement"] in store.brief(record, stage, MemberRole.THEORIST)
+    assert read_basis_unchanged(store) == basis
+
+
 def read_basis_unchanged(store):
     from model_forge_codex.storage import read_json
     return read_json(store.run_dir / "basis.json")

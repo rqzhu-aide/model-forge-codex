@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { compareDecisionPriority, decisionDraft, decisionOptions, decisionSubmission } from "../src/researcherDecisions.js";
+import { compareDecisionPriority, decisionDiscussionDraft, decisionDraft, decisionOptions, decisionSubmission, recommendedDecisionOption } from "../src/researcherDecisions.js";
 import { issueCardEntries } from "../src/phaseUiState.js";
 import { researcherDecisionCards } from "../src/contextualRequests.js";
 import { populationChoice, studyFact, resourceChoice, legacyQuestion } from "./fixtures/researcher-decisions.mjs";
@@ -36,6 +36,28 @@ test("a selectable choice requires complete, distinct authored options", () => {
   for (const options of ["one or two", ["one", "two"], [{ id: "a", label: "A" }], [{ id: "a", label: "A", consequence: "Effect." }, { id: "a", label: "B", consequence: "Other effect." }]]) assert.deepEqual(decisionOptions({ ...populationChoice, options }), []);
   assert.deepEqual(decisionOptions({ ...populationChoice, response_kind: undefined }), []);
   assert.deepEqual(decisionOptions({ ...populationChoice, response_kind: "study_fact" }), []);
+});
+
+test("a recommendation identifies an authored option without ordering or selecting it", () => {
+  const item = { ...populationChoice, recommended_option_id: "observed" }, before = structuredClone(item);
+  assert.equal(recommendedDecisionOption(item), item.options[1]);
+  assert.deepEqual(decisionOptions(item).map(option => option.id), ["survivors", "observed"]);
+  assert.equal(decisionDraft(item).choice, "");
+  for (const invalid of [undefined, "unlisted", "1", 1]) assert.equal(recommendedDecisionOption({ ...item, recommended_option_id: invalid }), null);
+  assert.equal(recommendedDecisionOption({ ...item, response_kind: "study_fact" }), null);
+  assert.deepEqual(item, before);
+});
+
+test("discussion snapshots preserve a selected choice without a note, alternatives and unknowns", () => {
+  const item = structuredClone(populationChoice), before = structuredClone(item);
+  assert.deepEqual(decisionDiscussionDraft(item, { choice: "option:observed", note: "" }), { kind: "choice", option_id: "observed", label: item.options[1].label, consequence: item.options[1].consequence, note: "" });
+  assert.deepEqual(decisionDiscussionDraft(item, { choice: "custom", note: "  Predict for a separate cohort.  " }), { kind: "custom", note: "Predict for a separate cohort." });
+  assert.deepEqual(decisionDiscussionDraft(item, { choice: "unknown", note: "" }), { kind: "unknown", note: "" });
+  assert.deepEqual(decisionDiscussionDraft(studyFact, { origin: "unknown", note: "Partial records only." }), { kind: "unknown", note: "Partial records only." });
+  assert.equal(decisionDiscussionDraft(item, { choice: "option:missing", note: "Wrong option." }), null);
+  assert.equal(decisionDiscussionDraft(item, { choice: "custom", note: " " }), null);
+  assert.equal(decisionDiscussionDraft(item, {}), null);
+  assert.deepEqual(item, before);
 });
 
 test("saved selection metadata restores the choice without parsing canonical prose", () => {

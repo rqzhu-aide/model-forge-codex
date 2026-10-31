@@ -1,5 +1,6 @@
 import { legacySummaryForDisplay } from "./researchMath.js";
 import { contextApplies } from "./researcherDialogue.js";
+import { researchTaskAppliesToMethod } from "./researchTaskScope.js";
 
 // Join authored records by identity and producing run, never by title or prose.
 export const proposalKey = (proposal) => `${proposal.generation_ref?.run_id || ""}:${proposal.proposal_id}`;
@@ -61,6 +62,7 @@ export function orderedProposals(proposals = []) {
 export function methodRequests(items = [], methodId, branch, { includeShared = false, modelRef } = {}) {
   return items.filter((item) => {
     if (!item) return false;
+    if (!researchTaskAppliesToMethod(item, methodId, branch, modelRef)) return false;
     if (item.scope?.kind === "model") {
       // P2 publishes exact candidate identities on trunk before a model branch
       // exists. Reading that candidate later keeps its authored trunk scope.

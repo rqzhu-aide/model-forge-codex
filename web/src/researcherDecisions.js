@@ -10,6 +10,21 @@ export function decisionOptions(item) {
   return item.options;
 }
 
+export function recommendedDecisionOption(item) {
+  return decisionOptions(item).find(option => option.id === item.recommended_option_id) || null;
+}
+
+// Discussion receives a snapshot of the editor without saving or adopting it.
+// Authored display text is retained locally; the API sends only kind, ID and note.
+export function decisionDiscussionDraft(item, { note = "", origin = "researcher_reported", choice = "" }) {
+  const options = decisionOptions(item);
+  const option = options.find(entry => `option:${entry.id}` === choice);
+  if (option) return { kind: "choice", option_id: option.id, label: option.label, consequence: option.consequence, note: note.trim() };
+  if ((options.length && choice === "unknown") || (!options.length && origin === "unknown")) return { kind: "unknown", note: note.trim() };
+  if (note.trim() && (!options.length || choice === "custom" || !choice)) return { kind: "custom", note: note.trim() };
+  return null;
+}
+
 export function decisionDraft(item, answer, cached) {
   const options = decisionOptions(item);
   if (cached) return { note: cached.text ?? cached.note ?? "", origin: cached.origin || "researcher_reported", choice: cached.choice || (cached.selection?.option_id ? `option:${cached.selection.option_id}` : "") };
@@ -65,8 +80,9 @@ export function decisionBriefSections(item, { showOptions = true } = {}) {
   const authoredBrief = ["choice", "study_fact"].includes(item.response_kind);
   const context = authoredBrief ? item.context_markdown || item.summary_markdown : null;
   const consequence = item.likely_consequence || item.consequence_markdown || item.why_it_matters || item.why_it_matters_markdown;
-  const role = item.original_role || item.responsible_role || item.raised_by;
-  const recommendationLabel = authoredBrief || role === "research_lead" ? "Lead recommendation" : role === "outside_reviewer" ? "Reviewer recommendation" : "Author recommendation";
+  const role = item.original_role || item.raised_by || item.requested_by || item.responsible_role;
+  const recommendationLabel = authoredBrief ? role === "research_lead" ? "Lead recommendation" : "Team recommendation"
+    : ({ research_lead: "Lead recommendation", outside_reviewer: "Reviewer recommendation", theorist: "Theorist recommendation", data_analyst: "Analyst recommendation" })[role] || "Author recommendation";
   return distinctSections([
     [context, item.response_kind === "study_fact" ? "Study context" : "What this choice changes", "context"],
     [consequence, "Why your answer matters", "consequence"],

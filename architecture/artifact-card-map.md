@@ -4,6 +4,11 @@ P4 mappings revised October 16, 2026 for catalog 1.25.1/P4 contract 3.3.1.
 P1 remains at contract 3.6.4 and P2 at 3.10.0. Installation and browser evidence
 are recorded in the [implementation status](implementation-status.md).
 
+Catalog 1.30.0 adds the source-bound notation amendment below to these existing
+reading locations. Earlier mapping dates remain historical; the executable
+contracts and [presentation design](research-presentation.md) define current
+authoring duties.
+
 This guide maps authored research to the current reader. Phase 1 has five
 sections: Research Setting, Main Findings, Decisions to Discuss, Explore Individual Papers,
 and Additional Runs and History. Shared colors and controls stay consistent across phases.
@@ -45,6 +50,21 @@ This supersedes the detailed-setting emphasis of 1.23.3. Historical publications
 retain their original instructions and provenance.
 
 ## Primary reading locations
+
+For `project_notation_v1`, each existing Lead account supplies `notation_updates`
+and a harness-retained final `notation_snapshot`. One shared Notation dialog is
+reached from Research Setting, the selected P2 formulation/comparison, the P3
+theoretical account, P4 Summary/Experiments and the exact P5 report or material.
+It shows account additions, method definitions and shared study definitions,
+while retaining other admitted source scopes. Definitions remain inline where
+needed to understand the science. P1 `component_interpretations` and P4
+`notation_markdown` below describe historical fallback fields only.
+
+Each row can open an exact-source explanation or the existing editable correction
+owner. A saved correction requests future work; the displayed account stays on
+its retained definitions. Lead dispositions name exact saved revisions and their
+published response sources. P5 report, appendix and offline HTML retain explicit
+source-local mappings. These controls add no card or scientific output family.
 
 | Phase and reader question | Author and scientific check | Existing source fields | Reader and source access |
 | --- | --- | --- | --- |

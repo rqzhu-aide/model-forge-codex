@@ -5,7 +5,7 @@ models, and algorithms. A Research Lead, Theorist, Data Analyst, and Outside
 Reviewer produce structured research that the application presents as concise
 cards and a technical report. The researcher chooses which phase to run.
 
-The current source tree prepares application **0.9.3** with workflow catalog **1.28.5**;
+The current source tree prepares application **0.9.3** with workflow catalog **1.30.2**;
 already published packages are unchanged. Application releases,
 project workflow adoption, and scientific publications are separate versions.
 An existing project keeps its catalog and historical results until an explicit
@@ -22,6 +22,8 @@ update or new run. Application updates do not rewrite past research.
 | [Artifact types](system_artifact_types.md) | Scientific, presentation, and operational records |
 | [Member and phase matrix](member-phase-matrix.md) | Production and independent review responsibilities |
 | [Researcher question language](../contracts/phases/researcher-question-language.md) | Scientific interpretation, mathematical precision and reader context across phases |
+| [Research presentation](research-presentation.md) | Five authoring references, numerical display ownership, notation and consequential inquiries |
+| [Shared notation and all-phase presentation](shared-notation-plan.md) | Implemented source design, scoped account snapshots, compatibility and verification limits |
 | [Visual design](../design-system/model-forge/MASTER.md) | Blue research, navy system controls, orange researcher interaction |
 
 The detailed design covers [principles](design/00-system-principles.md),

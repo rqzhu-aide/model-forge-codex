@@ -11,6 +11,7 @@ import os
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -112,6 +113,13 @@ class ContextConfirmation(BaseModel):
     statement: str | None = None
 
 
+class NotationCorrection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    target: dict
+    statement: str = Field(min_length=1)
+    expected_revision: int = Field(ge=1)
+
+
 class MemberUpdate(BaseModel):
     model: str | None = None
     reasoning_effort: str | None = None
@@ -151,6 +159,7 @@ class StartRun(BaseModel):
     assessment_id: str | None = None
     assessment_purpose: str = "assessment"
     researcher_note_draft: str | None = None
+    researcher_response_draft: dict | None = None
     retry_run_id: str | None = None
     supplied_method: SuppliedMethod | None = None
     budget_seconds: float | None = Field(default=None, gt=0, allow_inf_nan=False)
@@ -186,6 +195,7 @@ class SavedDecisionAnswer(BaseModel):
 class AssessmentMessage(BaseModel):
     instructions: str = Field(min_length=1)
     researcher_note_draft: str | None = None
+    researcher_response_draft: dict | None = None
     idempotency_key: str | None = None
     retry_run_id: str | None = None
 
@@ -480,6 +490,36 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
         except ValueError as exc:
             raise HTTPException(409, str(exc)) from exc
 
+    @app.get("/api/v1/projects/{project_id}/notation")
+    async def notation_view(project_id: str, source: str) -> dict:
+        from .notation_interactions import public_notation
+        try:
+            reference = json.loads(source)
+            if not isinstance(reference, dict):
+                raise ValueError("Select an exact scientific account")
+            return public_notation(engine.project_dir(project_id), reference)
+        except (ValueError, ArtifactError, KeyError, TypeError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/v1/projects/{project_id}/notation/correction")
+    async def notation_correction(project_id: str, target: str) -> dict:
+        from .notation_interactions import load_correction
+        try:
+            reference = json.loads(target)
+            if not isinstance(reference, dict):
+                raise ValueError("Select an exact notation entry")
+            return load_correction(engine.project_dir(project_id), reference)
+        except (ValueError, ArtifactError, KeyError, TypeError) as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.put("/api/v1/projects/{project_id}/notation/correction")
+    async def edit_notation_correction(project_id: str, body: NotationCorrection) -> dict:
+        from .notation_interactions import save_correction
+        try:
+            return save_correction(engine.project_dir(project_id), **body.model_dump())
+        except (ValueError, ArtifactError, KeyError, TypeError) as exc:
+            raise HTTPException(409, str(exc)) from exc
+
     @app.post("/api/v1/projects/{project_id}/problem-context/proposals/{proposal_id}/confirm")
     async def confirm_context(project_id: str, proposal_id: str, body: ContextConfirmation) -> dict:
         try:
@@ -712,6 +752,7 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
                 assessment_id=body.assessment_id,
                 assessment_purpose=body.assessment_purpose,
                 researcher_note_draft=body.researcher_note_draft,
+                researcher_response_draft=body.researcher_response_draft,
                 retry_run_id=body.retry_run_id,
                 supplied_method=body.supplied_method.model_dump() if body.supplied_method else None,
                 budget_seconds=body.budget_seconds,
@@ -755,6 +796,7 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
                                         intent="assessment", assessment_id=assessment_id,
                                         assessment_purpose=item.get("assessment_purpose", "assessment"),
                                         researcher_note_draft=body.researcher_note_draft,
+                                        researcher_response_draft=body.researcher_response_draft,
                                         retry_run_id=body.retry_run_id)
         return {"run_id": record.run_id, "state": record.state.value, "assessment_id": record.assessment_id}
 
@@ -893,7 +935,7 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
         from . import browse
 
         try:
-            if view == "portable":
+            if view in ("portable", "attachment"):
                 if family not in ("technical_report", "technical_report_candidate"):
                     raise HTTPException(400, "Only a technical report has a portable report view")
                 from .technical_reports import export_technical_report, completed_report_review_packets
@@ -913,17 +955,36 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
                     raise HTTPException(409, "This report's retained run source is unavailable")
                 run_dir = engine.run_dir(project_id, run_id)
                 basis = read_json(run_dir / "basis.json") or {}
+                artifact_roots = {family: run_dir / "outputs" / str(meta.get("stage_id") or "p5.assembly")}
+                if view == "attachment":
+                    import mimetypes
+                    from .technical_reports import report_context_basis, report_required_artifacts, resolve_report_artifact
+                    report_basis = report_context_basis(basis, doc)
+                    materials = report_required_artifacts(doc, report_basis)
+                    selected = [item for item in materials if material_id and item.get("artifact_id") == material_id]
+                    if len(selected) != 1:
+                        raise HTTPException(400, "Choose one declared HTML report material to download")
+                    target = resolve_report_artifact(selected[0], report_basis, roots=artifact_roots.values())
+                    if (selected[0].get("media_type") or mimetypes.guess_type(target.name)[0]) != "text/html":
+                        raise HTTPException(400, "Choose one declared HTML report material to download")
+                    filename = str(selected[0].get("authored_path") or selected[0].get("path") or target.name).replace("\\", "/").split("/")[-1]
+                    return research_file_response(target, download=True, filename=filename)
                 review_packets = completed_report_review_packets(engine.project_dir(project_id))
+                # A served view can use a generation-bound attachment. A saved
+                # standalone file must keep its embedded sources and work offline.
+                record_url = (f"/api/v1/projects/{quote(project_id, safe='')}/branches/{quote(branch_id, safe='')}"
+                              f"/phases/{quote(phase, safe='')}/records/{quote(family, safe='')}/{quote(generation_id, safe='')}")
                 payload = export_technical_report(doc, basis,
                     generation_ref={"phase": phase, "branch": branch_id, "family": family,
                         "generation_id": generation_id, "content_sha256": sha256_file(source)},
-                    artifact_roots={family: run_dir / "outputs" / str(meta.get("stage_id", "p5.assembly"))},
+                    artifact_roots=artifact_roots,
                     exported_at=datetime.now(timezone.utc).isoformat(), review_packets=review_packets,
-                    print_material_id=material_id)
+                    print_material_id=material_id,
+                    html_download_base_url=record_url + "?view=attachment" if not download else None)
                 return Response(payload, media_type="text/html", headers={
                     "Content-Disposition": ('attachment' if download else 'inline') + ('; filename="report-appendix.html"' if material_id else '; filename="technical-report.html"'),
                     "X-Content-Type-Options": "nosniff",
-                    "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'"})
+                    "Content-Security-Policy": "sandbox allow-downloads; default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'"})
             elif view == "document":
                 from .research import scientific_document_view
                 doc = scientific_document_view(engine.project_dir(project_id), branch_id, phase, family, generation_id)
@@ -1114,7 +1175,7 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
             raise HTTPException(409, "Artifact bytes no longer match the published source")
         return research_file_response(target, download=download)
 
-    def research_file_response(target, *, download=False):
+    def research_file_response(target, *, download=False, filename=None):
         from .research_sources import file_media
         media = file_media(target)
         headers = {"X-Content-Type-Options": "nosniff"}
@@ -1122,7 +1183,7 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
             # Image embedding disables scripts, but original navigation does
             # not. Sandbox the response itself without an application origin.
             headers["Content-Security-Policy"] = "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"
-        return FileResponse(target, media_type=media, headers=headers, filename=target.name,
+        return FileResponse(target, media_type=media, headers=headers, filename=filename or target.name,
                             content_disposition_type="attachment" if download else "inline")
 
     @app.get("/api/v1/projects/{project_id}/branches/{branch}/phases/P4/records/{family}/{generation}/implementation-bundle")

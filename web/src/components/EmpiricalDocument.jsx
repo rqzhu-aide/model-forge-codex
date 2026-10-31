@@ -46,13 +46,32 @@ export function empiricalSource(source, { branch, artifacts = [], records = [], 
 export function useEmpiricalSourceLink() {
   const sources = useContext(Sources);
   if (!sources.branch) return undefined;
-  return (source, label) => {
+  return (source, label, _path, { bare = false } = {}) => {
     if (!source.startsWith("run://")) return null;
     const target = empiricalSource(source, sources);
-    if (target?.reference) return <SourceRef reference={target.reference} onOpen={sources.onSource} label={label} />;
-    if (target?.artifact_url) return <a className="source-link ui-action" data-action="source" data-ui-role="system" href={target.artifact_url} target="_blank" rel="noreferrer"><ActionIcon name="source" />{label}</a>;
-    return <span className="note">{label} (source unavailable)</span>;
+    const visible = bare ? empiricalSourceLabel(source, sources, target) : label;
+    if (target?.reference) {
+      const link = <SourceRef reference={target.reference} onOpen={sources.onSource} label={visible} />;
+      return bare ? <span title={source}>{link}</span> : link;
+    }
+    if (target?.artifact_url) return <a className="source-link ui-action" data-action="source" data-ui-role="system" href={target.artifact_url} title={bare ? source : undefined} target="_blank" rel="noreferrer"><ActionIcon name="source" />{visible}</a>;
+    return <span className="note" title={bare ? source : undefined}>{visible} (source unavailable)</span>;
   };
+}
+
+// Bare prose has no authored label. Use a title only from the verified exact
+// target; an unresolved locator gets its filename, with its full URI retained.
+export function empiricalSourceLabel(source, { files = [], records = [] } = {}, target) {
+  const uri = source.split("#", 1)[0];
+  const sameReference = (reference) => reference && ["branch", "phase", "family", "generation_id", "sha256", "run_id", "stage_id", "package_id"]
+    .every((key) => reference[key] === target.reference[key]);
+  const matching = target ? files.filter((file) => file.uri === uri && file.source_verified === true && !file.source_error
+    && (target.artifact_url ? target.artifact_url.split("#", 1)[0] === file.artifact_url
+      : sameReference(file.generation_ref))) : [];
+  if (target?.reference) matching.push(...records.filter((record) => !record.source_error
+    && sameReference(record.generation_ref)));
+  const labels = [...new Set(matching.map((item) => item.title || item.label).filter((label) => typeof label === "string" && label.trim()))];
+  return labels.length === 1 ? labels[0] : uri.slice(uri.lastIndexOf("/") + 1) || "Retained source";
 }
 
 export default function EmpiricalDocument({ text, ...props }) {

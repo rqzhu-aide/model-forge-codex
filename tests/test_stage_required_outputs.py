@@ -4,7 +4,7 @@ import json
 import pytest
 
 from model_forge_codex.domain import RunState
-from model_forge_codex.records import current_records, read_generation
+from model_forge_codex.records import current_records, read_generation, source_artifact_path
 from model_forge_codex.runs import RunError
 from model_forge_codex.storage import read_json
 from test_direct_workflow import PID, direct_engine, p1_documents, script
@@ -65,10 +65,17 @@ async def test_missing_discovery_output_stops_synthesis_and_correction_preserves
     for name, original in siblings.items():
         assert (discovery / name).read_bytes() == original
         assert (directory / "attempts/original/outputs/p1.discovery" / name).read_bytes() == original
-    assert read_json(directory / "outputs/p1.lead_synthesis/research_basis.json") == documents["p1.research_basis"]
+    synthesis = read_json(directory / "outputs/p1.lead_synthesis/research_basis.json")
+    authored = documents["p1.research_basis"]
+    assert set(synthesis) == set(authored) | {"notation_snapshot"}
+    assert {key: value for key, value in synthesis.items() if key != "notation_snapshot"} == authored
     phase = project / "branches/trunk/phases/p1"
     records = current_records(phase)
-    assert read_generation(phase, "research_basis", records["research_basis"]) == documents["p1.research_basis"]
+    assert read_generation(phase, "research_basis", records["research_basis"]) == synthesis
+    notation = synthesis["notation_snapshot"]
+    for artifact, name in ((notation, "notation.json"), (notation["markdown"], "notation.md")):
+        assert source_artifact_path(project, records["research_basis"], artifact) == (
+            directory / "outputs/p1.lead_synthesis" / name).resolve()
 
 
 async def test_correction_that_still_omits_output_never_starts_synthesis(direct_engine):

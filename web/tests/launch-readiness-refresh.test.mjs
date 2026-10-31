@@ -329,6 +329,8 @@ test("cross-phase P2 modals poll their exact target through provider retry compl
   const names = ["window", "document", "setInterval", "clearInterval"];
   const previous = Object.fromEntries(names.map((name) => [name, globalThis[name]]));
   const method = { method_id: "method.target", branch_id: "method.target", title: "Target model", identity: { stable_id: "method.target", version: 1 } };
+  const viewSource = { phase: "P1", branch: "trunk", family: "research_basis", generation_id: "generation.study", content_sha256: "a".repeat(64) };
+  const viewNotation = { entries: [{ entry_id: "notation.shared-study" }] };
   try {
     globalThis.window = { addEventListener: noop, removeEventListener: noop };
     globalThis.document = { hidden: false, addEventListener: noop, removeEventListener: noop };
@@ -338,14 +340,20 @@ test("cross-phase P2 modals poll their exact target through provider retry compl
       const targetReadiness = () => phase === "P3"
         ? { modes: [{ mode: "p3.theory_revision", ready: published, reasons: published ? [] : ["A complete current theory package is required for this action"], basis: { sha256: published ? "target-published" : "target-before" } }] }
         : { modes: ["p4.preliminary", "p4.comprehensive"].map((mode) => readiness(mode, published ? "target-published" : "target-before", true).modes[0]) };
-      await withApi({ project: async () => ({ project: { name: "Cross-phase fixture" }, catalog: { version: "1.19.0" } }), branches: async () => ({ branches: [] }), listRuns: async () => ({ runs: [{ run_id: "run.provider-retry", phase, branch_id: method.branch_id, mode: phase === "P3" ? "p3.theory_establishment" : "p4.preliminary", state: runState }] }), artifacts: async () => ({}), decisionsPending: async () => ({}), readiness: async (_, branch, targetPhase, mode) => { checks.push({ branch, phase: targetPhase, mode }); return targetPhase === "P2" ? readiness("p2.full_catalog", "unchanged-p2-basis") : targetReadiness(); }, records: async () => ({ records: [] }), assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [method] }), activateMethod: async () => ({ branch_id: method.branch_id }), startRun: async (_, payload) => { starts.push(payload); return { run_id: "run.next", phase, branch_id: method.branch_id, state: "requested" }; } }, async () => {
+      await withApi({ project: async () => ({ project: { name: "Cross-phase fixture" }, catalog: { version: "1.19.0" } }), branches: async () => ({ branches: [] }), listRuns: async () => ({ runs: [{ run_id: "run.provider-retry", phase, branch_id: method.branch_id, mode: phase === "P3" ? "p3.theory_establishment" : "p4.preliminary", state: runState }] }), artifacts: async () => ({}), decisionsPending: async () => ({}), readiness: async (_, branch, targetPhase, mode) => { checks.push({ branch, phase: targetPhase, mode }); return { ...(targetPhase === "P2" ? readiness("p2.full_catalog", "unchanged-p2-basis") : targetReadiness()), basis: { records: [targetPhase === "P2" ? viewSource : { ...viewSource, phase: targetPhase, branch: method.branch_id, generation_id: "generation.target" }], notation: { document: targetPhase === "P2" ? viewNotation : { entries: [{ entry_id: "notation.target-only" }] } } } }; }, records: async () => ({ records: [] }), assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [method] }), activateMethod: async () => ({ branch_id: method.branch_id }), startRun: async (_, payload) => { starts.push(payload); return { run_id: "run.next", phase, branch_id: method.branch_id, state: "requested" }; } }, async () => {
         const project = mount(ui.ProjectView, { projectId: "project.cross-phase", context: { phase: "P2", branch: "trunk" }, onContextChange: noop, onOpenRun: noop });
         let launch;
         try {
           await project.settle(); assert.deepEqual(checks.at(-1), { branch: "trunk", phase: "P2", mode: undefined });
           const methods = find(project.tree, (node) => node.type === ui.MethodProposals);
+          assert.deepEqual(methods.props.issues().props.admittedRecords, [viewSource]);
           await methods.props.onContinue(method, phase, { prepareRun: true }); await project.settle();
           assert.deepEqual(checks.at(-1), { branch: method.branch_id, phase, mode: undefined }, "The existing parent poll must follow the modal target before the child mounts.");
+          const activeReader = find(project.tree, (node) => node.type === ui.MethodProposals);
+          assert.deepEqual(activeReader.props.issues().props.admittedRecords, [viewSource]);
+          assert.deepEqual(activeReader.props.issues().props.admittedNotation, viewNotation);
+          assert.deepEqual(activeReader.props.furtherWork().props.summaryContext.admittedRecords, [viewSource], "The active view must not count notes against the cross-phase modal's sources.");
+          assert.deepEqual(activeReader.props.furtherWork().props.summaryContext.admittedNotation, viewNotation);
           let modal = find(project.tree, (node) => node.type === ui.LaunchRun); const exactRequest = modal.props.request;
           launch = mount(ui.LaunchRun, modal.props); await launch.settle();
           find(launch.tree, (node) => node.type === "textarea").props.onChange({ target: { value: "Keep my cross-phase draft." } });
@@ -357,7 +365,7 @@ test("cross-phase P2 modals poll their exact target through provider retry compl
           await launch.settle(); const beforePublication = modal.props.readinessRevision; const beforeUnchangedPoll = checks.length;
           await poll(); await project.settle(); modal = find(project.tree, (node) => node.type === ui.LaunchRun);
           launch.update(modal.props); await launch.settle();
-          assert.equal(checks.length, beforeUnchangedPoll + 1, "An unchanged poll does not trigger another child readiness read.");
+          assert.equal(checks.length, beforeUnchangedPoll + 2, "The parent refreshes the active view and modal without triggering another child readiness read.");
           runState = "requested"; await poll(); await project.settle();
           modal = find(project.tree, (node) => node.type === ui.LaunchRun); launch.update(modal.props); await launch.settle();
           assert.equal(submit(launch).props.disabled, true, "The same retried run reserves the target phase.");

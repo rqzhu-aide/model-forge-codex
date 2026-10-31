@@ -1,5 +1,6 @@
 import { methodRequests } from "./methodWorkspace.js";
 import { contextApplies } from "./researcherDialogue.js";
+import { researchTaskAppliesToMethod } from "./researchTaskScope.js";
 
 export const explanationRun = (run) => ["explanation", "issue_explanation", "project_context", "model_dialogue", "issue_suggestions"].includes(run?.assessment_purpose);
 
@@ -11,6 +12,7 @@ export const issueIsOpen = (issue) => !issue.disposition || issue.disposition ==
 export function issuesForPhase(issues = [], phase, branch, methodId, modelRef) {
   return issues.filter((issue) => {
     if (issue.phase !== phase) return false;
+    if (!researchTaskAppliesToMethod(issue, methodId, branch, modelRef)) return false;
     if (methodId && phase === "P2") return methodRequests([issue], methodId, branch, { includeShared: true, modelRef }).length > 0;
     if (issue.scope?.kind === "project") return true;
     if (issue.scope?.kind === "model" && !contextApplies(issue.scope, branch, modelRef)) return false;
@@ -19,6 +21,18 @@ export function issuesForPhase(issues = [], phase, branch, methodId, modelRef) {
 }
 
 export const issueKey = (issue) => issue.issue_id || issue.attention_id;
+// Publication can refresh a question's context without moving its answer.
+// A future method phase without a source branch has no answer editor yet;
+// report choices are edited only on their own published report.
+export function issueAnswerPhase(issue) {
+  const target = issue.target_phase;
+  const branch = issue.branch || issue.branch_id;
+  if (!["P1", "P2", "P3", "P4", "P5"].includes(target)
+      || issue.scope?.kind === "model" && ["P1", "P2"].includes(target)
+      || target === "P5" && issue.phase !== "P5"
+      || ["P3", "P4"].includes(target) && ["P1", "P2"].includes(issue.phase) && (!branch || branch === "trunk")) return issue.phase;
+  return target;
+}
 // Earlier projections used the source object ID as a title even when the
 // author supplied a statement. Keep identifiers in provenance, not row labels.
 export function issueLabel(issue, preferQuestion = false) {

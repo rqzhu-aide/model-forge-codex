@@ -1,6 +1,6 @@
 # Phase 5: Technical report
 
-Contract version: 3.3.4. Catalog: 1.28.4.
+Contract version: 3.5.2. Catalog: 1.30.2.
 
 Phase 5 assembles, independently reviews and revises a connected statistical technical report for one exact published model. It connects the researcher's problem and intended use with the formulation, mathematical justification, numerical findings and limitations. Journal selection, novelty and publication readiness are absent from this workflow. The reading output is HTML: a compact main report with a separately linked in-app proof appendix. Each run's frozen `p5.instructions` governs reading scope and appendix organization. PDF creation, print layout and page-count checks are required only if the researcher explicitly requests them later.
 
@@ -72,31 +72,15 @@ Validated publication replaces only the report slot atomically. A valid interim 
 
 ## Compact editorial decisions
 
-P5 attention remains limited to indispensable editorial preferences for this exact
-report. Apply the same consequence threshold: the preference must materially affect
-the report's interpretation or use and remain unresolved by existing instructions.
-Mathematical alternatives, scientific justification and missing study facts stay in
-their scientific sources and upstream work, with explicit report limitations.
-Empty attention output is valid. Briefly record material Lead-owned editorial choices
-and reasons in the existing decision summary.
-
-New researcher items author `decision_priority` as `interpretation`, `inference`,
-`data` or `resources` and `response_kind` as `choice` or `study_fact`. This metadata
-does not authorize P5 study-fact elicitation. Keep `question` to the current editorial
-choice, `context_markdown` to its affected point and `likely_consequence` to its
-practical effect. When useful, offer usually two or three realistic `options` as
-`{id, label, consequence}` with unique IDs; open-ended choices may omit them.
-When an editorial choice changes the presentation of existing mathematics,
-`context_markdown` shows the affected problem or equation, defining symbols and
-any shared objective once. Each option's `consequence` shows that retained
-formulation as it would appear and its concise practical effect. This does not
-authorize choosing between scientific definitions. Choices without a mathematical
-distinction need no artificial equation.
-`recommendation` gives the Lead's Markdown advice and reason, or the evidence missing
-for advice. Do not preselect or save it as the researcher answer. Keep full sources
-accessible without repeating context or imposing a word cap. Preserve exact question
-scope, model version, audience and answer history. Saving an instruction does not
-resume a pause or launch scientific work.
+Follow the delivered frozen [user-inquiry reference](../references/research-presentation/user-inquiry.md)
+for new inquiry ceilings, overlap consolidation, stable option IDs and justified
+suggestion-first presentation. New attention retains exact scope, audience and
+answer applicability. P5 attention remains limited to indispensable editorial
+preferences for this exact report; metadata does not authorize study-fact or
+upstream scientific elicitation. When an editorial alternative presents retained
+mathematics differently, show that formulation and its meaning without choosing
+a new scientific definition. Preserve source and answer history. Empty attention
+is valid, and saving an answer neither resumes a pause nor launches work.
 
 ## Scientific meaning for the intended reader
 
@@ -114,3 +98,9 @@ necessary conditions. Review findings state assessment, support and consequence;
 the revision account distinguishes the independently reviewed original bytes from
 a later Lead-checked revision. Researcher questions remain editorial only;
 reviewers retain scientific open-question findings in their owned outputs.
+
+## Shared notation and presentation (catalog 1.30.0)
+
+Assembly and revision freeze each report candidate's complete notation with the declared review materials. Reviewers check that submitted view without hidden or newer project context. Main-text translations preserve exact proof-local meanings; report-section discussion cannot publish notation or reopen upstream elicitation.
+
+The five neutral presentation references apply through `research_presentation_v2`; shared notation is separately gated by `project_notation_v1`, which requires v2. Keep full measure definitions beside results and actual resource measurements outside mathematical notation. This adds no stage, output family or scientific authority. Retained catalogs preserve their original routing and historical local fields.

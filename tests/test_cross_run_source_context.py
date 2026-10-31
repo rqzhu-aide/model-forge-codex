@@ -5,8 +5,28 @@ import pytest
 
 from model_forge_codex.domain import MemberRole
 from model_forge_codex.methods import get_method
+from model_forge_codex.records import ArtifactError, source_artifact_path
 from model_forge_codex.storage import read_json, sha256_bytes
 from test_researcher_workbench_engine import publish, workbench
+
+
+def test_nonexported_input_keeps_truthful_unverified_diagnostic(tmp_path):
+    project = tmp_path / "project.test"
+    run_dir = project / "runs/run.p3.original"
+    original = run_dir / "inputs/notation.json"
+    original.parent.mkdir(parents=True)
+    content = b'{"entries": [{"symbol": "x", "scope": "study"}]}'
+    original.write_bytes(content)
+    (run_dir / "outputs/p3.theorist").mkdir(parents=True)
+    pointer = {"path": "inputs/notation.json", "sha256": sha256_bytes(content)}
+
+    with pytest.raises(ArtifactError) as error:
+        source_artifact_path(project, {"run_id": run_dir.name, "stage_id": "p3.theorist"}, pointer)
+
+    assert original.read_bytes() == content
+    assert sha256_bytes(original.read_bytes()) == pointer["sha256"]
+    assert "could not be verified from the retained outputs" in str(error.value)
+    assert "missing" not in str(error.value) and "digest differs" not in str(error.value)
 
 
 @pytest.mark.parametrize("uri_prefix", ["", "outputs/"])

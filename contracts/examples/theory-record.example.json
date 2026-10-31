@@ -314,5 +314,11 @@
     "The counterexample on naive variance estimation removes the simplest standard-error route; only bootstrap inference is currently justified."
   ],
   "content_sha256": "0042e88677b3ff9e12a81e666bc3e478cfe2c3aa7cd4c9cc110566323b1df763",
-  "created_at": "2026-08-16T10:05:00Z"
+  "created_at": "2026-08-16T10:05:00Z",
+  "notation_updates": {
+    "incoming_sources": [],
+    "entries": [],
+    "retirements": [],
+    "correction_dispositions": []
+  }
 }

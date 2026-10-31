@@ -1,0 +1,20 @@
+.shared-notation { width:min(820px, calc(100vw - 32px)); }
+.notation-context { margin-top:0; }
+.notation-scope { margin:20px 0; }
+.notation-scope h3 { margin:0 0 8px; }
+.notation-entries { margin:0; }
+.notation-entry { display:grid; grid-template-columns:minmax(60px, max-content) minmax(0, 1fr); column-gap:20px; padding:12px 0; border-bottom:1px solid var(--line); }
+.notation-entry:first-child { padding-top:4px; }
+.notation-entry dt { padding-top:2px; max-width:180px; overflow-x:auto; }
+.notation-entry dd { margin:0; min-width:0; }
+.notation-entry dd > .research-document > :first-child { margin-top:0; }
+.notation-entry dd > .research-document > :last-child { margin-bottom:6px; }
+.notation-entry-actions { margin-top:6px; gap:6px 12px; }
+.notation-mapping { margin:6px 0; }
+.notation-corrected-definition { margin:16px 0; }
+.notation-correction textarea { min-height:120px; width:100%; }
+.notation-disposition { margin-top:20px; }
+@media (max-width:560px) {
+  .notation-entry { grid-template-columns:1fr; gap:6px; }
+  .notation-entry dt { max-width:100%; }
+}

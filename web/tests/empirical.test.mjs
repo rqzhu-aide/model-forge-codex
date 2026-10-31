@@ -116,11 +116,12 @@ test("missing legacy completion totals remain unrecorded", () => {
   assert.doesNotMatch(html, /<h3>Completion and convergence<\/h3>|0 incomplete or nonconverged/);
 });
 
-test("question view retains interpretation while numerical results have their own experiment disclosure", () => {
+test("question view retains interpretation and exact scoped values in a closed disclosure", () => {
   const html = render({ branch: "method.a", questions: [{ ...question, branch: "method.a", phase: "P4", followup_target: target, theory_context: { state: "affected", tested_ref: testedRef, affected_statement_ids: ["statement.error"], message: "A dependency changed after these experiments." } }], cases, protocols, diagnostics: [diagnostic], onSource: noop, onRequest: noop, onTheory: noop });
   const start = html.indexOf('<details class="question-detail empirical-question-row"');
   const selected = html.slice(start, html.indexOf('class="research-details empirical-complete-numbers"', start));
-  assert.doesNotMatch(selected, /1,234/);
+  assert.match(selected, /1,234/);
+  assert.match(selected, /<details class="research-details empirical-recorded-values"><summary>Recorded values, uncertainty and repetitions/);
   assert.doesNotMatch(selected, /9,?876|5,?432|999999|Solver health|<b>total<\/b>/);
   assert.match(html, /<details class="research-details complete-evaluation" data-card-role="history"><summary>/);
   assert.match(html, /9,876|5,432/);

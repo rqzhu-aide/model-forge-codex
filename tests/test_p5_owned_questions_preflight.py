@@ -79,9 +79,10 @@ def frozen_run(engine, project, branch, report_case, mode='p5.review_revision', 
 def test_p5_update_keeps_review_scope_and_writers_exact():
     current = read_json(REPO / 'contracts/contracts/phases/P5.json')
     previous = read_json(OLD_PHASE)
-    assert current['contract_version'] == '3.3.4'
+    assert current['contract_version'] == '3.5.2'
     assert current['capabilities'] == [*previous['capabilities'], NATIVE,
-                                      'consequential_researcher_decisions_v1', 'p5.reader_report.v1']
+                                      'consequential_researcher_decisions_v1', 'p5.reader_report.v1',
+                                      'research_presentation_v1', 'research_presentation_v2', 'project_notation_v1']
     for stage, old in zip(current['role_stages'], previous['role_stages']):
         assert {key: value for key, value in stage.items() if key != 'objective'} == {
             key: value for key, value in old.items() if key != 'objective'}

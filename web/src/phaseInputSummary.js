@@ -2,14 +2,15 @@ import { issueCardEntries, issueDisplayKind } from "./phaseUiState.js";
 import { issueIsOpen, issueKey, issueSourceIdentity, issueVersionKey } from "./phaseWorkflow.js";
 import { answerContextOwner, contextApplies } from "./researcherDialogue.js";
 import { decisionDraft } from "./researcherDecisions.js";
+import { notationCorrectionApplies } from "./sharedNotation.js";
 
 const ordered = (value) => value && typeof value === "object"
   ? Array.isArray(value) ? value.map(ordered) : Object.fromEntries(Object.keys(value).sort().map((key) => [key, ordered(value[key])]))
   : value ?? null;
 const identity = (value) => JSON.stringify(ordered(value));
 
-// Navigation retains the viewing scope separately from a question's original
-// phase. Carried questions still open in the current phase and method.
+// Navigation retains the viewing scope separately from a question's publication
+// phase. Each question is counted only where its answer is edited.
 export const phaseInputScopeKey = ({ phase, branch, methodId, modelRef }) => identity([phase, branch, methodId, modelRef]);
 export const phaseQuestionKey = (issue) => identity([issueKey(issue), issueSourceIdentity(issue)
   || [issue.phase, issue.branch || issue.branch_id, issue.question_version_id]]);
@@ -56,12 +57,12 @@ export function phaseInputSummary({ projectId, problemContext, contextAnswers, g
   });
   const saved = (problemContext?.items || []).filter((item) => item.status === "confirmed"
     && !answerContextOwner(item, contextAnswers ?? scope.answers)
-    && contextApplies(item.scope, scope.branch, scope.modelRef)).map((item) => ({
+    && contextApplies(item.scope, scope.branch, scope.modelRef) && notationCorrectionApplies(item, scope)).map((item) => ({
     key: identity([item.item_id, item.revision]), item, anchor: `problem-context:${item.item_id}:${item.revision}`,
   }));
   const proposals = (problemContext?.proposals || []).filter((proposal) => proposal.status === "pending"
     && !answerContextOwner(proposal.item, contextAnswers ?? scope.answers)
-    && contextApplies(proposal.item?.scope, scope.branch, scope.modelRef)).map((proposal) => ({
+    && contextApplies(proposal.item?.scope, scope.branch, scope.modelRef) && notationCorrectionApplies(proposal.item, scope)).map((proposal) => ({
     key: proposal.amendment_id, proposal, anchor: `proposed-understanding:${proposal.amendment_id}`,
   }));
   return {

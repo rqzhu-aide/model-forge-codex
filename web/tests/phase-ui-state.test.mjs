@@ -8,6 +8,8 @@ import { fileURLToPath } from "node:url";
 import { sharedPackage } from "../scripts/shared-deps.mjs";
 import { issueCardEntries, issueCardState, issueDisplayState, issueUrgency, phaseNavigationState } from "../src/phaseUiState.js";
 import { issueSourceIdentity, issueVersionKey } from "../src/phaseWorkflow.js";
+import { phaseInputSummary, phaseQuestionAnchor } from "../src/phaseInputSummary.js";
+import { answerSourceNavigation } from "../src/researcherAnswerNavigation.js";
 
 const require = createRequire(import.meta.url);
 const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.js"));
@@ -16,7 +18,7 @@ const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
 await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Issues from '${src}/components/IssuesCard.jsx'; export const issues = props => renderToStaticMarkup(<Issues {...props}/>); export const history = props => renderToStaticMarkup(<Issues {...props} pause={<section>Earlier saved decision</section>}/>);`, resolveDir: src, loader: "jsx" }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const render = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
-const question = { issue_id: "decision.a", phase: "P3", branch: "method.a", target_phase: "P4", kind: "researcher_decision", title: "Which setting should be studied?", disposition: "open" };
+const question = { issue_id: "decision.a", phase: "P3", branch: "method.a", target_phase: "P3", kind: "researcher_decision", title: "Which setting should be studied?", disposition: "open" };
 const answer = { attention_id: question.issue_id, attention: question, revision: 2, note: "Study the dependent setting.", previously_applied_to: ["run.old"] };
 const props = { projectId: "test", phase: "P3", branch: "method.a" };
 
@@ -24,13 +26,92 @@ test("P2 response helper follows the recorded destination rather than the displa
   for (const target_phase of ["P2", "P3", "P4", undefined]) {
     const html = render.issues({ projectId: "test", phase: "P2", branch: "trunk", issues: [{ ...question, phase: "P2", branch: "trunk", target_phase }] });
     assert.match(html, /<textarea/);
-    if (!target_phase || target_phase === "P2") assert.match(html, /After you save, the Lead can use it for the next model development work/);
+    if (!target_phase || target_phase === "P2") {
+      assert.match(html, /After you save, the Lead can use it for the next model development work/);
+    }
     else {
       assert.match(html, /After you save, it is available to the next work you start/);
       assert.doesNotMatch(html, /After you save, the Lead can use it for the next model development work/);
       assert.match(html, target_phase === "P3" ? /intended for theory development/ : /intended for numerical evaluation/);
     }
   }
+});
+
+test("a refreshed upstream question has one owner while its published context remains readable", () => {
+  const source = { kind: "phase_issue", branch: "trunk", phase: "P2", family: "attention_items", generation_id: "generation.refresh", sha256: "a".repeat(64), object_id: "attention.cost", entry_pointer: "/0" };
+  const cost = { attention_id: "attention.cost", attention_version_id: "attention.cost.v2", phase: "P2", target_phase: "P1", branch: "trunk",
+    kind: "researcher_decision", scope: { kind: "project" }, disposition: "open", question: "Which cost units are intended?",
+    context_markdown: "The pooled target is fixed; the cost is still undefined.", likely_consequence: "All proposed models still require the cost definition.",
+    explanation_target: source, generation_ref: source };
+  const logging = { ...cost, attention_id: "attention.logging", target_phase: "P2", question: "Which logging information is available?", explanation_target: { ...source, object_id: "attention.logging", entry_pointer: "/1" } };
+  const earlier = { attention_id: cost.attention_id, revision: 1, note: "An earlier saved account.", question_ref: { ...source, phase: "P1", generation_id: "generation.earlier" }, attention: { ...cost, phase: "P1" } };
+  const input = { projectId: "test", phase: "P2", branch: "trunk", attention: [cost, logging], answers: [earlier], onNavigate() {}, onSource() {} };
+  const before = structuredClone({ cost, logging, earlier });
+  const p2 = issueCardEntries(input);
+  assert.deepEqual(p2.entries.map(item => item.attention_id), [logging.attention_id]);
+  assert.deepEqual(p2.related.map(item => item.attention_id), [cost.attention_id]);
+  assert.deepEqual(p2.earlierAnswers, []);
+  assert.equal(issueCardState(p2).label, "1 unanswered question");
+  const p1 = issueCardEntries({ ...input, phase: "P1" });
+  assert.deepEqual(p1.entries.map(item => item.attention_id), [cost.attention_id]);
+  assert.deepEqual(p1.earlierAnswers, [earlier]);
+  assert.equal(p1.entries[0].researcher_answer, undefined);
+  assert.equal(p1.entries[0].explanation_target, source);
+  const html = render.issues(input);
+  assert.equal((html.match(/<textarea/g) || []).length, 1);
+  const linked = html.slice(html.indexOf('<section class="related-phase-questions">'));
+  assert.match(linked, /Which cost units are intended/);
+  assert.match(linked, /The pooled target is fixed; the cost is still undefined/);
+  assert.match(linked, /All proposed models still require the cost definition/);
+  assert.match(linked, /Read the scientific context/);
+  assert.match(linked, /Go to Phase 1 - Define and Explore questions/);
+  assert.doesNotMatch(linked, /<textarea|Save answer|Edit your answer|Responses to earlier question versions/);
+  assert.deepEqual({ cost, logging, earlier }, before);
+});
+
+test("model-scoped questions keep their reachable source editor when a shared target cannot host them", () => {
+  const modelRef = { stable_id: "method.a", version: 2, definition_sha256: "b".repeat(64) };
+  for (const phase of ["P2", "P3", "P4"]) {
+    const branch = phase === "P2" ? "trunk" : "method.a";
+    for (const target_phase of ["P1", "P2"]) {
+      const source = { kind: "phase_issue", phase, branch, family: "attention_items", generation_id: "generation.model", sha256: "c".repeat(64), object_id: "question.model", entry_pointer: "/0" };
+      const item = { attention_id: "question.model", phase, branch, target_phase, kind: "researcher_decision", question: "Which model regime applies?",
+        scope: { kind: "model", branch, model_ref: modelRef }, explanation_target: source };
+      const input = { projectId: "test", branch, methodId: modelRef.stable_id, modelRef, attention: [item] };
+      const original = issueCardEntries({ ...input, phase });
+      assert.equal(original.entries.length, 1);
+      assert.equal(phaseInputSummary({ ...input, phase }).questions.unanswered, 1);
+      assert.equal(original.entries[0].explanation_target, source);
+      assert.match(render.issues({ ...input, phase }), /<textarea/);
+      if (phase !== target_phase) {
+        const target = issueCardEntries({ ...input, phase: target_phase, ...(target_phase === "P1" ? { branch: "trunk" } : {}) });
+        assert.deepEqual(target.entries, []);
+        assert.equal(phaseInputSummary({ ...input, phase: target_phase, ...(target_phase === "P1" ? { branch: "trunk" } : {}) }).questions.total, 0);
+      }
+      const route = answerSourceNavigation({ projectId: "test", question: original.entries[0] });
+      assert.equal(route.change.phase, phase);
+      assert.deepEqual(route.anchors, [phaseQuestionAnchor(original.entries[0])]);
+    }
+  }
+});
+
+test("a changed target keeps old answers at the current owner's history with the original exact source", () => {
+  const source = { kind: "phase_issue", phase: "P3", branch: "method.a", family: "attention_items", generation_id: "generation.old", sha256: "d".repeat(64), object_id: "question.target", entry_pointer: "/0" };
+  const old = { attention_id: source.object_id, phase: "P3", branch: "method.a", target_phase: "P4", kind: "researcher_decision", scope: { kind: "project" }, question: "Which setting applies?", explanation_target: source };
+  const current = { ...old, target_phase: "P3", explanation_target: { ...source, generation_id: "generation.current", sha256: "e".repeat(64) } };
+  const saved = { attention_id: old.attention_id, revision: 1, question_ref: source, attention: old, note: "The original setting." };
+  const input = { ...props, issues: [current], answers: [saved] };
+  const owner = issueCardEntries(input);
+  assert.deepEqual(owner.earlierAnswers, [saved]);
+  assert.deepEqual(issueCardEntries({ ...input, phase: "P4" }).earlierAnswers, []);
+  const route = answerSourceNavigation({ projectId: "test", source, questions: [current], answers: [saved] });
+  assert.deepEqual(route.change, { phase: "P3", branch: "method.a" });
+  assert.deepEqual(route.anchors, [phaseQuestionAnchor(old)]);
+  const html = render.issues(input);
+  assert.match(html, /Responses to earlier question versions/);
+  assert.ok(html.includes(`data-reading-anchor="${route.anchors[0].replaceAll('"', '&quot;')}"`));
+  assert.equal(saved.question_ref, source);
+  assert.equal(saved.attention.explanation_target, source);
 });
 
 test("request urgency comes from responsibility and disposition, never from question phrasing", () => {
@@ -115,6 +196,33 @@ test("partial shared team work reaches other models in the same phase with its e
   assert.equal(issueDisplayState({ ...shared, kind: "researcher_decision" }).state, "recorded");
 });
 
+test("selected-method issue cards omit other methods' project tasks in local and carried work", () => {
+  const source = { branch: "trunk", phase: "P2", family: "attention_items", generation_id: "generation.tasks", sha256: "f".repeat(64), entry_pointer: "/1" };
+  const task = { phase: "P2", target_phase: "P4", branch: "trunk", kind: "research_task", disposition: "open", scope: { kind: "project" }, generation_ref: source };
+  const own = { ...task, attention_id: "own", question: "Check the selected method.", affected_record_ids: ["method.a"] };
+  const other = { ...task, attention_id: "other", question: "Check another method.", affected_record_ids: ["method.b"] };
+  const both = { ...task, attention_id: "both", question: "Check both named methods.", affected_record_ids: ["method.a", "method.b"] };
+  const shared = { ...task, attention_id: "shared", question: "Check the shared setting.", affected_record_ids: ["setting.record"] };
+  const decision = { ...other, attention_id: "decision", kind: "researcher_decision", question: "Choose the common cost unit." };
+  const attention = [own, other, both, shared, decision];
+  const before = JSON.stringify(attention);
+  const input = { ...props, phase: "P4", attention };
+  const carried = issueCardEntries(input);
+  assert.deepEqual(carried.related.map(item => item.attention_id).sort(), ["both", "decision", "own", "shared"]);
+  assert.deepEqual(carried.entries, []);
+  const original = issueCardEntries({ ...input, phase: "P2" });
+  assert.deepEqual(original.entries.filter(item => item.kind === "researcher_decision").map(item => item.attention_id), ["decision"]);
+  assert.equal(carried.related.find(item => item.attention_id === "own").generation_ref, source);
+  const html = render.issues(input);
+  assert.match(html, /Scientific work carried forward/);
+  assert.match(html, /Check the selected method|Check both named methods|Check the shared setting/);
+  assert.match(html, /Choose the common cost unit/);
+  assert.doesNotMatch(html, /Check another method/);
+  const local = issueCardEntries({ ...input, attention: attention.map(item => ({ ...item, phase: "P4" })) });
+  assert.deepEqual(local.entries.map(item => item.attention_id).sort(), ["both", "decision", "own", "shared"]);
+  assert.equal(JSON.stringify(attention), before);
+});
+
 test("partial model tasks remain limited to the exact branch, version and definition", () => {
   const modelRef = { stable_id: "method.a", version: 1, definition_sha256: "b".repeat(64) };
   const scoped = { ...question, kind: "research_task", target_phase: "P3", disposition: "partially_fixed",
@@ -164,13 +272,14 @@ test("React history content is not treated as an active pause", () => {
 });
 
 test("applicable carried questions join the response rows while retaining exact method scope", () => {
-  const other = { ...question, issue_id: "decision.b", branch: "method.b" };
-  const savedOnly = { ...answer, attention_id: "decision.saved", attention: { ...question, issue_id: "decision.saved" } };
-  const result = issueCardEntries({ ...props, phase: "P4", issues: [other], attention: [question], answers: [savedOnly] });
+  const carried = { ...question, target_phase: "P4" };
+  const other = { ...carried, issue_id: "decision.b", branch: "method.b" };
+  const savedOnly = { ...answer, attention_id: "decision.saved", attention: { ...carried, issue_id: "decision.saved" } };
+  const result = issueCardEntries({ ...props, phase: "P4", issues: [other], attention: [carried], answers: [savedOnly] });
   assert.deepEqual(result.entries.map((issue) => issue.issue_id), [question.issue_id, "decision.saved"]);
   assert.deepEqual(result.related, []);
   assert.equal(result.entries[1].researcher_answer, savedOnly);
-  const html = render.issues({ ...props, phase: "P4", issues: [other], attention: [question], answers: [savedOnly], onNavigate: () => {} });
+  const html = render.issues({ ...props, phase: "P4", issues: [other], attention: [carried], answers: [savedOnly], onNavigate: () => {} });
   assert.match(html, /data-issue-state="response"/);
   assert.match(html, /data-issue-state="saved"/);
   assert.match(html, /Raised during Phase 3 - Theory/);
@@ -249,7 +358,7 @@ test("carried project answers remain editable at their destination without reusi
 });
 
 test("shared P2 questions and method-specific questions stay with the intended method", () => {
-  const shared = { ...question, issue_id: "shared", branch: "trunk", phase: "P2" };
+  const shared = { ...question, issue_id: "shared", branch: "trunk", phase: "P2", target_phase: "P2" };
   const a = { ...shared, issue_id: "a", affected_record_ids: ["method.a"] };
   const b = { ...shared, issue_id: "b", affected_record_ids: ["method.b"] };
   const result = issueCardEntries({ issues: [shared, a, b], branch: "branch.a", phase: "P2", methodId: "method.a" });

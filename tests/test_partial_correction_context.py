@@ -3,8 +3,7 @@ import copy
 import json
 
 from model_forge_codex.domain import RunState
-from model_forge_codex.records import current_records, read_generation
-from model_forge_codex.storage import read_json
+from model_forge_codex.records import current_records, read_generation, source_artifact_path
 from test_direct_workflow import PID, complete, direct_engine, p1_documents, p2_documents, script
 
 
@@ -50,6 +49,7 @@ async def test_p1_synthesis_correction_keeps_discovery_sources_and_seals(direct_
     assert {finding["code"] for finding in record.findings_history[-1]} == {"output.cumulative_conflict"}
     directory = engine.run_dir(PID, record.run_id)
     discovery_before = files_under(directory / "outputs/p1.discovery")
+    synthesis_before = files_under(directory / "outputs/p1.lead_synthesis")
     turns_before = len(engine.bridge.turns)
     corrected = copy.deepcopy(original)
     corrected["source_dispositions"] = corrected["source_dispositions"][:1]
@@ -59,10 +59,16 @@ async def test_p1_synthesis_correction_keeps_discovery_sources_and_seals(direct_
     assert len(engine.bridge.turns) == turns_before + 1
     assert files_under(directory / "outputs/p1.discovery") == discovery_before
     assert files_under(directory / "attempts/original/outputs/p1.discovery") == discovery_before
-    assert read_json(directory / "attempts/original/outputs/p1.lead_synthesis/research_basis.json") == original
+    assert files_under(directory / "attempts/original/outputs/p1.lead_synthesis") == synthesis_before
     phase = project / "branches/trunk/phases/p1"
     records = current_records(phase)
-    assert read_generation(phase, "research_basis", records["research_basis"]) == corrected
+    published = read_generation(phase, "research_basis", records["research_basis"])
+    assert set(published) == set(corrected) | {"notation_snapshot"}
+    assert {key: value for key, value in published.items() if key != "notation_snapshot"} == corrected
+    notation = published["notation_snapshot"]
+    for artifact, name in ((notation, "notation.json"), (notation["markdown"], "notation.md")):
+        assert source_artifact_path(project, records["research_basis"], artifact) == (
+            directory / "outputs/p1.lead_synthesis" / name).resolve()
     library = read_generation(phase, "literature_library", records["literature_library"])
     assert len(library["sources"]) == 1
     assert len(library["sources"][0]["assessments"]) == 2

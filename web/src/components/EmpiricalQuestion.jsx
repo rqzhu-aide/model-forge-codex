@@ -6,6 +6,8 @@ import { Dialog, Outcome, RunState, SourceRef } from "./Shared";
 import ResearchDocument from "./EmpiricalDocument";
 import { ActionButton, ActionIcon, EmptyState } from "./Visuals";
 import ArtifactTable from "./ArtifactTable";
+import { hasSharedNotation } from "../sharedNotation";
+import { NotationDialog } from "./SharedNotation";
 
 export const EVIDENCE_TABS = [["setup", "Synthetic example"], ["comparisons", "Performance"], ["computation", "Computation"], ["tuning", "Tuning"], ["sensitivity", "Robustness"]];
 const TABS = EVIDENCE_TABS;
@@ -66,7 +68,7 @@ function RecordedQuestionTable({ diagnostic, cases, protocol, onSource }) {
 }
 
 // One readable evidence block, without a second layer of scientific tabs.
-export default function EmpiricalQuestion({ question, cases = [], diagnostics = [], protocol, onSource, onRequest, onTheory, hasMapping = true, headlineExhibits = [], onHeadline, showEvidence = true, onExhibit }) {
+export default function EmpiricalQuestion({ question, cases = [], diagnostics = [], protocol, onSource, onRequest, onTheory, hasMapping = true, headlineExhibits = [], onHeadline, showEvidence = true, showRecordedValues = false, onExhibit }) {
   const result = question.result || {}; const review = question.review || {};
   const hasHeadline = (question.exhibits || []).some((exhibit) => headlineExhibits.includes(exhibit));
   const recorded = hasHeadline ? [] : diagnostics.filter((item) => item.headline_numbers?.length);
@@ -80,8 +82,8 @@ export default function EmpiricalQuestion({ question, cases = [], diagnostics = 
     <div className="section-heading"><p className="note">{evidenceFamily(result.category || question.category)} · Analyst</p><div className="btnrow empirical-result-status"><Outcome state={scientificOutcome} />{executionState && <span className="note">Execution: <RunState state={executionState} /></span>}</div></div>
     <section className="empirical-result-finding"><h4>Finding</h4><ResearchDocument text={answer || (scientificOutcome === "not_assessed" ? "No authored finding is recorded for this question. It remains unassessed; its planned design is in Setup." : "No separate authored finding is recorded for this question.")} />{result.relevance_markdown && <ResearchDocument text={result.relevance_markdown} />}{result.comparison_markdown && <ResearchDocument text={result.comparison_markdown} />}</section>
     {(question.exhibits || []).map((exhibit, index) => !showEvidence ? <p className="empirical-exhibit-link" key={exhibit.exhibit_id || index}><ActionButton action="details" variant="link" onClick={() => onExhibit?.(exhibit)}>View {exhibit.title || "recorded exhibit"} in Experiments and Results</ActionButton></p> : headlineExhibits.includes(exhibit) ? <p className="empirical-headline-link" key={exhibit.exhibit_id || index}><ActionButton action="details" variant="link" onClick={() => onHeadline?.(exhibit)}>View {exhibit.title || "recorded result"} in Experiments and Results</ActionButton></p> : <EmpiricalExhibit key={exhibit.exhibit_id || index} exhibit={exhibit} onSource={onSource} />)}
-    {showEvidence && (recorded.length ? <details className="research-details empirical-recorded-values" open={!question.exhibits?.length}><summary>Recorded values, uncertainty and repetitions</summary>{recorded.map((diagnostic, index) => <RecordedQuestionTable key={diagnostic.diagnostics_id || index} diagnostic={diagnostic} cases={cases} protocol={protocol} onSource={onSource} />)}</details> : <p className="note">{hasHeadline ? "Quantitative results are shown in the linked experiment exhibit." : hasVerifiedExhibit ? "No additional aggregate numerical summary is linked to this question. Inspect the linked exhibits and original sources." : !hasMapping ? "This source does not identify which numerical rows answer this question. The complete numerical source remains in Experiments and Results." : ["not_evaluated", "inconclusive"].includes(result.outcome) ? "No completed numerical values are linked to this question. Its evidence gap remains open." : "No recorded numerical values are linked to this result. Inspect its sources before interpreting the answer."}</p>)}
-    {!showEvidence && !question.exhibits?.length && <p className="note">{!hasMapping ? "This source does not identify which numerical rows answer this question. Complete numerical sources are retained in Experiments and Results." : "Recorded numerical values and sources are retained in the complete numerical results disclosure."}</p>}
+    {(showEvidence || showRecordedValues) && (recorded.length ? <details className="research-details empirical-recorded-values" open={showEvidence && !question.exhibits?.length}><summary>Recorded values, uncertainty and repetitions</summary>{recorded.map((diagnostic, index) => <RecordedQuestionTable key={diagnostic.diagnostics_id || index} diagnostic={diagnostic} cases={cases} protocol={protocol} onSource={onSource} />)}</details> : <p className="note">{hasHeadline ? "Quantitative results are shown in the linked experiment exhibit." : hasVerifiedExhibit ? "No additional aggregate numerical summary is linked to this question. Inspect the linked exhibits and original sources." : !hasMapping ? "This source does not identify which numerical rows answer this question. The complete numerical source remains in Experiments and Results." : ["not_evaluated", "inconclusive"].includes(result.outcome) ? "No completed numerical values are linked to this question. Its evidence gap remains open." : "No recorded numerical values are linked to this result. Inspect its sources before interpreting the answer."}</p>)}
+    {!showEvidence && !showRecordedValues && !question.exhibits?.length && <p className="note">{!hasMapping ? "This source does not identify which numerical rows answer this question. Complete numerical sources are retained in Experiments and Results." : "Recorded numerical values and sources are retained in the complete numerical results disclosure."}</p>}
     <section className="empirical-result-conditions"><h4>Conditions and caveats</h4>
       {[result.conditions_markdown || question.scope || question.conditions, result.reliability_markdown, result.uncertainty_markdown, result.limitations_markdown || question.caveat].filter(Boolean).map((text, index) => <ResearchDocument key={index} text={text} />)}
       {result.observed_counts && <p className="note">Recorded case outcomes: {fmt(result.observed_counts.completed, { kind: "count" })} completed, {fmt(result.observed_counts.failed, { kind: "count" })} failed and {fmt(result.observed_counts.not_run, { kind: "count" })} not run, from {fmt(result.observed_counts.planned, { kind: "count" })} planned.</p>}
@@ -127,10 +129,22 @@ export function EmpiricalQuestionSetup({ question, cases = [], onSource, onTheor
   </section>;
 }
 
-export function EmpiricalDecisionSummary({ record, questions = [], dataSources = [], onSelect, onSource, awaitingDirection = false, hasProgress = false, progressState }) {
+export function EmpiricalNotation({ record, onSource, onClose }) {
+  if (hasSharedNotation(record)) return <NotationDialog record={record} onSource={onSource} onClose={onClose} />;
+  const notation = record?.decision_summary?.notation_markdown;
+  if (typeof notation !== "string" || !notation.trim()) return null;
+  return <Dialog title="Notation" className="empirical-notation" onClose={onClose}>
+    <ResearchDocument text={notation} />
+    <SourceRef reference={record.generation_ref && { ...record.generation_ref, entry_pointer: "/decision_summary/notation_markdown" }} onOpen={onSource} label="Notation source" />
+  </Dialog>;
+}
+
+export function EmpiricalDecisionSummary({ record, questions = [], dataSources = [], onSelect, onSource, onNotation, awaitingDirection = false, hasProgress = false, progressState }) {
   const summary = record?.decision_summary; const method = record?.evaluated_method;
   const outcome = record?.scientific_outcome;
-  const conciseOutcome = [outcome?.conclusion, outcome?.scope].every((text) => typeof text === "string" && text.trim());
+  const conciseOutcome = typeof outcome?.conclusion === "string" && outcome.conclusion.trim();
+  const hasOutcomeScope = outcome?.scope != null && (typeof outcome.scope !== "string" || Boolean(outcome.scope.trim()));
+  const authoredRecap = typeof summary?.method_recap_markdown === "string" && summary.method_recap_markdown.trim() ? summary.method_recap_markdown : null;
   const formulationBlocks = summary?.method_formulation_markdown ? researchBlocks(summary.method_formulation_markdown) : [];
   const fullFormulation = formulationBlocks.length > 1;
   const formulationRecap = fullFormulation && formulationBlocks[0].kind === "paragraph" ? formulationBlocks[0].text : null;
@@ -138,19 +152,21 @@ export function EmpiricalDecisionSummary({ record, questions = [], dataSources =
   const hasFrozenMethod = Boolean(method?.summary || method?.objective_markdown || method?.target_markdown);
   const summarySources = [
     record?.generation_ref && conciseOutcome && { label: "Current finding", reference: { ...record.generation_ref, entry_pointer: "/scientific_outcome/conclusion" } },
-    record?.generation_ref && conciseOutcome && { label: "Evaluation scope", reference: { ...record.generation_ref, entry_pointer: "/scientific_outcome/scope" } },
+    record?.generation_ref && hasOutcomeScope && { label: "Evaluation scope", reference: { ...record.generation_ref, entry_pointer: "/scientific_outcome/scope" } },
+    record?.generation_ref && authoredRecap && { label: "Method recap", reference: { ...record.generation_ref, entry_pointer: "/decision_summary/method_recap_markdown" } },
     record?.generation_ref && summary?.method_formulation_markdown && { label: "Implemented method", reference: { ...record.generation_ref, entry_pointer: "/decision_summary/method_formulation_markdown" } },
     record?.generation_ref && summary?.implementation_markdown && { label: "Developed and tested", reference: { ...record.generation_ref, entry_pointer: "/decision_summary/implementation_markdown" } },
     !summary?.method_formulation_markdown && hasFrozenMethod && method?.source_ref && { label: "Evaluated method", reference: method.source_ref },
   ].filter(Boolean);
   const questionIds = [...new Set((summary?.coverage || []).flatMap((entry) => entry.question_ids || []))];
   const questionLinks = questionIds.map((id) => questions.find((question) => (question.id || question.question_id || question.test_id) === id)).filter(Boolean);
-  return <section className="card empirical-decision" data-card-role="summary"><h2>Summary</h2><div className="body" data-overview-complete={Boolean(summary?.implementation_markdown && (summary?.method_formulation_markdown || method?.summary))}>
+  return <section className="card empirical-decision" data-card-role="summary"><h2>Summary</h2><div className="body" data-overview-complete={Boolean(summary?.implementation_markdown && (authoredRecap || summary?.method_formulation_markdown || method?.summary))}>
     {!summary ? <EmptyState><p className="note">{awaitingDirection ? "This evaluation is waiting for your direction. Inspect the latest attempt in Activity; any recorded questions appear below. No reviewed implementation or performance account has been published yet." : ["failed", "cancelled"].includes(progressState) ? "The evaluation stopped before publication. Inspect Activity for the interruption and available recovery actions. Saved experiments remain in the evaluation plan below." : hasProgress ? "The evaluation is in progress. Its implementation and performance account will appear after scientific review." : "No reviewed implementation or performance account has been published for this model yet."}</p></EmptyState> : <>
-      {conciseOutcome && <section className="empirical-overview-section"><h3>Current finding and scope</h3><ResearchDocument text={outcome.conclusion} /><ResearchDocument text={outcome.scope} /></section>}
-      <section className="empirical-overview-section empirical-method-formulation"><h3>{summary.method_formulation_markdown ? "Implemented method" : "Method evaluated"}</h3>{!summary.method_formulation_markdown && method?.summary && <p className="note">Definition recorded at the start of this evaluation</p>}
-        {summary.method_formulation_markdown ? fullFormulation ? <>{formulationRecap && <><ResearchDocument text={formulationRecap} /></>}<details className="research-details empirical-method-definition" data-reading-anchor={`${anchor}:method-definition`}><summary>Full mathematical formulation and fitting criterion</summary><ResearchDocument text={summary.method_formulation_markdown} /></details></> : <><ResearchDocument text={summary.method_formulation_markdown} /></> : hasFrozenMethod ? <>{method.summary && <ResearchDocument text={method.summary} />}
+      {conciseOutcome && <section className="empirical-overview-section"><h3>{hasOutcomeScope ? "Current finding and scope" : "Current finding"}</h3><ResearchDocument text={outcome.conclusion} />{hasOutcomeScope && <ResearchDocument text={outcome.scope} />}</section>}
+      <section className="empirical-overview-section empirical-method-formulation"><h3>{authoredRecap || summary.method_formulation_markdown ? "Implemented method" : "Method evaluated"}</h3>{!authoredRecap && !summary.method_formulation_markdown && method?.summary && <p className="note">Definition recorded at the start of this evaluation</p>}
+        {authoredRecap ? <><ResearchDocument text={authoredRecap} />{summary.method_formulation_markdown && <details className="research-details empirical-method-definition" data-reading-anchor={`${anchor}:method-definition`}><summary>Full mathematical formulation and fitting criterion</summary><ResearchDocument text={summary.method_formulation_markdown} /></details>}</> : summary.method_formulation_markdown ? fullFormulation ? <>{formulationRecap && <><ResearchDocument text={formulationRecap} /></>}<details className="research-details empirical-method-definition" data-reading-anchor={`${anchor}:method-definition`}><summary>Full mathematical formulation and fitting criterion</summary><ResearchDocument text={summary.method_formulation_markdown} /></details></> : <><ResearchDocument text={summary.method_formulation_markdown} /></> : hasFrozenMethod ? <>{method.summary && <ResearchDocument text={method.summary} />}
           {(method.objective_markdown || method.target_markdown) && <details className="research-details empirical-method-definition" data-reading-anchor={`${anchor}:method-definition`}><summary>Model formulation and fitting criterion</summary>{method.objective_markdown && <ResearchDocument text={method.objective_markdown} />}{method.target_markdown && <ResearchDocument text={method.target_markdown} />}</details>}</> : <p className="note">No mathematical formulation is available from the method frozen for this evaluation.</p>}
+        {(hasSharedNotation(record) || typeof summary.notation_markdown === "string" && summary.notation_markdown.trim()) && onNotation && <ActionButton action="details" variant="link" aria-haspopup="dialog" onClick={onNotation}>Notation</ActionButton>}
       </section>
       <section className="empirical-overview-section"><h3>What was developed and tested</h3>{summary.implementation_markdown ? <><ResearchDocument text={summary.implementation_markdown} /></> : <p className="note">This saved evaluation has no separate authored account of its implementation and completed experiments.</p>}
         {dataSources.length > 0 && <p className="note">Recorded data: {dataSources.map((entry) => `${entry.label || "Unnamed data source"} (${humanLabel(entry.origin)})`).join("; ")}</p>}
@@ -166,10 +182,10 @@ export function EmpiricalFullInterpretation({ record, onSource }) {
   const summary = record?.decision_summary;
   if (!summary) return null;
   const theory = summary.theory_relation; const outcome = record.scientific_outcome;
-  const conciseOutcome = [outcome?.conclusion, outcome?.scope].every((text) => typeof text === "string" && text.trim());
+  const conciseOutcome = typeof outcome?.conclusion === "string" && outcome.conclusion.trim();
   const anchor = `evaluation:${record.generation_ref?.generation_id || record.branch || "overview"}`;
   const source = (field) => <SourceRef reference={record.generation_ref && { ...record.generation_ref, entry_pointer: `/decision_summary/${field}` }} onOpen={onSource} label="Interpretation source" />;
-  return <details className="research-details empirical-full-interpretation" data-reading-anchor={`${anchor}:full-interpretation`}><summary>Full interpretation and evaluation purpose</summary><section className="empirical-overview-section"><h3>Numerical findings and limitations</h3>{["conclusion_markdown", "tradeoff_markdown", "limitations_markdown", "intent_markdown"].filter((field) => summary[field]).map((field) => <div key={field}><ResearchDocument text={summary[field]} />{source(field)}</div>)}</section>{outcome && !conciseOutcome && <><ResearchDocument text={outcome.conclusion} /><ResearchDocument text={outcome.scope} /></>}
+  return <details className="research-details empirical-full-interpretation" data-reading-anchor={`${anchor}:full-interpretation`}><summary>Full interpretation and evaluation purpose</summary><section className="empirical-overview-section"><h3>Numerical findings and limitations</h3>{["conclusion_markdown", "tradeoff_markdown", "limitations_markdown", "intent_markdown"].filter((field) => summary[field]).map((field) => <div key={field}><ResearchDocument text={summary[field]} />{source(field)}</div>)}</section>{outcome && !conciseOutcome && [outcome.conclusion, outcome.scope].filter((text) => text != null && (typeof text !== "string" || text.trim())).map((text, index) => <ResearchDocument key={index} text={text} />)}
     {theory ? <section><h3>Relationship to the theory</h3><p className="note">{{ unavailable: "No Phase 3 theory was available", not_tested: "Available theory was not tested", tested: "Evidence examines specific theory claims" }[theory.status] || "Theory relationship as recorded"}</p><ResearchDocument text={theory.explanation_markdown} />{source("theory_relation")}<p className="note">Numerical evidence is not a proof.</p></section> : <p className="note">This saved account does not state whether Phase 3 theory was available or tested.</p>}
   </details>;
 }

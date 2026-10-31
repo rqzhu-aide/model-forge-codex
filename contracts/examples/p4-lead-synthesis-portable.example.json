@@ -122,5 +122,11 @@
       "theorist_findings_markdown": "No independent research audit is claimed.",
       "next_steps_markdown": "No additional research is launched by this example."
     }
-  ]
+  ],
+  "notation_updates": {
+    "incoming_sources": [],
+    "entries": [],
+    "retirements": [],
+    "correction_dispositions": []
+  }
 }

@@ -176,11 +176,17 @@ class ResearcherPauseStore:
 
     def accepted_context_items(self, record):
         """The applicable item snapshots already authorized in this run."""
+        from .notation_interactions import notation_context_visible
+        from .notation import frozen_notation
         basis = read_json(self.run_dir / "basis.json") or {}
+        notation = frozen_notation(basis)
         items = {}
         for continuation in self.snapshot()["continuations"]:
             for item in continuation.get("accepted_context_items", []):
-                if scope_applies(item.get("scope"), _value(record, "branch_id"), basis.get("method")):
+                if (scope_applies(item.get("scope"), _value(record, "branch_id"), basis.get("method"))
+                        and notation_context_visible(item, basis.get("records", []), basis.get("method"),
+                                                     notation=notation, phase=_value(record, "phase"),
+                                                     branch_id=_value(record, "branch_id"))):
                     items[item["item_id"]] = deepcopy(item)
         return list(items.values())
 
@@ -206,6 +212,12 @@ class ResearcherPauseStore:
         context["authorized_context_refs"] = [
             {"item_id": item["item_id"], "revision": item["revision"],
              "answer_refs": deepcopy(item.get("answer_refs", []))} for item in accepted]
+        correction_refs = [{"context_id": item["item_id"], "revision": item["revision"], "sha256": digest(item)}
+                           for item in accepted if item.get("topic") == "notation_correction"]
+        if correction_refs:
+            refs = {row["context_id"]: row for row in context.get("notation_correction_refs", [])}
+            refs.update({row["context_id"]: row for row in correction_refs})
+            context["notation_correction_refs"] = list(refs.values())
         if accepted:
             document = deepcopy(context.get("document", context))
             items = {item["item_id"]: item for item in document.get("items", [])}
@@ -326,7 +338,11 @@ class ResearcherPauseStore:
             result += "\n## Previously authorized context amendments\n\n" + json.dumps(items, ensure_ascii=False, indent=2) + "\n"
             result += "These exact item snapshots were accepted during explicit continuations of this run. Apply their recorded scope and explicit amendments to the original frozen account; preserve unamended instructions.\n"
         if applicable:
-            result += "\n## Explicit continuation amendment\n\n" + json.dumps(applicable[-1], ensure_ascii=False, indent=2) + "\n"
+            amendment = deepcopy(applicable[-1])
+            admitted = {(item["item_id"], item["revision"]) for item in items}
+            amendment["accepted_context_items"] = [item for item in amendment.get("accepted_context_items", [])
+                                                   if (item["item_id"], item["revision"]) in admitted]
+            result += "\n## Explicit continuation amendment\n\n" + json.dumps(amendment, ensure_ascii=False, indent=2) + "\n"
             result += "Use the original frozen basis with the previously authorized context amendments and this selected response. Completed stages stay unchanged.\n"
         return result
 

@@ -13,7 +13,7 @@ from model_forge_codex.storage import sha256_file, write_json_atomic
 from test_researcher_workbench_engine import workbench
 
 
-def retained_sources(project, branch="method.a", *, reproduction=False, registry=False):
+def retained_sources(project, branch="method.a", *, reproduction=False, registry=False, presentation=False):
     run_id = "run.p4.current"
     run = project / "runs" / run_id
     primary = run / "outputs/p4.analyst/working/data_analyst/analyst_text.json"
@@ -24,6 +24,11 @@ def retained_sources(project, branch="method.a", *, reproduction=False, registry
     uris = [f"run://{run_id}/outputs/{path}" for path in [paths["protocol"], paths["theory_audit"],
             "p4.analyst/working/data_analyst/analyst_text.json"]]
     lead = {"decision_summary": {"implementation_markdown": " ".join(f"[source {i}]({uri})" for i, uri in enumerate(uris))}}
+    if presentation:
+        lead["decision_summary"].update(
+            method_recap_markdown=f"Estimate $m(x)$ for the stated population. [Protocol]({uris[0]})",
+            notation_markdown=f"| Symbol | Meaning |\n|---|---|\n| $m(x)$ | Conditional mean response; response units. [Audit]({uris[1]}) |",
+        )
     docs = {"protocol": {"claim_tests": [{"test_id": "question.one", "hypothesis": "A question"}]},
             "theory_audit": {"assessment_markdown": "Independent qualification."},
             "analyst_synthesis": {"question_results": [{"question_id": "question.one", "answer_markdown": "Full Q4."}],
@@ -202,6 +207,215 @@ def test_stage_form_run_locators_keep_exact_published_records_and_declared_worki
     assert audit_uri not in {link["uri"] for link in empirical_run_sources(tmp_path, lead, records["empirical_synthesis"][1], records)}
 
 
+@pytest.mark.parametrize("damage", [None, "changed_bytes", "missing_seal", "other_package", "other_branch",
+                                    "other_phase", "missing_package", "other_run", "wrong_output", "conflicting_digest"])
+def test_output_id_core_locators_require_exact_published_generation_and_stage_seal(tmp_path, damage):
+    run, docs, records, _, _ = retained_sources(tmp_path)
+    uri = f"run://{run.name}/p4.protocol/protocol.json"
+    family_uri = f"run://{run.name}/p4.protocol"
+    target = run / "outputs/p4.analyst/protocol.json"
+    source = records["protocol"][1]["generation_ref"]
+    if damage == "changed_bytes":
+        target.write_bytes(b'{"changed":true}')
+    elif damage == "missing_seal":
+        (target.parent / "seal.json").unlink()
+    elif damage in ("other_package", "other_branch", "other_phase", "other_run"):
+        field = {"other_package": "package_id", "other_branch": "branch", "other_phase": "phase", "other_run": "run_id"}[damage]
+        source[field] = "different"
+    elif damage == "missing_package":
+        source.pop("package_id")
+    elif damage == "wrong_output":
+        uri = uri.replace("/p4.protocol/", "/p4.theory_audit/")
+        family_uri = family_uri.replace("p4.protocol", "p4.unknown")
+    elif damage == "conflicting_digest":
+        docs["empirical_synthesis"]["source_artifacts"] = [{"uri": item, "path": "missing.json", "sha256": "f" * 64}
+                                                          for item in (uri, family_uri)]
+    lead = {"body_md": f"[Design]({uri}#/cases/0) [Protocol]({family_uri})"}
+    before = copy.deepcopy(records)
+    links = empirical_run_sources(tmp_path, lead, records["empirical_synthesis"][1], records)
+    if damage:
+        assert links == []
+    else:
+        assert {link["uri"] for link in links} == {uri, family_uri}
+        assert all(link["sha256"] == source["sha256"] and "path=protocol.json" in link["artifact_url"] for link in links)
+    assert records == before
+
+
+@pytest.mark.parametrize("damage", [None, "changed_bytes", "missing_file", "missing_path", "missing_digest",
+                                    "wrong_producer", "unknown_output", "other_package", "missing_package", "missing_branch",
+                                    "missing_phase", "traversal", "conflicting_digest"])
+def test_output_id_declared_markdown_and_reproduction_aliases_keep_exact_pointer_identity(tmp_path, damage):
+    run, docs, records, _, primary = retained_sources(tmp_path, reproduction=True)
+    audit = run / "outputs/p4.theorist/working/theorist/theory_audit.md"
+    audit.parent.mkdir(parents=True)
+    audit.write_text("The conclusion depends on the stated assumptions.\n", encoding="utf-8")
+    uri = f"run://{run.name}/p4.theory_audit/theory_audit.md"
+    pointer = {"uri": uri, "path": audit.name, "sha256": sha256_file(audit)}
+    docs["theory_audit"]["primary_artifact"] = pointer
+    readme = docs["implementation_record"]["reproduction"]["readme"]["artifact"]
+    readme["uri"] = f"run://{run.name}/p4.implementation_record/{readme['path']}"
+    if damage == "changed_bytes":
+        audit.write_text("Changed conclusion.\n", encoding="utf-8")
+    elif damage == "missing_file":
+        audit.unlink()
+    elif damage == "missing_path":
+        pointer.pop("path")
+    elif damage == "missing_digest":
+        pointer.pop("sha256")
+    elif damage in ("wrong_producer", "unknown_output"):
+        pointer["uri"] = uri = uri.replace("p4.theory_audit", "p4.protocol" if damage == "wrong_producer" else "p4.unknown")
+    elif damage == "other_package":
+        records["theory_audit"][1]["generation_ref"]["package_id"] = "package.other"
+    elif damage in ("missing_package", "missing_branch", "missing_phase"):
+        records["theory_audit"][1]["generation_ref"].pop({"missing_package": "package_id", "missing_branch": "branch", "missing_phase": "phase"}[damage])
+    elif damage == "traversal":
+        pointer["path"] = "../theory_audit.md"
+    elif damage == "conflicting_digest":
+        docs["empirical_synthesis"]["source_artifacts"] = [{"uri": uri, "path": "missing.md", "sha256": "f" * 64}]
+    lead = {"body_md": f"[Audit]({uri}#findings) [Reproduce]({readme['uri']})"}
+    before = copy.deepcopy(records)
+    links = empirical_run_sources(tmp_path, lead, records["empirical_synthesis"][1], records)
+    assert {link["uri"] for link in links} == ({readme["uri"], uri} if not damage else {readme["uri"]})
+    if not damage:
+        link = next(link for link in links if link["uri"] == uri)
+        assert link["sha256"] == pointer["sha256"]
+        assert "path=working%2Ftheorist%2Ftheory_audit.md" in link["artifact_url"]
+    assert records == before
+
+
+def test_shared_run_source_map_includes_authored_markdown_outside_the_lead_account(tmp_path):
+    run, docs, records, _, _ = retained_sources(tmp_path)
+    uri = f"run://{run.name}/p4.protocol/protocol.json"
+    docs["analyst_synthesis"]["question_results"][0]["answer_markdown"] = f"The result is conditional. [Design]({uri}#/cases/0)"
+    lead = {"body_md": "A qualified evaluation."}
+    before = copy.deepcopy(records)
+    links = empirical_run_sources(tmp_path, lead, records["empirical_synthesis"][1], records)
+    assert {link["uri"] for link in links} == {uri}
+    assert records == before
+
+
+def test_bare_only_output_id_source_request_keeps_sentence_punctuation_outside_identity(tmp_path):
+    run, _, records, _, _ = retained_sources(tmp_path)
+    uri = f"run://{run.name}/p4.protocol/protocol.json"
+    links = empirical_run_sources(tmp_path, {"body_md": f"See {uri}."}, records["empirical_synthesis"][1], records)
+    assert {link["uri"] for link in links} == {uri}
+
+
+@pytest.mark.parametrize("damage", [None, "changed_manifest", "missing_manifest_seal", "changed_table", "missing_table",
+                                    "missing_table_seal", "other_package", "wrong_manifest_digest", "duplicate_id",
+                                    "conflicting_alias", "traversal", "undeclared_basename"])
+def test_output_id_tables_join_exact_sealed_authored_and_published_manifests(tmp_path, damage):
+    run, docs, records, _, _ = retained_sources(tmp_path)
+    stage = run / "outputs/p4.analyst"
+    table = stage / "exhibit-artifacts/retained-table.csv"
+    table.parent.mkdir()
+    table.write_bytes(b"method,value\nselected,0.1\n")
+    digest = sha256_file(table)
+    authored = [{"exhibit_id": "exhibit.safety", "artifact_path": "tables/safety.csv", "artifact_sha256": digest}]
+    display = [{**authored[0], "artifact_path": "exhibit-artifacts/retained-table.csv", "title": "Returned-policy patient risk"}]
+    uri = f"run://{run.name}/p4.exhibits/tables/safety.csv"
+    if damage == "wrong_manifest_digest":
+        authored[0]["artifact_sha256"] = "f" * 64
+    elif damage == "duplicate_id":
+        authored.append(copy.deepcopy(authored[0]))
+    elif damage == "conflicting_alias":
+        authored.append({**authored[0], "exhibit_id": "exhibit.other", "artifact_sha256": "f" * 64})
+    elif damage == "traversal":
+        authored[0]["artifact_path"] = "../tables/safety.csv"
+        uri = f"run://{run.name}/p4.exhibits/../tables/safety.csv"
+    elif damage == "undeclared_basename":
+        uri = f"run://{run.name}/p4.exhibits/safety.csv"
+    manifest = stage / "working/data_analyst/exhibits.json"
+    write_json_atomic(manifest, authored)
+    write_json_atomic(stage / "exhibits.json", display)
+    seal = json.loads((stage / "seal.json").read_text(encoding="utf-8"))
+    seal["outputs"].update({"exhibits.json": {"sha256": sha256_file(stage / "exhibits.json")},
+                            "working/data_analyst/exhibits.json": {"sha256": sha256_file(manifest)},
+                            "exhibit-artifacts/retained-table.csv": {"sha256": digest}})
+    if damage == "missing_manifest_seal":
+        del seal["outputs"]["working/data_analyst/exhibits.json"]
+    elif damage == "missing_table_seal":
+        del seal["outputs"]["exhibit-artifacts/retained-table.csv"]
+    write_json_atomic(stage / "seal.json", seal)
+    stages = {family: meta["generation_ref"]["stage_id"] for family, (_, meta) in records.items()}
+    stages["exhibits"] = "p4.analyst"
+    docs["exhibits"] = display
+    raw = {family: json.dumps(doc).encode() for family, doc in docs.items()}
+    raw["exhibits"] = (stage / "exhibits.json").read_bytes()
+    package = publish_package(tmp_path / "branches/method.a/phases/p4", raw,
+        run_id=run.name, phase="P4", branch_id="method.a", metadata={"stage_ids": stages})
+    records = {family: (doc, {"generation_ref": source_ref("method.a", "P4", family, package["records"][family])})
+               for family, doc in docs.items()}
+    if damage == "other_package":
+        records["exhibits"][1]["generation_ref"]["package_id"] = "package.other"
+    elif damage == "changed_manifest":
+        manifest.write_bytes(b"[]")
+    elif damage == "changed_table":
+        table.write_bytes(b"changed\n")
+    elif damage == "missing_table":
+        table.unlink()
+    lead = {"body_md": f"[Safety table]({uri})"}
+    before = copy.deepcopy(records)
+    links = empirical_run_sources(tmp_path, lead, records["empirical_synthesis"][1], records)
+    if damage:
+        assert links == []
+    else:
+        assert len(links) == 1 and links[0]["uri"] == uri and links[0]["sha256"] == digest
+        assert links[0]["title"] == display[0]["title"]
+        assert "path=exhibit-artifacts%2Fretained-table.csv" in links[0]["artifact_url"]
+    assert records == before
+
+
+@pytest.mark.parametrize("declaration", ["source_artifacts", "retained_outputs", "evidence_collection"])
+def test_short_run_alias_requires_an_exact_same_publication_file_declaration(tmp_path, declaration):
+    run, docs, records, _, primary = retained_sources(tmp_path)
+    audit = run / "outputs/p4.theorist/theory_audit.json"
+    targets = [(audit.name, audit), (primary.name, primary)]
+    uris = [f"run://{run.name}/{name}" for name, _ in targets]
+    pointers = [{"uri": uri, "path": name, "sha256": sha256_file(target)}
+                for uri, (name, target) in zip(uris, targets)]
+    lead = {"body_md": " ".join(f"[Saved source]({uri})" for uri in uris)}
+    assert empirical_run_sources(tmp_path, lead, records["empirical_synthesis"][1], records) == []
+    if declaration == "evidence_collection":
+        records["evidence"] = ([{"artifacts": pointers}], copy.deepcopy(records["empirical_synthesis"][1]))
+    else:
+        docs["empirical_synthesis"][declaration] = [{"artifact": pointer} for pointer in pointers]
+    before = copy.deepcopy(records)
+    links = empirical_run_sources(tmp_path, lead, records["empirical_synthesis"][1], records)
+    assert {link["uri"] for link in links} == set(uris)
+    assert all(link["source_verified"] and link["sha256"] in link["artifact_url"] for link in links)
+    assert "path=working%2Fdata_analyst%2Fanalyst_text.json" in next(link for link in links if link["uri"] == uris[1])["artifact_url"]
+    assert records == before
+
+
+@pytest.mark.parametrize("damage", ["changed_bytes", "other_package", "other_run", "missing_digest", "missing_path", "conflicting_digest", "conflicting_collection", "traversal"])
+def test_short_run_alias_does_not_relax_exact_source_boundaries(tmp_path, damage):
+    run, docs, records, _, primary = retained_sources(tmp_path)
+    uri = f"run://{run.name}/{primary.name}"
+    pointer = {"uri": uri, "path": primary.name, "sha256": sha256_file(primary)}
+    docs["analyst_synthesis"]["retained_outputs"] = [{"artifact": pointer}]
+    if damage == "changed_bytes":
+        primary.write_bytes(b'{"changed":true}')
+    elif damage == "other_package":
+        records["analyst_synthesis"][1]["generation_ref"]["package_id"] = "package.other"
+    elif damage == "other_run":
+        pointer["uri"] = uri.replace(run.name, "run.other")
+    elif damage == "missing_digest":
+        pointer.pop("sha256")
+    elif damage == "missing_path":
+        pointer.pop("path")
+    elif damage == "conflicting_digest":
+        docs["theory_audit"]["source_artifacts"] = [{"uri": uri, "path": "missing.json", "sha256": "f" * 64}]
+    elif damage == "conflicting_collection":
+        records["evidence"] = ([{"artifacts": [{"uri": uri, "path": "missing.json", "sha256": "f" * 64}]}], copy.deepcopy(records["empirical_synthesis"][1]))
+    elif damage == "traversal":
+        pointer["path"] = "../analyst_text.json"
+    lead = {"body_md": f"[Saved source]({uri})"}
+    before = copy.deepcopy(records)
+    assert empirical_run_sources(tmp_path, lead, records["empirical_synthesis"][1], records) == []
+    assert records == before
+
+
 def frozen_upstream_sources(project, run):
     frozen = []
     uris = []
@@ -274,3 +488,87 @@ def test_upstream_stage_filename_selects_original_family_among_identical_promote
     links = empirical_run_sources(tmp_path, {"body_md": f"[Theory]({uris[0]})"}, records["empirical_synthesis"][1], records)
     assert len(links) == 1
     assert links[0]["generation_ref"] == source_ref("method.a", "P3", "complete_theory", frozen[0])
+
+
+def test_resolved_same_run_links_do_not_read_unrequested_upstream_records(tmp_path, monkeypatch):
+    run, docs, records, uris, _ = retained_sources(tmp_path)
+    frozen_upstream_sources(tmp_path, run)
+
+    def unexpected_read(*_):
+        pytest.fail("Resolved P4 links must not reread unrequested upstream generations.")
+
+    monkeypatch.setattr("model_forge_codex.technical_reports.resolve_report_source", unexpected_read)
+    links = empirical_run_sources(tmp_path, docs["empirical_synthesis"], records["empirical_synthesis"][1], records)
+    assert {link["uri"] for link in links} == set(uris)
+
+
+@pytest.mark.parametrize("damage", [None, "changed_snapshot", "changed_generation", "not_frozen", "undeclared_alias",
+    "missing_artifact", "changed_artifact", "wrong_producer", "wrong_branch", "ambiguous_record", "conflicting_digest",
+    "traversal", "foreign_run", "unpublished"])
+@pytest.mark.parametrize("alias", ["short", "output_id"])
+def test_short_upstream_manuscript_alias_requires_exact_frozen_declaration_and_input(tmp_path, damage, alias):
+    from pathlib import Path
+    from model_forge_codex.records import generation_path
+    from model_forge_codex.storage import read_json
+
+    run, _, records, _, _ = retained_sources(tmp_path)
+    frozen, _ = frozen_upstream_sources(tmp_path, run)
+    manuscript = run / "inputs/artifacts/exact-theory.md"
+    manuscript.parent.mkdir()
+    manuscript.write_text("The exact frozen mathematical argument.\n", encoding="utf-8")
+    uri = "run://run.p3.origin/theory_manuscript.md"
+    if alias == "output_id":
+        uri = "run://run.p3.origin/p3.complete_theory/theory_manuscript.md"
+    pointer = {"artifact_id": "artifact.theory", "uri": uri, "path": "theory_manuscript.md", "sha256": sha256_file(manuscript)}
+    if damage == "undeclared_alias":
+        pointer["uri"] = "artifact://theory"
+    elif damage == "traversal":
+        pointer["path"] = "../theory_manuscript.md"
+    saved = {"primary_artifact": pointer}
+    if damage == "conflicting_digest":
+        saved["source_artifacts"] = [{**pointer, "sha256": "f" * 64}]
+    raw = json.dumps(saved).encode()
+    package = publish_package(tmp_path / "branches/method.a/phases/p3", {"complete_theory": raw},
+        run_id="run.p3.origin", phase="P3", branch_id="method.a", metadata={"stage_ids": {"complete_theory": "p3.lead"}})
+    Path(frozen[0]["snapshot_path"]).write_bytes(raw)
+    frozen[0] = {**frozen[0], **package["records"]["complete_theory"]}
+    artifact = {"phase": "P3", "producing_run_id": "run.p3.origin", "artifact_id": pointer["artifact_id"],
+                "content_sha256": sha256_file(manuscript), "original_path": pointer["path"], "path": str(manuscript)}
+    basis = {"records": frozen, "artifacts": [artifact]}
+    if damage == "changed_snapshot":
+        Path(frozen[0]["snapshot_path"]).write_bytes(b"{}")
+    elif damage == "changed_generation":
+        generation_path(tmp_path / "branches/method.a/phases/p3", "complete_theory", frozen[0]).write_bytes(b"{}")
+    elif damage == "not_frozen":
+        basis["records"] = frozen[1:]
+    elif damage == "missing_artifact":
+        basis["artifacts"] = []
+    elif damage == "changed_artifact":
+        manuscript.write_text("A changed argument.\n", encoding="utf-8")
+    elif damage == "wrong_producer":
+        artifact["producing_run_id"] = "run.p3.other"
+    elif damage == "wrong_branch":
+        frozen[0]["branch"] = "method.other"
+    elif damage == "ambiguous_record":
+        basis["records"] = [*frozen, copy.deepcopy(frozen[0])]
+    elif damage == "foreign_run":
+        uri = uri.replace("run.p3.origin", "run.p3.other")
+    elif damage == "unpublished":
+        write_json_atomic(tmp_path / "runs/run.p3.origin/run.json", {"state": "running", "branch_id": "method.a", "phase": "P3"})
+    write_json_atomic(run / "basis.json", basis)
+    before = copy.deepcopy(records), read_json(run / "basis.json")
+    lead = {"body_md": f"[Retained argument]({uri})"}
+    links = empirical_run_sources(tmp_path, lead, records["empirical_synthesis"][1], records)
+    if damage:
+        assert links == []
+    else:
+        assert len(links) == 1
+        assert links[0]["uri"] == uri and links[0]["sha256"] == pointer["sha256"]
+        assert links[0]["producing_run_id"] == "run.p3.origin" and links[0]["branch"] == "method.a"
+        assert links[0]["source_verified"] and links[0]["source_kind"] == "retained_input"
+        assert f"/runs/{run.name}/inputs/artifact?" in links[0]["artifact_url"]
+        assert pointer["sha256"] in links[0]["artifact_url"]
+        publish_package(tmp_path / "branches/method.a/phases/p3", {"complete_theory": b'{"new":"current"}'},
+                        run_id="run.p3.new", phase="P3", branch_id="method.a")
+        assert empirical_run_sources(tmp_path, lead, records["empirical_synthesis"][1], records) == links
+    assert (records, read_json(run / "basis.json")) == before

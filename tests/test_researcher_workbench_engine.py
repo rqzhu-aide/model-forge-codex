@@ -500,6 +500,15 @@ def scientific_output_documents(catalog, phase, method_identity, *, mode=None, s
             "protocol_sha256": hashlib.sha256(json.dumps(documents["p4.protocol"]).encode()).hexdigest(),
             "metrics_sha256": hashlib.sha256("\n".join(json.dumps(r) for r in documents["p4.metrics_long"]).encode()).hexdigest(),
             "script_sha256": hashlib.sha256(files["summarize.py"].encode()).hexdigest()}
+    # Generic scientific-run fixtures use the adopted contract without testing
+    # notation authorship. Add an empty update only to its existing Lead output;
+    # notation-specific transforms below can replace it with real additions.
+    from model_forge_codex.catalog import NOTATION_LEAD_OUTPUTS
+    contract = read_json(catalog.root / "contracts/phases" / f"{phase}.json")
+    if "project_notation_v1" in contract.get("capabilities", []):
+        for output_id in NOTATION_LEAD_OUTPUTS.intersection(documents):
+            documents[output_id].setdefault("notation_updates", {
+                "incoming_sources": [], "entries": [], "retirements": [], "correction_dispositions": []})
     return documents, files
 
 

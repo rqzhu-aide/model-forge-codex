@@ -33,14 +33,26 @@ def without_descriptions(value):
 ])
 def test_five_card_fields_survive_explicit_decision_contract_extensions(schema, expected):
     document = without_descriptions(read_json(ROOT / "contracts/schemas" / schema))
-    if schema == "attention-item.schema.json":
+    if schema == "research-basis.schema.json":
+        # Shared notation extends the existing Lead record, retaining every
+        # prior scientific field and keeping both new fields optional on read.
+        for field in ("notation_updates", "notation_snapshot"):
+            assert field not in document["required"]
+            del document["properties"][field]
+    elif schema == "attention-item.schema.json":
         properties = document["properties"]
-        additions = {"decision_priority", "response_kind", "options", "recommendation"}
+        additions = {"decision_priority", "response_kind", "options", "recommendation", "recommended_option_id"}
         assert not additions.intersection(document["required"])
         assert properties["decision_priority"]["enum"] == ["interpretation", "inference", "data", "resources"]
         assert properties["response_kind"]["enum"] == ["choice", "study_fact"]
         assert properties["options"]["type"] == "array"
         assert properties["recommendation"]["type"] == "string"
+        assert properties["recommended_option_id"]["type"] == "string"
+        recommendation_rule = document["allOf"].pop()
+        assert recommendation_rule == {
+            "if": {"required": ["recommended_option_id"]},
+            "then": {"required": ["response_kind", "options", "recommendation"],
+                     "properties": {"response_kind": {"const": "choice"}}}}
         for field in additions:
             del properties[field]
     elif schema == "literature-findings.schema.json":
@@ -60,7 +72,7 @@ def test_frozen_p1_briefs_deliver_field_ownership_and_preserve_independent_roles
     directory = engine.run_dir(candidate.project_id, candidate.run_id)
     shutil.copytree(engine.project_dir(candidate.project_id) / "contracts", directory / "contracts")
     phase = read_json(directory / "contracts/contracts/phases/P1.json")
-    assert phase["contract_version"] == "3.7.4"
+    assert phase["contract_version"] == "3.9.1"
     assert [(stage.execution, len(stage.roles)) for stage in stages] == [("parallel", 3), ("serial", 1)]
     assert set(phase["role_stages"][0]["writes"]) == {
         "p1.lead_literature", "p1.theory_literature", "p1.empirical_literature",
@@ -112,7 +124,9 @@ def test_frozen_p1_briefs_deliver_field_ownership_and_preserve_independent_roles
                 assert "Preserve an unresolved consequential target preference symbolically" in brief
                 assert "do not silently narrow the target or pretend an identification assumption is established" in brief
                 assert "The Lead selects routine details determined by the stated goal and scientific judgment" in brief
-                assert "Different mathematical definitions or defensible alternatives alone do not create a researcher decision" in brief
+                inquiry = (directory / "contracts/references/research-presentation/user-inquiry.md").read_text(encoding="utf-8")
+                assert inquiry in brief
+                assert "Routine methodology, proofs, implementation, diagnostics and presentation belong to the team" in inquiry
                 assert "one paragraph per brief field" not in brief
                 assert "Default common_assumptions to empty" in brief
                 assert "No additional P2-specific preparation is identified." in brief
@@ -129,6 +143,7 @@ def test_required_containers_may_be_empty_without_inventing_a_landscape():
     catalog = Catalog(ROOT / "contracts")
     documents = p1_documents()
     basis = documents["p1.research_basis"]
+    basis["notation_updates"] = {"incoming_sources": [], "entries": [], "retirements": [], "correction_dispositions": []}
     basis["research_setting"]["component_interpretations"] = []
     for field in ("topics", "frameworks", "variants", "relationships", "algorithm_families",
                   "overview_item_ids", "common_assumptions", "citation_refs"):

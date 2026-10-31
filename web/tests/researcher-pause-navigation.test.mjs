@@ -120,6 +120,27 @@ test("ProjectView forwards raw copy owners separately and routes a cross-model a
     assert.deepEqual(preparation.props.summaryContext.answers, [original]);
     assert.equal(dialogue.props.onNavigate("P3", source), true);
     assert.deepEqual(changes, [{ phase: "P3", branch: "method.original" }]);
+    const linked = { attention_id: "question.upstream", phase: "P2", target_phase: "P1", branch: "trunk", explanation_target: { ...source, kind: "phase_issue", phase: "P2", branch: "trunk", object_id: "question.upstream" } };
+    assert.equal(dialogue.props.onNavigate("P1", undefined, linked), true);
+    assert.deepEqual(changes[1], { phase: "P1" });
+  } finally { ui.dispatcher.current = priorDispatcher; }
+});
+
+test("ProjectView routes an old saved copy to the current question's history after its target changes", () => {
+  const priorDispatcher = ui.dispatcher.current;
+  const source = { kind: "phase_issue", phase: "P3", branch: "method.a", family: "attention_items", generation_id: "generation.old", sha256: "a".repeat(64), object_id: "question.history", entry_pointer: "/0" };
+  const old = { attention_id: source.object_id, phase: "P3", branch: source.branch, target_phase: "P4", kind: "researcher_decision", question: "Which setting applies?", scope: { kind: "project" }, explanation_target: source };
+  const current = { ...old, target_phase: "P3", explanation_target: { ...source, generation_id: "generation.current" } };
+  const saved = { attention_id: old.attention_id, revision: 1, question_ref: source, attention: old, note: "The earlier setting." };
+  const snapshot = { scope: "project.history:method.b:P3", project: { project: { name: "History route fixture" } }, branches: [], runs: [], artifacts: { issues: [current] }, pending: { attention: [current], researcher_answers: [saved] }, readiness: {}, records: [], assessments: [], methods: [{ method_id: "method.b", branch_id: "method.b", title: "Method B" }] };
+  const changes = []; let stateIndex = 0;
+  try {
+    ui.dispatcher.current = { useState: value => [stateIndex++ === 0 ? snapshot : typeof value === "function" ? value() : value, () => {}], useRef: value => ({ current: value }), useEffect() {}, useLayoutEffect() {} };
+    const tree = ui.ProjectView({ projectId: "project.history", context: { phase: "P3", branch: "method.b" }, onContextChange: value => changes.push(value) });
+    const dialogue = nodes(tree).find(node => node.type === ui.Dialogue);
+    assert.ok(dialogue);
+    assert.equal(dialogue.props.onNavigate("P3", source), true);
+    assert.deepEqual(changes, [{ phase: "P3", branch: "method.a" }]);
   } finally { ui.dispatcher.current = priorDispatcher; }
 });
 

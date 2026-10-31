@@ -7,6 +7,7 @@ import TheoryWorkbench from "./TheoryWorkbench";
 import { TheoryConditions } from "./TheoryConditions";
 import { TheoryAssessmentAccount, TheoryLeadResponses, theorySupportPresentation } from "./TheoryAssessment";
 import ClaimTraceability from "./ClaimTraceability";
+import { NotationLookup } from "./SharedNotation";
 
 export function PhaseTabs({ tabs, label, heading, initialTab, selectedTab, onTabChange }) {
   const id = useId(); const [picked, setPicked] = useState(initialTab || tabs[0]?.id);
@@ -27,12 +28,16 @@ export function PhaseOverview({ phase, decision, summaries = [], methodLabel, re
   const title = phase === "P3" ? "What is established about this model" : "Current report conclusion";
   const accountSource = decision?.conclusion || decision?.headline ? decision : summaries[0];
   const account = decision?.conclusion || decision?.headline || accountSource?.evaluation_markdown || accountSource?.summary_markdown;
+  const headline = typeof decision?.headline === "string" && typeof decision?.conclusion === "string"
+    && decision.headline.trim() && decision.conclusion.trim() && decision.headline.trim() !== decision.conclusion.trim() ? decision.headline : null;
   const accountLink = accountSource && scientificDocumentLink(accountSource, onSource);
   const decisionLink = decision && scientificDocumentLink(decision, onSource);
   return <section className="card phase-overview" data-card-role="summary"><div className="card-heading"><h2>{title}</h2></div><div className="body">
     {methodLabel && <p className="note">Model: {methodLabel}</p>}
     {phase === "P3" && accountSource === decision && account && <p className="note">Research Lead assessment</p>}
+    {headline && <div className="phase-overview-headline"><ResearchDocument text={headline} renderSourceLink={decisionLink} renderFileLink={decisionLink} /></div>}
     {account ? <ResearchDocument text={account} renderSourceLink={accountLink} renderFileLink={accountLink} /> : <EmptyState><p className="note">{phase === "P3" ? "No theoretical account has been completed for this model yet." : "No technical report account has been completed for this model yet."}</p></EmptyState>}
+    <NotationLookup record={accountSource} onSource={onSource} />
     {decision?.fundamental_contribution && <section><h3>Contribution</h3><ResearchDocument text={decision.fundamental_contribution} renderSourceLink={decisionLink} renderFileLink={decisionLink} /></section>}
     {decision?.principal_uncertainty && <section><h3>Main uncertainty</h3><ResearchDocument text={decision.principal_uncertainty} renderSourceLink={decisionLink} renderFileLink={decisionLink} /></section>}
     {decision?.principal_risk && <section><h3>Main risk or limitation</h3><ResearchDocument text={decision.principal_risk} renderSourceLink={decisionLink} renderFileLink={decisionLink} /></section>}
@@ -70,6 +75,7 @@ export function ScientificDocuments({ documents = [], onSource, showRecordSource
     const link = scientificDocumentLink(doc, onSource);
     return <article className="scientific-block" key={`${doc.kind}:${doc.generation_ref?.generation_id || index}`}>
     <h3>{researchDocumentTitle(doc) || humanLabel(doc.kind || "Research account")}</h3>
+    <NotationLookup record={doc} onSource={onSource} />
     {doc.method_status && <MethodStatusNote status={doc.method_status} onOpen={onSource} />}
     {doc.kind === "review_issue_ledger" && <p className="note">{retainedReviewNote}</p>}
     {doc.review_focus && <details className="research-details"><summary>Review focus and scope</summary><ResearchDocument text={doc.review_focus} />{doc.review_focus_url && <a className="source-link ui-action" href={doc.review_focus_url} target="_blank" rel="noreferrer"><ActionIcon name="source" />Open frozen review directions</a>}</details>}
@@ -89,10 +95,10 @@ export function ManuscriptMetadata({ document }) {
   return <dl className="manuscript-metadata">{record.manuscript_kind && <div><dt>Draft</dt><dd>{({ assembly_candidate: "Assembled manuscript", revised_candidate: "Revised manuscript" })[record.manuscript_kind] || humanLabel(record.manuscript_kind)}</dd></div>}{record.venue_length && <div><dt>Manuscript scope</dt><dd>{({ journal: "Journal article", conference: "Conference paper" })[record.venue_length] || record.venue_length}</dd></div>}{record.target_audience && <div><dt>Intended readers</dt><dd>{record.target_audience}</dd></div>}{record.sections_present?.length > 0 && <div><dt>Included sections</dt><dd>{record.sections_present.map(humanLabel).join(", ")}</dd></div>}{(record.method_identity?.version || document.method_identity?.version) && <div><dt>Model version</dt><dd>{record.method_identity?.version || document.method_identity.version}</dd></div>}{document.published_at && <div><dt>Saved publication</dt><dd>{document.published_at.slice(0, 16).replace("T", " ")}</dd></div>}</dl>;
 }
 
-export function TheoryStatement({ statement, reference, onSource }) {
+export function TheoryStatement({ statement, reference, onSource, proofSources }) {
   return <>{statement.status && <p className="note">Statement status: {humanLabel(statement.status)}</p>}<ResearchDocument text={statement} />
     <TheoryConditions statement={statement} />
-    <TheoryAssessmentAccount statement={statement} onSource={onSource} />
+    <TheoryAssessmentAccount statement={statement} onSource={onSource} proofSources={proofSources} />
     <SourceRef reference={reference} onOpen={onSource} />
   </>;
 }
@@ -102,10 +108,11 @@ export function TheoryReading({ documents = [], assessments, onSource, reading =
   const reference = map?.theory_generation_ref || map?.generation_ref;
   const canExplain = hasExactRef(reference) && ["theory_record", "complete_theory"].includes(reference.family);
   const claims = map?.claims || [];
+  const proofSources = documents.flatMap((doc) => doc.inline_sources || []);
   return <section className="card" data-card-role="research"><PhaseTabs heading="Claims, assumptions and proofs" label="Theoretical detail" selectedTab={reading.tab} onTabChange={(tab) => onReadingChange?.({ tab })} tabs={[
-    { id: "claims", label: "Claims", content: <TheoryWorkbench {...props} reading={reading} onReadingChange={onReadingChange} onSource={onSource} embedded /> },
-    { id: "assumptions", label: "Assumptions", content: (map?.assumptions || []).length ? map.assumptions.map((assumption, index) => <article className="scientific-block" key={assumption.assumption_id || index}><TheoryStatement statement={assumption} reference={reference} onSource={onSource} />{props.onAssumptionConversation && canExplain && <ActionButton action="ask" uiRole="research" onClick={() => props.onAssumptionConversation({ ...reference, kind: "assumption", object_id: assumption.assumption_id || assumption.id, label: assumption.label || assumption.title, statement: assumption.text || assumption.statement, latex: assumption.latex })}>Explain this assumption</ActionButton>}</article>) : <p className="note">No linked assumptions have been recorded yet.</p> },
-    { id: "arguments", label: "Arguments", content: <>{claims.map((claim, index) => <article className="scientific-block" key={claim.statement_id || claim.id || index}>{!theorySupportPresentation(claim).reassessed && <p className="note">{claim.proof_status ? `${humanLabel(claim.proof_status)} proof` : "Proof status not recorded"}</p>}<TheoryStatement statement={claim} reference={reference} onSource={onSource} /></article>)}<ScientificDocuments documents={documents.filter((doc) => !/audit|review|falsification/.test(doc.kind || ""))} onSource={onSource} empty={claims.length ? "The claims above retain their arguments, remaining obligations, and available proof sources." : "No arguments have been recorded yet."} /></> },
+    { id: "claims", label: "Claims", content: <TheoryWorkbench {...props} proofSources={proofSources} reading={reading} onReadingChange={onReadingChange} onSource={onSource} embedded /> },
+    { id: "assumptions", label: "Assumptions", content: (map?.assumptions || []).length ? map.assumptions.map((assumption, index) => <article className="scientific-block" key={assumption.assumption_id || index}><TheoryStatement statement={assumption} reference={reference} onSource={onSource} proofSources={proofSources} />{props.onAssumptionConversation && canExplain && <ActionButton action="ask" uiRole="research" onClick={() => props.onAssumptionConversation({ ...reference, kind: "assumption", object_id: assumption.assumption_id || assumption.id, label: assumption.label || assumption.title, statement: assumption.text || assumption.statement, latex: assumption.latex })}>Explain this assumption</ActionButton>}</article>) : <p className="note">No linked assumptions have been recorded yet.</p> },
+    { id: "arguments", label: "Arguments", content: <>{claims.map((claim, index) => <article className="scientific-block" key={claim.statement_id || claim.id || index}>{!theorySupportPresentation(claim).reassessed && <p className="note">{claim.proof_status ? `${humanLabel(claim.proof_status)} proof` : "Proof status not recorded"}</p>}<TheoryStatement statement={claim} reference={reference} onSource={onSource} proofSources={proofSources} /></article>)}<ScientificDocuments documents={documents.filter((doc) => !/audit|review|falsification/.test(doc.kind || ""))} onSource={onSource} empty={claims.length ? "The claims above retain their arguments, remaining obligations, and available proof sources." : "No arguments have been recorded yet."} /></> },
     { id: "review", label: "Review", content: <><ScientificDocuments documents={documents.filter((doc) => /audit|review|falsification/.test(doc.kind || ""))} onSource={onSource} empty="No separate review account is available yet." /><TheoryLeadResponses responses={map?.issue_dispositions} onSource={onSource} />{assessments}</> },
   ]} /></section>;
 }

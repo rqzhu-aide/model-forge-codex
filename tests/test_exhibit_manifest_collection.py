@@ -60,7 +60,7 @@ async def test_cited_manifest_survives_collection_source_opening_and_p5_freezing
     assert Path(copied["path"]).read_bytes() == authored.read_bytes()
 
     retained.write_bytes(b"Changed retained bytes must not resolve by filename alone.")
-    with pytest.raises(ArtifactError, match="digest differs"):
+    with pytest.raises(ArtifactError, match="could not be verified from the retained outputs"):
         source_artifact_path(project, reference, pointer)
     assert not artifact_link(project, reference, pointer).get("source_verified")
     assert "artifact.digest_mismatch" in {f.code for f in engine._validate_run_outputs(final, [stage])}

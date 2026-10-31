@@ -339,6 +339,9 @@ def resolve_research_goal(project_dir, reference):
 
 def _context_source_refs(source_refs, old):
     """Generic edits may not erase or rebind a correction's exact goal."""
+    old_notation = [ref for ref in (old or {}).get("source_refs", []) if ref.get("kind") == "notation_entry"]
+    if old_notation and not any(ref.get("kind") == "notation_entry" for ref in (source_refs or []) if isinstance(ref, dict)):
+        return [*(source_refs or []), *deepcopy(old_notation)]
     old_goals = [ref for ref in (old or {}).get("source_refs", []) if ref.get("kind") == "research_goal"]
     if not old_goals or source_refs is not None and not isinstance(source_refs, list):
         return source_refs
@@ -398,6 +401,9 @@ def save_context_item(project_dir, statement, *, expected_revision, item_id=None
                  topic=topic if topic is not None else (old or {}).get("topic"))
     _validate_amendments(project_dir, previous, item)
     _validate_goal_references(project_dir, item)
+    if item.get("topic") == "notation_correction" or any(ref.get("kind") == "notation_entry" for ref in item["source_refs"]):
+        from .notation_interactions import validate_correction
+        validate_correction(project_dir, item)
     if old and {**old, "revision": item["revision"]} == item:
         return previous
     # Same identity is an explicit amendment to its prior statement. Retain
@@ -426,6 +432,9 @@ def propose_context_amendment(project_dir, statement, *, expected_revision, item
                  topic=topic if topic is not None else (old or {}).get("topic"))
     _validate_amendments(project_dir, previous, item)
     _validate_goal_references(project_dir, item)
+    if item.get("topic") == "notation_correction" or any(ref.get("kind") == "notation_entry" for ref in item["source_refs"]):
+        from .notation_interactions import validate_correction
+        validate_correction(project_dir, item)
     item["status"] = "proposed"
     proposal = {"amendment_id": "amendment." + _digest({"revision": previous["revision"], "item": item})[:24],
                 "status": "pending", "item": item, "reason": reason, "conflicts_with": deepcopy(conflicts_with or [])}

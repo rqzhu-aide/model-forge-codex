@@ -1,4 +1,4 @@
-import { explanationRun, issueKey, issuesForPhase, answerMatchesIssue, issueIsOpen } from "./phaseWorkflow.js";
+import { explanationRun, issueKey, issueAnswerPhase, issuesForPhase, answerMatchesIssue, issueIsOpen } from "./phaseWorkflow.js";
 import { methodRequests } from "./methodWorkspace.js";
 import { humanLabel, TERMINAL } from "./research.js";
 import { compareDecisionPriority } from "./researcherDecisions.js";
@@ -49,15 +49,16 @@ export function issueCardEntries({ issues = [], attention = [], answers = [], ph
     // A shared destination follows explicit project scope, not its source branch.
     : withAnswers.filter((issue) => issue.scope?.kind === "project"
       || issue.scope?.kind !== "model" && (issue.branch || issue.branch_id) === "trunk");
-  const carried = relatedScope.filter((issue) => issue.phase !== phase && issue.target_phase === phase);
   const isTeamWork = issue => ["research_task", "scientific_issue"].includes(issueDisplayKind(issue));
+  const carried = relatedScope.filter((issue) => issue.phase !== phase && issue.target_phase === phase);
   const localScope = phase === "P1" && branch === "trunk" ? relatedScope : withAnswers;
-  const entries = [...issuesForPhase(localScope, phase, branch, methodId, modelRef), ...carried.filter(issue => !isTeamWork(issue))].sort(compareDecisionPriority);
-  const related = carried.filter(isTeamWork).sort(compareDecisionPriority);
+  const local = issuesForPhase(localScope, phase, branch, methodId, modelRef);
+  const entries = [...local.filter(issue => isTeamWork(issue) || issueAnswerPhase(issue) === phase), ...carried.filter(issue => !isTeamWork(issue) && issueAnswerPhase(issue) === phase)].sort(compareDecisionPriority);
+  const related = [...local.filter(issue => !isTeamWork(issue) && issueAnswerPhase(issue) !== phase), ...carried.filter(issue => isTeamWork(issue) || issueAnswerPhase(issue) !== phase)].sort(compareDecisionPriority);
   return {
     entries,
     related,
-    earlierAnswers: answers.filter((answer) => [...entries, ...related].some((issue) => issueKey(issue) === (answer.attention_id || answer.issue_id) && !answerMatchesIssue(answer, issue))),
+    earlierAnswers: answers.filter((answer) => [...entries, ...related.filter(isTeamWork)].some((issue) => issueKey(issue) === (answer.attention_id || answer.issue_id) && !answerMatchesIssue(answer, issue))),
   };
 }
 

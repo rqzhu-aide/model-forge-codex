@@ -766,7 +766,9 @@ class P4Controller:
             state["pending_batch"] = None
             state["budget"]["used_seconds"] += elapsed
             state["budget"]["remaining_seconds"] = max(0, state["budget"]["limit_seconds"] - state["budget"]["used_seconds"])
-            repeated_failures = sum(item["work_item_id"] == batch["work_item_id"] and item["status"] == "failed" for item in state["ledger"]) >= 2
+            repeated_failures = result["status"] == "failed" and sum(
+                item["work_item_id"] == batch["work_item_id"] and item["status"] == "failed" for item in state["ledger"]
+            ) >= 2
             must_pause = result["status"] not in {"completed", "failed"} or repeated_failures or state["budget"]["remaining_seconds"] <= 0
             if not state.get("pause_request") and must_pause:
                 question = {"infrastructure_error": "Restore the experiment setup before continuing.",
@@ -813,7 +815,14 @@ for (name in dependencies[nzchar(dependencies)]) {
 }
 script <- args[[1]]
 script_args <- args[-1]
-commandArgs <- function(trailingOnly=FALSE) if(trailingOnly) script_args else base::commandArgs(FALSE)
+commandArgs <- local({
+  full <- base::commandArgs(FALSE)
+  full <- full[seq_len(match('--args',full)-1L)]
+  full[startsWith(full,'--file=')] <- paste0('--file=',script)
+  trailing <- script_args
+  if (length(trailing)) full <- c(full,'--args',trailing)
+  function(trailingOnly=FALSE) if(trailingOnly) trailing else full
+})
 record(TRUE)
 source(script,local=.GlobalEnv,chdir=FALSE)
 """

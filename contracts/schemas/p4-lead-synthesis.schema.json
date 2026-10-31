@@ -13,6 +13,13 @@
     "question_reviews"
   ],
   "properties": {
+    "notation_snapshot": {
+      "$ref": "notation-updates.schema.json#/$defs/snapshotPointer"
+    },
+    "notation_updates": {
+      "$ref": "notation-updates.schema.json",
+      "description": "Lead-adopted notation changes for this exact account under project_notation_v1. The harness generates the complete lookup from the frozen incoming view and these additions; do not author a second glossary. Historical records may omit this field."
+    },
     "phase": {
       "const": "P4"
     },
@@ -40,7 +47,7 @@
           "type": "string",
           "minLength": 1,
           "pattern": "\\S",
-          "description": "Concise mathematical recap of the exact implemented method from the frozen Phase 2 definition: essential inputs, model relationship, fitting criterion or estimating rule, target/output and decisive conditions. Define notation and use proper Markdown/LaTeX. A target equation alone is insufficient when the model and fitting criterion are needed to explain the method. Cite exact method and implementation sources; do not infer mathematics from observed results or extract isolated equations from prose. No quantitative result tables or figures belong here."
+          "description": "Fuller source-backed mathematical account of the exact implemented method from the frozen Phase 2 definition and inspected implementation: inputs, model relationships, fitting criterion or estimating rule, target/output and decisive conditions. Follow the supplied scientific-explanation reference. Define notation in context and use proper Markdown/LaTeX; the authored method_recap_markdown supplies the visible short recap. Do not invent mathematics or infer it from outcomes. No numerical display belongs here."
         },
         "implementation_markdown": {
           "type": "string",
@@ -126,7 +133,7 @@
           "pattern": "\\S"
         },
         "conclusion_markdown": {
-          "description": "Explain whether the exact evaluated method serves the researcher intent, supported by the principal quantitative findings and their decisive qualification. Execution success is not scientific support. Lead with the supported result and decisive condition. Retain unsuccessful fits and inconclusive comparisons, and keep observed fitted synthetic equality within its tested scope. Lack of demonstrated benefit is not demonstrated absence of benefit. Distinguish evidence against a benefit from an inconclusive comparison; do not claim equivalence or absence of benefit from nonsignificance. Retain the applicable uncertainty and tested scope.",
+          "description": "Start with the decisive supported observation and its boundary for the stated researcher goal, including applicable uncertainty and tested scope. Follow the supplied summary and claims-and-evidence references. Preserve unsuccessful fits, inconclusive comparisons and synthetic/actual-data limits; absence of demonstrated benefit or nonsignificance does not establish no benefit or equivalence. Execution success is not scientific support. Keep the primary conclusion here and link detail rather than repeating every result.",
           "type": "string",
           "minLength": 1,
           "pattern": "\\S"
@@ -150,7 +157,7 @@
           "pattern": "\\S"
         },
         "coverage": {
-          "description": "Topical researcher accounts composed from the analyst answers and retained exhibits. New accounts use synthetic_example, performance, computation, tuning and robustness, plus actual_data when supplied. Include assessed/partial evidence or an explicit not_assessed/not_applicable reason without requiring additional experiments. Preserve substantive answers and their uncertainty and limitations.",
+          "description": "One primary topical account composed from Analyst answers and verified exhibits, following the supplied summary reference. Use synthetic_example, performance, computation, tuning, robustness and actual_data when supplied, with assessed/partial evidence or an explicit not_assessed/not_applicable reason. Preserve scientific substance and do not require extra experiments to fill a topic.",
           "type": "array",
           "minItems": 1,
           "items": {
@@ -188,12 +195,14 @@
               "limitation_markdown": {
                 "type": "string",
                 "minLength": 1,
-                "pattern": "\\S"
+                "pattern": "\\S",
+                "description": "The scientific uncertainty or condition that limits this topic, without retelling its primary account. Display-routing or platform availability is not a scientific limitation. Keep distinct missing, failed and unstarted work truthful."
               },
               "implication_markdown": {
                 "type": "string",
                 "minLength": 1,
-                "pattern": "\\S"
+                "pattern": "\\S",
+                "description": "Concise consequence for interpretation, intended use or next work; link the primary topic account instead of repeating its numbers or full explanation. Do not authorize a run or infer a researcher preference."
               },
               "question_ids": {
                 "description": "Exact effective protocol.claim_tests[].test_id values covered by this decision dimension, including prospectively added_tests. Use the same identifiers as analyst question_results and lead question_reviews; do not invent aliases.",
@@ -225,6 +234,18 @@
             "pattern": "^exhibit\\.[a-z0-9_.-]+$"
           },
           "description": "Verified table/figure exhibits from this evaluation that support the overall result, in preferred order within Experiments and Results. Empty when no observed numerical result is available. Summary contains no exhibits. Detailed answers link to an exhibit's home in Experiments and Results."
+        },
+        "method_recap_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Authored visible short recap: exact implemented target, defining mechanism, returned output and decisive condition. Follow the supplied scientific-explanation reference and interpret essential symbols locally. Cite the frozen method/implementation sources. Keep the full formulation in method_formulation_markdown; do not extract the recap heuristically or create new mathematics."
+        },
+        "notation_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Historical Markdown lookup. Under project_notation_v1 omit this field and adopt additions through notation_updates; the harness generates the exact account lookup. For retained catalogs without that capability, use only recurring mathematical symbols already used in the scientific account: symbol, definition, scientific meaning and relevant units. Exclude ordinary metric names, abbreviations, software terms and computational cost; explain measures in full beside the results and do not invent symbols merely to populate this table. Keep essential meanings visible at first use. Preserve distinctions between target risk, implemented bound, numerical reference error and repeated-experiment uncertainty where applicable. No historical glossary is inferred."
         }
       }
     },
@@ -255,7 +276,7 @@
             "pattern": "\\S"
           },
           "theorist_findings_markdown": {
-            "description": "Explain the applicable theorist findings and their consequence for this answer without implying a later independent check.",
+            "description": "Applicable independent Theorist qualification or disagreement and its consequence for this exact test, with attribution and source. A short concurrence is sufficient when the audit adds no qualification. Do not copy the primary answer or imply review of later Lead bytes.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"
@@ -266,6 +287,13 @@
             "minLength": 1,
             "pattern": "\\S"
           }
+        }
+      }
+    },
+    "scientific_outcome": {
+      "properties": {
+        "conclusion": {
+          "description": "State the decisive supported observation and its boundary for the researcher goal, including applicable uncertainty and tested scope. Follow the supplied summary and claims-and-evidence references. Successful execution is not a favorable scientific outcome; missing comparisons, failed attempts and synthetic-only support remain explicit."
         }
       }
     }

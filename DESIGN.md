@@ -2,6 +2,11 @@
 name: Model Forge
 description: Research workbench where a researcher reads, compares, answers and decides on an AI research team's published work, set as a scholarly workshop in a dwarven foundry.
 colors:
+  wall-top: "#bdc3c8"
+  wall-mid: "#aab3bb"
+  wall-bottom: "#9ca7b0"
+  wall-ink: "#1d2935"
+  wall-muted: "#243342"
   forge-0: "#0b1a31"
   forge-1: "#0f2140"
   forge-2: "#13294B"
@@ -262,7 +267,7 @@ components:
     backgroundColor: "{colors.tab-selected}"
     textColor: "{colors.team-ink}"
   sidebar:
-    backgroundColor: "{colors.forge-2}"
+    backgroundColor: "{colors.wall-mid}"
     textColor: "{colors.forge-text}"
   nav-item:
     textColor: "{colors.forge-text-soft}"
@@ -282,7 +287,7 @@ components:
     textColor: "#ffffff"
     padding: "4px 10px 4px 24px"
   project-lintel:
-    backgroundColor: "{colors.forge-2}"
+    backgroundColor: "{colors.wall-mid}"
     textColor: "{colors.forge-title}"
     typography: "{typography.display-title}"
     rounded: "{rounded.lintel}"
@@ -365,6 +370,14 @@ components:
 ---
 
 # Design System: Model Forge
+
+## Wall finish, updated October 29, 2026
+
+The silver ramp was subsequently lowered slightly and its broad white highlights softened at the user's request. The finish stays silver rather than charcoal; all other styling remains as described below.
+
+Individual wall plates now have varied brushing, small scuffs and worn edges. A static, seamless texture retains the existing 96 by 48 plate scale and rivets, with fixed variation across a larger tile so the wear does not change during reading. The silver base colors remain unchanged. Texture stays behind the sidebar and project header only, away from card content and controls.
+
+The sidebar and project-header wall now use bright brushed silver in both themes, including the mobile sidebar. Wall-only tokens (`wall-top`, `wall-mid`, `wall-bottom`) and neutral plating highlights replace the blue background. This supersedes the navy wall descriptions below. Bare wall labels and the project title use dark wall ink; the brand mark is unchanged. Navy controls use opaque navy backing where their former translucent fills would wash out over silver. Their blue and orange colors, phase tabs, brand artwork, brackets, card fittings, reading surfaces, typography and layout are retained. Focus outlines on the silver frame use navy for contrast. Shared `forge-*` colors still govern the controls and artwork and must not be repurposed to recolor the wall.
 
 ## Overview
 

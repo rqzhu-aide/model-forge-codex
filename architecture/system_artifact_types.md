@@ -25,6 +25,21 @@ supersedes older P1/P2 examples; all phases use their pinned declared types.
 Deterministic compatibility projections create no scientific
 prose and grant no new authority.
 
+Catalog 1.30.0 adds `notation_updates` to the five existing Lead account shapes,
+gated by `project_notation_v1` and its required `research_presentation_v2`.
+Notation is supporting scientific data, not another presentation tier, output
+family or member stage. The harness freezes admitted `inputs/notation.json` and
+`notation.md`, then generates and seals each Lead account's complete final pair.
+The published account's `notation_snapshot` owns their exact paths and digests.
+Its inherited entries retain original definition sources and scoped meanings.
+
+The Markdown file is a generated reading view, not a mutable second authority.
+There is no global latest registry. P1's historical component array and P4's
+historical notation field remain readable but are not independently authored in
+new-capability accounts. Source-bound correction requests use the existing
+researcher-context store; dispositions remain in the Lead account that recorded
+them. See [shared notation](shared-notation-plan.md) for scope and admission.
+
 Additional P2 instructions or ideas have the Research Lead as their sole
 recipient. Shared scientific fields remain directly reusable;
 this does not grant every member access to raw researcher notes or method

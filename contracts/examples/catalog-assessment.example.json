@@ -45,5 +45,11 @@
       "what_changes_markdown": "Increase the sieve penalty on the propensity model's tail coefficients from $\\lambda_n$ to $2\\lambda_n$ in the stated penalized likelihood.",
       "when_preferable_markdown": "Preferable when the estimated propensities concentrate near zero or one and the recorded weights show heavy tails under the proposed penalty."
     }
-  ]
+  ],
+  "notation_updates": {
+    "incoming_sources": [],
+    "entries": [],
+    "retirements": [],
+    "correction_dispositions": []
+  }
 }

@@ -1,5 +1,101 @@
 # Catalog adoption
 
+## Catalog 1.30.2: grouped scientific comparisons
+
+The existing table reference now selects columns by the scientific comparison
+and permits related values in clearly labelled cells, such as an estimate with
+its interval or a count with its denominator. A shared denominator reference
+requires the same defined population and count. A captioned shared bound retains
+its confidence level and exact applicable row family. Zero outcomes, missing or
+inapplicable values, differing denominators and full supporting sources remain
+visible. Captions supply definitions and scope without replaying the account.
+
+P2 advances to 3.13.2, P3 to 2.13.2, P4 to 3.6.2 and P5 to 3.5.2; P1 stays
+at 3.9.1 because it does not receive the table reference. Explicit adoption
+applies this prospective clarification to future runs, including projects that
+already adopted 1.30.1. No output shape, scientific authority, source value,
+review scope or historical research record changes.
+
+## Catalog 1.30.1: concise scientific accounts and readable comparisons
+
+The existing presentation references now direct summaries to show the central
+result and decisive limitation before detailed explanation, and targeted
+discussion to answer its selected question without replaying the full research
+account. P3's existing summary fields explicitly display the principal
+mathematical relation. New numerical tables use source-grounded scientific row
+labels and describe shared setup once. Scientific sample sizes remain separate
+from dataset repetitions, internal resamples and computational-check draws.
+
+P1 advances to 3.9.1, P2 to 3.13.1, P3 to 2.13.1, P4 to 3.6.1 and P5 to
+3.5.1. This is authoring guidance in the same five references and existing
+fields. No output shape, scientific authority, computation, review scope or
+question-state rule changes. Explicit adoption applies to future runs; retained
+scientific records, exact values and row identities remain unchanged.
+
+## Catalog 1.30.0: shared notation and neutral presentation
+
+`research_presentation_v2` delivers the existing five neutral references to the
+relevant P1-P5 authors and explanation routes. Independent review receives
+neutral editorial directions frozen in its submitted packet. Report-section
+discussion receives explanation and evidence guidance without upstream inquiry.
+Frozen v1 catalogs keep their original routing and reference bytes.
+
+`project_notation_v1` requires presentation v2. Each existing Lead account adopts
+small `notation_updates`; the harness retains complete source-bound account views
+and generates `notation.json` and `notation.md`. P1 owns the study core, P2 owns
+exact method definitions, and later phases own their account additions or explicit
+translations. Local paper and proof meanings remain source-owned. No stage,
+mutable global registry, computation permission or automatic migration is added.
+The historical P1 component lookup and P4 notation field remain readable, but new
+capability authors do not create a duplicate glossary. Report review and later
+discussion retain their submitted notation rather than receiving a newer view.
+
+P1 advances to 3.9.0, P2 to 3.13.0, P3 to 2.13.0, P4 to 3.6.0 and P5 to
+3.5.0. Existing scientific schema versions stay readable; capability-conditioned
+output schemas require updates only on the existing Lead output. Explicit catalog
+adoption governs future runs and does not rewrite earlier scientific generations.
+
+## Catalog 1.29.1: statistical names and mathematical notation
+
+New P2 method names describe the actual framework, estimator or algorithm and
+supported defining variant; they no longer require coined acronyms. The title
+field and method identities are unchanged. P4 notation is limited to recurring
+mathematical symbols. Full measure names and definitions belong beside results,
+and computational measurements belong under computational cost with their units
+and timing boundary. Ambiguous error labels cannot acquire an invented loss
+definition through a wording edit.
+
+P2 advances to 3.12.1 and P4 to 3.5.1. Other phase versions, scientific workflows,
+field shapes and source permissions stay unchanged. Existing projects require
+explicit catalog adoption for future work. Historical records and names remain
+readable without rewriting or filtering their contents.
+
+## Catalog 1.29.0: delivered presentation references and concise inquiries
+
+The frozen catalog now delivers five short authoring references through
+`research_presentation_v1`. Scientific explanation, claims/evidence, summary and
+tables/figures start in P4. User inquiry reaches eligible P1-P5 authors and
+targeted discussion/advice within their existing authority. P4 Analyst authors
+compact flat table exhibits through the existing managed numerical route; Lead
+selects existing displays and synthesizes the result, and Theorist retains the
+independent meaning/fidelity audit. Scientific workflow steps and output families
+are unchanged.
+
+P4 Lead decision summaries may include authored `method_recap_markdown` and
+`notation_markdown`. Choice inquiries may include `recommended_option_id`, naming
+a justified suggested option placed first without preselection. Historical
+records remain readable without these optional fields. New inquiries consolidate
+semantic overlap against applicable answers and follow the reference's primary
+prose ceilings; full scientific explanations and historical text are not capped
+or truncated. P5 retains report-section discussion, indispensable editorial
+attention and its existing checked proof/figure permissions.
+
+Contract versions advance to P1 3.8.0, P2 3.12.0, P3 2.12.0, P4 3.5.0 and
+P5 3.4.0. Existing projects and started runs keep their frozen catalog until
+explicit adoption. This source change neither rewrites published science or
+saved answers nor launches research. Recommendation, unsaved draft, saved answer,
+unknown and actual pause remain distinct states.
+
 ## Catalog 1.28.5: useful change accounts and precise observation assumptions
 
 P3 contract 2.11.5 gives the existing summary fields clearer duties: explain the

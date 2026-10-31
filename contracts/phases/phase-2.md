@@ -1,6 +1,6 @@
 # Phase 2: independent method proposals and cross-audit
 
-Contract version: 3.11.4. Catalog: 1.28.4.
+Contract version: 3.13.2. Catalog: 1.30.2.
 
 ## Scientific purpose
 
@@ -136,6 +136,14 @@ proposal also preserves researcher_origin when a method seed is supplied. Author
 objectives or operators, algorithms, assumptions, source relations and intended
 claims. They distinguish original researcher mathematics from P2 extensions.
 No toy examples or separately rewritten display cards are required.
+
+In method.title, use a complete descriptive name for the mathematical or statistical
+framework, estimator or algorithm actually defined, with only defining modifiers
+supported by method.mathematical_definition and the supplied literature. Do not
+coin a brand name or acronym, name an intended benefit as the mechanism, or infer
+a guarantee from the name. Retain an existing source-supported name when
+appropriate. Keep display naming separate from method identity and historical
+records.
 
 The existing method.summary concisely explains this candidate's purpose and
 mechanism, with mathematics when needed to explain its target or mechanism.
@@ -367,66 +375,28 @@ Saved responses do not start work, revise a model or establish a guarantee.
 
 ### Consequential input under the revised catalog
 
-Invite researcher input when plausible answers materially change the target or
-interpretation, validity of the intended claim, data applicability or a meaningful
-resource compromise, and the missing input is an unresolved researcher preference
-or study fact the team cannot establish from available material. When that input is
-useful now, the Lead consolidates and invites it through the existing owned attention
-output at its designated stage even if conditional work can proceed; members propose
-it in their existing owned outputs for consolidation. Explain the proposed
-conditional direction, plausible alternatives and what the answer would change,
-keeping any proposed default provisional until adopted. An intended use, claim to
-support first or reference standard for judging success can warrant this
-nonblocking invitation. Do not omit such an invitation merely because it is not a
-blocker. In an eligible stage, use the existing phase mechanism to pause only when
-missing input makes the next authorized action unjustified; otherwise continue
-justified work with explicit conditions.
+Use the catalog's [user-inquiry reference](../references/research-presentation/user-inquiry.md)
+for consequential filtering, overlap consolidation, concise mathematical choices,
+the new primary inquiry ceilings and suggestion-first options. The reference bytes
+are delivered from the frozen catalog; this link is not a substitute for delivery.
+The designated Lead consolidates member proposals against open items and exact
+applicable saved answers. Keep independently answerable inputs, source history and
+one effective-answer location. Zero new inquiries is valid.
 
-Different mathematical definitions or defensible alternatives alone are insufficient.
-The Lead uses the stated goal and scientific judgment to select routine details
-within the authorized scope and budget, briefly recording consequential choices and
-reasons in the existing phase summary. Counting all attempted developments and
-reporting declared failures is Lead-owned evaluation work. Proofs, implementation
-defects, scientific justification and uncertainty procedures remain team work.
+New researcher items retain `decision_priority`, `response_kind`, exact scope and
+audience. A justified choice suggestion is first, with `recommended_option_id`
+bound to its stable option ID and a short reason in `recommendation`; nothing is
+preselected. Study facts use free text/unknown without options or recommendation.
+The ceilings apply to new inquiry prose only, not scientific accounts, user answers,
+requested discussions or old records. Rewrite rather than truncate or split a
+decision. Actual run/request state determines optionality and pauses. This adds no
+stage, output duty or pause authority.
 
-Preserve saved preferences and the requested inferential claim. A prediction goal
-does not waive valid uncertainty claims or appropriate censoring assumptions.
-The researcher chooses the intended claim and acceptable scope, but cannot certify
-statistical assumptions by preference. Empty attention output is valid.
-
-For each new `researcher_decision`, author `decision_priority` as `interpretation`,
-`inference`, `data` or `resources`, using the highest material consequence in that
-order, and `response_kind` as `choice` or `study_fact`. Urgency and an actual pause
-remain separate. Keep `question` to one current choice or exact factual request.
-`context_markdown` identifies the affected point. When mathematics distinguishes
-the choices, show the affected problem or equation with enough formulation to
-understand the decision, defining symbols and any shared objective once in that
-context. For a choice, provide useful finite `options` when appropriate, usually
-two or three realistic alternatives as `{id, label, consequence}` with unique IDs.
-Each mathematically distinct option's `consequence` gives its formulation or changed
-equation under that shared context, followed by a concise practical effect and
-material benefits/costs. Prose-only options do not explain a mathematical distinction.
-`likely_consequence` gives the overall practical effect without repeating the option
-accounts. Plain study facts, budgets and choices without a mathematical distinction
-need no artificial equation. `recommendation` is Markdown Lead advice with its reason, or a candid
-statement of what is missing. Do not preselect, save a recommendation as an answer,
-or invent literal researcher responses. An open-ended choice need not have options.
-A study-fact request names the missing information, applicability limit and what
-can proceed while unknown, without options or recommendation.
-
-Inspect supplied material before asking. Unknown patient/event counts, encoded
-feature dimension, collection and ascertainment facts remain unknown; synthetic
-settings never establish them. Retain unknown facts with their applicability limits.
-Defer questions without a useful current consequence; do not repeatedly request
-unavailable facts. Reuse exact applicable saved answers, and reopen an answered
-question only when its premise materially changes. There is no question quota.
-Consolidate duplicates without merging independently answerable premises, exact
-question IDs, model versions, audiences or saved answers. Carry forward only materially new
-consequences in the brief; preserve full derivations and prior context through
-exact sources. Legacy rationale fields need no separate repetition, and no rigid
-word cap applies. Specialists propose only qualifying items in their existing
-owned outputs; the Lead prioritizes and authors the final brief without another
-stage or writer.
+The Lead owns routine scientific choices, all-attempted accounting and failure
+handling within the agreed target and budget. Scientific defects, proofs and
+diagnostics remain team work; a researcher cannot verify assumptions by preference.
+Preserve the requested claim and applicable saved answers. Useful optional input
+can be invited while justified conditional work proceeds.
 
 Use existing assumptions and data-requirement sections to explain target recovery and applicability in the described setting, including conditions unavailable data cannot check. Leave identification and applicability gaps explicit even when P3 is not requested.
 
@@ -450,3 +420,9 @@ lost guarantee and observed failure. The Lead's `overview_markdown`, disposition
 development recommendation and meaningful alternatives with decisive conditions,
 proposer attribution and independent disagreement. Advice does not adopt a target
 revision or invent a researcher risk preference.
+
+## Shared notation and presentation (catalog 1.30.0)
+
+Proposals define candidate symbols in their existing mathematical fields. The existing Lead catalog assessment adopts exact method-scoped additions or translations without rewriting sealed proposals. Stable method identity and the mathematical-definition digest determine scope; supplied source text retains its original notation.
+
+The five neutral presentation references apply through `research_presentation_v2`; shared notation is separately gated by `project_notation_v1`, which requires v2. Keep full measure definitions beside results and actual resource measurements outside mathematical notation. This adds no stage, output family or scientific authority. Retained catalogs preserve their original routing and historical local fields.

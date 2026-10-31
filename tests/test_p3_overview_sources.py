@@ -10,7 +10,8 @@ from model_forge_codex.research_sources import scientific_account_sources
 from model_forge_codex.storage import sha256_bytes, sha256_file, write_json_atomic
 
 
-def overview_publication(project, *, run_id="run.original", branch="method.a", proof=True, method_version=1, nested=False):
+def overview_publication(project, *, run_id="run.original", branch="method.a", proof=True, method_version=1, nested=False,
+                         short_run_alias=False):
     run = project / "runs" / run_id
     manuscript = run / "outputs/p3.lead/working/research_lead/argument.md"
     manuscript.parent.mkdir(parents=True)
@@ -19,7 +20,7 @@ def overview_publication(project, *, run_id="run.original", branch="method.a", p
         text += "[Decision](decision.json) [Canonical record](published-theory-object.json) [Audit](artifact://audit) [Unsealed](unsealed.json) [Guessed](theory_record.json)\n"
     manuscript.write_text(text, encoding="utf-8")
     identity = {"stable_id": branch, "version": method_version, "definition_sha256": str(method_version) * 64}
-    uri = "artifact://artifact.arbitrary-proof-identity"
+    uri = f"run://{run_id}/argument.md" if short_run_alias else "artifact://artifact.arbitrary-proof-identity"
     conclusion = f"The bound holds under the stated assumptions. See the [full proof and interpretation]({uri})."
     document = {"method_identity": identity, "statements": [], "assumptions": [], "primary_artifact": {
         "uri": uri, "path": "argument.md", "sha256": sha256_file(manuscript)}}
@@ -57,8 +58,9 @@ def overview_publication(project, *, run_id="run.original", branch="method.a", p
     return package, account, meta, manuscript, text
 
 
-def test_decision_and_published_summary_bind_same_package_proof_in_readable_source_viewer(tmp_path):
-    package, account, meta, manuscript, text = overview_publication(tmp_path)
+@pytest.mark.parametrize("short_run_alias", [False, True])
+def test_decision_and_published_summary_bind_same_package_proof_in_readable_source_viewer(tmp_path, short_run_alias):
+    package, account, meta, manuscript, text = overview_publication(tmp_path, short_run_alias=short_run_alias)
     before = copy.deepcopy(account)
     view = artifacts_view(tmp_path)
     expected = source_ref("method.a", "P3", "theory_record", package["records"]["theory_record"])
@@ -74,10 +76,11 @@ def test_decision_and_published_summary_bind_same_package_proof_in_readable_sour
     assert account == before
 
 
-def test_old_overview_keeps_exact_proof_after_later_same_alias_publication(tmp_path):
-    package, account, meta, _, text = overview_publication(tmp_path)
+@pytest.mark.parametrize("short_run_alias", [False, True])
+def test_old_overview_keeps_exact_proof_after_later_same_alias_publication(tmp_path, short_run_alias):
+    package, account, meta, _, text = overview_publication(tmp_path, short_run_alias=short_run_alias)
     before = scientific_account_sources(tmp_path, account, meta)
-    overview_publication(tmp_path, run_id="run.later", method_version=2)
+    overview_publication(tmp_path, run_id="run.later", method_version=2, short_run_alias=short_run_alias)
     after = scientific_account_sources(tmp_path, account, meta)
     assert after == before
     ref = after[0]["generation_ref"]
@@ -125,14 +128,17 @@ def test_nested_proof_citation_rejects_a_later_package_from_the_same_run(tmp_pat
 
 
 @pytest.mark.parametrize("damage", ["other_package_same_run", "other_method", "changed_proof", "missing_proof", "conflicting_alias", "wrong_account_generation"])
-def test_overview_cannot_substitute_another_publication_or_changed_evidence(tmp_path, damage):
-    package, account, meta, manuscript, _ = overview_publication(tmp_path, proof=damage != "other_package_same_run")
+@pytest.mark.parametrize("short_run_alias", [False, True])
+def test_overview_cannot_substitute_another_publication_or_changed_evidence(tmp_path, damage, short_run_alias):
+    package, account, meta, manuscript, _ = overview_publication(
+        tmp_path, proof=damage != "other_package_same_run", short_run_alias=short_run_alias)
     phase_dir = tmp_path / "branches/method.a/phases/p3"
     if damage == "other_package_same_run":
         # A real declaration in a later package, even from the same run, is not
         # evidence for the original decision that lacked that declaration.
         publish_package(phase_dir, {"theory_record": json.dumps({"primary_artifact": {
-            "uri": "artifact://artifact.arbitrary-proof-identity", "path": "argument.md", "sha256": sha256_file(manuscript)}}).encode()},
+            "uri": "run://run.original/argument.md" if short_run_alias else "artifact://artifact.arbitrary-proof-identity",
+            "path": "argument.md", "sha256": sha256_file(manuscript)}}).encode()},
             run_id="run.original", branch_id="method.a", phase="P3")
     elif damage in {"other_method", "conflicting_alias"}:
         pointer = package["records"]["theory_record"]
@@ -141,7 +147,7 @@ def test_overview_cannot_substitute_another_publication_or_changed_evidence(tmp_
         if damage == "other_method":
             document["method_identity"]["version"] = 2
         else:
-            document["source_artifacts"] = [{"uri": "artifact://artifact.arbitrary-proof-identity", "path": "missing.md", "sha256": "f" * 64}]
+            document["source_artifacts"] = [{"uri": document["primary_artifact"]["uri"], "path": "missing.md", "sha256": "f" * 64}]
         replacement = publish_package(phase_dir, {"decision": json.dumps(account).encode(), "theory_record": json.dumps(document).encode()},
                                       run_id="run.original", branch_id="method.a", phase="P3")
         meta["generation_ref"] = source_ref("method.a", "P3", "decision", replacement["records"]["decision"])

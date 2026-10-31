@@ -40,7 +40,7 @@ test("complete formulation, consequences and advice remain visible with exact ma
   const before = structuredClone(item), opened = [], tree = ui.DecisionBrief({ item, onSource: source => opened.push(source) });
   assert.equal(nodes(tree).filter(node => node.type === "details").length, 0);
   const sections = nodes(tree).filter(node => node.type === "section");
-  assert.deepEqual(sections.map(node => text(nodes(node).find(child => child.type === "h4"))), ["What this choice changes", "Why your answer matters", "Lead recommendation"]);
+  assert.deepEqual(sections.map(node => text(nodes(node).find(child => child.type === "h4"))), ["What this choice changes", "Why your answer matters", "Team recommendation"]);
   assert.equal(new Set(sections.map(node => node.props["data-reading-anchor"])).size, 3);
   const expected = [[item.context_markdown, "context"], [item.likely_consequence, "consequence"], [item.recommendation, "recommendation"]];
   for (const [index, section] of sections.entries()) {

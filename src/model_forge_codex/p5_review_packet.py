@@ -33,6 +33,19 @@ def _venue(value) -> str | None:
     return value if value in _VENUES else None
 
 
+def _neutral_presentation_directions(catalog) -> str:
+    """Capture neutral editorial references without adding project context."""
+    if catalog is None:
+        return ""
+    from .domain import MemberRole
+    from .presentation_references import PRESENTATION_V2, presentation_reference_brief
+    path = catalog.root / "contracts" / "phases" / "P5.json"
+    contract = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    if PRESENTATION_V2 not in contract.get("capabilities", []):
+        return ""
+    return "\n" + presentation_reference_brief(catalog, "P5", MemberRole.OUTSIDE_REVIEWER)
+
+
 def _verified_bytes(path: Path, expected: str, message: str) -> bytes:
     try:
         payload = path.read_bytes()
@@ -133,7 +146,8 @@ def prepare_review_packet(run_dir: Path, *, basis: dict, instructions: str, run_
     audience = document.get("target_audience")
     audience = audience if isinstance(audience, str) and audience.strip() else None
     draft_venue = _venue(document.get("venue_length"))
-    focus_bytes = _instruction_text(instructions, venue, audience, draft_venue).encode("utf-8")
+    focus_bytes = (_instruction_text(instructions, venue, audience, draft_venue)
+                   + _neutral_presentation_directions(catalog)).encode("utf-8")
     packet_dir.mkdir(parents=True, exist_ok=True)
     refs = []
     for name, payload, family in payloads:
@@ -365,6 +379,7 @@ def _prepare_report_packet(packet_dir: Path, *, basis: dict, instructions: str, 
         # return before this path, preserving their exact original bytes.
         focus = focus.removesuffix("No new model, proof or numerical work is authorized during this review.\n")
         focus += _reader_review_directions()
+    focus += _neutral_presentation_directions(catalog)
     packet_dir.mkdir(parents=True, exist_ok=True)
     refs = []
     for name, payload, family in payloads:

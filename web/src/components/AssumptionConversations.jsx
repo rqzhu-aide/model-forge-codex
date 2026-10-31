@@ -1,9 +1,9 @@
 import React, { useId, useRef, useState } from "react";
 import { api } from "../api";
 import { freshId, humanLabel } from "../research";
-import { assumptionSource, conversationDraftKey, conversationPurpose, conversationsForTarget, conversationTitle, defaultConversationQuestion, isConversationTarget, isEarlierConversation, isPendingTurn, readConversationDraft, saveConversationDraft } from "../assumptionConversations";
+import { assumptionSource, conversationDraftKey, conversationPurpose, conversationsForTarget, conversationTitle, defaultConversationQuestion, isConversationTarget, isEarlierConversation, isPendingTurn, readConversationDraft, responseDraftPayload, responseDraftText, saveConversationDraft } from "../assumptionConversations";
 import { conversationSourceReference } from "../conversationSources";
-import { Dialog, MathText, ResearchDocument, SourceRef } from "./Shared";
+import { Dialog, MathText, ResearchDocument, ResearchLabel, SourceRef } from "./Shared";
 import { ActionButton, ActionIcon } from "./Visuals";
 import ReportSectionComment from "./ReportSectionComment";
 
@@ -53,41 +53,52 @@ function QuestionForm({ projectId, target, conversation, pending, blockedReason,
   const storageKey = conversationDraftKey(projectId, target, conversation?.assessment_id);
   const purpose = conversationPurpose(target, conversation);
   const suggestions = purpose === "issue_suggestions";
-  const newDraft = () => ({ text: conversation ? "" : defaultConversationQuestion(target), idempotencyKey: freshId(),
-    ...(!conversation && target.researcherNote ? { researcherNote: target.researcherNote } : {}),
-    ...(!conversation && target.researcherNoteDraft ? { researcherNoteDraft: target.researcherNoteDraft } : {}) });
-  const [draft, setDraft] = useState(() => readConversationDraft(storageKey) || newDraft());
+  const currentResponse = () => ({
+    researcherNote: !conversation ? target.researcherNote : undefined,
+    researcherResponseDraft: !conversation ? target.researcherResponseDraft : undefined,
+    researcherNoteDraft: !conversation && !target.researcherResponseDraft ? target.researcherNoteDraft : undefined,
+  });
+  const [draft, setDraft] = useState(() => {
+    const cached = readConversationDraft(storageKey);
+    // An uncertain submission keeps its exact payload and retry identity. An
+    // unsent question keeps its text, but uses the answer editor as it is now.
+    if (cached) return conversation || cached.submissionUnconfirmed ? cached : { ...cached, ...currentResponse() };
+    return { text: conversation ? "" : defaultConversationQuestion(target), idempotencyKey: freshId(), ...currentResponse() };
+  });
   const [error, setError] = useState(null); const [sending, setSending] = useState(false);
   const lock = useRef(false); const questionId = useId();
   const update = (text) => {
-    const next = { ...draft, text, idempotencyKey: freshId() };
+    const next = { ...draft, text, idempotencyKey: freshId(), submissionUnconfirmed: false, ...currentResponse() };
     setDraft(next); saveConversationDraft(storageKey, next); setError(null);
   };
   const submit = async (event) => {
     event.preventDefault();
     if (lock.current || pending || blockedReason || !draft.text.trim()) return;
     lock.current = true; setSending(true); setError(null);
-    saveConversationDraft(storageKey, draft);
+    const submitted = { ...draft, submissionUnconfirmed: true };
+    setDraft(submitted); saveConversationDraft(storageKey, submitted);
     try {
       const body = { instructions: draft.text, idempotency_key: draft.idempotencyKey,
-        ...(!conversation && draft.researcherNoteDraft ? { researcher_note_draft: draft.researcherNoteDraft } : {}) };
+        ...(!conversation && draft.researcherResponseDraft ? { researcher_response_draft: responseDraftPayload(draft.researcherResponseDraft) } : {}),
+        ...(!conversation && draft.researcherNoteDraft && !draft.researcherResponseDraft ? { researcher_note_draft: draft.researcherNoteDraft } : {}) };
       const run = conversation
         ? await api.assessmentMessage(projectId, conversation.assessment_id, body)
         : await api.startRun(projectId, { ...body, phase: target.phase || "P1", mode: target.kind === "assumption" || ["project_context", "model_dialogue", "issue_suggestions"].includes(purpose) ? "p3.assessment" : "explanation", branch_id: target.branch || "trunk", intent: "assessment", target: assumptionSource(target), assessment_purpose: purpose });
       if (readConversationDraft(storageKey)?.idempotencyKey === draft.idempotencyKey) saveConversationDraft(storageKey, null);
       setDraft({ text: "", idempotencyKey: freshId() });
-      onAccepted(run, draft.text, conversation, undefined, draft.researcherNoteDraft, draft.researcherNote);
+      onAccepted(run, draft.text, conversation, undefined, draft.researcherNoteDraft, draft.researcherNote, run.researcher_response_draft || draft.researcherResponseDraft);
     } catch (failure) {
       setError(failure.status ? submissionError(failure) : `${failure.message} The request could not be confirmed. Send the same question again to check its submission without creating a duplicate.`);
     } finally { lock.current = false; setSending(false); }
   };
   const savedNote = conversation ? conversation.researcher_answer : draft.researcherNote;
-  const includedDraft = conversation?.researcher_note_draft || (!conversation && draft.researcherNoteDraft);
+  const responseDraft = conversation ? conversation.researcher_response_draft : draft.researcherResponseDraft;
+  const includedDraft = responseDraftText(responseDraft) || conversation?.researcher_note_draft || (!conversation && draft.researcherNoteDraft);
   return <form className="conversation-question contribution-surface" onSubmit={submit}>
-    {(savedNote?.note || includedDraft) && <details className="research-details conversation-note-context" open={!conversation && Boolean(includedDraft)}><summary>{target.kind === "report_section" ? "Your comment included as context" : "Your note included as context"}{includedDraft ? " · unsaved draft" : savedNote?.revision != null ? ` · saved revision ${savedNote.revision}` : ""}</summary>{savedNote?.note && <><h4>{target.kind === "report_section" ? "Your saved comment" : "Your saved answer"}</h4><ResearchDocument text={savedNote.note} /></>}{includedDraft && <><h4>Your unsaved draft</h4><ResearchDocument text={includedDraft} /><p className="note">{target.kind === "report_section" ? "Included for discussion only. Use Save comment on this section to keep it as your comment." : "Included for discussion only. Use Save answer on the question to keep it as your answer."}</p></>}</details>}
-    <div className="field"><label htmlFor={questionId}>{conversation ? "Your follow-up" : suggestions ? "Your request to the Lead" : target.kind === "report_section" ? "Your question about this section" : "Your question"}</label><textarea id={questionId} rows={3} value={draft.text} disabled={sending} onChange={(event) => update(event.target.value)} placeholder={conversation ? "Ask for an explanation or example." : target.kind === "report_section" ? "Ask about this result, its assumptions or what it means for your problem." : target.kind === "project_context" ? "Describe your setting, ask how it fits a model, or explain what is still unknown." : target.kind === "assumption" ? "Ask what happens without this assumption." : "Ask for more detail or how this relates to your problem."} /></div>
+    {(savedNote?.note || includedDraft) && <details className="research-details conversation-note-context" open={!conversation && Boolean(includedDraft)}><summary>{conversation ? target.kind === "report_section" ? "Your comment when this discussion began" : "Your response when this discussion began" : target.kind === "report_section" ? "Your comment included as context" : "Your response included as context"}{includedDraft ? " · unsaved draft" : savedNote?.revision != null ? ` · saved revision ${savedNote.revision}` : ""}</summary>{savedNote?.note && <><h4>{target.kind === "report_section" ? "Your saved comment" : "Your saved answer"}</h4><ResearchDocument text={savedNote.note} /></>}{includedDraft && <><h4>{conversation ? "Your initial unsaved draft" : "Your unsaved draft"}</h4><ResearchDocument text={includedDraft} /><p className="note">{target.kind === "report_section" ? "Included for discussion only. Use Save comment on this section to keep it as your comment." : "Included for discussion only. Use Save answer on the question to keep it as your answer."}</p></>}</details>}
+    <div className="field"><label htmlFor={questionId}>{conversation ? "Your follow-up" : suggestions ? "Your request to the Lead" : target.kind === "notation_entry" ? "Your question about this definition" : target.kind === "report_section" ? "Your question about this section" : "Your question"}</label><textarea id={questionId} rows={3} value={draft.text} disabled={sending} onChange={(event) => update(event.target.value)} placeholder={conversation ? "Ask for an explanation or example." : target.kind === "notation_entry" ? "Ask what this symbol represents or how its scope affects the account." : target.kind === "report_section" ? "Ask about this result, its assumptions or what it means for your problem." : target.kind === "project_context" ? "Describe your setting, ask how it fits a model, or explain what is still unknown." : target.kind === "assumption" ? "Ask what happens without this assumption." : "Ask for more detail or how this relates to your problem."} /></div>
     {error && <p className="error" role="alert">{error}</p>}
-    <div className="btnrow"><ActionButton action="ask" uiRole="research" variant="primary" type="submit" disabled={sending || pending || Boolean(blockedReason) || !draft.text.trim()}>{sending ? "Sending…" : conversation ? "Ask follow-up" : suggestions ? "Get the Lead's advice" : "Discuss"}</ActionButton><span className="note">{blockedReason || (pending ? "You can draft a follow-up while the answer is prepared." : target.kind === "report_section" ? "The Research Lead answers using this report section, its supporting sources and your saved comment." : suggestions ? "The Research Lead will advise you on answering this question using its sources and your note. Advice does not save an answer or change the model." : "Discussion uses this exact question, its sources and your note. Saving an answer is a separate action.")}</span></div>
+    <div className="btnrow"><ActionButton action="ask" uiRole="research" variant="primary" type="submit" disabled={sending || pending || Boolean(blockedReason) || !draft.text.trim()}>{sending ? "Sending…" : conversation ? "Ask follow-up" : suggestions ? "Get the Lead's advice" : "Discuss"}</ActionButton><span className="note">{blockedReason || (pending ? "You can draft a follow-up while the answer is prepared." : target.kind === "notation_entry" ? "The Research Lead explains this exact definition using its saved result and sources. Save a correction separately in Notation." : target.kind === "report_section" ? "The Research Lead answers using this report section, its supporting sources and your saved comment." : suggestions ? "The Research Lead will advise you on answering this question using its sources and your note. Advice does not save an answer or change the model." : "Discussion uses this exact question, its sources and your note. Saving an answer is a separate action.")}</span></div>
   </form>;
 }
 
@@ -113,11 +124,14 @@ export default function AssumptionConversations({ projectId, target, conversatio
   const retryFirst = selected && !pending && ["failed", "cancelled"].includes(selected.turns?.at(-1)?.state)
     && !selected.turns?.some((turn) => turn.state === "assessed") && !selected.messages?.length;
   const methodVersion = selected?.method_version ?? (!earlier ? target.methodVersion : null);
-  const acceptedTurn = (run, instructions, conversation, retryRunId, researcherNoteDraft, researcherNote) => {
+  const targetHeading = selected?.target_label ? selected.target_label === selected.target?.object_id ? humanLabel(selected.target_label) : selected.target_label : target.label || humanLabel(target.object_id);
+  const targetStatement = selected?.target_statement || (!earlier && target.statement);
+  const repeatsHeading = typeof targetHeading === "string" && typeof targetStatement === "string" && targetHeading.trim() === targetStatement.trim();
+  const acceptedTurn = (run, instructions, conversation, retryRunId, researcherNoteDraft, researcherNote, researcherResponseDraft) => {
     const assessmentId = run.assessment_id || conversation?.assessment_id;
     const turn = { run_id: run.run_id, instructions, state: run.state || "requested", created_at: run.created_at || new Date().toISOString(), retry_run_id: retryRunId };
     const purpose = conversationPurpose(target, conversation);
-    setAccepted((items) => [...items, { ...conversation, assessment_id: assessmentId, assessment_purpose: purpose, responsible_role: purpose === "issue_suggestions" ? "research_lead" : run.responsible_role || target.responsible_role, target: conversation?.target || assumptionSource(target), created_at: conversation?.created_at || turn.created_at, researcher_note_draft: conversation ? conversation.researcher_note_draft : researcherNoteDraft, researcher_answer: conversation ? conversation.researcher_answer : researcherNote, turns: [turn] }]);
+    setAccepted((items) => [...items, { ...conversation, assessment_id: assessmentId, assessment_purpose: purpose, responsible_role: purpose === "issue_suggestions" ? "research_lead" : run.responsible_role || target.responsible_role, target: conversation?.target || assumptionSource(target), created_at: conversation?.created_at || turn.created_at, researcher_note_draft: conversation ? conversation.researcher_note_draft : researcherNoteDraft, researcher_response_draft: conversation ? conversation.researcher_response_draft : researcherResponseDraft, researcher_answer: conversation ? conversation.researcher_answer : researcherNote, turns: [turn] }]);
     setSelectedId(assessmentId); setError(null); onStarted?.(run);
   };
   const retry = async (turn) => {
@@ -137,18 +151,18 @@ export default function AssumptionConversations({ projectId, target, conversatio
     ["This source version", combined.filter((conversation) => !isEarlierConversation(conversation, target))],
     ["Earlier source versions", combined.filter((conversation) => isEarlierConversation(conversation, target))],
   ];
-  return <Dialog title={target.kind === "report_section" ? "Discuss this section" : conversationPurpose(target) === "issue_suggestions" ? "Get the Lead's advice" : target.kind === "project_context" ? target.goal_source_ref ? "Discuss research goal" : "Discuss your problem" : target.kind === "model_dialogue" ? "Discuss this model" : target.kind === "assumption" ? "About this assumption" : "About this issue"} onClose={onClose} className="assumption-conversations-dialog">
+  return <Dialog title={target.kind === "notation_entry" ? "Discuss this definition" : target.kind === "report_section" ? "Discuss this section" : conversationPurpose(target) === "issue_suggestions" ? "Get the Lead's advice" : target.kind === "project_context" ? target.goal_source_ref ? "Discuss research goal" : "Discuss your problem" : target.kind === "model_dialogue" ? "Discuss this model" : target.kind === "assumption" ? "About this assumption" : "About this issue"} onClose={onClose} className="assumption-conversations-dialog">
     <div className="assumption-conversations">
-      <section className="conversation-target" data-card-role="research" aria-label={target.kind === "report_section" ? "Selected report section" : "Selected scientific question"}>
-        <h3>{selected?.target_label ? selected.target_label === selected.target?.object_id ? humanLabel(selected.target_label) : selected.target_label : target.label || humanLabel(target.object_id)}</h3>
-        <p className="note">{target.kind === "project_context" ? `Project-wide context revision ${displayedTarget.context_revision} · brief revision ${displayedTarget.brief_revision}` : <>{selected?.method_label || target.methodLabel || humanLabel(target.branch)}{methodVersion != null && methodVersion !== "" ? ` · Model version ${methodVersion}` : ""}</>}</p>
+      <section className="conversation-target" data-card-role="research" aria-label={target.kind === "notation_entry" ? "Selected notation definition" : target.kind === "report_section" ? "Selected report section" : "Selected scientific question"}>
+        <h3>{target.kind === "notation_entry" ? <ResearchLabel text={targetHeading} /> : targetHeading}</h3>
+        <p className="note">{target.kind === "notation_entry" ? <>{displayedTarget.phase} · {humanLabel(displayedTarget.family)}</> : target.kind === "project_context" ? `Project-wide context revision ${displayedTarget.context_revision} · brief revision ${displayedTarget.brief_revision}` : <>{selected?.method_label || target.methodLabel || humanLabel(target.branch)}{methodVersion != null && methodVersion !== "" ? ` · Model version ${methodVersion}` : ""}</>}</p>
         {earlier && <p className="note warn">Earlier source version. This conversation continues with its original saved sources.</p>}
-        {target.kind !== "report_section" && (selected?.target_statement || (!earlier && target.statement)) && <ResearchDocument text={selected?.target_statement || target.statement} />}
+        {target.kind !== "report_section" && targetStatement && !repeatsHeading && <ResearchDocument text={targetStatement} />}
         {!earlier && target.latex && <MathText latex={target.latex} />}
         {displayedTarget.goal_source_ref && <SourceRef reference={displayedTarget.goal_source_ref} onOpen={onSource} label="Exact goal source" />}
-        {!["p4_pause", "researcher_pause", "project_context"].includes(displayedTarget.kind) && <SourceRef reference={displayedTarget} onOpen={onSource} label={target.kind === "report_section" ? "Read this report version" : target.kind === "assumption" ? "Open exact assumption source" : "Read the issue source"} />}
+        {!["p4_pause", "researcher_pause", "project_context"].includes(displayedTarget.kind) && <SourceRef reference={displayedTarget} onOpen={onSource} label={target.kind === "notation_entry" ? "Read this definition's result" : target.kind === "report_section" ? "Read this report version" : target.kind === "assumption" ? "Open exact assumption source" : "Read the issue source"} />}
       </section>
-      {!isConversationTarget(target) ? <p className="error" role="alert">The exact source for this question is not available. Reopen it from its issue or assumption.</p> : <>
+      {!isConversationTarget(target) ? <p className="error" role="alert">{target.kind === "notation_entry" ? "The exact source for this definition is not available. Reopen it from Notation." : "The exact source for this question is not available. Reopen it from its issue or assumption."}</p> : <>
         {target.kind === "report_section" && <ReportSectionComment key={conversationDraftKey(projectId, displayedTarget, "section-comment")} projectId={projectId} target={displayedTarget} />}
         {combined.length > 0 && <section className="conversation-history" data-card-role="history" aria-label="Saved conversations"><div className="section-heading"><h3>Saved conversations</h3><ActionButton action="ask" uiRole="research" onClick={() => selectConversation(null)} aria-pressed={!selected}>New conversation</ActionButton></div>{groups.filter(([, items]) => items.length).map(([label, items]) => <div className="conversation-history-group" key={label}><h4>{label}</h4><ul>{items.map((conversation) => <li key={conversation.assessment_id}><button type="button" className={`conversation-choice${conversation.assessment_id === selectedId ? " selected" : ""}`} aria-pressed={conversation.assessment_id === selectedId} onClick={() => selectConversation(conversation.assessment_id)}><span className="conversation-title">{conversationTitle(conversation)}</span><span className="note">{dateLabel(conversation.created_at || conversation.updated_at)}{conversation.turns?.some(isPendingTurn) ? " · Answering" : ["failed", "cancelled"].includes(conversation.turns?.at(-1)?.state) ? " · Answer incomplete" : ""}{isEarlierConversation(conversation, target) && ` · ${conversation.target.generation_id || "earlier question"}`}</span></button></li>)}</ul></div>)}</section>}
         {selected && <ConversationTranscript conversation={selected} projectId={projectId} onSource={onSource} onRetry={retry} submitting={retrying} />}

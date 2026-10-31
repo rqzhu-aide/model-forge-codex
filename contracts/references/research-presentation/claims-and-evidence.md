@@ -1,0 +1,13 @@
+# State what the evidence supports
+
+State the finding and its tested or established scope, with the condition or uncertainty that changes its interpretation beside it. Distinguish a proposal, assumption, diagnostic, mathematical result, observed finding and researcher-reported fact. Keep the existing scientific status, proof status and support route separate.
+
+Use the support appropriate to the claim: retained theory for a mathematical guarantee, numerical evidence for an observed comparison, a literature source for its reported contribution, or supplied records for a study fact. A citation identifies a source; relevance, a matching identifier or a successful execution does not establish support. Explain which statement, conditions or observations support the claim and what remains unchecked.
+
+Preserve targets, quantifiers, populations, units, comparison groups, denominators and uncertainty. Numerical agreement does not prove a theorem. Equality in tested fitted cases does not establish general equivalence. Nonsignificance or absent analysis does not demonstrate absence of benefit. Synthetic performance does not establish clinical usefulness or intervention identification. A missing proof condition does not by itself demonstrate method failure.
+
+Separate numerical approximation or reference error from sampling and Monte Carlo uncertainty. A reference enclosure is not a confidence interval. Preserve the actually assessed interval family; do not extend simultaneous coverage to every displayed row. Keep all-attempted, completed and successful-fit denominators distinct. Report unsuccessful, incomplete and administratively unstarted procedures according to their saved states.
+
+Give counterevidence and material limitations where they affect the conclusion. A scientific limitation concerns what can be learned or used; an unavailable display or source is a delivery fact, not a new scientific failure. Attribute a reviewer's unique qualification or disagreement and retain its exact basis. A short concurrence with a source is enough when the review adds no qualification. Do not merge independent findings or per-test reviews when consolidating prose or inquiries.
+
+Keep evidence creation, independent review and synthesis within the responsibilities already granted to this invocation. A clearer account does not authorize a new calculation, proof, experiment, stronger claim or changed target. Exact values and source identities remain in records. Preserve the submitted account's exact notation and definition sources; newer or hidden project context cannot repair an incomplete independent-review submission.

@@ -49,6 +49,9 @@ from .p5_review_packet import (frozen_review_packet_enabled, prepare_review_pack
                                review_packet_brief, manuscript_scope_brief,
                                validate_review_packet_outputs, validate_manuscript_scope)
 from .records import ArtifactError, current_records, current_package_token, generation_path, read_generation, publish_package, source_artifact_path
+from .notation import (LEAD_FAMILIES, notation_enabled, collect_notation_inputs, digest as notation_digest,
+                       frozen_notation, freeze_notation_inputs, retain_account_notation, validate_notation_updates,
+                       build_account_notation, notation_brief)
 from .threads import ThreadRegistry
 from .validation_feedback import member_validation_feedback
 from .storage import (
@@ -117,6 +120,7 @@ class RunEngine(P4LifecycleMixin):
         self._active_turns: dict[str, set[str]] = {}
         self._cancellation_failures: dict[str, str] = {}
         self._mechanical_repairs: dict[tuple[str, str, str], dict] = {}
+        self._provider_retry_briefs: dict[tuple[str, str, str], dict] = {}
 
     # ------------------------------------------------------------------ #
     # Paths
@@ -517,8 +521,13 @@ class RunEngine(P4LifecycleMixin):
                    "project": read_json(project_dir / "project.json") or {},
                    "catalog_pin": read_json(project_dir / "contracts" / "catalog-pin.json") or {},
                    "catalog_sha256": catalog.snapshot_sha256}
+        notation = collect_notation_inputs(project_dir, records, method, phase) if notation_enabled(catalog, phase) else None
         if supports_problem_context(catalog):
             payload["problem_context"] = frozen_problem_context(project_dir, branch_id, method)
+            if notation_enabled(catalog, phase):
+                from .notation_interactions import freeze_context
+                payload["problem_context"] = freeze_context(payload["problem_context"], records,
+                    branch_id=branch_id, model_ref=method, notation=notation, phase=phase)
             if phase == "P5" and technical_report_enabled(catalog):
                 payload["absent_scientific_inputs"] = [p for p in ("P3", "P4") if not any(r["phase"] == p for r in records)]
         # Freeze accumulated state at authorization, including committed legacy
@@ -581,6 +590,8 @@ class RunEngine(P4LifecycleMixin):
             family: {"document": document, "sha256": self._cumulative_digest(document)}
             for family, document in cumulative.items()
         }
+        if notation_enabled(catalog, phase):
+            payload["notation"] = {"document": notation, "sha256": notation_digest(notation)}
         digest = sha256_bytes(json.dumps(payload, sort_keys=True).encode())
         return {**payload, "sha256": digest, "basis_phase": phase, "basis_branch": branch_id}
 
@@ -681,6 +692,7 @@ class RunEngine(P4LifecycleMixin):
         intent: str = "run", target: dict | None = None, assessment_id: str | None = None,
         assessment_purpose: str = "assessment", retry_run_id: str | None = None,
         researcher_note_draft: str | None = None,
+        researcher_response_draft: dict | None = None,
         supplied_method: dict | None = None,
         budget_seconds: float | None = None,
         context_refs: list[dict] | None = None,
@@ -695,6 +707,7 @@ class RunEngine(P4LifecycleMixin):
                 intent=intent, target=target, assessment_id=assessment_id, supplied_method=supplied_method,
                 assessment_purpose=assessment_purpose, retry_run_id=retry_run_id,
                 researcher_note_draft=researcher_note_draft,
+                researcher_response_draft=researcher_response_draft,
                 budget_seconds=budget_seconds,
                 context_refs=context_refs,
                 input_ids=input_ids,
@@ -745,6 +758,7 @@ class RunEngine(P4LifecycleMixin):
         assessment_id: str | None = None,
         assessment_purpose: str = "assessment",
         researcher_note_draft: str | None = None,
+        researcher_response_draft: dict | None = None,
         retry_run_id: str | None = None,
         supplied_method: dict | None = None,
         budget_seconds: float | None = None,
@@ -812,6 +826,7 @@ class RunEngine(P4LifecycleMixin):
                 retry = self.load_run(project_id, retry_run_id)
                 instructions = retry.instructions
                 researcher_note_draft = retry.researcher_note_draft
+                researcher_response_draft = retry.researcher_response_draft
                 previous_assessment = read_json(self.run_dir(project_id, retry_run_id) / "previous-assessment.json") or {}
                 previous_assessment = {**previous_assessment, "run_id": retry_run_id, "target": target,
                                        "assessment_purpose": assessment_purpose, "created_at": conversation["created_at"]}
@@ -831,11 +846,16 @@ class RunEngine(P4LifecycleMixin):
         context_dialogue = assessment_purpose == "project_context"
         issue_explanation = assessment_purpose in ("issue_explanation", "issue_suggestions", "model_dialogue")
         report_section = bool(target and target.get("kind") == "report_section")
+        notation_entry = bool(target and target.get("kind") == "notation_entry")
         if report_section and (intent != "assessment" or assessment_purpose != "model_dialogue"):
             raise RunError("Discuss a report section through its read-only conversation")
+        if notation_entry and (intent != "assessment" or assessment_purpose != "model_dialogue"):
+            raise RunError("Discuss notation through its read-only conversation")
         readonly_dialogue = context_dialogue or issue_explanation
         if researcher_note_draft is not None and (not isinstance(researcher_note_draft, str) or not readonly_dialogue):
             raise RunError("A response note draft belongs to an item discussion or suggestion request")
+        if researcher_response_draft is not None and (not issue_explanation or report_section or notation_entry):
+            raise RunError("An answer draft belongs to a question discussion or Lead advice request")
         if assessment_purpose in ("explanation", "issue_explanation", "issue_suggestions", "project_context", "model_dialogue") and not instructions.strip():
             raise RunError("Enter your question about the selected scientific item")
         from .providers import ProviderConfigError, load_provider_config
@@ -920,7 +940,7 @@ class RunEngine(P4LifecycleMixin):
             if original_basis and (candidate / "contracts").is_dir():
                 issue_source_run = candidate
                 basis = original_basis
-            elif report_section:
+            elif report_section or notation_entry:
                 raise RunError("This report's original frozen scientific context is unavailable")
         frozen_context = discussion or issue_source_run is not None
         if not basis:
@@ -950,9 +970,23 @@ class RunEngine(P4LifecycleMixin):
                     basis["records"] = section_source_records(issue, basis)
                     basis["cumulative_inputs"] = {}
                     basis.pop("predecessor_material", None)
+                    self._bind_account_notation(project_dir, basis, target)
+                elif notation_entry:
+                    from .notation import resolve_notation_entry
+                    selected_notation = resolve_notation_entry(project_dir, target)
+                    basis["records"] = [selected_notation["source_ref"]]
+                    basis["cumulative_inputs"] = {}
+                    basis.pop("predecessor_material", None)
+                    basis.pop("method_provenance", None)
+                    basis.pop("problem_context", None)
+                    snapshot = selected_notation["snapshot"]
+                    basis["notation"] = {"document": snapshot, "sha256": notation_digest(snapshot)}
                 else:
                     from .phase_interactions import exact_saved_answer
                     issue["researcher_answer"] = exact_saved_answer(project_dir, issue)
+                    notation_source = issue.get("generation_ref") or target
+                    if notation_source.get("generation_id") and notation_source.get("family"):
+                        self._bind_account_notation(project_dir, basis, notation_source)
                 if target.get("branch") != branch_id or target.get("phase") != phase:
                     raise RunError("The issue belongs to a different phase or method")
                 # Exact source records may be historical or excluded from a
@@ -1016,8 +1050,19 @@ class RunEngine(P4LifecycleMixin):
                 target = self._validate_explanation_target(project_id, branch_id, target, basis=basis if discussion else None)
             else:
                 target = self._validate_target(project_id, branch_id, target, allow_historical=discussion)
+        if intent == "assessment" and not discussion and not readonly_dialogue and target:
+            self._bind_account_notation(project_dir, basis, target)
+        if intent == "assessment" and not discussion:
+            payload = {key: value for key, value in basis.items() if key not in ("sha256", "basis_phase", "basis_branch")}
+            basis["sha256"] = sha256_bytes(json.dumps(payload, sort_keys=True).encode())
         if previous_assessment and previous_assessment.get("target") != target:
             raise RunError("Assessment discussion must remain linked to its original target")
+        if researcher_response_draft is not None and not retry_run_id:
+            from .phase_interactions import normalize_response_draft
+            try:
+                researcher_response_draft = normalize_response_draft(basis.get("explanation_issue") or {}, researcher_response_draft)
+            except ValueError as exc:
+                raise RunError(str(exc)) from exc
         record = RunRecord(
             run_id=new_id(f"run.{phase.lower()}.{mode}"),
             project_id=project_id,
@@ -1034,6 +1079,7 @@ class RunEngine(P4LifecycleMixin):
             assessment_id=(assessment_id or new_id("assessment")) if intent == "assessment" else assessment_id,
             assessment_purpose=assessment_purpose, retry_run_id=retry_run_id,
             researcher_note_draft=researcher_note_draft,
+            researcher_response_draft=researcher_response_draft,
             assessment_turn_index=len(conversation.get("turns", [])) if conversation else 0,
             responsible_role=stages[0].roles[0].value if intent == "assessment" else None,
             catalog_pin=basis.get("catalog_pin", {}),
@@ -1095,6 +1141,7 @@ class RunEngine(P4LifecycleMixin):
             ref["snapshot_path"] = str(snapshot)
             if ref.get("format") != "jsonl":
                 artifact_sources.append((ref, json.loads(snapshot.read_text(encoding="utf-8"))))
+        freeze_notation_inputs(run_dir, basis)
         for ref, document in artifact_sources:
             for origin, artifact in self._record_artifact_pointers(ref, document):
                 identity = (origin.get("run_id"), artifact.get("sha256") or artifact.get("artifact_sha256"))
@@ -1348,7 +1395,7 @@ class RunEngine(P4LifecycleMixin):
                     latest[aid] = item
             if run.get("intent") == "assessment" and run.get("assessment_purpose") in ("explanation", "issue_explanation", "issue_suggestions", "project_context", "model_dialogue") and run.get("assessment_id"):
                 aid = run["assessment_id"]
-                turn = {key: run.get(key) for key in ("run_id", "instructions", "researcher_note_draft", "state", "terminal_reason", "created_at", "updated_at", "retry_run_id")}
+                turn = {key: run.get(key) for key in ("run_id", "instructions", "researcher_note_draft", "researcher_response_draft", "state", "terminal_reason", "created_at", "updated_at", "retry_run_id")}
                 turn["assessment_turn_index"] = run.get("assessment_turn_index", 0)
                 if isinstance(item, dict):
                     turn["assessment_markdown"] = item.get("assessment_markdown") or item.get("summary", "")
@@ -1363,6 +1410,7 @@ class RunEngine(P4LifecycleMixin):
             item = latest.get(aid, {"messages": [], "findings": [], "options": [], "evidence_refs": []})
             item.update({"assessment_id": aid, "assessment_purpose": first.get("assessment_purpose", "explanation"), "target": target,
                          "researcher_note_draft": first.get("researcher_note_draft"),
+                         "researcher_response_draft": first.get("researcher_response_draft"),
                          "turns": [row[0] for row in rows], "run_id": last["run_id"], "state": last["state"],
                          "terminal_reason": last.get("terminal_reason"), "first_question": first.get("instructions", ""),
                          "created_at": first.get("created_at", ""), "updated_at": last_turn.get("updated_at") or last.get("created_at", "")})
@@ -1460,35 +1508,44 @@ class RunEngine(P4LifecycleMixin):
         self._save_run(current)
         await self._transition(current, RunState.FAILED, f"Run failed: {reason}")
 
-    def _provider_retry_stage(self, record):
+    def _provider_retry_stage(self, record, *, dispatch=False):
         """Recognize a stopped or rejected request, not a scientific correction."""
-        from .bridge import is_activity_log_failure, is_capacity_failure, rejected_input_limit
+        from .bridge import CAPACITY_FAILURE, is_activity_log_failure, is_capacity_failure, rejected_input_limit
         from .p4_execution import P4Controller
         from .providers import load_provider_config
         from .execution import capture_execution, public_execution
 
         directory = self.run_dir(record.project_id, record.run_id)
-        input_limit = rejected_input_limit(record.terminal_reason)
-        activity_log = is_activity_log_failure(record.terminal_reason, directory / "events.jsonl")
-        if (record.state != RunState.FAILED or not self._progressive_p4(record)
-                or not (is_capacity_failure(record.terminal_reason) or input_limit or activity_log)):
-            raise RunError("Retry is available for a capacity-interrupted, input-size-rejected or local activity-log-interrupted evaluation step.")
+        reason = CAPACITY_FAILURE if dispatch else record.terminal_reason
+        input_limit = rejected_input_limit(reason)
+        activity_log = is_activity_log_failure(reason, directory / "events.jsonl")
+        progressive = self._progressive_p4(record)
+        sequential_capacity = (record.intent == "run" and record.phase in ("P1", "P2", "P3", "P5")
+                               and not record.correction_attempts and is_capacity_failure(reason))
+        expected_state = RunState.RUNNING if dispatch else RunState.FAILED
+        if (record.state != expected_state or not (progressive or sequential_capacity)
+                or not (is_capacity_failure(reason) or input_limit or activity_log)):
+            raise RunError("Retry is available for a capacity-interrupted research step, or an input-size-rejected or local activity-log-interrupted evaluation step.")
         task = self._tasks.get(record.run_id)
-        if (task and not task.done()) or self._active_turns.get(record.run_id):
+        if not dispatch and ((task and not task.done()) or self._active_turns.get(record.run_id)):
             raise RunError("The interrupted work has not finished stopping.")
-        progress = P4Controller.load_snapshot(directory) or {}
+        progress = (P4Controller.load_snapshot(directory) or {}) if progressive else {}
         feedback = read_json(directory / "p4-control-feedback.json") or {}
-        if (not progress or progress.get("pending_batch") or progress.get("pause_request")
-                or feedback.get("execution_state") == "unknown"):
+        if progressive and (not progress or progress.get("pending_batch") or progress.get("pause_request")
+                            or feedback.get("execution_state") == "unknown"):
             raise RunError("Inspect the pending evaluation action before retrying.")
         stage = next((s for s in self._stages(record) if record.stage_states.get(s.stage_id) != "succeeded"), None)
+        if not progressive and (not stage or stage.execution != "serial" or len(stage.roles) != 1
+                                or record.stage_states.get(stage.stage_id) != ("running" if dispatch else "failed")):
+            raise RunError("Retry requires an interrupted single-member research step; start a new run for a parallel stage.")
         entries = [read_json(path) for path in (directory / "execution").glob("*/execution.json")]
         entry = max((e for e in entries if e), key=lambda e: e.get("started_at", ""), default={})
         if (not stage or entry.get("purpose") != "scientific" or entry.get("state") != "failed"
+                or not entry.get("execution_id") or not entry.get("thread_id")
                 or not entry.get("finished_at") or entry.get("stage_id") != stage.stage_id
                 or entry.get("role") != stage.roles[0].value
-                or progress.get("resume_stage") != stage.stage_id
-                or progress.get("resume_member") != stage.roles[0].value
+                or progressive and (progress.get("resume_stage") != stage.stage_id
+                                    or progress.get("resume_member") != stage.roles[0].value)
                 or entry.get("failure_code") not in (None, "provider.capacity", "provider.turn_failed")):
             raise RunError("The interrupted member step cannot be identified for retry.")
         # Older receipts classified the compaction wrapper as a generic failure.
@@ -1504,13 +1561,13 @@ class RunEngine(P4LifecycleMixin):
                     or not (entry.get("acknowledgement") or {}).get("turn_id")
                     or not callable(getattr(self.bridge, "confirm_activity_log_interruption", None))):
                 raise RunError("The local activity-log failure needs an exact terminal interruption check before retrying.")
-        elif entry.get("failure_code") != "provider.capacity" and (not (entry.get("acknowledgement") or {}).get("turn_id")
+        elif (not progressive or entry.get("failure_code") != "provider.capacity") and (not (entry.get("acknowledgement") or {}).get("turn_id")
                 or not callable(getattr(self.bridge, "confirm_capacity_failure", None))):
             raise RunError("The previous member turn needs an exact terminal-state check before retrying.")
-        if (entry.get("failure_code") == "provider.capacity" or input_limit) and entry.get("thread_id") in getattr(self.bridge, "_quarantined", set()):
+        if progressive and (entry.get("failure_code") == "provider.capacity" or input_limit) and entry.get("thread_id") in getattr(self.bridge, "_quarantined", set()):
             raise RunError("The previous member turn has not been confirmed stopped. Restart the local service before retrying.")
         if not (directory / "contracts").is_dir() or not (directory / "stage-plan.json").is_file():
-            raise RunError("This run did not retain its frozen inputs; start a new evaluation.")
+            raise RunError("This run did not retain its frozen inputs; start a new run.")
         if self._catalog(record).verify_manifest():
             raise RunError("The run's frozen catalog is damaged.")
         basis = read_json(directory / "basis.json") or {}
@@ -1524,10 +1581,34 @@ class RunEngine(P4LifecycleMixin):
             source = Path(ref.get("snapshot_path") or "")
             if not source.is_file() or self._cumulative_digest(read_json(source)) != ref.get("sha256"):
                 raise RunError("A frozen cumulative source is unavailable or changed.")
+        frozen_notation(basis)
+        if not progressive:
+            brief = directory / "briefs" / f"{stage.stage_id}.{stage.roles[0].value}.md"
+            if not brief.is_file() or sha256_file(brief) != entry.get("brief_sha256"):
+                raise RunError("The interrupted research brief is unavailable or changed; start a new run.")
+            for prior in self._stages(record):
+                if record.stage_states.get(prior.stage_id) != "succeeded":
+                    continue
+                output_dir = directory / "outputs" / prior.stage_id
+                seal = read_json(output_dir / "seal.json") or {}
+                if not seal.get("outputs"):
+                    raise RunError("A completed research step has no retained output seal; start a new run.")
+                for name, sealed in seal["outputs"].items():
+                    source = (output_dir / name).resolve()
+                    if (not source.is_relative_to(output_dir.resolve()) or not source.is_file()
+                            or sha256_file(source) != sealed.get("sha256")):
+                        raise RunError("A completed research output is unavailable or changed; start a new run.")
         self._assert_phase_available(record.project_id, record.phase, record.branch_id, excluding=record.run_id)
         self._assert_publication_current(record)
-        if self._p4_context_changes(record):
-            raise RunError("Research context changed; start a new evaluation against the current context.")
+        current = self.compute_basis(record.project_id, record.phase, record.branch_id, record.mode)
+        changes = self._p4_context_changes(record, current_basis=current)
+        if not progressive:
+            from .researcher_pause import continuation_context_changes
+            changes.extend(continuation_context_changes(basis, current))
+            if (basis.get("notation") or {}).get("sha256") != (current.get("notation") or {}).get("sha256"):
+                changes.append({"kind": "notation_changed"})
+        if changes:
+            raise RunError("Research context changed; start a new run against the current context.")
         role = stage.roles[0]
         provider = load_provider_config(self.data_root)
         provider.require_ready(role.value)
@@ -1536,8 +1617,10 @@ class RunEngine(P4LifecycleMixin):
         resolved = provider.resolve_member(config, role.value, home)
         selected = public_execution(capture_execution(resolved.config, home, resolved.environment, resolved.strip_keys))
         keys = ("model", "reasoning_effort", "provider", "provider_id", "provider_base_url", "provider_env_key")
+        if not progressive:
+            keys += ("instructions_sha256", "auto_compact_tokens", "max_turn_input_tokens")
         if any(selected.get(key) != entry.get("submitted", {}).get(key) for key in keys):
-            raise RunError("Member model or provider settings changed; restore them or start a new evaluation.")
+            raise RunError("Member instructions, model or provider settings changed; restore them or start a new run.")
         return stage, entry
 
     def provider_retry_preview(self, record):
@@ -1545,7 +1628,7 @@ class RunEngine(P4LifecycleMixin):
         kind = ("provider.input_too_large" if rejected_input_limit(record.terminal_reason) else
                 "provider.capacity" if is_capacity_failure(record.terminal_reason) else
                 "harness.activity_log" if is_activity_log_failure(record.terminal_reason,
-                    self.run_dir(record.project_id, record.run_id) / "events.jsonl") else None) if record.phase == "P4" else None
+                    self.run_dir(record.project_id, record.run_id) / "events.jsonl") else None)
         try:
             self._provider_retry_stage(record)
         except (RunError, CatalogError, ArtifactError, ValueError, OSError) as exc:
@@ -1561,7 +1644,8 @@ class RunEngine(P4LifecycleMixin):
             confirmation = None
             from .bridge import is_activity_log_failure, rejected_input_limit
             activity_log = is_activity_log_failure(record.terminal_reason, self.run_dir(project_id, run_id) / "events.jsonl")
-            if activity_log or entry.get("failure_code") != "provider.capacity" and not rejected_input_limit(record.terminal_reason):
+            if (not self._progressive_p4(record) or activity_log
+                    or entry.get("failure_code") != "provider.capacity" and not rejected_input_limit(record.terminal_reason)):
                 from .providers import load_provider_config
                 from .execution import capture_execution
                 role = stage.roles[0]
@@ -1581,7 +1665,7 @@ class RunEngine(P4LifecycleMixin):
                 stage, entry = self._provider_retry_stage(record)
                 if previous != (record.terminal_reason, entry["execution_id"], entry["thread_id"], (entry.get("acknowledgement") or {}).get("turn_id")):
                     raise RunError("The failed member receipt changed during the terminal-state check; retry did not start.")
-            self._event(record, "run.provider_retry", "Retrying the interrupted member step with saved work and remaining budget.",
+            self._event(record, "run.provider_retry", "Retrying the interrupted member step with saved work.",
                         stage=stage.stage_id, previous_reason=record.terminal_reason,
                         previous_execution_id=entry["execution_id"], terminal_confirmation=confirmation)
             record.stage_states[stage.stage_id] = "pending"
@@ -1589,6 +1673,8 @@ class RunEngine(P4LifecycleMixin):
             record.state = RunState.REQUESTED
             record.updated_at = _now()
             self._save_run(record)
+            if not self._progressive_p4(record):
+                self._provider_retry_briefs[(run_id, stage.stage_id, stage.roles[0].value)] = entry
             self._tasks[run_id] = asyncio.create_task(self._drive(record, self._stages(record)))
             self._task_projects[run_id] = project_id
             return record
@@ -1628,7 +1714,8 @@ class RunEngine(P4LifecycleMixin):
             doc["context_proposals"] = proposals
         messages = list(previous.get("messages", [])) + [
             {"role": "user", "content": record.instructions, "run_id": record.run_id,
-             **({"researcher_note_draft": record.researcher_note_draft} if record.researcher_note_draft is not None else {})},
+             **({"researcher_note_draft": record.researcher_note_draft} if record.researcher_note_draft is not None else {}),
+             **({"researcher_response_draft": record.researcher_response_draft} if record.researcher_response_draft is not None else {})},
             {"role": "assistant", "content": content, "run_id": record.run_id, "evidence_refs": doc.get("evidence_refs", [])},
         ]
         write_json_atomic(run_dir / "assessment.json", {
@@ -2073,9 +2160,29 @@ class RunEngine(P4LifecycleMixin):
             return StageResult(stage_id=stage.stage_id, succeeded=True)
         brief = run_dir / "briefs" / f"{stage.stage_id}.{role.value}.md"
         brief.parent.mkdir(parents=True, exist_ok=True)
-        brief.write_text(
-            self._render_brief(record, stage, role, workspace), encoding="utf-8"
-        )
+        retry_entry = self._provider_retry_briefs.pop((record.run_id, stage.stage_id, role.value), None)
+        if retry_entry:
+            if not brief.is_file() or sha256_file(brief) != retry_entry.get("brief_sha256"):
+                raise RunError("The interrupted research brief changed before retry; start a new run.")
+            if thread_id != retry_entry["thread_id"]:
+                raise RunError("The interrupted member thread is unavailable; start a new run.")
+            # Recheck under this member's ownership lock: a different phase
+            # may have advanced the project-spanning Lead thread since retry.
+            await self.bridge.confirm_capacity_failure(retry_entry["thread_id"], retry_entry["acknowledgement"]["turn_id"],
+                member_home=member_home, execution=execution, workspace_root=workspace_root)
+            current = self.load_run(record.project_id, record.run_id)
+            # Sources and settings may change while preflight or the terminal
+            # read awaits. Recheck immediately before sending scientific work.
+            _, checked_entry = self._provider_retry_stage(current, dispatch=True)
+            keys = ("model", "reasoning_effort", "provider", "provider_id", "provider_base_url", "provider_env_key",
+                    "instructions_sha256", "auto_compact_tokens", "max_turn_input_tokens")
+            selected = public_execution(execution)
+            if checked_entry != retry_entry or any(selected.get(name) != retry_entry.get("submitted", {}).get(name) for name in keys):
+                raise RunError("The interrupted research settings or receipt changed before retry; start a new run.")
+        else:
+            brief.write_text(
+                self._render_brief(record, stage, role, workspace), encoding="utf-8"
+            )
         # Advisory only (D8): report the assembled size, never refuse.
         self._event(
             record,
@@ -2491,6 +2598,27 @@ class RunEngine(P4LifecycleMixin):
                         exhibits_file.write_text(
                             json.dumps(exhibits, indent=1), encoding="utf-8"
                         )
+            # The final account view includes symbols introduced by this Lead,
+            # and is sealed with the candidate before any reviewer receives it.
+            if notation_enabled(self._catalog(record), record.phase) and role == MemberRole.RESEARCH_LEAD:
+                notation_basis = ResearcherPauseStore(run_dir).context_basis(record, read_json(run_dir / "basis.json") or {})
+                source_documents = self._notation_documents(record)
+                for family in LEAD_FAMILIES.get(record.phase, ()):
+                    account_path = out_dir / (family + ".json")
+                    if account_path.name not in owned_names or not account_path.is_file():
+                        continue
+                    account_document = read_json(account_path)
+                    if not isinstance(account_document, dict):
+                        continue  # The schema layer reports invalid authored bytes.
+                    try:
+                        validate_notation_updates(self._catalog(record), account_document)
+                        generated, support = retain_account_notation(project_dir, run_dir, record.phase,
+                            record.branch_id, stage.stage_id, account_document, family, notation_basis,
+                            source_documents)
+                    except ArtifactError:
+                        continue  # Report the exact source/scope error through normal repair feedback.
+                    write_json_atomic(account_path, generated)
+                    collected.extend(support)
             # A6: harness-owned stamping (design/05 §6) — digest-seal the
             # collected bytes BEFORE validation; validation reads these.
             seal = {
@@ -2944,6 +3072,13 @@ class RunEngine(P4LifecycleMixin):
         if repair:
             return self._render_mechanical_repair_brief(record, stage, role, workspace, catalog, repair)
         artifact_check = self._artifact_check_brief(record, stage, role)
+        from .presentation_references import presentation_reference_brief
+        presentation = presentation_reference_brief(
+            catalog, record.phase, role,
+            assessment_purpose=record.assessment_purpose if record.intent == "assessment" else None,
+            target_kind=(record.target or {}).get("kind"),
+            stage_id=stage.stage_id,
+        )
         if role == MemberRole.OUTSIDE_REVIEWER and frozen_review_packet_enabled(catalog):
             # The prepared submission is this role's entire scientific basis.
             # Corrections must not depend on unrelated internal input files.
@@ -2958,6 +3093,7 @@ class RunEngine(P4LifecycleMixin):
         instructions = project_instructions(project_doc)
         context = basis.get("problem_context")
         context_section = ""
+        context_section += notation_brief(basis, lead=role == MemberRole.RESEARCH_LEAD and record.intent != "assessment")
         if context:
             answers = self._cumulative_input(record, "researcher_answers") or {}
             account = role_effective_account(context, role.value, answers=answers.get("items", []),
@@ -2969,7 +3105,7 @@ class RunEngine(P4LifecycleMixin):
                 if record.intent == "assessment" else
                 "Cite item_id and revision in context_dependencies when a result depends on an item. "
             )
-            context_section = ("## Frozen problem context\n\n"
+            context_section += ("## Frozen problem context\n\n"
                 + json.dumps({"revision": context["revision"], "effective_account": account}, ensure_ascii=False, indent=1)
                 + "\n\nResearcher reports and confirmed paraphrases are premises with provenance, not statistical validation. "
                 + context_dependence
@@ -3055,8 +3191,15 @@ class RunEngine(P4LifecycleMixin):
                     "A saved section comment is user-authored discussion context, not a validated scientific fact or an instruction to change the report. "
                     "Do not save comments, propose context amendments, resolve issues, change the report or launch further work. "
                     "Return assessment_markdown and exact evidence_refs for sources actually used. ")
+            if (record.target or {}).get("kind") == "notation_entry":
+                objective = ("As Research Lead, answer the exact question about this source-qualified mathematical definition. "
+                    "Start with the direct answer, then explain the object, its scientific meaning and conditions from the selected account's retained notation. "
+                    "Keep target, estimator, estimate and transformed variables distinct. Preserve the original proof and method notation. "
+                    "A correction is a request for future scientific work, not an adopted change. "
+                    "Do not publish notation updates, amend context, invent a researcher question or launch work. "
+                    "Return assessment_markdown and exact evidence_refs for sources actually used. ")
             if (record.assessment_purpose in ("issue_explanation", "issue_suggestions", "model_dialogue", "project_context")
-                    and (record.target or {}).get("kind") != "report_section"):
+                    and (record.target or {}).get("kind") not in {"report_section", "notation_entry"}):
                 objective += (
                     "When a consequential choice has a mathematical distinction, or the researcher requests a mathematical comparison, "
                     "state the affected target, model, constraint, assumption or guarantee in assessment_markdown with sufficient mathematical formulation. "
@@ -3083,10 +3226,18 @@ class RunEngine(P4LifecycleMixin):
                 if record.researcher_note_draft is not None else "")
             if any(message.get("researcher_note_draft") is not None for message in prior.get("messages", [])):
                 draft_context += "Researcher note drafts retained in the previous discussion remain unsaved provisional input, not adopted answers.\n\n"
+            if record.researcher_response_draft is not None:
+                draft_context += ("Researcher answer draft (unsaved; option text comes from this exact question):\n"
+                    + json.dumps(record.researcher_response_draft, ensure_ascii=False, indent=1)
+                    + "\n\nThis is provisional conversation context, not a saved answer, adopted preference or validated fact. "
+                      "Keep it distinct from the saved answer in the frozen issue. Do not save, resolve or adopt it.\n\n")
+            if any(message.get("researcher_response_draft") is not None for message in prior.get("messages", [])):
+                draft_context += "Earlier structured answer drafts in this discussion remain unsaved provisional input.\n\n"
             return (
                 f"# {'Report section discussion' if (record.target or {}).get('kind') == 'report_section' else 'Lead suggestions' if record.assessment_purpose == 'issue_suggestions' else 'Issue explanation' if record.assessment_purpose == 'issue_explanation' else 'Assumption explanation' if explanation else 'Component assessment'}\n\n"
                 f"{self._workspace_mechanics(workspace)}"
                 f"{artifact_check}"
+                f"{presentation}"
                 f"{project_instruction_section}"
                 f"{context_section}"
                 f"Researcher note (verbatim):\n{record.instructions}\n\n{target_context}\n"
@@ -3348,6 +3499,7 @@ class RunEngine(P4LifecycleMixin):
             f"# Situation brief — {stage.stage_id} ({role.value})\n\n"
             f"{self._workspace_mechanics(workspace, managed_execution=self._progressive_p4(record))}{mechanics_notebook}\n\n"
             + artifact_check
+            + presentation
             + self._p4_brief(record, stage, role)
             + project_instruction_section
             + context_section
@@ -3866,6 +4018,7 @@ class RunEngine(P4LifecycleMixin):
                             frozen_basis=basis))
             findings.extend(self._validate_p4_execution(record, documents))
             findings.extend(self._validate_repair_scope(record, documents))
+            findings.extend(self._notation_findings(record, documents, roots))
             from .direct_validation import validate_direct_outputs
             findings.extend(validate_direct_outputs(record.phase, documents, supplied_method=record.supplied_method,
                             lead_instructions=record.instructions,
@@ -4272,6 +4425,67 @@ class RunEngine(P4LifecycleMixin):
             derived[family] = build_review_ledger(previous, documents.get("review_issues", []), record.run_id)
         return derived
 
+    @staticmethod
+    def _bind_account_notation(project_dir: Path, basis: dict, target: dict):
+        from .notation import retained_notation, account_notation_source
+        reference = {key: target[key] for key in ("phase", "branch", "family", "generation_id", "content_sha256", "run_id", "stage_id", "package_id", "sha256") if key in target}
+        reference["content_sha256"] = reference.get("content_sha256") or target.get("sha256")
+        source = account_notation_source(project_dir, reference)
+        snapshot = retained_notation(project_dir, source) if source else None
+        basis.pop("notation", None)
+        if snapshot is not None:
+            basis["notation"] = {"document": snapshot, "sha256": notation_digest(snapshot)}
+
+    def _notation_documents(self, record: RunRecord, *, documents=None, roots=None) -> dict:
+        """Declared outputs only; no directory search for uncommitted sources."""
+        directory = self.run_dir(record.project_id, record.run_id)
+        result = {}
+        for stage in read_json(directory / "stage-plan.json") or []:
+            for output_id in stage.get("writes", []):
+                path = directory / "outputs" / stage["stage_id"] / (output_id.split(".", 1)[-1] + ".json")
+                document = read_json(path)
+                if document is not None:
+                    result[output_id] = (document, stage["stage_id"])
+        for output_id, document in (documents or {}).items():
+            root = (roots or {}).get(output_id)
+            result[output_id] = (document, Path(root).name if root else result.get(output_id, (None, ""))[1])
+        return result
+
+    def _notation_findings(self, record: RunRecord, documents: dict, roots: dict, *, require_retained=False) -> list:
+        catalog = self._catalog(record)
+        if record.intent == "assessment" or not notation_enabled(catalog, record.phase):
+            return []
+        directory = self.run_dir(record.project_id, record.run_id)
+        basis = ResearcherPauseStore(directory).context_basis(record, read_json(directory / "basis.json") or {})
+        source_documents = self._notation_documents(record, documents=documents, roots=roots)
+        findings = []
+        for family in LEAD_FAMILIES.get(record.phase, ()):
+            output_id = record.phase.lower() + "." + family
+            document = documents.get(output_id)
+            if not isinstance(document, dict):
+                continue
+            root = Path(roots[output_id])
+            try:
+                validate_notation_updates(catalog, document)
+                snapshot = build_account_notation(self.project_dir(record.project_id), directory,
+                    record.phase, record.branch_id, root.name, document, family, basis, source_documents)
+                pointer = document.get("notation_snapshot")
+                if pointer is None and not require_retained:
+                    continue  # A member's in-turn artifact check precedes harness retention.
+                if not isinstance(pointer, dict):
+                    raise ArtifactError("The account has no retained final notation view")
+                actual = root / "notation.json"
+                readable = root / "notation.md"
+                from .notation import render_notation
+                if (pointer.get("path") != "notation.json" or not actual.is_file()
+                        or sha256_file(actual) != pointer.get("sha256") or read_json(actual) != snapshot
+                        or not readable.is_file() or readable.read_text(encoding="utf-8") != render_notation(snapshot)
+                        or (pointer.get("markdown") or {}).get("sha256") != sha256_file(readable)):
+                    raise ArtifactError("The final notation artifacts do not match this account's adopted updates")
+            except (ArtifactError, KeyError, TypeError, OSError) as exc:
+                findings.append(Finding("notation.invalid_account", str(exc), output_id, "/notation_updates"))
+        return findings
+
     def _publish(self, record: RunRecord, stages: list[StageSpec]) -> None:
         project_dir = self.project_dir(record.project_id)
         run_dir = self.run_dir(record.project_id, record.run_id)
@@ -4297,6 +4511,13 @@ class RunEngine(P4LifecycleMixin):
                 data_records[family] = path.read_bytes()
                 formats[family] = fmt
                 stage_ids[family] = stage.stage_id
+        notation_findings = self._notation_findings(record,
+            {record.phase.lower() + "." + family: json.loads(raw) for family, raw in data_records.items()
+             if formats.get(family) != "jsonl"},
+            {record.phase.lower() + "." + family: run_dir / "outputs" / stage_id
+             for family, stage_id in stage_ids.items()}, require_retained=True)
+        if notation_findings:
+            raise RunError(notation_findings[0].message)
         aliases = {
             "P1": {"literature_synthesis": "synthesis_candidate", "literature_coverage": "coverage_candidate"},
             "P3": {"theory_record": "complete_theory"},

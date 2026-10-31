@@ -35,6 +35,21 @@ test("partial project work published on a method remains a team task across meth
   assert.equal(JSON.stringify([shared, closed, recordedDecision]), before);
 });
 
+test("project follow-up filters only tasks with explicit nonmatching method recipients", () => {
+  const task = { ...request("task", "research_task", "P4"), phase: "P2", scope: { kind: "project" } };
+  const own = { ...task, attention_id: "own", affected_record_ids: ["method.a"] };
+  const other = { ...task, attention_id: "other", affected_record_ids: ["method.b"] };
+  const both = { ...task, attention_id: "both", affected_record_ids: ["method.a", "method.b"] };
+  const shared = { ...task, attention_id: "shared" };
+  const unknown = { ...task, attention_id: "unknown", affected_record_ids: ["setting.record"] };
+  const question = { ...other, attention_id: "question", kind: "researcher_decision" };
+  const items = [own, other, both, shared, unknown, question];
+  const before = JSON.stringify(items);
+  assert.deepEqual(requestsForScope(items, "method.a", "P4"), { tasks: [own, both, shared, unknown], decisions: [question], earlier: [] });
+  for (const branch of ["trunk", "custom.branch"]) assert.deepEqual(requestsForScope(items, branch, "P4").tasks, [own, other, both, shared, unknown]);
+  assert.equal(JSON.stringify(items), before);
+});
+
 test("legacy questions are preserved by recorded phase and branch without inferred responsibility", () => {
   const legacy = { attention_id: "legacy", branch: "trunk", phase: "P1", question: "The researcher must choose a method." };
   const unknown = { ...legacy, attention_id: "future", kind: "future_kind", target_phase: "P2" };

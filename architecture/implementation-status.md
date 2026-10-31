@@ -1,12 +1,12 @@
-# Implementation status for 0.9.3 preparation
+# Implementation status for 0.9.4 preparation
 
-The source tree prepares version 0.9.3 with researcher-communication improvements,
-clearer saved and paused states, and verified source links for theory overviews.
+The source tree prepares version 0.9.4 with shared project notation, scientific
+presentation guidance, compact results, and report appendix delivery improvements.
 It retains the revised research interface, targeted revision workflows,
 HTML report reader, and installation and onboarding fixes.
 
 This source tree provides the five researcher-directed phases described in the
-[architecture guide](README.md). The included workflow catalog is 1.28.5.
+[architecture guide](README.md). The included workflow catalog is 1.30.2.
 Existing projects retain their own catalog and scientific history.
 
 The communication revision uses field-specific writing guidance, neutral
@@ -51,7 +51,21 @@ The implementation is anchored by the [catalog](../contracts/catalog-pin.json),
 [research projection](../src/model_forge_codex/research.py), and
 [interface](../web/src/components/ProjectView.jsx).
 
+Catalog 1.30.0 adds [neutral presentation guidance](research-presentation.md)
+across P1-P5 and [shared, source-qualified notation](shared-notation-plan.md).
+Existing Lead accounts carry small adopted updates; the harness retains their
+complete frozen views without another stage or global glossary. Exact account
+lookups, row discussions, saved correction requests and report/export notation
+use those retained versions. Older project catalogs require explicit adoption.
+
 ## Verification and limits
+
+Shared-notation contract, lifecycle, interaction and report-delivery checks have
+been exercised with deterministic fixtures. Fresh paired guidance excerpts use
+the same synthetic task before and after the instruction change; their bounded
+meaning/readability assessment is recorded in the notation design. Final browser
+review, independent implementation review and broader regression results remain
+separate evidence. No fresh complete P1-P5 production research run is claimed.
 
 Automated tests cover contracts, source integrity, context routing, publication,
 recovery, reader projections, interactions, and packaging. Release checks also

@@ -54,7 +54,10 @@ async def test_branch_basis_freezes_exact_proposal_reviews_and_assessment(direct
     assert [review["document"]["review_id"] for review in reviews] == ["review.empirical"]
     assert reviews[0]["matched_proposal_id"] == "proposal.theory"
     assessment = entry["materials"]["catalog_assessment"]
-    assert assessment["document"] == outputs["p2.catalog_assessment"]
+    assert {key: value for key, value in assessment["document"].items() if key != "notation_snapshot"} == outputs["p2.catalog_assessment"]
+    from model_forge_codex.notation import retained_notation
+    retained = retained_notation(project, assessment["ref"])
+    assert retained["account"]["run_id"] == p2_run.run_id and retained["account"]["family"] == "catalog_assessment"
     assert any(option["applies_to"] == "proposal.theory" for option in assessment["document"]["modification_options"])
     # Every reference verifies against the published bytes.
     store = project / "branches/trunk/phases/p2"

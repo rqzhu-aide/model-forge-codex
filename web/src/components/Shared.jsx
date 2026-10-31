@@ -5,10 +5,11 @@ import "../researchMath.css";
 import { inlineTokens, inlineStrongParts, mathBody, renderMath } from "../researchMath";
 import { humanLabel, OUTCOMES, methodUpdateMessage, methodStatusBadge } from "../research";
 import { readableSections } from "../researchContent";
-import { researchBlocks } from "../researchMarkdown";
+import { referenceMarkdown, researchBlocks } from "../researchMarkdown";
 import { executionStatus } from "../visualSemantics";
 import { ActionButton, ActionIcon } from "./Visuals";
-import { availableFocusTarget, dialogFocusTargets } from "../dialogFocus";
+import { availableFocusTarget, dialogFocusTargets, crossDocumentReturnTarget } from "../dialogFocus";
+import { bareRunSourceParts } from "../researchSourceLinks";
 
 const dialogStack = [];
 
@@ -56,7 +57,7 @@ export function Dialog({ title, children, onClose, busy = false, className = "",
       const fallback = typeof returnRef.current === "function" ? returnRef.current() : returnRef.current?.current || returnRef.current;
       const parent = dialogStack.at(-1);
       const invoker = previous !== document.body && availableFocusTarget(previous) ? previous : null;
-      const target = parent ? invoker && parent.contains(invoker) ? invoker : dialogFocusTargets(parent)[0] || parent : invoker || (availableFocusTarget(fallback) ? fallback : null);
+      const target = crossDocumentReturnTarget(parent, fallback, document) || (parent ? invoker && parent.contains(invoker) ? invoker : dialogFocusTargets(parent)[0] || parent : invoker || (availableFocusTarget(fallback) ? fallback : null));
       target?.focus({ preventScroll: true });
     };
   }, []);
@@ -81,7 +82,7 @@ export function ResearchLabel({ text, className }) {
     if (math?.latex) return <MathText key={index} latex={math.latex} display={false} />;
     if (index % 2 && part.startsWith("**")) return <strong key={index}>{part.slice(2, -2)}</strong>;
     if (index % 2 && part.startsWith("`")) return <code key={index}>{part.slice(1, -1)}</code>;
-    const link = part.match(/^\[([^\]]+)\]\([^)]*\)$/);
+    const link = part.match(/^\[([^\]]+)\]\((?:<[^<>\n]+>|[^\s)]+)\)$/);
     return link ? link[1] : part;
   });
   return <span className={className}>{inlineStrongParts(String(text || "")).map((part, index) => part.strong
@@ -126,26 +127,30 @@ function inline(text, renderInternalLink, renderImage, renderAnchor, path = "doc
       const before = mathBody(parts[i - 1] || ""), after = mathBody(parts[i + 1] || "");
       if (before?.display && before.latex) part = part.replace(/^[ \t]*\r?\n/, "");
       if (after?.display && after.latex) part = part.replace(/\r?\n[ \t]*$/, "");
-      return part;
+      if (!renderSourceLink) return part;
+      return bareRunSourceParts(part).map((token, index) => token.source
+        ? <React.Fragment key={index}>{renderSourceLink(token.source, token.text, `${path}.inline${i}.source${index}`, { bare: true }) ?? token.text}</React.Fragment>
+        : token.text);
     }
     const math = mathBody(part);
     if (math) return math.latex ? <MathText key={i} {...math} /> : part;
     if (part.startsWith("**")) return <strong key={i}>{part.slice(2, -2)}</strong>;
     if (part.startsWith("`")) return <code key={i}>{part.slice(1, -1)}</code>;
-    const match = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-    if (match && match[2].startsWith("#") && renderInternalLink) return <React.Fragment key={i}>{renderInternalLink(match[2], match[1], `${path}.inline${i}`) ?? match[1]}</React.Fragment>;
+    const match = part.match(/^\[([^\]]+)\]\((?:<([^<>\n]+)>|([^\s)]+))\)$/);
+    const target = match && (match[2] || match[3]);
+    if (match && target.startsWith("#") && renderInternalLink) return <React.Fragment key={i}>{renderInternalLink(target, match[1], `${path}.inline${i}`) ?? match[1]}</React.Fragment>;
     if (match && renderSourceLink) {
-      const link = renderSourceLink(match[2], match[1], `${path}.inline${i}`);
+      const link = renderSourceLink(target, match[1], `${path}.inline${i}`);
       if (link != null) return <React.Fragment key={i}>{link}</React.Fragment>;
     }
-    if (match && safeUrl(match[2])) return <a key={i} href={safeUrl(match[2])} target="_blank" rel="noreferrer">{match[1]}</a>;
-    if (match && !match[2].startsWith("#") && renderFileLink) {
-      const link = renderFileLink(match[2], match[1], `${path}.inline${i}`);
+    if (match && safeUrl(target)) return <a key={i} href={safeUrl(target)} target="_blank" rel="noreferrer">{match[1]}</a>;
+    if (match && !target.startsWith("#") && renderFileLink) {
+      const link = renderFileLink(target, match[1], `${path}.inline${i}`);
       if (link != null) return <React.Fragment key={i}>{link}</React.Fragment>;
     }
     // Unresolved saved-record citations remain readable without inventing a URL.
     // Their exact targets are preserved in the complete source record.
-    if (match && /^(artifact|generation):\/\//i.test(match[2])) return <span key={i} title="Reference retained in the complete source record">{match[1]}</span>;
+    if (match && /^(artifact|generation):\/\//i.test(target)) return <span key={i} title="Reference retained in the complete source record">{match[1]}</span>;
     return part;
   });
 }
@@ -192,7 +197,7 @@ export function ResearchDocument({ text, headingLevel = 3, renderInternalLink, r
     </div>;
   }
   if (typeof text !== "string") return null;
-  return <div className="research-document"><DocumentBlocks blocks={researchBlocks(text)} headingLevel={headingLevel} {...{ renderInternalLink, renderImage, renderAnchor, renderFileLink, renderSourceLink, renderHeading, path }} /></div>;
+  return <div className="research-document"><DocumentBlocks blocks={researchBlocks(referenceMarkdown(text))} headingLevel={headingLevel} {...{ renderInternalLink, renderImage, renderAnchor, renderFileLink, renderSourceLink, renderHeading, path }} /></div>;
 }
 
 export function SourceRef({ reference, onOpen, label = "Open source" }) {

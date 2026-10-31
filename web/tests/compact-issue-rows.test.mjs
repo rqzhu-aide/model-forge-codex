@@ -463,7 +463,37 @@ test("authored choice briefs lead with the affected point, consequence and advic
   assert.match(html, /<fieldset class="decision-options"/);
   assert.equal((html.match(/type="radio"/g) || []).length, 4);
   assert.doesNotMatch(html, /checked=""/);
-  assert.match(html, /Not sure yet|Give a different response|Add a note \(optional\)|Save answer/);
+  assert.match(html, /Not sure yet|Suggest another option|Add a note \(optional\)|Save answer/);
+});
+
+test("recommendation badges use stable authored IDs in both response editors without selection or reordering", () => {
+  const item = { ...populationChoice, recommended_option_id: "observed" }, before = structuredClone(item);
+  const html = ui.entry({ ...props, issue: item });
+  assert.equal((html.match(/Lead suggests/g) || []).length, 1);
+  assert.match(html, /Patients still under observation<\/span><span class="note">Lead suggests<\/span>/);
+  const recommendationId = html.match(/<section[^>]*id="([^"]+-recommendation)"/)[1];
+  const selectedRadio = html.match(/<input[^>]*value="option:observed"[^>]*>/)[0];
+  assert.ok(selectedRadio.includes(` ${recommendationId}`));
+  assert.ok(html.indexOf('value="option:survivors"') < html.indexOf('value="option:observed"'));
+  assert.doesNotMatch(html, /checked=""/);
+  for (const recommended_option_id of [undefined, "missing", "0"]) {
+    assert.doesNotMatch(ui.entry({ ...props, issue: { ...item, recommended_option_id } }), /Lead suggests/);
+  }
+  const render = hookHarness(ui.ResearcherDecision);
+  const tree = render({ item, projectId: "project.contextual-badge", branch: "trunk", number: 1, onSaved() {} });
+  const labels = all(tree, node => node.type === "label" && node.props.className === "decision-option-heading");
+  assert.deepEqual(labels.map(label => find(label, node => node.type === "input").props.value), ["option:survivors", "option:observed"]);
+  assert.deepEqual(labels.map(label => Boolean(find(label, node => node.type === "span" && text(node) === "Lead suggests"))), [false, true]);
+  assert.ok(all(tree, node => node.type === "input" && node.props.type === "radio").every(node => node.props.checked === false));
+  assert.match(text(tree), /Suggest another option/);
+  assert.equal(all(tree, node => node.type === "textarea").length, 1);
+  assert.deepEqual(item, before);
+  const memberHtml = ui.entry({ ...props, issue: { ...item, original_role: "data_analyst", responsible_role: "research_lead" } });
+  assert.match(memberHtml, /Suggested option/); assert.match(memberHtml, /Team recommendation/);
+  assert.doesNotMatch(memberHtml, /Lead suggests|Lead recommendation/);
+  const unknownHtml = ui.entry({ ...props, issue: { ...item, responsible_role: undefined } });
+  assert.match(unknownHtml, /Suggested option|Team recommendation/);
+  assert.doesNotMatch(unknownHtml, /Lead suggests|Lead recommendation/);
 });
 
 test("a complete shared objective stays visible with distinct chance and mean budget alternatives", () => {

@@ -113,7 +113,7 @@
           }
         }
       },
-      "description": "Optional presentation labels and units for columns read from the verified table artifact. Never duplicate data values here."
+      "description": "Optional presentation labels and units for columns read from the verified table artifact. Never duplicate data values here. New table artifacts use descriptive scientific scenario and method names in row values, grounded in supplied definitions; column labels do not translate internal case IDs. Preserve exact row mappings in structured references or supporting records without rewriting retained artifacts."
     },
     "data_exhibit_ids": {
       "type": "array",

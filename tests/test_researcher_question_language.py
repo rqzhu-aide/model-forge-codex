@@ -10,7 +10,6 @@ from model_forge_codex.problem_context import project_context_target, save_conte
 from model_forge_codex.records import current_records
 from model_forge_codex.researcher_language import (
     PREVIOUS_RESEARCHER_LANGUAGE_GUIDANCE,
-    RESEARCHER_INPUT_POLICY,
     RESEARCHER_LANGUAGE_GUIDANCE,
     has_researcher_language_guidance,
 )
@@ -255,15 +254,18 @@ def test_every_generated_stage_delivers_owned_duties_once_and_keeps_frozen_basis
             assert stage.objective.index("Owned output instructions:") < stage.objective.index("Scientific and execution constraints:")
             owned_duties = stage.objective.split("Owned output instructions:\n", 1)[1].split("Scientific and execution constraints:", 1)[0]
             if stage.stage_id in {"p4.analyst", "p4.lead"}:
-                assert "Lack of demonstrated benefit is not demonstrated absence of benefit" in owned_duties
-                assert "evidence against a benefit from an inconclusive comparison" in owned_duties
-                assert "do not claim equivalence or absence of benefit from nonsignificance" in owned_duties
-                assert "Retain the applicable uncertainty and tested scope" in owned_duties
+                # The canonical evidence guide replaces repeated obligations in each field.
+                guide = (project / "contracts/references/research-presentation/claims-and-evidence.md").read_text(encoding="utf-8")
+                assert guide in brief
+                assert "Nonsignificance or absent analysis does not demonstrate absence of benefit" in guide
+                assert "Equality in tested fitted cases does not establish general equivalence" in guide
+                assert "Preserve targets, quantifiers, populations, units, comparison groups, denominators and uncertainty" in guide
             if stage.stage_id == "p3.lead":
                 assert "proposed next work a conditional recommendation within the stated scope" in owned_duties
                 assert "do not turn that recommendation into an instruction to start or imply authorization for another run" in owned_duties
             if phase != "P5":
-                assert stage.objective.count(RESEARCHER_INPUT_POLICY) == 1
+                assert stage.objective.count("Consequential researcher input policy:") == 1
+                assert "Use the supplied frozen user-inquiry reference within this stage's existing output and pause authority" in stage.objective
             if stage.execution == "parallel":
                 assert pause_brief(candidate, stage, role) == ""
     assert (directory / "basis.json").read_bytes() == frozen

@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { hasExactRef, sameRef } from "../research";
 import { researchDocumentContent, researchDocumentTitle } from "../researchContent";
 import { REPORT_SECTION_KEYS, reportSectionHeadings, reportReferenceBoundary } from "../reportSections";
@@ -6,12 +7,16 @@ import { Dialog, ResearchDocument, SourceRef, MethodStatusNote } from "./Shared"
 import { ActionButton, ActionIcon, EmptyState } from "./Visuals";
 import { PhaseTabs, ScientificDocuments, ManuscriptReviewStatus } from "./PhaseReading";
 import ClaimTraceability from "./ClaimTraceability";
+import { NotationLookup } from "./SharedNotation";
+import { reportHtmlPreview, bindReportHtmlFrame } from "../reportHtmlSource";
 import "../technicalReportReading.css";
 
 export const isTechnicalReport = (document) => ["technical_report", "technical_report_candidate"].includes(document?.kind);
 const usableArtifactUrl = (url) => typeof url === "string" && /^\/api\//.test(url);
 const verifiedMaterial = (material) => material?.source_verified === true && !material.source_error && usableArtifactUrl(material.artifact_url);
 const markdownMaterial = (material) => material?.media_type?.split(";")[0] === "text/markdown" || /\.md$/i.test(material?.authored_path || material?.path || "");
+const htmlMaterial = (material) => material?.media_type?.split(";")[0] === "text/html" || /\.html?$/i.test(material?.authored_path || material?.path || "");
+const readableMaterial = (material) => markdownMaterial(material) || htmlMaterial(material);
 const fragmentName = (fragment) => { try { return decodeURIComponent(fragment); } catch { return fragment; } };
 const materialPath = (source, basePath) => {
   if (/^(?:[a-z][a-z\d+.-]*:|\/)/i.test(source)) return source;
@@ -47,11 +52,11 @@ export function printableReportMaterial(portable, material, materials, primaryId
     ? `${portable}${portable.includes("?") ? "&" : "?"}material_id=${encodeURIComponent(id)}` : null;
 }
 
-function retainedFileLink(materials, source, label, basePath = "") {
+function retainedFileLink(materials, source, label, basePath = "", notationRecord, onSource) {
   const { material, fragment, path } = retainedReportMaterial(materials, source, basePath);
   if (!verifiedMaterial(material)) return <span className="note warn">{label}: {material?.source_error || "The exact retained file is unavailable."}</span>;
-  return markdownMaterial(material)
-    ? <ReportMaterialLink {...{ material, fragment, materials, label }} path={materialBase(material, path)} />
+  return readableMaterial(material)
+    ? <ReportMaterialLink {...{ material, fragment, materials, label, notationRecord, onSource }} path={materialBase(material, path)} />
     : <a href={materialHref(material, fragment)} target="_blank" rel="noreferrer">{label}</a>;
 }
 
@@ -62,18 +67,23 @@ function retainedImage(materials, source, caption, basePath = "") {
     : <span className="note warn">{caption || "Report figure"}: {material?.source_error || "The exact retained figure is unavailable."}</span>;
 }
 
-export function ReportMaterialLink({ material, fragment = "", path, materials, label, sourceAction = false }) {
+export function ReportMaterialLink({ material, fragment = "", path, materials, label, sourceAction = false, notationRecord, onSource }) {
   const [open, setOpen] = useState(false);
   const invoker = useRef(null);
   return <><a href={materialHref(material, fragment)} ref={invoker} className={sourceAction ? "source-link ui-action" : undefined} data-ui-role={sourceAction ? "system" : undefined} onClick={(event) => { event.preventDefault(); setOpen(true); }}>{sourceAction && <ActionIcon name="source" />}{label}</a>
-    {open && <ReportMaterialDialog {...{ material, fragment, path, materials }} onClose={() => setOpen(false)} returnFocus={invoker} />}</>;
+    {open && createPortal(<ReportMaterialDialog {...{ material, fragment, path, materials, notationRecord, onSource }} onClose={() => setOpen(false)} returnFocus={invoker} />, document.body)}</>;
 }
 
-export function ReportMaterialDialog({ material, fragment = "", path, materials, onClose, returnFocus }) {
+export function ReportMaterialDialog({ material, fragment = "", path, materials, onClose, returnFocus, notationRecord, onSource }) {
   const [content, setContent] = useState({ loading: true });
   const [attempt, setAttempt] = useState(0);
   const [missingAnchor, setMissingAnchor] = useState("");
+  const [sourceError, setSourceError] = useState("");
+  const [nestedSource, setNestedSource] = useState(null);
   const root = useRef(null);
+  const htmlFrame = useRef(null);
+  const frameCleanup = useRef(null);
+  const isHtml = htmlMaterial(material);
   const prefix = `report-material-${useId().replace(/[^a-zA-Z0-9_-]/g, "_")}`;
   const anchorId = (name) => `${prefix}-${Array.from(name).map((character) => character.codePointAt(0).toString(16)).join("-")}`;
   const focusAnchor = (name) => {
@@ -89,22 +99,40 @@ export function ReportMaterialDialog({ material, fragment = "", path, materials,
     fetch(material.artifact_url).then((response) => {
       if (!response.ok) throw new Error(`The retained supporting text could not be loaded (${response.status}).`);
       return response.text();
-    }).then((text) => { if (active) setContent({ text }); })
+    }).then((text) => { if (active) setContent(isHtml ? { html: reportHtmlPreview(text) } : { text }); })
       .catch((error) => { if (active) setContent({ error: error.message }); });
     return () => { active = false; };
-  }, [material.artifact_url, material.sha256, material.artifact_sha256, attempt]);
+  }, [material.artifact_url, material.sha256, material.artifact_sha256, isHtml, attempt]);
+  useEffect(() => () => frameCleanup.current?.(), [content.html]);
   useEffect(() => { if (content.text !== undefined) focusAnchor(fragment); }, [content.text, fragment]);
+  const htmlSourceLink = (source, label, invoker) => {
+    setSourceError("");
+    if (/^https?:\/\//i.test(source)) { window.open(source, "_blank", "noopener,noreferrer"); return; }
+    const resolved = retainedReportMaterial(materials, source, path);
+    if (!verifiedMaterial(resolved.material)) { setSourceError(`${label || "Supporting source"}: ${resolved.material?.source_error || "The exact retained file is unavailable."}`); return; }
+    if (readableMaterial(resolved.material)) setNestedSource({ ...resolved, path: materialBase(resolved.material, resolved.path), returnFocus: { current: invoker || htmlFrame.current } });
+    else window.open(materialHref(resolved.material, resolved.fragment), "_blank", "noopener,noreferrer");
+  };
   return <Dialog title="Research source" onClose={onClose} returnFocus={returnFocus}>
+    <NotationLookup record={material._notation || material.notation_snapshot ? material : notationRecord} section={material.notation_section || material.artifact_id} onSource={onSource} />
     {content.loading ? <p className="note" role="status">Loading supporting detail…</p>
       : content.error ? <div className="error" role="alert">{content.error}<ActionButton action="retry" onClick={() => setAttempt((value) => value + 1)}>Retry</ActionButton></div>
-      : <div ref={root} tabIndex={-1}>
+      : content.html !== undefined ? <>
+        {missingAnchor && <p className="note warn" role="status">The retained document has no unique section named {missingAnchor}.</p>}
+        {sourceError && <p className="note warn" role="status">{sourceError}</p>}
+        <iframe ref={htmlFrame} className="report-html-source" title="Retained supporting document" sandbox="allow-same-origin" srcDoc={content.html} onLoad={() => {
+          frameCleanup.current?.();
+          frameCleanup.current = bindReportHtmlFrame(htmlFrame.current, { fragment, onClose, onSourceLink: htmlSourceLink, onMissingAnchor: setMissingAnchor });
+        }} />
+      </> : <div ref={root} tabIndex={-1}>
         {missingAnchor && <p className="note warn" role="status">The retained document has no unique section named {missingAnchor}.</p>}
         <ResearchDocument text={content.text}
           renderAnchor={(name) => <span id={anchorId(name)} data-material-anchor={name} tabIndex={-1} />}
           renderInternalLink={(href, label) => <a href={`#${anchorId(fragmentName(href.slice(1)))}`} onClick={(event) => { event.preventDefault(); focusAnchor(fragmentName(href.slice(1))); }}>{label}</a>}
-          renderFileLink={(source, label) => retainedFileLink(materials, source, label, path)}
+          renderFileLink={(source, label) => retainedFileLink(materials, source, label, path, notationRecord, onSource)}
           renderImage={(source, caption) => retainedImage(materials, source, caption, path)} />
       </div>}
+    {nestedSource && createPortal(<ReportMaterialDialog material={nestedSource.material} fragment={nestedSource.fragment} path={nestedSource.path} materials={materials} notationRecord={notationRecord} onSource={onSource} onClose={() => setNestedSource(null)} returnFocus={nestedSource.returnFocus} />, document.body)}
   </Dialog>;
 }
 
@@ -142,10 +170,11 @@ export function TechnicalReportDocument({ document, onSource, showRecordSource =
     if (!section) return null;
     return <div className="report-section-heading" data-report-section={section.key} data-reading-anchor={`${readingAnchor}:section:${section.key}`}>
       <Heading>{children}</Heading>
+      <NotationLookup record={document} section={section.key} onSource={onSource} />
       {canDiscuss && <ActionButton action="ask" uiRole="research" className="report-section-discuss" title={`Discuss or comment on ${section.label}`} aria-label={`Discuss or comment on ${section.label}`} onClick={() => onDiscussSection({ ...ref, kind: "report_section", object_id: section.key, label: section.label, assessmentPurpose: "model_dialogue", responsible_role: "research_lead" })}>Discuss</ActionButton>}
     </div>;
   };
-  const fileLink = (source, label) => retainedFileLink(materials, source, label, primaryPath);
+  const fileLink = (source, label) => retainedFileLink(materials, source, label, primaryPath, document, onSource);
   const image = (source, caption) => retainedImage(materials, source, caption, primaryPath);
   return <article className="scientific-block technical-report" data-reading-anchor={readingAnchor}>
     {!(typeof content === "string" && /^\s*#\s+/.test(content)) && <h3>{researchDocumentTitle(document) || "Technical report"}</h3>}
@@ -159,6 +188,7 @@ export function TechnicalReportDocument({ document, onSource, showRecordSource =
     {document.report_materials_error && <p className="note warn">{document.report_materials_error}</p>}
     {boundaryError && <p className="note warn" role="status">The report's References boundary could not be verified. {boundaryError}</p>}
     <div className="report-utility-row">
+    <NotationLookup record={document} onSource={onSource} />
     {(model || document.problem_context_ref || record.problem_context_ref || document.report_generation_id || ref?.generation_id) && <details className="research-details report-source-details" data-reading-anchor={`${readingAnchor}:source-details`}><summary>Source details</summary><dl className="manuscript-metadata report-metadata">
       {model && <div><dt>Model identity</dt><dd>{model.stable_id || model.method_id || "Selected model"} · {model.version ?? "Version not recorded"}</dd></div>}
       {model && <div><dt>Model version</dt><dd>{model.version ?? "Version not recorded"}</dd></div>}
@@ -177,7 +207,7 @@ export function TechnicalReportDocument({ document, onSource, showRecordSource =
     {materials.length > 0 && <details className="research-details report-materials" data-reading-anchor={`${readingAnchor}:materials`}><summary>Sources and reproducibility</summary>{materials.map((artifact, index) => {
       const printable = printableReportMaterial(portable, artifact, materials, primary.artifact_id);
       const label = artifact.label || artifact.title || artifact.authored_path || artifact.path || "Supporting document";
-      return <div className="report-material-actions" key={index}>{verifiedMaterial(artifact) ? markdownMaterial(artifact) ? <ReportMaterialLink material={artifact} path={materialBase(artifact)} materials={materials} label={label} sourceAction /> : <a className="source-link ui-action" data-ui-role="system" href={artifact.artifact_url} target="_blank" rel="noreferrer"><ActionIcon name="source" />{label}</a> : <p className="note warn">{label}: {artifact.source_error || "The retained file is unavailable."}</p>}
+      return <div className="report-material-actions" key={index}>{verifiedMaterial(artifact) ? readableMaterial(artifact) ? <ReportMaterialLink material={artifact} path={materialBase(artifact)} materials={materials} label={label} sourceAction notationRecord={document} onSource={onSource} /> : <a className="source-link ui-action" data-ui-role="system" href={artifact.artifact_url} target="_blank" rel="noreferrer"><ActionIcon name="source" />{label}</a> : <p className="note warn">{label}: {artifact.source_error || "The retained file is unavailable."}</p>}
         {printable && <a className="source-link ui-action" data-ui-role="system" href={printable} target="_blank" rel="noreferrer" aria-label={`Open HTML edition with ${label}`} title={`Open HTML edition with ${label}`}><ActionIcon name="source" />HTML edition</a>}
       </div>;
     })}</details>}

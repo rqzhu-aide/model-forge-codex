@@ -93,5 +93,11 @@
       "Perform and retain relevant numerical analysis for this exact model"
     ],
     "basis_scope": "Declared support and exact retained source integrity; scientific adequacy remains an expert judgment."
+  },
+  "notation_updates": {
+    "incoming_sources": [],
+    "entries": [],
+    "retirements": [],
+    "correction_dispositions": []
   }
 }

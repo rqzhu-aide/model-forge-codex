@@ -33,6 +33,7 @@ shim.env
 /.tmp/
 /tmp/
 /exports/
+/output/
 /.impeccable/
 /architecture/evidence/
 /architecture/plans/

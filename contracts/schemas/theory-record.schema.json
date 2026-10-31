@@ -29,6 +29,13 @@
     "created_at"
   ],
   "properties": {
+    "notation_snapshot": {
+      "$ref": "notation-updates.schema.json#/$defs/snapshotPointer"
+    },
+    "notation_updates": {
+      "$ref": "notation-updates.schema.json",
+      "description": "Lead-adopted notation changes for this exact account under project_notation_v1. The harness generates the complete lookup from the frozen incoming view and these additions; do not author a second glossary. Historical records may omit this field."
+    },
     "schema_version": {
       "$ref": "common-definitions.schema.json#/$defs/schemaVersion"
     },

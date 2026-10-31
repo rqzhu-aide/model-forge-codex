@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "model-forge-codex"
-version = "0.9.3"
+version = "0.9.4"
 description = "Model Forge (Codex edition): researcher-directed multi-agent scientific method pipeline on the OpenAI Codex harness."
 requires-python = ">=3.11"
 dependencies = [

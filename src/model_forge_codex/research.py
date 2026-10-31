@@ -667,7 +667,7 @@ def _primary_document(project_dir: Path, ref: dict, document) -> dict:
     return {"document_error": f"The readable {label} is missing or its bytes no longer match the published digest."}
 
 
-def _report_material_projection(project_dir: Path, ref: dict, pointer: dict, basis: dict, roots: dict) -> dict:
+def _report_material_projection(project_dir: Path, ref: dict, pointer: dict, basis: dict, roots: dict, report_document=None) -> dict:
     """Link required report bytes through their existing exact retained source."""
     from .research_sources import artifact_link, authored_pointer, frozen_artifact
     from .technical_reports import resolve_report_artifact
@@ -690,7 +690,11 @@ def _report_material_projection(project_dir: Path, ref: dict, pointer: dict, bas
                               "source_verified": True, "source_kind": "retained_input", "media_type": file_media(retained)}
             except (ArtifactError, OSError, ValueError):
                 pass
-    return {**authored_pointer(pointer), **action}
+    notation = {}
+    if report_document is not None:
+        from .technical_reports import report_material_notation_source
+        notation = report_material_notation_source(project_dir, report_document, pointer, basis) or {}
+    return {**authored_pointer(pointer), **action, **notation}
 
 
 def _document_projection(project_dir: Path, document, meta: dict) -> dict:
@@ -704,6 +708,9 @@ def _document_projection(project_dir: Path, document, meta: dict) -> dict:
               "body_md": body, "body": body, "structured": document,
               "method_identity": document.get("method_identity") if isinstance(document, dict) else None,
               **_primary_document(project_dir, meta["generation_ref"], document)}
+    if isinstance(document, dict) and isinstance(document.get("notation_snapshot"), dict):
+        result.update(notation_snapshot=deepcopy(document["notation_snapshot"]),
+                      notation_source_ref=deepcopy(meta["generation_ref"]))
     if meta.get("phase") == "P3" and isinstance(document, dict):
         from .research_sources import scientific_account_sources
         result["inline_sources"] = scientific_account_sources(project_dir, document, meta, result["body_md"])
@@ -717,9 +724,9 @@ def _document_projection(project_dir: Path, document, meta: dict) -> dict:
             for pointer in document.get("supplementary_artifacts", []) if isinstance(pointer, dict)]
         if kind in {"technical_report", "technical_report_candidate"}:
             from .technical_reports import (derive_report_completion, exact_report_review_status, report_required_artifacts,
-                                            completed_report_review_packets, report_context_basis)
+                                            completed_report_review_packets, report_context_basis, report_projection_basis)
             run_dir = project_dir / "runs" / (exact.get("run_id") or "missing")
-            basis = report_context_basis(read_json(run_dir / "basis.json") or {}, document)
+            basis = report_projection_basis(report_context_basis(read_json(run_dir / "basis.json") or {}, document))
             roots = {str(folder): folder for stage in (run_dir / "outputs").glob("*")
                      for folder in [stage, *(stage / "working").glob("*")] if folder.is_dir()}
             result.update(title=document.get("title") or "Technical report", report_generation_id=ref.get("generation_id"),
@@ -727,7 +734,7 @@ def _document_projection(project_dir: Path, document, meta: dict) -> dict:
                           review_status="not_independently_reviewed", portable_artifact_url=meta.get("source_url", "") + "?view=portable",
                           problem_context_ref=document.get("problem_context_ref"))
             try:
-                result["report_materials"] = [_report_material_projection(project_dir, exact, pointer, basis, roots)
+                result["report_materials"] = [_report_material_projection(project_dir, exact, pointer, basis, roots, document)
                                               for pointer in report_required_artifacts(document, basis)]
             except (ArtifactError, OSError, ValueError):
                 result["report_materials_error"] = "An exact report source or exhibit is unavailable."
@@ -945,6 +952,37 @@ def current_decisions_view(project_dir: Path) -> list[dict]:
                         "published_at": pointer.get("published_at", "")}
                 decisions.append(_decision_projection(project_dir, document, meta))
     return decisions
+
+
+def _attach_notation_views(result, loaded):
+    """Link projections only to their own package's retained Lead account."""
+    from .notation import LEAD_FAMILIES
+    owners = {}
+    for (_, phase), records in loaded.items():
+        for family in LEAD_FAMILIES.get(phase, ()):
+            record = records.get(family)
+            if record is None:
+                continue
+            document, meta = record
+            if not isinstance(document, dict) or not isinstance(document.get("notation_snapshot"), dict):
+                continue
+            ref = meta["generation_ref"]
+            key = (ref["branch"], ref["phase"], ref.get("package_id"), ref.get("run_id"))
+            if key[2] and key[3]:
+                owners.setdefault(key, (ref, document["notation_snapshot"]))
+    for values in result.values():
+        if not isinstance(values, list):
+            continue
+        for row in values:
+            if not isinstance(row, dict):
+                continue
+            ref = row.get("generation_ref") or {}
+            owner = owners.get((ref.get("branch"), ref.get("phase"), ref.get("package_id"), ref.get("run_id")))
+            if owner is None:
+                continue
+            source, pointer = owner
+            row["notation_source_ref"] = deepcopy(source)
+            row["notation_snapshot"] = deepcopy(pointer)
 
 
 def artifacts_view(project_dir: Path, branch: str | None = None, *, _p4_records: dict | None = None,
@@ -1243,4 +1281,5 @@ def artifacts_view(project_dir: Path, branch: str | None = None, *, _p4_records:
         result["issues"] = published_issues(project_dir, branch)
         _issue_citation_projection(project_dir, result["issues"])
         result["manuscript_review_context"] = manuscript_review_context(project_dir, loaded)
+    _attach_notation_views(result, loaded)
     return result

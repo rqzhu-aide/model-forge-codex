@@ -7,8 +7,10 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { sharedPackage } from "../scripts/shared-deps.mjs";
 import { assumptionTarget as target, assumptionConversations as conversations } from "./fixtures/assumption-conversations.mjs";
-import { assumptionSource, conversationDraftKey, conversationsForTarget, isEarlierConversation, readConversationDraft, saveConversationDraft } from "../src/assumptionConversations.js";
+import { assumptionSource, conversationDraftKey, conversationPurpose, conversationsForTarget, isConversationTarget, isEarlierConversation, readConversationDraft, saveConversationDraft } from "../src/assumptionConversations.js";
+import { refs, snapshots } from "./fixtures/shared-notation.mjs";
 import { conversationSourceReference } from "../src/conversationSources.js";
+import { issueSourceTarget } from "../src/phaseWorkflow.js";
 
 const require = createRequire(import.meta.url);
 const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.js"));
@@ -63,6 +65,62 @@ test("dialog has a labeled question form, exact source, separate histories and e
   assert.doesNotMatch(html, /aria-label="Close dialog"[^>]*disabled/);
   assert.match(html, /<label for="[^"]+">Your question<\/label>/);
   assert.match(html, /<button(?=[^>]*disabled="")(?=[^>]*type="submit")(?=[^>]*data-action="ask")[^>]*><svg[^>]*aria-hidden="true"[\s\S]*?<\/svg>Discuss<\/button>/);
+});
+
+test("notation discussions validate and retain the exact entry snapshot with a mathematical source summary", () => {
+  const notation = { ...refs.P4, kind: "notation_entry", entry_id: "bandwidth", object_id: "bandwidth", snapshot_sha256: snapshots.P4.snapshot_sha256, label: "Meaning of \\(\\kappa\\)", statement: "$\\kappa>0$ is this evaluation's bandwidth." };
+  assert.equal(isConversationTarget(notation), true);
+  assert.equal(conversationPurpose(notation), "model_dialogue");
+  for (const invalid of [{ sha256: undefined }, { generation_id: undefined }, { snapshot_sha256: undefined }, { snapshot_sha256: "unknown" }, { entry_id: undefined }, { object_id: "different" }]) assert.equal(isConversationTarget({ ...notation, ...invalid }), false);
+  const source = assumptionSource(notation);
+  assert.equal(source.snapshot_sha256, notation.snapshot_sha256);
+  assert.equal(source.entry_id, notation.entry_id);
+  assert.equal(source.label, undefined);
+  const saved = { assessment_id: "notation.saved", assessment_purpose: "model_dialogue", target: source };
+  assert.deepEqual(conversationsForTarget([saved], notation), [saved]);
+  assert.equal(isEarlierConversation(saved, notation), false);
+  const changed = { ...notation, snapshot_sha256: "f".repeat(64) };
+  assert.equal(isEarlierConversation(saved, changed), true);
+  assert.notEqual(conversationDraftKey("project.notation", notation), conversationDraftKey("project.notation", changed));
+  const html = render.conversations({ projectId: "project.notation", target: notation, onClose: noop, onSource: noop });
+  for (const label of ["Discuss this definition", "Selected notation definition", "Your question about this definition", "Read this definition&#x27;s result", "The Research Lead explains this exact definition"]) assert.ok(html.includes(label), label);
+  assert.match(html.match(/<h3>[\s\S]*?<\/h3>/)[0], /class="katex/);
+  assert.doesNotMatch(html, /The exact source for this definition is not available|Read the issue source|Saving an answer is a separate action/);
+});
+
+test("an issue question repeated exactly in its discussion heading is read once without altering its source", () => {
+  const question = "Which next comparison best serves the intended use?";
+  const issue = { question, responsible_role: "research_lead", explanation_target: { ...assumptionSource(target), kind: "phase_issue", entry_pointer: "/attention_items/0" } };
+  const source = issueSourceTarget(issue);
+  const before = structuredClone(source);
+  assert.equal(source.label, question);
+  assert.equal(source.statement, question);
+  for (const statement of [source.statement, `  ${source.statement}  `]) {
+    const html = render.conversations({ projectId: "project.exact-discussion-question", target: { ...source, statement }, onClose: noop });
+    const displayed = html.match(/<section class="conversation-target"[\s\S]*?<\/section>/)[0];
+    assert.match(displayed, /<h3>Which next comparison best serves the intended use\?<\/h3>/);
+    assert.equal(displayed.split(question).length - 1, 1);
+    assert.doesNotMatch(displayed, /class="research-document"/);
+  }
+  assert.deepEqual(source, before);
+});
+
+test("distinct discussion statements, equations and original earlier-source context remain visible", () => {
+  const current = { ...target, label: "Independent assessment", statement: String.raw`The held-out observations satisfy $X_i\perp D_{\mathrm{train}}$.`, latex: String.raw`\widehat\mu=\frac{1}{n}\sum_iX_i` };
+  const html = render.conversations({ projectId: "project.distinct-discussion-context", target: current, onClose: noop });
+  const displayed = html.match(/<section class="conversation-target"[\s\S]*?<\/section>/)[0];
+  assert.match(displayed, /<h3>Independent assessment<\/h3>/);
+  assert.match(displayed, /The held-out observations satisfy/);
+  assert.match(displayed, /X_i\\perp D_/);
+  assert.match(displayed, /\\widehat\\mu=\\frac/);
+  const earlier = { ...conversations[1], target_label: "Earlier scientific question", target_statement: String.raw`The earlier source assumes $|X_i|\le1$.` };
+  const old = render.conversations({ projectId: "project.earlier-discussion-context", target: { ...current, conversationId: earlier.assessment_id }, conversations: [earlier], onClose: noop });
+  const oldContext = old.match(/<section class="conversation-target"[\s\S]*?<\/section>/)[0];
+  assert.match(oldContext, /<h3>Earlier scientific question<\/h3>/);
+  assert.match(oldContext, /Earlier source version/);
+  assert.match(oldContext, /The earlier source assumes/);
+  assert.match(oldContext, /class="katex/);
+  assert.doesNotMatch(oldContext, /The held-out observations satisfy|\\widehat\\mu/);
 });
 
 test("Lead advice describes answering without turning a factual draft into a saved answer", () => {
@@ -151,6 +209,24 @@ test("discussion citations use source-window controls without rendering filesyst
   assert.match(html, /class="katex/);
   assert.doesNotMatch(html, /katex-error/);
   assert.match(html, /The guarantee remains conditional/);
+  assert.match(html, /Sources used/);
+  assert.equal(JSON.stringify(conversation), before);
+});
+
+test("reference-style discussion sources retain exact resolution without displaying local definitions", () => {
+  const notation = inputPath.slice(0, inputPath.indexOf("/inputs/")) + "/inputs/notation.md";
+  const markdown = `The [recorded concern][logging] remains conditional on $A=1$. **[Repeated concern][LOGGING]**. [Unknown label][undefined].\n\n| Meaning | Source |\n| --- | --- |\n| Exact | [Table concern][logging] |\n\n[Notation][notation] and [Exact entry][entry]. [Private data][private] and [Unsafe target][unsafe]. [Web paper][paper].\n\n[logging]: <${inputPath}>\n[LOGGING]: <C:/private/wrong.json>\n[notation]: <${notation}>\n[entry]: <${notation}#notation.entry>\n[private]: <C:/private/patient.csv>\n[unsafe]: <javascript:alert(1)>\n[paper]: https://example.com/paper`;
+  const turn = { run_id: replyRun, instructions: "Explain the logger.", state: "assessed", assessment_markdown: markdown, evidence_refs: [linkedEvidence] };
+  const conversation = { ...conversations[0], turns: [turn] };
+  const before = JSON.stringify(conversation);
+  const html = render.transcript({ conversation, onSource: noop });
+  for (const label of ["recorded concern", "Repeated concern", "Table concern"]) assert.match(html, new RegExp(`<button(?=[^>]*data-action="source")[^>]*>[\\s\\S]*?${label}<\\/button>`));
+  for (const label of ["Notation", "Exact entry", "Private data", "Unsafe target"]) assert.ok(html.includes(`${label} (source unavailable)`), label);
+  assert.match(html, /\[Unknown label\]\[undefined\]/);
+  assert.doesNotMatch(html, /C:[/\\]|javascript:|href="file:|\[logging\]:|\[notation\]:/);
+  assert.match(html, /href="https:\/\/example.com\/paper"/);
+  assert.match(html, /class="katex/);
+  assert.doesNotMatch(html, /katex-error/);
   assert.match(html, /Sources used/);
   assert.equal(JSON.stringify(conversation), before);
 });

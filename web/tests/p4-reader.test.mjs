@@ -370,8 +370,41 @@ test("legacy numerical diagnostics stay complete inside experiments while histor
   const html = render.render({ ...props, questions: [selected], exhibits: [], cases, diagnostics, protocols: [protocol] });
   for (const text of ["Complete numerical results and recorded diagnostics", "0.31", "0.53", "MCSE 0.02", "One numerical failure", "9,876", "5,432"]) assert.ok(html.includes(text), text);
   const answer = html.slice(html.indexOf('data-question-id="q.accuracy"'), html.indexOf('class="research-details empirical-complete-numbers"'));
-  assert.doesNotMatch(answer, /9,876|5,432|Recorded results for this question/);
+  assert.doesNotMatch(answer, /9,876|5,432/);
+  assert.match(answer, /Recorded results for this question/);
+  assert.match(answer, /<details class="research-details empirical-recorded-values"><summary>/);
   const history = render.evaluationHistory({ branch: "method.a", diagnostics }); assert.doesNotMatch(history, /9876|5432|<table|<pre/); assert.match(history, /Numerical source/);
+});
+
+test("generic supplements retain a closed scoped numerical table with pagination and missing-value truth", () => {
+  const metricIds = Array.from({ length: 30 }, (_, index) => `metric.${index}`);
+  const selected = { ...question, metric_ids: metricIds };
+  const cases = [{ case_id: "case.small", label: "Selected sample", comparator_id: "selected_method", test_ids: ["test.accuracy"], metric_ids: metricIds, generation_ref: ref }];
+  const diagnostics = [{ branch: "method.a", phase: "P4", generation_ref: { ...ref, family: "diagnostics" }, headline_numbers: [...metricIds.map((metric, index) => ({ case_id: "case.small", metric, estimate: index === 1 ? null : index, mcse: index === 0 ? 0 : null, n_replicates: index === 1 ? 0 : 16, ...(index === 0 ? { ci_lo: 0, ci_hi: 0.29 } : {}) })), { case_id: "case.other", metric: metricIds[0], estimate: 987654 }] }];
+  const generic = { ...exhibit, kind: "result", media_type: "application/json", artifact_url: "/api/results.json", source_verified: true }; delete generic.table;
+  const values = { ...props, questions: [selected], exhibits: [generic], diagnostics, cases, protocols: [{ generation_ref: ref }] };
+  const before = JSON.stringify(values);
+  const html = render.render(values);
+  const answer = html.slice(html.indexOf('data-question-id="q.accuracy"'), html.indexOf('class="research-details empirical-complete-numbers"'));
+  assert.match(answer, /<details class="research-details empirical-recorded-values"><summary>/);
+  for (const text of ["Recorded results for this question", "MCSE 0", "Not recorded", "Interval level", "Rows 1 to 25 of 30", "Next rows", "Diagnostics"]) assert.ok(answer.includes(text), text);
+  assert.doesNotMatch(answer, /987,654|95%/);
+  assert.match(html, /href="\/api\/results\.json"/);
+  assert.equal((html.match(/Open original exhibit/g) || []).length, 1);
+  assert.match(answer, /data-reading-anchor="evaluation:[^"]+:question:q\.accuracy"|Recorded values/);
+  assert.equal(JSON.stringify(values), before);
+});
+
+test("scoped fallback appears only when the question lacks a usable linked table or image", () => {
+  const selected = { ...question, metric_ids: ["metric.error"] };
+  const cases = [{ case_id: "case.small", comparator_id: "selected_method", test_ids: ["test.accuracy"], metric_ids: ["metric.error"], generation_ref: ref }];
+  const diagnostics = [{ branch: "method.a", phase: "P4", generation_ref: { ...ref, family: "diagnostics" }, headline_numbers: [{ case_id: "case.small", metric: "metric.error", estimate: 0, mcse: 0, n_replicates: 16 }] }];
+  const image = { ...exhibit, table: undefined, media_type: "image/png", artifact_url: "/api/image.png", source_verified: true };
+  for (const [candidate, fallback] of [[exhibit, false], [image, false], [{ ...image, source_error: "Digest mismatch" }, true], [{ ...image, source_verified: false }, true], [{ ...exhibit, table: { columns: [{ key: "value" }], rows: [] } }, true]]) {
+    const html = render.render({ ...props, questions: [selected], exhibits: [candidate], cases, diagnostics, protocols: [{ generation_ref: ref }] });
+    const answer = html.slice(html.indexOf('data-question-id="q.accuracy"'), html.indexOf('class="research-details empirical-complete-numbers"'));
+    assert.equal(answer.includes("Recorded results for this question"), fallback);
+  }
 });
 
 test("frozen source paths remain inspectable and work modes remain distinct", () => {

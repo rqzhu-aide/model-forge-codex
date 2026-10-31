@@ -6,6 +6,7 @@ import { conversationsForTarget } from "../assumptionConversations";
 import { ActionButton } from "./Visuals";
 import { TheoryConditions } from "./TheoryConditions";
 import { TheoryAssessmentAccount, TheorySupportBadge, theoryAssessmentTone, theorySupportPresentation } from "./TheoryAssessment";
+import { NotationLookup } from "./SharedNotation";
 
 function nodePresentation(node, probes) {
   const support = theorySupportPresentation({ ...node.claim, ...node });
@@ -51,7 +52,7 @@ function StatementPreview({ value }) {
   return <>{value.latex && <MathText latex={value.latex} />}<ResearchDocument text={value.text || value.statement || value.summary || value} />{value.status && <p className="note">Status: {humanLabel(typeof value.status === "string" ? value.status : JSON.stringify(value.status))}</p>}</>;
 }
 
-export default function TheoryWorkbench({ claimMaps = [], falsificationLogs = [], glossaries = [], conversations = [], branch, selected, onSelect, onRequest, onSource, onAssumptionConversation, embedded = false, reading = {}, onReadingChange }) {
+export default function TheoryWorkbench({ claimMaps = [], falsificationLogs = [], glossaries = [], conversations = [], proofSources, branch, selected, onSelect, onRequest, onSource, onAssumptionConversation, embedded = false, reading = {}, onReadingChange }) {
   const cm = scoped(claimMaps, branch, "P3")[0];
   const fl = scoped(falsificationLogs, branch, "P3")[0];
   const glossary = scoped(glossaries, branch, "P3")[0]?.glossary || {};
@@ -132,6 +133,7 @@ export default function TheoryWorkbench({ claimMaps = [], falsificationLogs = []
         <label className="field"><span className="visually-hidden">Find a theory component</span><input ref={searchInput} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Find a statement or assumption" type="search" /></label>
         <label className="check-label"><input type="checkbox" checked={focus} disabled={!selected} onChange={(e) => setFocus(e.target.checked)} />Focus related components</label>
         <SourceRef reference={reference} onOpen={onSource} />
+        <NotationLookup record={cm} onSource={onSource} section={node?.id} />
       </div>
       {search && <div className="search-results">{graph.nodes.filter((n) => `${n.label} ${n.id}`.toLowerCase().includes(search.toLowerCase())).map((n) => <ActionButton action="details" key={n.id} onClick={() => { selectNode(n.id, searchInput.current, true); setSearch(""); }}>{n.label}</ActionButton>)}</div>}
       <div className={`graph-and-inspector ${node ? "has-selection" : ""}`}>
@@ -174,7 +176,7 @@ export default function TheoryWorkbench({ claimMaps = [], falsificationLogs = []
           <ResearchDocument text={statement.text || statement.statement || "The full statement is available in its theory source."} />
           <TheoryConditions statement={statement} />
           {node.kind !== "unresolved" && <div className="inspector-actions"><ActionButton action="check" uiRole="research" disabled={!linked || !onRequest} onClick={event => onRequest("assessment", targetFor(node), node.label, event?.currentTarget)}>Request an assessment</ActionButton><ActionButton action="repair" uiRole="research" disabled={!linked || !onRequest} onClick={event => onRequest("repair", targetFor(node), node.label, event?.currentTarget)}>Prepare theory revision</ActionButton><p className="note">{linked ? "An assessment saves a separate check without changing the published theory. Preparing a revision opens instructions and settings. Starting it can publish a changed account after the independent analyst audit and lead assessment." : "This component's exact theory source is unavailable. A linked theory generation is required before component work can be requested."}</p></div>}
-          <TheoryAssessmentAccount statement={statement} onSource={onSource} />
+          <TheoryAssessmentAccount statement={statement} onSource={onSource} proofSources={proofSources} />
           {node.kind === "claim" && graph.edges.some((e) => e.to === node.id) && <div className="inspector-group"><h4>Rests on</h4>{graph.edges.filter((e) => e.to === node.id).map((e) => <button key={e.from} className="chip" onClick={(event) => selectNode(e.from, event.currentTarget)}>{graph.nodes.find((n) => n.id === e.from)?.label}</button>)}</div>}
           {relatedNodes(graph, node.id, "downstream").size > 1 && <div className="inspector-group"><h4>Conclusions to reassess if this changes</h4>{graph.nodes.filter((n) => n.id !== node.id && relatedNodes(graph, node.id, "downstream").has(n.id)).map((n) => <button className="chip" key={n.id} onClick={(event) => selectNode(n.id, event.currentTarget)}>{n.label}</button>)}</div>}
           {node.claim?.novelty_refs?.length > 0 && <div className="inspector-group"><h4>Relation to the literature</h4><TheoryLiteratureLinks claim={node.claim} onSource={onSource} /></div>}

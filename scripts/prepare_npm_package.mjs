@@ -64,7 +64,8 @@ export function verifyPackageContents(paths, catalogPaths, { requireReleaseManif
   for (const name of names) {
     const clean = !name.split("/").some((part) => part === ".." || part === "node_modules" || part === "__pycache__" || part.startsWith(".env"));
     const allowed = exact.has(name) || /^src\/model_forge_codex\/(?:[\w-]+\/)*[\w-]+\.py$/u.test(name)
-      || /^web\/dist\/(?:assets\/[\w.-]+\.(?:js|css|woff2?|ttf)|index\.html)$/u.test(name);
+      || /^web\/dist\/(?:assets\/[\w.-]+\.(?:js|css|woff2?|ttf)|index\.html)$/u.test(name)
+      || /^web\/dist\/assets\/worn-silver-plates-[\w-]+\.svg$/u.test(name);
     if (!clean || !allowed) throw new Error(`Unexpected file in the npm package: ${name}`);
   }
   for (const required of [...exact, "src/model_forge_codex/local_app.py", "web/dist/index.html", "web/runtime/validate-math.mjs"]) {

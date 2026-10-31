@@ -12,13 +12,21 @@ const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.j
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-report-support-"));
 const bundle = path.join(directory, "test.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; export {TechnicalReportDocument,ReportMaterialLink,ReportMaterialDialog,retainedReportMaterial} from '${src}/components/TechnicalReportReading.jsx'; export {Dialog,ResearchDocument} from '${src}/components/Shared.jsx'; export {ActionButton} from '${src}/components/Visuals.jsx'; export const render=(Component,props)=>renderToStaticMarkup(React.createElement(Component,props)); export const dispatcher=React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; export {TechnicalReportDocument,ReportMaterialLink,ReportMaterialDialog,retainedReportMaterial} from '${src}/components/TechnicalReportReading.jsx'; export {reportHtmlPreview,bindReportHtmlFrame} from '${src}/reportHtmlSource.js'; export {Dialog,ResearchDocument} from '${src}/components/Shared.jsx'; export {ActionButton} from '${src}/components/Visuals.jsx'; export const render=(Component,props)=>renderToStaticMarkup(React.createElement(Component,props)); export const dispatcher=React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const ui = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
-const nodes = (tree) => Array.isArray(tree) ? tree.flatMap(nodes) : tree && typeof tree === "object" && tree.props ? [tree, ...nodes(tree.props.children)] : [];
+const isPortal = tree => tree?.$$typeof === Symbol.for("react.portal");
+const nodes = (tree) => Array.isArray(tree) ? tree.flatMap(nodes) : isPortal(tree) ? [tree, ...nodes(tree.children)] : tree && typeof tree === "object" && tree.props ? [tree, ...nodes(tree.props.children)] : [];
+const inlineNodes = tree => Array.isArray(tree) ? tree.flatMap(inlineNodes) : isPortal(tree) ? [] : tree && typeof tree === "object" && tree.props ? [tree, ...inlineNodes(tree.props.children)] : [];
 const find = (tree, predicate) => nodes(tree).find(predicate);
 const deferred = () => { let resolve; const promise = new Promise((done) => { resolve = done; }); return { resolve, promise }; };
 const ok = (text) => ({ ok: true, text: async () => text });
 const noop = () => {};
+async function withPortalBody(run) {
+  const previous = globalThis.document;
+  globalThis.document = { body: { nodeType: 1 } };
+  try { await run(); }
+  finally { if (previous === undefined) delete globalThis.document; else globalThis.document = previous; }
+}
 
 // Exercise the shipped hooks and callbacks. Existing Dialog tests cover its DOM
 // focus trap; these fixtures verify the support reader passes the return target.
@@ -50,7 +58,7 @@ test("fragment-aware support lookup resolves nested paths and preserves unique a
   assert.equal(ui.retainedReportMaterial([{ ...support, source_verified: false }, native], `${support.authored_path}#model`).material.source_verified, false);
 });
 
-test("main links open verified Markdown in a dialog while other exact files retain direct links and fragments", async () => {
+test("main links open verified Markdown in a dialog while other exact files retain direct links and fragments", async () => withPortalBody(async () => {
   const document = { kind: "technical_report", generation_ref: { generation_id: "report.exact" }, body_md: "[Supporting model](notes/supporting-detail.md#model) and [Values](data/values.csv#row).", report_materials: materials };
   const before = structuredClone(document);
   const tree = ui.TechnicalReportDocument({ document });
@@ -62,6 +70,9 @@ test("main links open verified Markdown in a dialog while other exact files reta
   find(fixture.tree, (node) => node.type === "a").props.onClick({ preventDefault() { prevented = true; } });
   await fixture.settle();
   const dialog = find(fixture.tree, (node) => node.type === ui.ReportMaterialDialog);
+  const portal = find(fixture.tree, isPortal);
+  assert.equal(portal.containerInfo, globalThis.document.body);
+  assert.equal(inlineNodes({ type: "p", props: { children: fixture.tree } }).some(node => node.type === ui.ReportMaterialDialog), false, "An inline report paragraph must not contain the modal's block content.");
   assert.equal(prevented, true); assert.equal(dialog.props.returnFocus, find(fixture.tree, (node) => node.type === "a").ref);
   fixture.update({ materials: structuredClone(materials) }); await fixture.settle();
   assert.ok(find(fixture.tree, (node) => node.type === ui.ReportMaterialDialog), "Polling retains the open reader.");
@@ -74,7 +85,7 @@ test("main links open verified Markdown in a dialog while other exact files reta
   const invalid = ui.render(ui.TechnicalReportDocument, { document: { ...document, report_materials: [{ ...support, source_verified: false }] } });
   assert.match(invalid, /Supporting model: The exact retained file is unavailable/);
   assert.deepEqual(document, before);
-});
+}));
 
 test("loaded supporting detail renders LaTeX and nested exact files, focuses its fragment and retains position on polling", async () => {
   const oldFetch = globalThis.fetch; const reads = []; const focused = [];
@@ -113,4 +124,115 @@ test("support reader exposes load errors and retry, and ignores a late response 
     assert.equal(find(fixture.tree, (node) => node.type === ui.ResearchDocument).props.text, "## Exact replacement\n\n$x=2$.");
     assert.equal(calls, 3);
   } finally { fixture.unmount(); globalThis.fetch = oldFetch; }
+});
+
+test("an exact declared HTML proof opens its own reader without guessing a Markdown rendition", () => {
+  const html = { ...support, artifact_id: "artifact.proof-html", authored_path: "appendix.html", path: "working/research_lead/appendix.html", artifact_url: "/api/v1/exact-proof?sha256=c", sha256: "c".repeat(64), media_type: "text/html" };
+  const markdown = { ...support, artifact_id: "artifact.proof-md", authored_path: "appendix.md" };
+  const document = { kind: "technical_report", body_md: "[Proof](appendix.html#proof-safety)", report_materials: [html, markdown] };
+  const tree = ui.TechnicalReportDocument({ document });
+  const body = find(tree, (node) => node.type === ui.ResearchDocument && node.props.renderFileLink);
+  const link = body.props.renderFileLink("appendix.html#proof-safety", "Proof");
+  assert.equal(link.type, ui.ReportMaterialLink);
+  assert.equal(link.props.material, html); assert.equal(link.props.fragment, "proof-safety");
+  const missing = ui.TechnicalReportDocument({ document: { ...document, report_materials: [markdown] } });
+  assert.match(ui.render(() => find(missing, (node) => node.type === ui.ResearchDocument).props.renderFileLink("appendix.html#proof-safety", "Proof"), {}), /exact retained file is unavailable/);
+  const unsafe = ui.TechnicalReportDocument({ document: { ...document, report_materials: [{ ...html, source_verified: false }, markdown] } });
+  assert.match(ui.render(() => find(unsafe, (node) => node.type === ui.ResearchDocument).props.renderFileLink("appendix.html#proof-safety", "Proof"), {}), /exact retained file is unavailable/);
+  // Fresh P5 projection deliberately uses binary download media for HTML, while
+  // preserving the same exact declared path, hash, URL and verified status.
+  const projected = { ...html, artifact_id: "artifact.p5.proof-appendix-html", media_type: "application/octet-stream" };
+  const projectedTree = ui.TechnicalReportDocument({ document: { ...document, report_materials: [projected, markdown] } });
+  const projectedLink = find(projectedTree, (node) => node.type === ui.ResearchDocument).props.renderFileLink("appendix.html#proof-safety", "Proof");
+  assert.equal(projectedLink.type, ui.ReportMaterialLink); assert.equal(projectedLink.props.material, projected);
+  assert.equal(projectedLink.props.material.sha256, html.sha256); assert.equal(projectedLink.props.material.artifact_url, html.artifact_url);
+});
+
+test("HTML preview keeps scientific markup inert, blocks active/network content and controls every source link", () => {
+  const node = (localName, attributes = {}) => ({ localName, values: { ...attributes }, removed: false,
+    get attributes() { return Object.keys(this.values).map(name => ({ name })); },
+    getAttribute(name) { return this.values[name] ?? null; }, setAttribute(name, value) { this.values[name] = value; }, removeAttribute(name) { delete this.values[name]; }, remove() { this.removed = true; } });
+  const script = node("script"), noscript = node("noscript"), meta = node("meta", { "http-equiv": "refresh", content: "0;url=https://unretained.example" });
+  const link = node("a", { href: "javascript:alert(1)", onclick: "alert(2)", target: "_top", ping: "https://unretained.example", "data-report-source": "forged" });
+  const remote = node("img", { src: "https://unretained.example/image.png", srcset: "https://unretained.example/other.png 2x" });
+  const inline = node("img", { src: "data:image/png;base64,AA==" });
+  const math = node("span", { class: "katex", style: "height:1em" });
+  const mutations = ["set", "animate", "animateMotion", "animateTransform", "animateColor", "discard"].map(name => node(name, { attributeName: "href", to: "https://unretained.example" }));
+  const staticPath = node("path", { d: "M0 0 L1 1" });
+  const all = [script, noscript, meta, link, remote, inline, math, ...mutations, staticPath];
+  const template = { innerHTML: "<span>preserved math</span>", content: { querySelectorAll(selector) { return selector === "*" ? all.filter(x => !x.removed) : all.filter(x => selector.split(",").includes(x.localName)); } } };
+  const result = ui.reportHtmlPreview("<span>preserved math</span>", { createElement(tag) { assert.equal(tag, "template"); return template; } });
+  assert.equal(script.removed, true); assert.equal(noscript.removed, true); assert.equal(meta.removed, true);
+  assert.deepEqual(link.values, { href: "#", "data-report-source": "javascript:alert(1)" });
+  assert.deepEqual(remote.values, {}); assert.equal(inline.values.src, "data:image/png;base64,AA==");
+  assert.deepEqual(math.values, { class: "katex", style: "height:1em" });
+  assert.equal(mutations.every(node => node.removed), true); assert.equal(staticPath.removed, false);
+  assert.match(result, /default-src 'none'; script-src 'none'/); assert.match(result, /font-src data:; img-src data:/);
+  assert.match(result, /form-action 'none'; base-uri 'none'/); assert.match(result, /preserved math/);
+});
+
+test("HTML frame focuses exact unique anchors, routes source links and bridges Escape without authored scripts", () => {
+  const events = new Map(), calls = [];
+  const target = { id: "proof-safety", setAttribute: (key, value) => calls.push([key, value]), scrollIntoView: () => calls.push("scroll"), focus: () => calls.push("focus") };
+  const sourceDocument = { body: {}, querySelectorAll: () => [target], addEventListener: (name, handler, capture) => { if (name === "click") assert.equal(capture, true); events.set(name, handler); }, removeEventListener: name => events.delete(name) };
+  const frame = { contentDocument: sourceDocument };
+  const dispose = ui.bindReportHtmlFrame(frame, { fragment: "proof-safety", onClose: () => calls.push("close"), onSourceLink: (source, label) => calls.push([source, label]), onMissingAnchor: value => calls.push(["missing", value]) });
+  assert.deepEqual(calls.slice(0, 4), [["missing", ""], ["tabindex", "-1"], "scroll", "focus"]);
+  const click = source => events.get("click")({ preventDefault: () => calls.push("prevent"), target: { closest: () => ({ getAttribute: () => source, textContent: "Original proof" }) } });
+  click("materials/theory_manuscript.md"); assert.deepEqual(calls.at(-1), ["materials/theory_manuscript.md", "Original proof"]);
+  click("#proof-safety"); assert.equal(calls.at(-1), "focus");
+  click(null); assert.deepEqual(calls.slice(-2), ["prevent", ["", "Original proof"]], "Even an anchor without a prepared source cannot navigate outside the controlled bridge.");
+  events.get("keydown")({ key: "Escape", preventDefault: noop, stopPropagation: noop }); assert.equal(calls.at(-1), "close");
+  dispose(); assert.equal(events.size, 0);
+  sourceDocument.querySelectorAll = () => [target, target];
+  ui.bindReportHtmlFrame(frame, { fragment: "proof-safety", onClose: noop, onSourceLink: noop, onMissingAnchor: value => calls.push(["missing", value]) });
+  assert.deepEqual(calls.at(-1), ["missing", "proof-safety"]);
+});
+
+test("loaded exact HTML uses a sandboxed in-dialog preview and opens declared nested sources", async () => withPortalBody(async () => {
+  const oldFetch = globalThis.fetch; const reads = [];
+  const html = { ...support, artifact_id: "artifact.proof-html", authored_path: "appendix.html", artifact_url: "/api/v1/exact-proof?sha256=c", sha256: "c".repeat(64), media_type: "application/octet-stream" };
+  const original = "<h1>Original proof</h1><span class='katex'>math</span>";
+  const originalMaterial = structuredClone(html);
+  globalThis.document.createElement = tag => { assert.equal(tag, "template"); return { innerHTML: "", content: { querySelectorAll: () => [] } }; };
+  globalThis.fetch = async url => { reads.push(url); return ok(original); };
+  const events = new Map(); const body = { setAttribute: noop, scrollIntoView: noop, focus: noop };
+  const sourceDocument = { body, querySelectorAll: () => [], addEventListener: (name, handler) => events.set(name, handler), removeEventListener: name => events.delete(name) };
+  const frame = { contentDocument: sourceDocument };
+  const fixture = mount(ui.ReportMaterialDialog, { material: html, path: html.authored_path, materials: [html, support], onClose: noop }, tree => {
+    const node = find(tree, node => node.type === "iframe"); if (node) node.ref.current = frame;
+  });
+  try {
+    await fixture.settle();
+    const preview = find(fixture.tree, node => node.type === "iframe");
+    assert.equal(preview.props.sandbox, "allow-same-origin"); assert.equal(preview.props.src, undefined);
+    assert.match(preview.props.srcDoc, /script-src 'none'/); assert.match(preview.props.srcDoc, /Original proof/);
+    assert.deepEqual(reads, [html.artifact_url]); assert.equal(find(fixture.tree, node => node.type === ui.ResearchDocument), undefined);
+    preview.props.onLoad();
+    const invoker = { getAttribute: () => support.authored_path, textContent: "Original manuscript" };
+    events.get("click")({ preventDefault: noop, target: { closest: () => invoker } });
+    await fixture.settle();
+    const nested = find(fixture.tree, node => node.type === ui.ReportMaterialDialog);
+    assert.equal(nested.props.material, support); assert.equal(nested.props.returnFocus.current, invoker);
+    nested.props.onClose(); await fixture.settle();
+    assert.equal(find(fixture.tree, node => node.type === ui.ReportMaterialDialog), undefined);
+    assert.deepEqual(html, originalMaterial);
+  } finally { fixture.unmount(); globalThis.fetch = oldFetch; }
+}));
+
+test("Tab and Shift-Tab leave the HTML document at its boundaries and remain inside the source dialog", () => {
+  const oldStyle = globalThis.getComputedStyle; globalThis.getComputedStyle = () => ({ visibility: "visible", display: "block" });
+  const events = new Map(), focused = [];
+  const visible = name => ({ isConnected: true, tabIndex: 0, parentElement: null, tagName: "A", getClientRects: () => [1], closest: () => null, matches: () => false, focus: () => focused.push(name) });
+  const first = visible("first"), last = visible("last"), close = visible("close"), frame = visible("frame");
+  const body = { querySelectorAll: () => [first, last], setAttribute: noop, scrollIntoView: noop, focus: noop };
+  const doc = { body, activeElement: last, querySelectorAll: () => [], addEventListener: (name, handler) => events.set(name, handler), removeEventListener: noop };
+  frame.contentDocument = doc; frame.closest = selector => selector === '[role="dialog"]' ? { querySelectorAll: () => [close, frame] } : null;
+  try {
+    ui.bindReportHtmlFrame(frame, { onClose: noop, onSourceLink: noop, onMissingAnchor: noop });
+    let prevented = 0; const tab = shiftKey => events.get("keydown")({ key: "Tab", shiftKey, preventDefault: () => prevented++ });
+    tab(false); assert.deepEqual(focused, ["close"]); assert.equal(prevented, 1);
+    doc.activeElement = first; tab(true); assert.deepEqual(focused, ["close", "close"]); assert.equal(prevented, 2);
+    tab(false); assert.equal(prevented, 2, "Interior keyboard navigation stays native.");
+  } finally { if (oldStyle === undefined) delete globalThis.getComputedStyle; else globalThis.getComputedStyle = oldStyle; }
 });

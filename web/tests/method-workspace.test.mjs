@@ -141,6 +141,26 @@ test("questions and saved answers remain method local across P2, P3 and P4 desti
   assert.deepEqual(methodAnswers(answers, "method.b", "branch.b").map((answer) => answer.note), ["Answer other", "Answer both"]);
 });
 
+test("project tasks with explicit method recipients exclude other methods without hiding shared questions", () => {
+  const task = { kind: "research_task", phase: "P2", branch: "trunk", target_phase: "P4", scope: { kind: "project" } };
+  const own = { ...task, attention_id: "own", affected_record_ids: ["method.a"] };
+  const other = { ...task, attention_id: "other", affected_record_ids: ["method.b", "setting.record"] };
+  const both = { ...task, attention_id: "both", affected_record_ids: ["method.a", "method.b"] };
+  const shared = { ...task, attention_id: "shared", affected_record_ids: [] };
+  const unknown = { ...task, attention_id: "unknown", affected_record_ids: ["setting.record"] };
+  const missing = { ...task, attention_id: "missing" };
+  const question = { ...other, attention_id: "question", kind: "researcher_decision" };
+  const scientific = { ...other, attention_id: "scientific", kind: "scientific_issue" };
+  const items = [own, other, both, shared, unknown, missing, question, scientific];
+  const before = JSON.stringify(items);
+  const expected = [own, both, shared, unknown, missing, question, scientific];
+  assert.deepEqual(methodRequests(items, "method.a", "custom.branch", { includeShared: true }), expected);
+  assert.deepEqual(methodRequests(items, undefined, "method.a", { includeShared: true }), expected);
+  assert.deepEqual(methodRequests(items, undefined, "custom.branch", { includeShared: true, modelRef: { identity } }), expected);
+  for (const branch of ["trunk", "custom.branch"]) assert.deepEqual(methodRequests(items, undefined, branch, { includeShared: true }), items);
+  assert.equal(JSON.stringify(items), before);
+});
+
 test("role ordering does not alter the author's proposal or source records", () => {
   const source = [{ role: "data_analyst" }, { role: "research_lead" }, { role: "theorist" }];
   const before = JSON.stringify(source);

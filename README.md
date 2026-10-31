@@ -1,6 +1,9 @@
 # Model Forge, Codex edition
 
-[![Version 0.9.3](https://img.shields.io/badge/version-0.9.3-blue)](https://www.npmjs.com/package/@rqzhu-aide/model-forge-codex/v/0.9.3)
+[![npm latest](https://img.shields.io/npm/v/%40rqzhu-aide%2Fmodel-forge-codex/latest?label=npm%20latest)](https://www.npmjs.com/package/@rqzhu-aide/model-forge-codex)
+[![npm next](https://img.shields.io/npm/v/%40rqzhu-aide%2Fmodel-forge-codex/next?label=npm%20next)](https://www.npmjs.com/package/@rqzhu-aide/model-forge-codex?activeTab=versions)
+
+The installation commands below follow the **`next` prerelease channel**. The badges show the versions currently available on npm.
 
 Model Forge is a local workbench for developing statistical and machine learning models and algorithms with an AI research team. Start from a problem, compare approaches, examine theory and numerical evidence, and build a **technical report** with mathematics, citations, and links to supporting work.
 
@@ -8,14 +11,14 @@ Model Forge is a local workbench for developing statistical and machine learning
 
 ![Model Forge 0.9.3 research workbench showing a synthetic demonstration project](https://raw.githubusercontent.com/rqzhu-aide/model-forge-codex/main/docs/images/model-forge-overview.jpg)
 
-*Model Forge 0.9.3 with a synthetic demonstration project. The example content illustrates the interface and is not output from a live model run.*
+*Earlier 0.9.3 interface with a synthetic demonstration project. The current source uses a brushed silver frame. The example content illustrates the interface and is not output from a live model run.*
 
 ## Install and use
 
 Use shared **Node.js 22+ with npm** and **Python 3.11+** installations. Complete the one-time setup for **[Windows](docs/installation.md#windows)**, **[macOS](docs/installation.md#macos)**, or **[Linux](docs/installation.md#linux)**. This installs the backend dependencies and sets `MF_PYTHON` to the shared Python used for launch. Then run in the same terminal:
 
 ```sh
-npx @rqzhu-aide/model-forge-codex web
+npx @rqzhu-aide/model-forge-codex@next web
 ```
 
 In a new terminal, set `MF_PYTHON` again or pass `--python PATH` to that same shared executable. The package includes the built interface. No project environment or frontend build is needed, and the Codex desktop app is optional.
@@ -35,11 +38,11 @@ Projects and settings are saved in **`~/.model-forge-codex`**, separately from a
 Finish or cancel active research before stopping. Use the same data folder and port when checking or stopping a custom instance:
 
 ```sh
-npx @rqzhu-aide/model-forge-codex status
-npx @rqzhu-aide/model-forge-codex stop
+npx @rqzhu-aide/model-forge-codex@next status
+npx @rqzhu-aide/model-forge-codex@next stop
 ```
 
-Use `@0.9.3` to pin this release or `@next` to follow the prerelease channel. For setup errors and updates, see [installation and troubleshooting](docs/installation.md). The development guide also covers [source installation](docs/development.md#source-checkout) and [GitHub tarballs](docs/development.md#prepared-release-tarball).
+Use `@0.9.4` to pin this version or `@latest` for the default npm release. Use the same version or channel for `web`, `status`, and `stop`. For setup errors and updates, see [installation and troubleshooting](docs/installation.md). The development guide also covers [source installation](docs/development.md#source-checkout) and [GitHub tarballs](docs/development.md#prepared-release-tarball).
 
 Windows package launch and browser onboarding have been checked locally. Native clean-profile macOS/Linux verification remains pending. Model-generated scientific claims and results require researcher review.
 
@@ -64,6 +67,7 @@ Run the phases that serve your question, returning to earlier work when needed. 
 - **Specialized team.** A Research Lead, Theorist, Data Analyst, and Outside Reviewer work through a Codex bridge. Structured outputs feed the interface directly.
 - **Researcher interaction.** Blue marks team findings, navy marks system controls, and orange marks researcher input. Questions support discussion, advice, and editable answers. Reports support section-level discussion and self-contained HTML export.
 - **Traceable work.** Findings link to their method, theory, and experiment sources. Application updates preserve research history; each project retains its workflow catalog until explicitly updated.
+- **Consistent scientific presentation.** A shared notation record carries mathematical definitions across phases. The Lead uses presentation guidance for summaries, notation, tables, figures, and consequential questions.
 - **Local workspace.** React provides the interface and FastAPI manages runs and artifacts. Research is stored locally; model requests go to your configured account or provider.
 
 See the [architecture guide](https://github.com/rqzhu-aide/model-forge-codex/blob/main/architecture/README.md) for component responsibilities, artifact flow, and UI specifications.

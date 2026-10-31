@@ -29,6 +29,54 @@ async def explain(engine, issue, question="Why does this matter?", **extra):
     return engine.load_run("project.test", record.run_id)
 
 
+def test_discussion_draft_resolves_only_its_exact_authored_choice_without_saving(workbench):
+    from copy import deepcopy
+    from model_forge_codex.phase_interactions import normalize_response_draft
+    _, project, branch = workbench
+    question = {"attention_id": "question.population", "kind": "researcher_decision", "response_kind": "choice",
+                "question": "Which population should the estimate describe?", "options": [
+                    {"id": "donors", "label": "Equal donor weights", "consequence": "Each donor contributes equally."},
+                    {"id": "cells", "label": "Equal cell weights", "consequence": "Donors with more cells contribute more."}]}
+    publish(project, branch, "P2", {"attention_items": [question]})
+    issue = next(row for row in published_issues(project, branch) if row["attention_id"] == question["attention_id"])
+    target = issue["explanation_target"]
+    resolved = resolve_issue(project, target)
+    before = deepcopy(resolved)
+    draft = normalize_response_draft(resolved, {"kind": "choice", "option_id": "cells", "note": ""})
+    assert draft == {"kind": "choice", "option_id": "cells", "label": "Equal cell weights",
+                     "consequence": "Donors with more cells contribute more.", "note": ""}
+    assert resolved == before
+    assert not (project / "researcher" / "attention_resolutions.json").exists()
+    # The same stable question and option IDs in a newer publication do not
+    # change the scientific meaning of a discussion opened on the old source.
+    changed = deepcopy(question)
+    changed["options"][1]["consequence"] = "A changed source consequence."
+    publish(project, branch, "P2", {"attention_items": [changed]}, "run.new-draft")
+    assert normalize_response_draft(resolve_issue(project, target), {"kind": "choice", "option_id": "cells"}) == draft
+    current = next(row for row in published_issues(project, branch) if row["attention_id"] == question["attention_id"]
+                   and row["explanation_target"]["run_id"] == "run.new-draft")
+    assert normalize_response_draft(resolve_issue(project, current["explanation_target"]),
+                                    {"kind": "choice", "option_id": "cells"})["consequence"] == "A changed source consequence."
+    for altered in [{**target, "sha256": "0" * 64}, {**target, "object_id": "question.other"},
+                    {**target, "entry_pointer": "/1"}]:
+        with pytest.raises(ValueError):
+            resolve_issue(project, altered)
+    for invalid in [
+        {"kind": "choice", "option_id": "missing"},
+        {"kind": "choice", "option_id": "cells", "label": "Client replacement"},
+        {"kind": "choice", "option_id": "cells", "note": None},
+        {"kind": "unknown", "option_id": "cells"}, {"kind": "custom", "note": " "},
+    ]:
+        with pytest.raises(ValueError):
+            normalize_response_draft(resolved, invalid)
+    assert normalize_response_draft(resolved, {"kind": "custom", "note": "  Use a specified subgroup.  "}) == {
+        "kind": "custom", "note": "Use a specified subgroup."}
+    assert normalize_response_draft(resolved, {"kind": "unknown"}) == {"kind": "unknown", "note": ""}
+    with pytest.raises(ValueError, match="unknown study information"):
+        normalize_response_draft({**resolved, "response_kind": "study_fact"}, {"kind": "choice", "option_id": "cells"})
+    assert not (project / "researcher" / "attention_resolutions.json").exists()
+
+
 async def test_p5_outside_comment_explanation_is_lead_interpretation_and_frozen(workbench):
     engine, project, branch = workbench
     package = publish(project, branch, "P5", {"outside_review": {"prioritized_issues": [

@@ -42,7 +42,7 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 350,
-      "description": "Short catalog display name that pinpoints the core mechanic: a few words plus an acronym in parentheses, e.g. 'Antithetic Shared-Noise Entangled Langevin (ASN-EL)'. No subtitle clauses, no descriptive tails, no marketing words."
+      "description": "Concise descriptive display name for the mathematical or statistical framework, estimator or algorithm actually defined. Use only defining modifiers supported by the canonical definition and supplied sources. Prefer the complete descriptive name; do not coin a brand name or acronym. Retain an existing source-supported name when appropriate without implying novelty, superiority or a guarantee. Display naming is separate from method identity and historical records."
     },
     "lifecycle_state": {
       "type": "string",

@@ -32,6 +32,7 @@
 .modal { --reader-scroll-offset:16px; }
 .technical-report .report-anchor:focus-visible { outline:2px solid var(--system-focus); outline-offset:3px; }
 .technical-report .report-material-actions { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; margin:5px 0; }
+.report-html-source { display:block; width:100%; height:min(68vh,850px); border:0; background:white; }
 @media (max-width:600px) {
   .technical-report .report-section-heading { align-items:flex-start; gap:5px 8px; }
   .technical-report .report-section-heading .report-section-discuss { --control-height:44px; min-height:44px; }

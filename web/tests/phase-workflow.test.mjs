@@ -72,7 +72,7 @@ test("saved responses distinguish currently used instructions from an edited rev
   assert.match(answerEffect({ applied_to: ["run.used"] }), /Used in earlier work/);
   assert.match(answerEffect({ applied_to: [], previously_applied_to: ["run.old"] }), /Earlier work used your previous response/);
   assert.match(answerEffect({}), /Saved for future work/);
-  const html = render.issues({ projectId: "project.a", phase: "P3", branch: "method.a", issues: [{ ...issue, researcher_answer: { note: "Study weak dependence first.", applied_to: [], previously_applied_to: ["run.old"] } }] });
+  const html = render.issues({ projectId: "project.a", phase: "P4", branch: "method.a", issues: [{ ...issue, researcher_answer: { note: "Study weak dependence first.", applied_to: [], previously_applied_to: ["run.old"] } }] });
   assert.match(html, /Study weak dependence first/); assert.match(html, /Earlier work used your previous response/); assert.match(html, /Edit your answer/); assert.doesNotMatch(html, /<textarea/);
 });
 
@@ -81,7 +81,7 @@ test("issues distinguish scientific work from researcher questions and omit an e
   assert.match(scientific, /Open scientific work/); assert.match(scientific, /further work request below/); assert.doesNotMatch(scientific, /<textarea|Add your direction|Save response/);
   const finding = render.issues({ projectId: "p", phase: "P3", branch: "method.a", issues: [{ ...issue, kind: "scientific_issue" }] });
   assert.match(finding, /Open scientific work/); assert.match(finding, /further work request below/); assert.doesNotMatch(finding, /<textarea|Save your answer/);
-  const question = render.issues({ projectId: "p", phase: "P3", branch: "method.a", issues: [issue] }); assert.match(question, /1 unanswered question/); assert.match(question, /Open question/); assert.match(question, /<textarea/);
+  const question = render.issues({ projectId: "p", phase: "P4", branch: "method.a", issues: [issue] }); assert.match(question, /1 unanswered question/); assert.match(question, /Open question/); assert.match(question, /<textarea/);
   const empty = render.issues({ projectId: "p", phase: "P3", branch: "method.a" }); assert.equal(empty, "");
   assert.match(render.issues({ projectId: "p", phase: "P3", branch: "method.a", correctionCount: 1 }), /Work needs correction/);
   assert.match(render.issues({ projectId: "p", phase: "P4", branch: "method.a", activePause: true }), /Work is paused/);
