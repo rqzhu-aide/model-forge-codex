@@ -4,6 +4,10 @@ This local workbench supports developing statistical and machine learning models
 
 **You direct the research.** The team invites your input on critical decisions affecting the scientific goal, model interpretation, statistical claims, data applicability, or meaningful resource tradeoffs. Each decision explains its consequences. Discuss the question, ask for the Lead's advice, and save an editable answer for future work. The Lead handles routine choices; you choose which phase to run next.
 
+![Research workbench showing a synthetic demonstration project](docs/images/model-forge-overview.jpg)
+
+*Earlier 0.9.3 interface with a synthetic demonstration project. The current source uses a brushed silver frame. The example content illustrates the interface and is not output from a live model run.*
+
 ## Install and use
 
 Use shared **Node.js 22+ with npm** and **Python 3.11+** installations. Run the following commands from the repository root, using `python` for your selected shared Python executable. Install packages user-wide or machine-wide; do not create a project-local environment.
@@ -64,6 +68,10 @@ Run the phases that serve your question, returning to earlier work when needed. 
 | **Phase 3 - Theory** | Examine assumptions, claims, and mathematical arguments. |
 | **Phase 4 - Numerical Eval** | Implement and evaluate methods on synthetic or available real data. |
 | **Phase 5 - Report** | Read, discuss, revise, and export the technical report. |
+
+![Researcher response showing the Lead's recommendation, alternatives, and answer controls](docs/images/model-forge-decisions.jpg)
+
+*Choosing which population a treatment effect should describe. This illustrative selection has not been saved; the researcher can add a note or give a different response. The content is synthetic, not live model output.*
 
 ## Architecture and design
 
