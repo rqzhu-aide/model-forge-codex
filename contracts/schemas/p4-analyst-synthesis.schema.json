@@ -20,7 +20,7 @@
       "const": "empirical_synthesis"
     },
     "question_results": {
-      "description": "Exactly one result for each effective protocol.claim_tests[].test_id, including prospectively added_tests. Use the exact test_id as question_id; do not invent aliases or merge tests into one result. Detailed reasoning may be shared through exact source references.",
+      "description": "Exactly one result for each effective protocol.claim_tests[].test_id, including prospectively added_tests. Use the exact test_id as question_id; do not invent aliases or merge tests into one result. Detailed reasoning may be shared through exact source references. Related results may link the same compact exhibit with complete exact case/metric mappings; no separate table is required for every test.",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -143,7 +143,8 @@
           "relevance_markdown": {
             "type": "string",
             "minLength": 1,
-            "pattern": "\\S"
+            "pattern": "\\S",
+            "description": "Explain how this test's measured quantity answers the scientific question, distinguishing the true target from a surrogate score, bound or numerical reference."
           },
           "answer_markdown": {
             "examples": [
@@ -152,43 +153,43 @@
               "Illustrative partial result: The implementation reproduced the deterministic reference solution to the declared tolerance. Performance and tuning sensitivity were not run within the authorized budget, so implementation agreement provides no evidence of advantage over the baseline.",
               "Illustrative unassessed result: No computation was performed for the heavy-tail setting. Its effect on accuracy and uncertainty coverage remains unknown; the Gaussian comparison cannot answer this question."
             ],
-            "description": "Start with the direct finding for this exact test and regime, including observed magnitude/unit, usable counts, applicable uncertainty and decisive boundary. Follow the supplied scientific-explanation and claims-and-evidence references. Link the compact exhibit as the primary numerical comparison without copying all rows. Preserve attempted/returned denominators, inconclusive or negative evidence, and synthetic/actual-data scope; absent demonstrated benefit or nonsignificance does not establish no benefit or equivalence.",
+            "description": "Start with the direct finding and tested scope for this exact test, including magnitude, units, usable counts and uncertainty when measured and applicable. Follow the supplied scientific-explanation and claims-and-evidence references. Explain the actual target, loss or performance measure and link the compact exhibit without narrating every cell. Give any explanation of a negative result through an established analytical relation or recorded diagnostic when available; otherwise leave its cause unresolved. Other required fields add distinct design, uncertainty or qualification needed for inspection. Preserve attempted/returned denominators, inconclusive or negative evidence and synthetic/actual-data scope; absent demonstrated benefit or nonsignificance does not establish no benefit or equivalence.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"
           },
           "comparison_markdown": {
-            "description": "Explain the recorded comparison and its practical meaning, linking the primary compact table rather than replaying its full rows. Preserve the named alternatives, conditions, units and applicable paired or independent uncertainty. Exact source links do not authorize unmeasured dominance or a newly calculated contrast.",
+            "description": "Explain the recorded contrast and its meaning for the intended benefit, linking the primary compact exhibit rather than replaying its rows or the answer. State comparator information and whether the setting can distinguish the claimed mechanism; coincident procedures support a check, not evidence of no benefit from their difference. Preserve alternatives, compatible targets, units, conditions and uncertainty. A paired selective-output contrast needs saved differences on the same stated subset, its count and uncertainty. Equal counts alone do not establish matched membership; marginal means over different returned subsets imply neither that contrast nor unconditional superiority. Observed comparisons do not establish an untested explanation. Exact links authorize no new contrast.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"
           },
           "conditions_markdown": {
-            "description": "The tested data-generating or analysis conditions and assumptions that bound this answer.",
+            "description": "The tested data-generating and observation conditions and assumptions that bound this answer. State what stays fixed and what changes across settings, with exact protocol references rather than a duplicate setup account.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"
           },
           "design_markdown": {
-            "description": "Explain study settings, comparator fairness, paired or independent repetitions and the planned versus exploratory scope, with exact protocol references.",
+            "description": "Explain what one independent replication contains, comparator fairness, paired or independent repetitions and planned versus exploratory scope, with exact protocol references. Define reported quantities and their averaging subsets where first needed. Primary setup explains data generation, observations, replication, comparators and measures. Code-specific agreement and engineering checks remain in the protocol or implementation reader unless essential to the comparison. Keep engineering pilots and finite code checks distinct from main repeated-simulation evidence unless they are the scientific subject.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"
           },
           "reliability_markdown": {
-            "description": "Explain usable, failed, invalidated and unrun observations and their reasons, and how those omissions affect the conclusion. Keep unsuccessful fits and inconclusive sampled uncertainty visible, including the attempted versus returned denominator.",
+            "description": "Explain usable, failed, invalidated and unrun observations and how they affect the conclusion, retaining attempted/returned denominators. Distinguish completed no-output procedures from execution failures and unstarted work. Conditional returned quality is undefined without output, not zero; do not invent a deployment fallback. Failed or unresolved truth classifications cannot silently count as successful or safe.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"
           },
           "uncertainty_markdown": {
-            "description": "Name the recorded uncertainty measure, its units and usable repetition count; distinguish unavailable uncertainty from zero and explain the resulting inferential limit.",
+            "description": "Name the recorded statistical uncertainty, units, relevant repetition/subset count and interval type, sidedness and confidence level when applicable. Unavailable uncertainty is not zero; an all-attempted event interval is not a conditional-on-selection interval. Keep numerical reference error separate: an enclosure crossing a threshold leaves classification unresolved, and an estimated reference retains statistical uncertainty. Explain unknown classifications' effect on the conclusion without treating them as safe or failed observations.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"
           },
           "limitations_markdown": {
-            "description": "Keep the important scientific caveat beside this answer, including untested regimes and deviations. Reference a detailed existing finding rather than copying it.",
+            "description": "State the scientific uncertainty, untested regimes or deviations that bound the answer, without retelling it. A zero count does not prove impossibility; an ideal analytical screen is not observed power or actual return. Link detailed findings; the answer owns the source-backed explanation of the principal result.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"

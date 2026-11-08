@@ -1,6 +1,8 @@
 # Phase 2: independent method proposals and cross-audit
 
-Contract version: 3.13.2. Catalog: 1.30.2.
+Contract version: 3.13.10. Catalog: 1.31.13.
+
+Scientific accounts use standard statistical and machine-learning terminology for the source-defined target and quantities, preserving their definitions across summaries, comparisons, decisions and displays. The frozen [scientific-explanation reference](../references/research-presentation/scientific-explanation.md) governs this meaning; undefined measures stay unresolved rather than being renamed or calculated for presentation.
 
 ## Scientific purpose
 
@@ -127,6 +129,39 @@ candidate; the analyst's profile quantifies the cost drivers of the
 implementable updates it specified.
 P2 records P3 proof obligations and P4 simulation plans but does not execute them.
 
+Within their existing outputs, proposers and reviewers may use affordable algebra
+or numerical substitution into stated bounds to assess informative regimes.
+Distinguish exact necessary conditions, sufficient conditions, special cases and
+heuristic scaling. A worst-case upper bound is not universal evidence of failure.
+Distinguish the requested objective and constraints, the fitted or optimized
+criterion, any other learning or ranking strategy, the evaluation measure and
+any additional promise. A conservative
+estimator or ranking strategy is not inherently a different scientific objective.
+Explain the consequential cost of an extra promise in assumptions, error
+allocation, computation or selection before treating it as required. An inherited
+promise does not establish researcher preference. Proposers, reviewers and the
+Lead honor explicitly requested stronger guarantees in the original instructions
+or applicable saved answers. Keep horizon, clipping and
+fitted-model approximations explicit. A safety guarantee alone does not establish
+useful reward, and this distinction adds no reward-confidence requirement.
+Repeated catalog work should contribute a justified
+refinement or a materially different approach, rather than rename a construction.
+Calculation-defining changes, including tie handling, use owned method revisions.
+
+The Lead places the decisive feasibility conclusion in the compact overview and
+the supporting comparison, including a concise table where useful, in the existing
+comparison field. Each method account remains independently understandable without
+repeating all shared qualifications. Inquiries follow their scientific dependencies;
+conditional follow-ups are not all prerequisites. A material applicability choice
+can warrant researcher input, while comparing bounds under settled requirements
+is team work. Required information may be recorded or reconstructible from a
+documented design; storage in a particular column is not the scientific premise.
+
+Source-integrity allegations need an executed comparison or system verification
+result with exact structured evidence. An unsupported claim is unverified, not a
+publication-blocking fact. A refuted allegation receives an evidence-backed
+successor disposition in its owning output; original sources and history remain.
+
 A method-proposal record has proposal_id, one complete method.schema.json
 record, data_requirements_markdown, proposed_evaluation_markdown and a
 computational_profile. The profile states the dominant per-iteration cost with
@@ -209,13 +244,25 @@ complete. No fixed word, line or equation count applies. Preserve the original
 mathematics and exact source references; identify missing input facts and
 specifications without inventing assumptions or silently completing missing
 steps.
-The overview leads with the conditional recommendation and its decisive
-limitation, explains consequential differences in what the candidates compute,
-and identifies the next scientific check or genuinely needed researcher choice.
-Show this overview once as a concise conditional comparative conclusion, without
-replaying each candidate account. Preserve consequential differences in scientific
-targets rather than treating all candidates as interchangeable competitors.
-Keep detailed comparison in comparison_markdown. Use human
+The overview directly compares every actual candidate assessed in this run,
+including excluded proposals, rather than describing only the explored or
+recommended method. Start with one short comparative finding or conditional
+recommendation and its decisive limitation, without forcing a winner. Name each
+mathematical or statistical framework and directly contrast its central mechanism
+and target. Choose two or three supported consequential axes that affect scientific
+interpretation or use, such as applicability conditions, inferential support or
+proposed computational demands. State shared conditions once and preserve
+different targets. For the usual three-method comparison, aim for roughly 120-180
+words in one or two short paragraphs or a few compact bullets, expanding for
+necessary scientific conditions. This is a soft guide, with no hard word, line or
+equation cap and no display clipping. Favor compact contrasts and decisive limits;
+do not repeat individual procedures or add proposer-role, phase-routing, workflow
+or permission commentary to the overview. Existing authority constraints still
+apply outside this display prose. Do not invent rankings, target equivalence,
+established results or researcher preferences. Preserve material unknowns and
+distinguish checked algebra, proposed guarantees and demonstrated results. Mention
+a next scientific check or genuinely needed researcher choice only when it helps
+interpret or use the comparison. Keep detailed comparison in comparison_markdown. Use human
 model names and scientific descriptions in the opening prose; keep internal
 record IDs, schema/catalog state and execution language in structured sources.
 An overview citation can use a descriptive Markdown label linked to an exact
@@ -253,17 +300,25 @@ states the exact mathematical change with defined symbols, and states the
 regime or preference under which it beats the proposed form. An option never
 silently edits the proposal's mathematics; the proposal record remains the
 proposer's attributed account. An option needs no answer to be useful; a
-choice that genuinely requires the researcher's preference remains a
-researcher_decision attention item naming the affected method stable IDs.
+consequential unresolved modeling choice remains eligible for a
+researcher_decision attention item naming the affected method stable IDs,
+including when all alternatives fit the broad goal and the team recommends one.
 
 The Lead applies the consequential input rule below before authoring a
 researcher_decision. A mathematical modification option alone requires no answer.
-Preserve an explicit preference within its exact scope; unresolved scientific
-judgment, proof obligations and error correction remain team work. Briefly record
-material Lead-owned choices and reasons in the existing comparative summary.
+Preserve an applicable saved answer within its exact scope. Check instructions,
+literature and affordable analysis before asking; proof obligations, routine
+scientific judgment and unambiguous scientific repairs remain team work.
+Consequential choices among defensible repair directions remain eligible for
+researcher input. Briefly record consequential team choices, their reasons and
+any provisional team directions in the existing
+`catalog_assessment.overview_markdown` and relevant method-specific `rationale`
+fields, without another summary artifact.
 
 Optional attention items record unresolved issues. Their affected_record_ids
 name exact method stable IDs from actual proposals or the frozen method catalog.
+Consolidate them with the appropriate project or model scope and exact references
+to the originating proposals or findings.
 Every researcher_decision names at least one affected method, including decisions
 addressed to P3 or P4. A research_task may use empty scope only when explicitly
 phase-wide. Branch association is never inferred from prose or proposal IDs.
@@ -402,9 +457,40 @@ Use existing assumptions and data-requirement sections to explain target recover
 
 ## Scientific meaning for the intended reader
 
+Also inspect the candidate comparisons, limitations and original goal for a consequential next choice the researcher owns, even when no member proposed it. In P2, this may concern which scientific formulation or materially different accuracy, interpretability or computation tradeoff to pursue. Distinguish that preference from routine candidate ranking or technical work the team can resolve; a saved answer does not revise or select a method automatically.
+
 Apply the [shared question-language guidance](researcher-question-language.md) within this phase's existing output ownership and interaction rules. It refines the existing question, context, option consequences and recommendation; it adds no artifact, questionnaire or question quota.
 
 In P2, explain what each relevant method would estimate, predict or decide and how a consequential choice changes its scientific use. Algorithm design and technical verification within the agreed goal remain team work.
+
+In both proposal routes, every proposer, including the Lead, states the
+consequential commitments of its single candidate, reasonable alternatives and
+their mathematical or practical differences in existing assumptions, limitations
+and data requirements. Distinguish applicable saved answers from provisional
+choices. The Theorist emphasizes state and policy classes, objectives,
+constraints, structural assumptions, identification and guarantee scope. The Data
+Analyst emphasizes structured or flexible representations, data efficiency,
+approximations, interpretability and material computational requirements. Only
+the Lead uses the additional P2 directions. An alternative direction does not
+become another candidate hidden inside the single proposal.
+
+In both review routes, cross-reviewers identify consequential commitments hidden
+by proposal wording and reference the exact affected formulation or algorithm
+step. Compare defensible alternatives fairly in the existing applicability and
+findings fields, with mathematics and supplied-study meaning. Do not invent
+options merely to complete a response format.
+
+In both reconciliation routes, the Lead distinguishes alternatives available in
+retained candidates from proposed future modifications requiring later scientific
+work. A decision may shape one modeling axis without selecting an entire method;
+missing facts or a previously expressed preference are not prerequisites. Merge
+only when one answer settles both concerns under the same target, population,
+time and conditions, preserving theory and computation consequences. Check fixed
+quantities, coupled changes, assumptions and claimed implications before ranking.
+Preserve original proposal ownership and the three-candidate publication boundary;
+presentation repair cannot introduce a fourth candidate. An unanswered or unknown
+response is not consent to a recommendation. Any justified conditional work uses
+an explicit provisional team direction within existing authority.
 
 ## Writing duties in existing outputs
 
@@ -413,9 +499,14 @@ and separate scientific/execution constraints. Proposers explain purpose and
 mechanism in `method.summary`, retain the complete calculation and constraints in
 `mathematical_definition`, and keep cost, memory, scaling and honest unknowns in
 `computational_profile`. Assumptions, limitations and data requirements carry
-consequential premises for Lead consolidation. Review assessments state support
-and consequence, distinguishing an undefined procedure, lost identification,
-lost guarantee and observed failure. The Lead's `overview_markdown`, disposition
+consequential premises for Lead consolidation. Review assessments check fit to the
+current goal as well as correctness of the declared construction. They state
+support and consequence, distinguishing an undefined procedure, lost
+identification, lost guarantee and observed failure. The Lead reuses applicable
+saved answers; an inherited mismatch requires an explicit scientific revision
+through the existing route, not deletion of a theorem clause or silent repair of
+an attributed proposal. Settled preferences stay settled. The Lead's
+`overview_markdown`, disposition
 `method_summary_markdown`, `rationale` and comparison/modification fields give the
 development recommendation and meaningful alternatives with decisive conditions,
 proposer attribution and independent disagreement. Advice does not adopt a target

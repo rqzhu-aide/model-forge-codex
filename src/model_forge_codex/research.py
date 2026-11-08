@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from copy import deepcopy
 from pathlib import Path
 from urllib.parse import quote, urlencode
@@ -10,6 +11,7 @@ from .empirical_context import evaluation_theory_context
 from .empirical_targets import effective_protocol, protocol_questions
 from .records import ArtifactError, committed_packages, current_records, generation_path, read_generation
 from .storage import read_json, sha256_file
+from .report_delivery import COMPANION_FAMILIES, delivery_display, report_delivery_state
 from .research_sources import (evaluated_method_projection, file_media, implementation_projection, literature_reference_links,
                                producing_role, theory_statement_projection, traceability_projection)
 
@@ -120,6 +122,12 @@ def exhibit_source(project_dir: Path, ref: dict, exhibit: dict) -> dict:
         except (OSError, ValueError, TypeError, UnicodeError) as error:
             result["source_error"] = f"The verified table could not be rendered inline: {error}"
     return result
+
+
+def _published_exhibit(project_dir: Path, exhibit: dict, meta: dict) -> dict:
+    authored = {key: value for key, value in exhibit.items() if key not in {
+        "artifact_url", "source_verified", "source_error", "table", "data_sources", "data_source_status"}}
+    return {**authored, **meta, **exhibit_source(project_dir, meta["generation_ref"], exhibit)}
 
 
 def _figure_data_sources(exhibits: list[dict]) -> None:
@@ -697,6 +705,44 @@ def _report_material_projection(project_dir: Path, ref: dict, pointer: dict, bas
     return {**authored_pointer(pointer), **action, **notation}
 
 
+def _analyst_reporting_notes(project_dir: Path, meta: dict) -> dict | None:
+    """Keep separately authored Lead notes with their exact evaluation publication."""
+    ref = meta["generation_ref"]
+    if not ref.get("run_id") or not ref.get("package_id") or producing_role(project_dir, ref) != "data_analyst":
+        return None
+    phase_dir = project_dir / "branches" / ref["branch"] / "phases" / "p4"
+    try:
+        for package in committed_packages(phase_dir):
+            if package.get("package_id") != ref["package_id"] or package.get("run_id") != ref["run_id"]:
+                continue
+            analyst = package["records"].get("analyst_synthesis", {})
+            if (analyst.get("generation_id") != ref.get("generation_id")
+                    or analyst.get("content_sha256") != ref.get("sha256")):
+                return None
+            pointer = package["records"].get("empirical_evidence_index")
+            if not isinstance(pointer, dict):
+                return None
+            note_ref = source_ref(ref["branch"], "P4", "empirical_evidence_index", pointer)
+            if (any(note_ref.get(key) != ref[key] for key in ("run_id", "package_id"))
+                    or producing_role(project_dir, note_ref) != "research_lead"):
+                return None
+            index = read_generation(phase_dir, "empirical_evidence_index", pointer)
+            if (not isinstance(index, dict) or index.get("record_type") != "empirical_evidence_index"
+                    or index.get("phase") != "P4" or index.get("source_run_id") != ref["run_id"]):
+                return None
+            corrections = index.get("reporting_corrections")
+            if not isinstance(corrections, list):
+                return None
+            notes = [{"text": item["correction"],
+                      "generation_ref": {**note_ref, "entry_pointer": f"/reporting_corrections/{position}"}}
+                     for position, item in enumerate(corrections)
+                     if isinstance(item, dict) and isinstance(item.get("correction"), str) and item["correction"].strip()]
+            return {"producer_role": "research_lead", "notes": notes} if notes else None
+    except (ArtifactError, OSError, ValueError):
+        return None
+    return None
+
+
 def _document_projection(project_dir: Path, document, meta: dict) -> dict:
     """Use the same exact paper and source reader for current and saved drafts."""
     kind = meta["family"]
@@ -714,6 +760,12 @@ def _document_projection(project_dir: Path, document, meta: dict) -> dict:
     if meta.get("phase") == "P3" and isinstance(document, dict):
         from .research_sources import scientific_account_sources
         result["inline_sources"] = scientific_account_sources(project_dir, document, meta, result["body_md"])
+    if meta.get("phase") == "P4" and kind == "analyst_synthesis" and isinstance(document, dict):
+        from .research_sources import empirical_account_sources
+        result["inline_sources"] = empirical_account_sources(project_dir, document, meta)
+        notes = _analyst_reporting_notes(project_dir, meta)
+        if notes:
+            result["lead_reporting_notes"] = notes
     if kind in {"manuscript", "manuscript_candidate", "technical_report", "technical_report_candidate"} and isinstance(document, dict):
         from .research_sources import artifact_link, authored_pointer
         ref = meta["generation_ref"]
@@ -753,11 +805,63 @@ def _document_projection(project_dir: Path, document, meta: dict) -> dict:
                 result["context_change_notices"] = context_change_notices(frozen_context, load_problem_context(project_dir), document.get("context_dependencies"))
         except (OSError, ValueError, TypeError):
             pass
+    delivery = report_delivery_state(project_dir, meta.get("generation_ref") or {})
+    if delivery:
+        result["delivery_state"] = delivery
+        if kind in COMPANION_FAMILIES and isinstance(document, dict):
+            result["display_structured"], result["delivery_history"] = delivery_display(document, delivery)
+    return result
+
+
+def _p4_evidence_entry(project_dir, phase_dir, package, document, meta, pointer):
+    """Open one cited passage, resolving its table IDs inside the same publication."""
+    paths = {"analyst_synthesis": "question_results", "theory_audit": "findings", "exhibits": ""}
+    field = paths.get(meta["family"])
+    if meta["phase"] != "P4" or field is None:
+        raise ValueError("This record has no numerical evidence reader.")
+    prefix = f"/{field}/" if field else "/"
+    if not pointer.startswith(prefix) or not re.fullmatch(r"0|[1-9][0-9]{0,8}", pointer[len(prefix):]):
+        raise ValueError("This link does not identify a saved result or finding.")
+    entries = document.get(field) if field and isinstance(document, dict) else document
+    index = int(pointer[len(prefix):])
+    if not isinstance(entries, list) or index >= len(entries) or not isinstance(entries[index], dict):
+        raise ValueError("The linked entry is missing from this publication.")
+    entry = entries[index]
+    result = {**meta, "structured": document, "entry": entry}
+    if meta["family"] == "exhibits":
+        result["exhibit"] = _published_exhibit(project_dir, entry, meta)
+    if meta["family"] == "analyst_synthesis":
+        from .research_sources import empirical_account_sources
+        result["inline_sources"] = empirical_account_sources(project_dir, entry, meta)
+        identifiers = entry.get("exhibit_ids") or []
+        if not isinstance(identifiers, list) or not identifiers:
+            return result
+        exhibit_pointer = package["records"].get("exhibits")
+        exhibits = []
+        if (exhibit_pointer and meta["generation_ref"].get("run_id")
+                and (exhibit_pointer.get("run_id") or exhibit_pointer.get("source_run_id")) == meta["generation_ref"]["run_id"]
+                and exhibit_pointer.get("package_id") == package.get("package_id")):
+            try:
+                exhibits = read_generation(phase_dir, "exhibits", exhibit_pointer)
+            except ArtifactError:
+                pass
+        result["cited_exhibits"] = []
+        for identifier in dict.fromkeys(item for item in identifiers if isinstance(item, str)):
+            matches = [(i, row) for i, row in enumerate(exhibits if isinstance(exhibits, list) else [])
+                       if isinstance(row, dict) and row.get("exhibit_id") == identifier]
+            if len(matches) == 1:
+                position, row = matches[0]
+                reference = source_ref(meta["branch"], "P4", "exhibits", exhibit_pointer)
+                result["cited_exhibits"].append({"title": row.get("title") or "Cited result",
+                                                 "reference": {**reference, "entry_pointer": f"/{position}"}})
+            else:
+                result["cited_exhibits"].append({"title": "Cited result unavailable"})
     return result
 
 
 def scientific_document_view(project_dir: Path, branch: str, phase: str, family: str,
-                             generation_id: str) -> dict | None:
+                             generation_id: str, *, artifact_ref: dict | None = None,
+                             entry_pointer: str | None = None) -> dict | None:
     """Read a named committed generation without substituting the current paper."""
     from .browse import _check_ident
     _check_ident(branch, phase, family, generation_id)
@@ -766,9 +870,51 @@ def scientific_document_view(project_dir: Path, branch: str, phase: str, family:
     for package in committed_packages(phase_dir):
         pointer = package.get("records", {}).get(family)
         if pointer and pointer.get("generation_id") == generation_id:
+            if entry_pointer is not None:
+                # A later publication may retain this generation unchanged.
+                # Its cited tables still belong to the original producing set.
+                if pointer.get("package_id") and pointer["package_id"] != package.get("package_id"):
+                    continue
+                origin_run = pointer.get("run_id") or pointer.get("source_run_id")
+                if not pointer.get("package_id") and origin_run and package.get("run_id") and origin_run != package["run_id"]:
+                    continue
             document = read_generation(phase_dir, family, pointer)
             meta = _record_meta(project_dir, branch, phase, family, pointer)
-            return _document_projection(project_dir, document, meta)
+            if entry_pointer is not None:
+                return _p4_evidence_entry(project_dir, phase_dir, package, document, meta, entry_pointer)
+            result = _document_projection(project_dir, document, meta)
+            if artifact_ref is not None:
+                from .research_sources import artifact_link, authored_pointer, walk_objects
+                from .records import source_artifact_path
+                if phase != "P3" or family not in {"theory_record", "complete_theory", "theory_candidate", "analyst_audit"}:
+                    raise ValueError("This record has no readable auxiliary source")
+                matches = {}
+                for item in walk_objects(document):
+                    digest = item.get("sha256") or item.get("artifact_sha256")
+                    if item.get("uri") == artifact_ref.get("uri") and digest == artifact_ref.get("sha256"):
+                        selected = authored_pointer(item)
+                        matches[(selected.get("path") or selected.get("artifact_path"), digest)] = selected
+                if len(matches) != 1:
+                    raise ValueError("The requested source is not one unambiguous declared artifact")
+                selected = next(iter(matches.values()))
+                action = artifact_link(project_dir, meta["generation_ref"], selected)
+                if (not action.get("source_verified") or action.get("source_kind") != "output"
+                        or action.get("media_type") not in {"text/markdown", "text/plain"}):
+                    raise ValueError("The requested source cannot be verified as readable text")
+                target = source_artifact_path(project_dir, meta["generation_ref"], selected)
+                try:
+                    text = target.read_text(encoding="utf-8")
+                except (OSError, UnicodeError) as exc:
+                    raise ValueError("The requested source could not be read") from exc
+                result.update(title=selected.get("title") or selected.get("label") or target.name,
+                              body_md=text, body=text, source_artifact=selected,
+                              primary_artifact_url=action["artifact_url"], primary_source_verified=True,
+                              primary_artifact_media_type=action["media_type"], primary_artifact_kind="markdown",
+                              generation_ref={**meta["generation_ref"], "artifact_ref": artifact_ref})
+                result.pop("document_error", None)
+                from .research_sources import scientific_account_sources
+                result["inline_sources"] = scientific_account_sources(project_dir, document, meta, text)
+            return result
     return None
 
 
@@ -918,9 +1064,15 @@ def _account_projection(project_dir: Path, document: dict, meta: dict) -> dict:
 
 def _decision_projection(project_dir: Path, document: dict, meta: dict) -> dict:
     outcome = document.get("scientific_outcome") or {}
-    return {**_account_projection(project_dir, document, meta), "outcome": outcome.get("state", ""),
+    result = {**_account_projection(project_dir, document, meta), "outcome": outcome.get("state", ""),
             "conclusion": document.get("current_conclusion") or outcome.get("conclusion", ""),
             "material_disagreement": document.get("material_disagreement", outcome.get("material_disagreement", []))}
+    delivery = report_delivery_state(project_dir, meta.get("generation_ref") or {})
+    if delivery:
+        result.update(delivery_state=delivery, delivery_status=delivery["message"])
+        if "delivery_status" in document:
+            result["authored_delivery_status"] = document["delivery_status"]
+    return result
 
 
 def current_decisions_view(project_dir: Path) -> list[dict]:
@@ -1033,9 +1185,7 @@ def artifacts_view(project_dir: Path, branch: str | None = None, *, _p4_records:
                 elif suffix == "exhibits" and isinstance(doc, list):
                     for exhibit in doc:
                         if isinstance(exhibit, dict):
-                            authored = {key: value for key, value in exhibit.items() if key not in {
-                                "artifact_url", "source_verified", "source_error", "table", "data_sources", "data_source_status"}}
-                            result["exhibits"].append({**authored, **meta, **exhibit_source(project_dir, ref, exhibit)})
+                            result["exhibits"].append(_published_exhibit(project_dir, exhibit, meta))
                 elif suffix in ("diagnostics", "protocol", "case_manifest", "falsification_log") and isinstance(doc, dict):
                     key = {"protocol": "protocols", "case_manifest": "case_manifests", "falsification_log": "falsification_logs"}.get(suffix, suffix)
                     result[key].append({**doc, **meta})
@@ -1086,7 +1236,8 @@ def artifacts_view(project_dir: Path, branch: str | None = None, *, _p4_records:
                     answer = answers.get(question["question_id"])
                     if answer:
                         question["result"] = {**answer, "generation_ref": analyst_meta.get("generation_ref")}
-                        if isinstance(_primary_document_pointer(analyst), dict):
+                        if (isinstance(_primary_document_pointer(analyst), dict)
+                                or analyst.get("summary_markdown") or analyst.get("experimental_setting_markdown")):
                             question["result"]["has_full_analyst_account"] = True
                         question.update(conclusion=answer.get("answer_markdown", ""), status=answer.get("outcome"),
                                         category=answer.get("category"), title=answer.get("title") or question["title"])

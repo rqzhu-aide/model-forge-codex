@@ -1,5 +1,345 @@
 # Catalog adoption
 
+## Catalog 1.31.13: table rows show the scientific comparison
+
+P4 advances to 3.6.12 and P5 to 3.5.12. Before choosing table columns, authors
+decide what the rows compare. Fixed design descriptors appear once in the caption
+or labeled panel heading for their applicable rows; varying methods, conditions
+and contrast identifiers stay beside those rows. Constant observed outcomes,
+including zeroes, remain results, with the denominators, uncertainty and undefined
+cells needed to interpret them. Complete source data and mappings stay available.
+
+The P4 Analyst plans this distinction with the comparison and creates the display
+before completion. The Lead checks retained displays during synthesis and evidence
+selection without replacing numerical evidence or reopening a completed Analyst
+stage. P5 assembly and revision Leads apply the same distinction within existing
+exact-source authority, and existing reviewers check it in their owned findings.
+The former broad permission to omit invariant or undefined results as redundant
+is replaced by this distinction between design and outcomes.
+
+Existing frozen-reference delivery already reaches both P4 scopes and P5 assembly;
+P5 revision receives the neutral reference through its immutable review packet.
+No stage, output, schema field, calculation authority, pause rule or application
+version changes. Install or restart from the updated application source/package,
+then explicitly adopt this catalog for an existing project's future runs. Existing
+pins, frozen runs and packets, published research and saved answers are unchanged.
+Deterministic delivery checks and bounded paired authoring probes have separate
+scope and limits; this update does not establish general model improvement.
+
+## Catalog 1.31.12: Lead notices consequential next choices
+
+P1 advances to 3.9.7, P2 to 3.13.10, P3 to 2.13.9, P4 to 3.6.11 and P5
+to 3.5.11. The designated Lead also inspects current findings and limitations
+for a consequential next choice owned by the researcher, rather than depending
+on a specialist to propose it. Phase-specific instructions connect that check
+to problem scope, formulation, theory, numerical development or indispensable
+report-specific editorial input. Options use plain contextual labels and explain
+what each direction changes or helps the researcher learn, its practical
+implications and decisive uncertainty.
+
+Existing eligibility, phase ownership, saved-answer scope, optional invitations
+and actual pause authority remain unchanged. Zero questions is valid. Missing
+analysis and routine next tasks remain team work; the Lead does not manufacture
+alternatives, reopen settled preferences or turn a P5 scientific limitation into
+editorial elicitation. No new stages, outputs, schemas or application version
+are introduced. Explicit catalog adoption affects future runs; existing pins,
+frozen instructions, published results and saved answers are not rewritten.
+Deterministic contract checks and a bounded paired same-input writing probe have
+separate scope and limits.
+
+## Catalog 1.31.11: explicit attempted-trial metric populations
+
+P4 advances to 3.6.10. The optional executable metric field
+`summary.population` selects `completed` (the existing default) or `attempted`.
+Attempted summaries include eligible completed and failed computations, exclude
+unstarted and invalidated rows, and require a recorded value for every attempt.
+A known no-issuance indicator can be recorded on a failed computation; unknown
+risk, reward or coverage is never filled with zero. If any attempted outcome is
+unknown, the standard estimate, MCSE and dispersion remain unavailable, while
+`n_replicates` reports the attempted count. Custom bounds retain their separate
+construction and are not independently certified by the standard arithmetic check.
+
+The same declared population supplies headline arithmetic, seed diagnostics and
+the binary MCSE convention check. Completed-only and conditional-on-observed
+metrics retain their prior behavior. No row status, stage, pause rule or calculation
+authority changes. Explicit catalog adoption applies to future runs; archived
+catalogs, existing pins, frozen protocols, published results and saved answers are
+not rewritten. Deterministic mixed/all-failed/unknown fixtures and replay of saved
+all-completed rows establish arithmetic compatibility, not general model behavior.
+
+## Catalog 1.31.10: concise Phase 5 papers with interpretable evidence
+
+P5 advances to 3.5.10. Assembly and revision Leads plan a concise methodological
+paper, ordinarily under about ten main-text manuscript pages with references and
+supplements separate. The main theorem appears once with essential assumptions,
+remaining sampling randomness, interpretation and a direct proof link. Substantial
+proof reasoning, extended results and detailed source correspondence stay available
+separately. The reading budget is an editorial guide, not a hard cap or a new PDF
+requirement.
+
+When the science fits, three informative main tables organize absolute outcomes,
+paired differences and calibration or constraint violations. Counts distinguish
+observations per dataset, independent datasets and selected subsets. Calibration
+explains joint versus conditional frequencies and whether a violation is possible
+under the supplied generator; a structurally nonviolating case cannot test behavior
+with unsafe outputs. Retained intervals and distinct abstention mechanisms stay
+visible, without new calculations or a universal table count. Existing reviewers
+check these duties within their current responsibilities.
+
+No stages, outputs, schemas, scientific claims, calculation authority, pause rules
+or application version change. Explicit adoption applies to future runs. Existing
+project pins, frozen runs, published studies, results and saved answers are not
+rewritten. Deterministic checks and a bounded paired writing probe have separate
+scope and limits.
+
+## Catalog 1.31.9: self-contained Phase 5 comparisons
+
+P5 advances to 3.5.9. Assembly and revision Leads give the opening's principal
+supported magnitude with its setting, uncertainty and denominator. Numerical
+comparisons explain independent units, material settings and selection subsets.
+Repeated counts distinguish source-supported equivalence from observed agreement;
+compact tables can omit undefined or redundant entries with an explanation and a
+link to retained values, while material failure and abstention counts stay visible.
+
+Conditions remain attached to the individual or pooled object they govern.
+Main-text notation translations and direct formula links preserve the exact
+mathematical statements. Scientific prose explains the finding rather than internal
+reporting or review history. Existing reviewers check these duties within their
+current responsibilities.
+
+No stage, output, schema field, calculation authority, scientific claim, pause rule
+or application version changes. Explicit project adoption affects future runs;
+existing pins, frozen runs, published reports and saved answers are not rewritten.
+A bounded paired writing probe and deterministic contract checks have separate
+evidence and limits; this catalog update alone does not establish general model
+improvement.
+
+## Catalog 1.31.8: concise mathematical table headings
+
+Quantitative table headings prefer established mathematical notation when it makes
+the recorded quantity clear. Captions and adjacent prose retain full measure names,
+local symbol definitions, averaging subsets, units and uncertainty. Standard
+deviation, standard error and Monte Carlo standard error remain distinct. Scenario
+and method labels stay descriptive. No table values, source keys, notation records,
+schema fields or rendering behavior change. Existing projects and published results
+are not rewritten; adoption applies to future runs.
+
+## Catalog 1.31.7: focused research accounts and role-specific context
+
+P2 distinguishes the requested objective, an estimation or optimization strategy,
+and an additional guarantee. P3 preserves the current assessment status and the
+exact probability statement and premises. P4 assigns prospective comparison
+design, compact display files and final reproduction instructions to the Analyst;
+the Lead reads actual retained tables and selects existing evidence without
+inventing a return to a completed Analyst stage. Source definitions, uncertainty,
+selection populations, undefined outcomes and material disagreement stay intact.
+
+The `research_account_focus_v1` capability gates shorter targeted-discussion
+guidance across phases and role-specific P4 control instructions. Reviewers retain
+their exact-source, timing, budget, checkpoint and decision-request duties without
+the Analyst's batch-submission tutorial. Existing source-delivery rules remain
+unchanged; no speculative deduplication is added. Full selected definitions,
+schemas, addressed accounts, frozen notation and saved-answer applicability remain.
+
+No stage, scientific output, schema field, question quota, pause authority or
+application version changes. Explicit project adoption affects future runs only.
+Existing project catalogs, saved answers, frozen runs and published scientific
+results are not migrated or rewritten. Behavioral verification and its limits are
+reported separately; a catalog update is not evidence that model outputs improve.
+
+## Catalog 1.31.6: source-defined statistical quantities across phases
+
+P1-P5 author and review instructions identify the actual estimand, objective,
+constraint, performance measure or measured resource behind each scientific
+account. Summaries, consequential choices, table headings, figure axes/captions
+and the report preserve the source definition, scale and averaging population.
+The P4 Analyst carries protocol measure definitions into its result and exhibit
+fields; the Lead retains those meanings in selected conclusions. An undefined
+score does not become mean squared error, regret, coverage or another familiar
+metric through presentation. Missing definitions remain explicit. No metric,
+calculation, stage, output, field, pause permission or application version is added.
+
+Explicit project adoption affects future runs and archives the prior catalog.
+Frozen runs, retained evidence, published accounts and saved researcher choices
+keep their producing versions. Existing projects are not silently upgraded.
+This instruction change alone does not establish improved model behavior.
+
+## Catalog 1.31.5: a procedure and evidence account for the report reader
+
+P5 advances to 3.5.5. Assembly and revision Leads explain the method in execution
+order before optimizer recipes, preserving the defining formulation and its
+conditions. The empirical account states what the tested design can distinguish,
+whether cases approach a relevant decision threshold and which attempted,
+issued or paired subset each measure describes. It keeps per-output targets
+distinct from across-dataset error probabilities, identifies synthetic
+implementation restrictions and preserves untested comparisons without inventing
+new numerical evidence. The existing reviewers examine these distinctions.
+
+Reader labels distinguish workflow phases from proof statements and keep durable
+cross-references. Shareable authored materials separate necessary scientific
+decisions and values from private saved notes and machine-specific paths, while
+private originals and hashes remain retained. This instruction change alone does
+not make an export shareable or establish improved model writing.
+
+No stage, output, schema field, scientific or computation authority, pause rule
+or application version changes. Explicit project adoption affects future runs
+and archives the prior catalog. It does not rewrite frozen run catalogs,
+published reports, upstream evidence, saved answers or private source records.
+
+## Catalog 1.31.4: a connected numerical experiments account
+
+P4 advances to 3.6.6. The Analyst explains independent replication, fixed and
+varied conditions, comparator information and the subsets behind reported
+measures in existing protocol and result accounts. It produces compact primary
+displays from saved rows before Lead selection, separating engineering pilots
+and finite checks from the principal repeated-simulation evidence. The Theorist
+identifies the claim or comparison affected by each qualification, preserving
+its premise and evidence boundary.
+
+The Lead writes a compact numerical experiments section using existing fields:
+design and measures before results, each comparison beside its exhibit and
+distinct interpretation. Summary selects the principal finding, including a
+tested failure or no-useful-output condition when it changes the practical
+assessment, and the decisive scope limit. The principal result account owns
+any source-backed explanation of a negative finding; limitations state evidence
+or claim boundaries. Each topic lists all interpreted exhibits in existing
+`exhibit_ids`, including shared ones; the first declaring coverage entry owns
+the display and later entries show links. Per-test reviews retain every
+assessment and unique qualification without repeating the primary section.
+Existing scientific-explanation, summary and tables-and-figures references
+clarify this composition. Matched
+Analyst and Lead schema descriptions change without structural requirements.
+
+Other phase objectives, output identities and counts, calculation ownership,
+source and notation authority, execution and researcher-input rules are unchanged.
+Explicit project adoption affects future runs; it does not rewrite frozen
+catalogs, published evidence or saved answers. These instruction changes alone
+do not establish improved model writing or scientific validity.
+
+## Catalog 1.31.3: numerical evidence that answers the research question
+
+P4 advances to 3.6.5. The Analyst plans the informative comparison and its
+display in existing protocol fields, distinguishes the scientific target from
+a score, certificate or reference, and gives each result field a distinct role.
+Conditional guidance for constrained or selective methods separates return,
+constraint behavior and objective quality, compatible paired subsets, unresolved
+truth classifications and numerical versus statistical uncertainty. The existing
+Theorist audit checks those interpretations within its saved evidence.
+
+The Lead's `scientific_outcome.conclusion` owns the first visible Summary
+finding; `decision_summary.conclusion_markdown` adds interpretation. Topical
+accounts select supported comparisons and shared exhibits without repeating
+every exact test answer. The existing tables-and-figures reference gains the
+conditional display pattern for all its already eligible recipients. Progressive
+protocol, Analyst/Lead synthesis and implementation-account descriptions clarify
+these existing duties without changing fields or structural requirements.
+
+Other phase contracts, application 0.9.4, output counts and identities, notation
+and source authority, numerical ownership, pause semantics and UI behavior are
+unchanged. There is no new metric, exhibit or experiment quota. Explicit adoption
+affects future runs only; historical catalogs, published evidence and saved
+answers remain unchanged. Deterministic delivery checks do not establish improved
+model behavior or scientific validity.
+
+## Catalog 1.31.2: readable Phase 3 scientific accounts
+
+P3 advances to 2.13.5. The Lead's existing decision fields now divide one
+visible overview: the headline and `current_conclusion` state the result for
+the research goal with its decisive relation and conditions, while contribution,
+uncertainty, risk and next-step fields each add their own point. The next step
+names one bounded question, the gap it resolves and why it comes first, and
+`available_actions` and any owning task agree with it. New evidence for an
+existing question is explained at that question's owner instead of creating an
+overlapping question. The manuscript opens with the scientific account; the
+phase summary records the run's outcome and audit effect; the compact theory
+keeps standalone technical context for later work instead of a page target.
+Material corrections and comparison qualifications are retained. Theorist and
+Analyst duties open with the result or examination outcome, explain mechanism
+and checks without repeating the common method account, and state any condition
+under which the procedure cannot give an informative result.
+
+`theory-record.schema.json` adds an optional nonblank assumption `label`; the
+Lead keeps authored labels unchanged. The P3 descriptions in
+`compact-view.schema.json` and `t2s-summary.schema.json` change; their P1, P5 and
+generic meanings are unchanged. Other phase contract versions, output shapes,
+scientific authority, conservative assessment rules and UI state logic are
+unchanged. Explicit adoption applies these instructions to future runs. It does
+not rewrite existing theory records, labels, questions, saved answers or frozen
+producing catalogs.
+
+## Catalog 1.31.1: informative Phase 2 comparisons
+
+P2 advances to 3.13.6. Existing proposer, specialist review and Lead synthesis
+objectives distinguish the scientific target from the quantity actually ranked,
+permit bounded analytical feasibility checks and separate necessary conditions,
+sufficient bounds and heuristic scaling. The Lead presents decisive information
+requirements concisely, sequences conditional modeling inquiries and distinguishes
+known or reconstructible information from its storage format. Source-integrity
+allegations require executed or system-produced evidence. Method refinements keep
+their existing identity/version rules, and factual corrections retain history.
+
+Other phase contracts, output shapes, scientific authority and UI state logic are
+unchanged. Explicit adoption applies the instructions to future runs. It does not
+rewrite existing methods, questions, saved answers or frozen producing catalogs.
+
+## Catalog 1.31.0: consequential modeling choices
+
+The team invites input on consequential modeling alternatives even when all
+alternatives fit the original goal, study facts are complete and the Lead can
+recommend one. Phase-specific instructions distinguish meaningful formulation,
+assumption, applicability and computational tradeoffs from routine team work.
+The shared inquiry reference asks the Lead to compare the mathematics and
+scientific meaning fairly, retain decisive consequences when merging questions,
+and avoid treating an unknown response as consent. P3 assumption adoption does
+not verify truth or proof validity; P4 ambiguous specifications and substantial
+approximations can require direction through existing routes. P5 direct inquiries
+remain editorial, with scientific changes routed upstream.
+
+P1 advances to 3.9.3, P2 to 3.13.5, P3 to 2.13.4, P4 to 3.6.4 and P5 to
+3.5.4. Output shapes, choice IDs, state-derived optionality, pause authority and
+the existing reading ceilings remain unchanged. Explicit adoption applies the
+catalog to future work; it does not regenerate historical questions, alter saved
+answers or migrate existing project catalogs automatically.
+
+## Catalog 1.30.4: coherent researcher inquiries
+
+The existing inquiry reference and P1-P5 Lead instructions make `context_markdown`
+and `likely_consequence` one connected account of the exact choice or missing
+fact, its necessary mathematical and domain meaning, practical effect and
+decisive uncertainty. P1 proposal fields use the same division without repeating
+the account in another rationale field. Choice options explain their own
+distinguishing change and consequential tradeoff. A justified suggestion stays
+first, with its stable `recommended_option_id` and short reason for display beside
+that option; an unjustified ranking remains absent. Existing reading ceilings,
+output fields, scientific ownership, editorial limits and pause authority stay
+unchanged. Study facts keep free-text and unknown responses without invented
+options, and advice never selects or saves a researcher answer.
+
+P1 advances to 3.9.2, P2 to 3.13.4, P3 to 2.13.3, P4 to 3.6.3 and P5 to
+3.5.3. Explicit adoption applies these instructions only to future work. Existing
+project catalogs, frozen briefs, published option order and IDs, saved answers
+and scientific history retain their producing versions.
+
+## Catalog 1.30.3: compare all proposed methods
+
+P2 contract 3.13.3 makes the existing `overview_markdown` a concise comparison
+of every candidate assessed in its run, including excluded proposals. It names
+the actual frameworks, contrasts mechanisms and targets, and uses consequential
+conditions, inferential support or proposed computational demands where the
+sources support them. A conditional recommendation keeps its decisive limitation
+beside it. The usual three-method account aims for roughly 120-180 words in one
+or two short paragraphs or a few compact bullets, expanding for necessary
+scientific conditions. Shared conditions appear once; procedural recap and
+proposer-role, phase-routing or permission commentary stay outside the overview.
+This is a soft guide, without a hard cap, display clipping or invented ranking,
+target equivalence, result or researcher preference. Detailed reasoning remains
+in `comparison_markdown`; output shapes, canonical definitions, role ownership
+and scientific authority are unchanged. Other phase contract versions stay fixed.
+
+Explicit adoption applies these instructions only to future work. Existing
+project catalogs, frozen run briefs, published comparisons and saved scientific
+records retain their producing versions and are not rewritten by this patch.
+
 ## Catalog 1.30.2: grouped scientific comparisons
 
 The existing table reference now selects columns by the scientific comparison

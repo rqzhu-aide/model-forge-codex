@@ -1,5 +1,5 @@
 import React, { useId } from "react";
-import { humanLabel } from "../research";
+import { humanLabel, phaseLabel } from "../research";
 import { latestScientificAttempt } from "../phaseUiState";
 import { ActionButton } from "./Visuals";
 
@@ -25,7 +25,7 @@ export default function ResearchProgress({ runs = [], run: suppliedRun, phase, b
   const state = run?.state || (correctionCount ? "awaiting_user" : "unavailable");
   const label = ({ published: "Complete", assessed: "Complete", requested: "Queued", running: "Running", correcting: "Running", validating: "Running", stopping: "Stopping", awaiting_user: "Needs input", failed: "Failed", cancelled: "Stopped", unavailable: "Status unavailable" })[state] || humanLabel(state);
   return <details className="research-progress-strip" data-card-role="progress" data-work-state={state} data-reading-anchor="work-activity" open={expanded}>
-    <summary aria-label={`${phase} latest update: ${label}. Activity details`}><span className="work-state-marker" aria-hidden="true" /><span className="research-progress-status" role="status" aria-atomic="true">{label}</span><span className="activity-label">Activity</span></summary>
+    <summary aria-label={`${phaseLabel(phase || run?.phase) || "Research"} latest update: ${label}. Activity details`}><span className="work-state-marker" aria-hidden="true" /><span className="research-progress-status" role="status" aria-atomic="true">{label}</span><span className="activity-label">Activity</span></summary>
     <div className="research-activity-body" aria-labelledby={`${id}-heading`}>
     <div className="section-heading"><h2 id={`${id}-heading`}>Activity details</h2>{run && onOpenRun && <ActionButton action="details" variant="link" data-run-origin={`ResearchProgress:1:${run.run_id}`} onClick={(event) => onOpenRun(run.run_id, event.currentTarget)}>{stoppedRepair ? "Review findings and correction" : "Open run history"}</ActionButton>}</div>
     {run && <p className="note">{setupAttention ? "Experiment setup needs attention" : workLabel(run.state)}{hasRetained && run.state !== "published" ? ". Retained results remain available." : "."}</p>}

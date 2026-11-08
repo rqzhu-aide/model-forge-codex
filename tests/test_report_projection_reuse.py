@@ -160,6 +160,59 @@ def test_material_digest_tree_is_scanned_once_per_exact_source(tmp_path, monkeyp
     assert counts["owners"] == 2
 
 
+@pytest.mark.parametrize("pointers", ["valid", "invalid_first", "all_invalid"])
+def test_material_notation_resolves_each_exact_source_until_one_pointer_is_valid(tmp_path, monkeypatch, pointers):
+    materials, rows, document, _ = notation_case(tmp_path, monkeypatch)
+    refs = document["claims"][0]["source_refs"]
+    if pointers == "invalid_first":
+        refs.insert(0, {**refs[0], "pointer": "/missing"})
+    elif pointers == "all_invalid":
+        for ref in refs[:2]:
+            ref["pointer"] = "/missing"
+    basis = reports.report_projection_basis({"records": rows})
+    calls = []
+    resolve = reports.resolve_report_source
+
+    def checked(reference, saved):
+        calls.append(deepcopy(reference))
+        return resolve(reference, saved)
+
+    monkeypatch.setattr(reports, "resolve_report_source", checked)
+    for material in materials:
+        result = reports.report_material_notation_source(tmp_path, document, material, basis)
+        if pointers == "all_invalid":
+            assert result is None
+        else:
+            assert result["notation_source_ref"]["family"] == "first"
+    assert len(calls) == len(materials) * (2 if pointers == "valid" else 3)
+
+
+@pytest.mark.parametrize("change", ["duplicate", "missing", "wrong_digest", "wrong_history"])
+def test_notation_source_reuse_rechecks_basis_membership_on_the_next_material(tmp_path, monkeypatch, change):
+    materials, rows, document, _ = notation_case(tmp_path, monkeypatch)
+    basis = reports.report_projection_basis({"records": rows})
+    assert reports.report_material_notation_source(tmp_path, document, materials[0], basis)
+    if change == "duplicate":
+        basis["records"].append(deepcopy(rows[0]))
+    elif change == "missing":
+        basis["records"] = rows[1:]
+    elif change == "wrong_digest":
+        rows[0]["content_sha256"] = "f" * 64
+    else:
+        rows[0]["generation_id"] = "generation.different"
+    assert reports.report_material_notation_source(tmp_path, document, materials[1], basis) is None
+
+
+@pytest.mark.parametrize("last_pointer_valid", [False, True])
+def test_interleaved_refs_with_identical_notation_keep_the_last_valid_owner(tmp_path, monkeypatch, last_pointer_valid):
+    materials, rows, document, _ = notation_case(tmp_path, monkeypatch, same_snapshot=True)
+    refs = document["claims"][0]["source_refs"]
+    refs[:] = [refs[0], refs[2], refs[3], {**refs[1], "pointer": "/proofs" if last_pointer_valid else "/missing"}]
+    basis = reports.report_projection_basis({"records": rows})
+    result = reports.report_material_notation_source(tmp_path, document, materials[0], basis)
+    assert result["notation_source_ref"]["family"] == ("first" if last_pointer_valid else "second")
+
+
 def test_complete_document_projection_is_identical_with_or_without_reuse(report_case, monkeypatch):
     report, basis, roots, add_frozen = report_case
     numerical(report, basis, add_frozen)

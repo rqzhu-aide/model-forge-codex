@@ -41,7 +41,7 @@
         },
         "correspondence": {
           "$ref": "#/$defs/account",
-          "description": "Relevant algorithm steps or equations and exact retained code/configuration pointers, or an explicit account of unavailable correspondence."
+          "description": "Relevant algorithm steps or equations and exact retained code/configuration pointers, naming the execution properties actually checked and any unavailable correspondence. Preserve the distinction between a checked implementation property and an exact execution guarantee."
         },
         "environment": {
           "$ref": "#/$defs/account",
@@ -49,7 +49,7 @@
         },
         "verification": {
           "$ref": "#/$defs/account",
-          "description": "Checks actually performed and their retained support; state when a check could not run."
+          "description": "Checks actually performed, their scope and retained support; state unavailable or unassessed checks and their limits. Finite tests or higher precision do not establish a universal exact execution guarantee."
         },
         "limitations": {
           "$ref": "#/$defs/account",
@@ -138,7 +138,7 @@
           "type": "string",
           "minLength": 1,
           "pattern": "\\S",
-          "description": "Ordinary command and input/output contract, including seed behavior. No harness paths, provider account or required MODEL_FORGE_* variables."
+          "description": "Ordinary command and input/output contract using the final declared filenames, including seed behavior. Distinguish example execution from retained-table regeneration and simulation reruns, naming required inputs and unavailable tasks honestly. Do not claim an unexecuted command was checked. No harness paths, provider account or required MODEL_FORGE_* variables."
         },
         "support_files": {
           "type": "array",
@@ -188,7 +188,7 @@
           }
         }
       ],
-      "description": "Portable model code and synthetic example. An unavailable bundle uses null for missing files and explains what is unavailable in the existing implementation account; it is never evidence of successful execution."
+      "description": "Portable model code and synthetic example reconciled against the final declared source files. Check README filenames, commands, inputs and dependencies against that inventory. Distinguish the standalone example, regeneration of retained tables from saved rows and rerunning simulations, with the files and inputs each needs or an explicit limitation. An unavailable bundle uses null for missing files and explains the limitation in the existing account; neither prose nor a declared command proves successful execution."
     }
   },
   "$defs": {

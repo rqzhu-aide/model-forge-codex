@@ -273,6 +273,25 @@ def test_lead_cannot_silently_strengthen_an_assumption(catalog):
     assert "theory.unaudited_math_change" in codes(catalog, "P3", outputs)
 
 
+def test_theory_assumption_accepts_an_optional_scientific_label(catalog):
+    theory = read("examples/theory-record.example.json")
+    assert all("label" not in assumption for assumption in theory["assumptions"])
+    # Historical unlabeled assumptions remain valid in both theory outputs.
+    for output in ("p3.theory_candidate", "p3.complete_theory"):
+        assert not catalog.validate_output(output, theory)
+    labeled = copy.deepcopy(theory)
+    labeled["assumptions"][0]["label"] = "Common outcome law"
+    for output in ("p3.theory_candidate", "p3.complete_theory"):
+        assert not catalog.validate_output(output, labeled)
+    # The label is additive: exact text, scope and status are unchanged.
+    for key in ("assumption_id", "text", "scope", "status", "used_by_statement_ids", "sensitivity"):
+        assert labeled["assumptions"][0][key] == theory["assumptions"][0][key]
+    for blank in ("", "   "):
+        invalid = copy.deepcopy(theory)
+        invalid["assumptions"][0]["label"] = blank
+        assert catalog.validate_output("p3.theory_candidate", invalid)
+
+
 def empirical_outputs():
     protocol = {"cases": [{"case_id": "case.small", "label": "Small feasibility screen", "test_ids": ["test.feasibility"], "metric_ids": ["metric.error"], "comparator_id": "selected_method", "regime": "small", "replicates": [{"replicate_id": "r1", "seed": 1}, {"replicate_id": "r2", "seed": 2}]}],
                 "claim_tests": [{"test_id": "test.feasibility"}], "baselines": [],

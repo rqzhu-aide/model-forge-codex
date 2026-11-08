@@ -48,7 +48,7 @@ async def test_pending_question_is_readable_without_model_call_and_retry_is_idem
     try:
         # A fresh app has no in-memory knowledge of the accepted submission.
         restored = create_app(data_root=eng.data_root, bridge=eng.bridge)
-        async with AsyncClient(transport=ASGITransport(app=restored), base_url="http://test") as reloaded:
+        async with AsyncClient(transport=ASGITransport(app=restored), base_url="http://localhost") as reloaded:
             saved = (await reloaded.get(f"{BASE}/assessments?branch={branch}")).json()["assessments"]
         assert len(saved) == 1 and saved[0]["assessment_id"] == run["assessment_id"]
         assert saved[0]["assessment_purpose"] == "explanation"

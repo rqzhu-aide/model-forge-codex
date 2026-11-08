@@ -154,7 +154,7 @@
     },
     "proposed_questions": {
       "type": "array",
-      "description": "Propose only an unavailable study fact or unresolved researcher preference whose answer materially changes interpretation, inferential validity, data applicability or a meaningful resource compromise and cannot be established from supplied material. Mathematical alternatives alone are insufficient. Keep the exact premise, answer effect and sources concise for Lead consolidation. An empty array is valid. State the scientific meaning in the supplied setting and whether the invitation is optional for current work; match demonstrated expertise without assuming knowledge from a field label.",
+      "description": "Follow the supplied frozen user-inquiry reference for consequential filtering, fair comparisons and concise requests. Propose consequential modeling choices revealed by the literature, even when alternatives fit the original goal and all study facts are known. After available analysis, explain defensible alternatives that change formulation, assumptions, information, scientific use or a material practical tradeoff. Different method names alone are insufficient. Request unavailable study facts separately. Keep one connected account of the exact premise, mathematical and scientific meaning, answer effect and decisive uncertainty for Lead consolidation, with exact sources. An empty array is valid. Describe unbuilt method consequences as literature-supported directions, not established performance. State what work can proceed; run/request state determines optionality. Match demonstrated expertise without assuming knowledge from a field label.",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -174,7 +174,7 @@
             "type": "string",
             "minLength": 1,
             "pattern": "\\S",
-            "description": "Exact affected point or missing fact with sufficient formulation to understand the question when mathematics distinguishes the choices, locally defined symbols and any shared objective once, and honest information limits. Make mathematically distinct alternatives explicit for Lead consolidation. Plain study facts need no artificial equation. Do not repeat the answer effect. Explain what the quantities or assumption mean for the population, measurements and intended use. Keep review history and internal identifiers in source fields. Unknown facts remain unknown; an illustrative example is not study evidence."
+            "description": "Begins the connected inquiry account with the exact scientific choice or missing fact, necessary mathematical and domain meaning, locally defined symbols and any shared objective once. answer_consequences_markdown completes its practical effect and decisive uncertainty without restarting the explanation. Give sufficient formulation when mathematics distinguishes the choices and make those alternatives explicit for Lead consolidation. Plain study facts need no artificial equation. Explain what the quantities or assumption mean for the population, measurements and intended use. Keep review history and internal identifiers in source fields. Unknown facts remain unknown; an illustrative example is not study evidence."
           },
           "why_it_matters_markdown": {
             "type": "string",
@@ -186,7 +186,7 @@
             "type": "string",
             "minLength": 1,
             "pattern": "\\S",
-            "description": "What the answer changes in intended use, validity, applicability or resources, or what can proceed while a study fact stays unknown. Keep distinct target revisions and identification limits explicit; unknown is legitimate and a proposed direction is not a saved preference."
+            "description": "Completes the connected account begun in context_markdown: what the answer changes in intended use, validity, applicability or resources, or what can proceed while a study fact stays unknown. State the decisive uncertainty once without repeating context or adding another rationale field. Keep distinct target revisions and identification limits explicit; unknown is legitimate and a proposed direction is not a saved preference."
           },
           "source_refs": {
             "type": "array",

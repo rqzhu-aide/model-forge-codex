@@ -19,12 +19,17 @@ export function phaseInputDestination(root, anchor) {
   return matches.length === 1 ? matches[0] : null;
 }
 
-function openDestination(root, target) {
+function openDestination(root, target, openedForVisit) {
   const path = [];
   for (let parent = target; parent && parent !== root; parent = parent.parentElement) {
     if (parent.tagName === "DETAILS") path.unshift(parent);
   }
-  for (const disclosure of path) disclosure.open = true;
+  for (const disclosure of path) {
+    if (!disclosure.open) {
+      openedForVisit.add(disclosure);
+      disclosure.open = true;
+    }
+  }
 }
 
 function destinationFocus(target) {
@@ -68,6 +73,7 @@ export function navigatePhaseInput({ root, origin, anchor, scope, currentScope =
   if (!target || !origin || !root.contains(origin)) { onUnavailable?.(unavailable); return null; }
 
   const position = captureReadingPosition(root);
+  const openedForVisit = new Set();
   const originKey = origin.getAttribute("data-phase-input-origin");
   const originRow = origin.closest(".input-summary-row")?.getAttribute("data-reading-anchor");
   let state = "pending"; let frame; let emphasisTimer; let cancelRestore;
@@ -84,6 +90,11 @@ export function navigatePhaseInput({ root, origin, anchor, scope, currentScope =
       if (state === "disposed" || state === "returning") return false;
       if (!inScope()) { dispose(); onUnavailable?.(unavailable); return false; }
       state = "returning"; cancelAnimationFrame(frame); clearEmphasis();
+      // A long answer above the rerun card can move the invoking button a full
+      // screen away. Put back only the disclosures this visit opened.
+      for (const disclosure of openedForVisit) {
+        if (root.contains(disclosure)) disclosure.open = false;
+      }
       cancelRestore = restoreReadingPosition(root, position, false, () => {
         if (state !== "returning" || !inScope()) return;
         const control = originControl(root, origin, originKey, originRow);
@@ -96,12 +107,12 @@ export function navigatePhaseInput({ root, origin, anchor, scope, currentScope =
     dispose,
   };
 
-  openDestination(root, target);
+  openDestination(root, target, openedForVisit);
   frame = requestAnimationFrame(() => {
     if (state !== "pending") return;
     const current = inScope() && phaseInputDestination(root, anchor);
     if (!current) { dispose(); onUnavailable?.(unavailable); return; }
-    openDestination(root, current);
+    openDestination(root, current, openedForVisit);
     if (!isVisibleElement(current)) { dispose(); onUnavailable?.(unavailable); return; }
     session.target = current;
     const focusTarget = destinationFocus(current);

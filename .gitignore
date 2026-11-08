@@ -35,6 +35,7 @@ shim.env
 /exports/
 /output/
 /.impeccable/
+/.archify/
 /architecture/evidence/
 /architecture/plans/
 /architecture/mocks/

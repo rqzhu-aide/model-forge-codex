@@ -6,6 +6,7 @@ It never certifies a proof or the adequacy of a numerical investigation.
 from __future__ import annotations
 
 import csv
+import base64
 import html
 import io
 import json
@@ -27,6 +28,14 @@ TECHNICAL_REPORT_CAPABILITY = "p5.technical_report.v1"
 READER_REPORT_CAPABILITY = "p5.reader_report.v1"
 REPORT_FAMILIES = ("technical_report", "technical_report_candidate")
 CONTENT_SECTIONS = ("problem", "model", "existing_approaches", "justification", "numerical_analysis", "limitations", "reproducibility")
+
+
+class ReportMaterialError(ArtifactError):
+    """A portable dependency is unavailable for an identified reason."""
+
+    def __init__(self, message, details):
+        super().__init__(message)
+        self.details = details
 
 
 def technical_report_enabled(catalog) -> bool:
@@ -190,8 +199,11 @@ def resolve_report_artifact(pointer: dict, basis: dict, *, roots=()) -> Path:
             path = Path(entry.get("path", ""))
             if path.is_file() and sha256_file(path) == expected:
                 return path
-    relative = Path(pointer.get("path") or pointer.get("artifact_path") or "")
-    if not str(relative) or relative.is_absolute() or ".." in relative.parts:
+    source_path = pointer.get("path") or pointer.get("artifact_path")
+    if not isinstance(source_path, str) or not source_path:
+        raise ArtifactError("A report artifact is unavailable in the frozen inputs and has no local retained source path")
+    relative = Path(source_path)
+    if relative.is_absolute() or ".." in relative.parts:
         raise ArtifactError("A report artifact has no safe retained source path")
     for root in roots:
         root = Path(root).resolve()
@@ -225,31 +237,55 @@ def resolve_report_scalar(reference: dict, basis: dict):
     return value, ref, full
 
 
-def _artifact_pointers(value):
+def _artifact_pointer_entries(value, pointer=""):
     if isinstance(value, dict):
         if value.get("information_layer") in {"structured_record", "compact_decision_view"}:
             return
         if (value.get("sha256") or value.get("artifact_sha256")) and (value.get("path") or value.get("artifact_path") or value.get("artifact_id")):
-            yield value
-        for child in value.values():
-            yield from _artifact_pointers(child)
+            yield value, pointer
+        for key, child in value.items():
+            # A literature check cites the frozen entry its author read. The
+            # citation is retained in the source account, not implicitly turned
+            # into another attachment that this report must reopen or package.
+            entry = value.get("entry_ref")
+            if (key == "source_ref" and isinstance(entry, dict) and entry.get("entry_id")
+                    and re.fullmatch(r"[a-f0-9]{64}", entry.get("entry_sha256") or "")):
+                continue
+            escaped = str(key).replace("~", "~0").replace("/", "~1")
+            yield from _artifact_pointer_entries(child, pointer + "/" + escaped)
     elif isinstance(value, list):
-        for child in value:
-            yield from _artifact_pointers(child)
+        for index, child in enumerate(value):
+            yield from _artifact_pointer_entries(child, pointer + "/" + str(index))
 
 
-def report_required_artifacts(document: dict, basis: dict) -> list[dict]:
-    """Every cited exhibit and its declared data dependencies travel to review."""
-    result = [document.get("report_artifact"), *document.get("supplementary_artifacts", [])]
+def _artifact_pointers(value):
+    for artifact, _ in _artifact_pointer_entries(value):
+        yield artifact
+
+
+def _report_artifact_requirements(document: dict, basis: dict) -> list[tuple[dict, dict]]:
+    result = [(document.get("report_artifact"), {"report_pointer": "/report_artifact"})]
+    result.extend((pointer, {"report_pointer": f"/supplementary_artifacts/{index}"})
+                  for index, pointer in enumerate(document.get("supplementary_artifacts", [])))
+
+    def collect(value, location, reference, source_root):
+        result.extend((pointer, {"report_pointer": location, "source_ref": deepcopy(reference),
+                                 "source_pointer": source_root + nested})
+                      for pointer, nested in _artifact_pointer_entries(value))
+
     notation = document.get("notation_snapshot")
     if isinstance(notation, dict):
-        result.extend(({key: value for key, value in notation.items() if key != "markdown"}, notation.get("markdown")))
-    for analysis in _rows(document.get("numerical_analysis")):
-        for reference in [*analysis.get("evidence_refs", []), *analysis.get("exhibit_refs", []), *analysis.get("implementation_refs", [])]:
+        result.extend((({key: value for key, value in notation.items() if key != "markdown"}, {"report_pointer": "/notation_snapshot"}),
+                       (notation.get("markdown"), {"report_pointer": "/notation_snapshot/markdown"})))
+    for analysis_index, analysis in enumerate(_rows(document.get("numerical_analysis"))):
+        references = ((field, index, reference) for field in ("evidence_refs", "exhibit_refs", "implementation_refs")
+                      for index, reference in enumerate(analysis.get(field, [])))
+        for field, reference_index, reference in references:
+            location = f"/numerical_analysis/{analysis_index}/{field}/{reference_index}"
             source, ref, full = resolve_report_source(reference, basis)
-            result.extend(_artifact_pointers(source))
-            if reference in analysis.get("implementation_refs", []):
-                result.extend(_artifact_pointers(full))
+            collect(source, location, reference, reference.get("pointer") or "")
+            if field == "implementation_refs":
+                collect(full, location, reference, "")
             if isinstance(source, dict) and source.get("data_exhibit_ids"):
                 if isinstance(full, list):
                     exhibits = full
@@ -261,23 +297,29 @@ def report_required_artifacts(document: dict, basis: dict) -> list[dict]:
                     matches = [row for row in _rows(exhibits) if row.get("exhibit_id") == identifier]
                     if len(matches) != 1:
                         raise ArtifactError("A report figure's retained data exhibit is unavailable")
-                    result.extend(_artifact_pointers(matches[0]))
-    for claim in _rows(document.get("claims")):
-        for reference in claim.get("source_refs", []):
+                    source_root = ("" if isinstance(full, list) else "/exhibit_index" if ref.get("family") in {"empirical_evidence_index", "empirical_index_candidate"} else "/exhibits")
+                    collect(matches[0], location, reference, source_root + "/" + str(exhibits.index(matches[0])))
+    for claim_index, claim in enumerate(_rows(document.get("claims"))):
+        for reference_index, reference in enumerate(claim.get("source_refs", [])):
             source, _, _ = resolve_report_source(reference, basis)
-            result.extend(_artifact_pointers(source))
-    for value in _rows(document.get("prose_values")):
-        for reference in value.get("source_refs", []):
+            collect(source, f"/claims/{claim_index}/source_refs/{reference_index}", reference, reference.get("pointer") or "")
+    for value_index, value in enumerate(_rows(document.get("prose_values"))):
+        for reference_index, reference in enumerate(value.get("source_refs", [])):
             if "scalar_pointer" in reference:
                 source, _, _ = resolve_report_source(reference, basis)
-                result.extend(_artifact_pointers(source))
+                collect(source, f"/prose_values/{value_index}/source_refs/{reference_index}", reference, reference.get("pointer") or "")
     unique = {}
-    for pointer in result:
+    for pointer, origin in result:
         if isinstance(pointer, dict):
             authored = (document.get("artifact_authored_paths") or {}).get(pointer.get("artifact_id"))
             material = {**pointer, **({"authored_path": authored} if authored else {})}
-            unique.setdefault((pointer.get("sha256") or pointer.get("artifact_sha256"), pointer.get("artifact_id")), material)
+            unique.setdefault((pointer.get("sha256") or pointer.get("artifact_sha256"), pointer.get("artifact_id")), (material, origin))
     return list(unique.values())
+
+
+def report_required_artifacts(document: dict, basis: dict) -> list[dict]:
+    """Every cited exhibit and declared file dependency travels to review."""
+    return [material for material, _ in _report_artifact_requirements(document, basis)]
 
 
 def report_material_notation_source(project_dir, document, material, basis):
@@ -292,9 +334,21 @@ def report_material_notation_source(project_dir, document, material, basis):
                   for reference in row.get(field, [])]
     matches = {}
     cache = getattr(basis, "source_materials", None)
+    resolved_sources = {}
     for reference in references:
         try:
-            _, source, full = resolve_report_source(reference, basis)
+            identity = tuple(reference.get(key) for key in ("phase", "branch", "family", "generation_id", "content_sha256"))
+            complete_identity = all(isinstance(value, str) for value in identity)
+            resolved = resolved_sources.get(identity) if complete_identity else None
+            if resolved is None:
+                _, source, full = resolve_report_source(reference, basis)
+                if complete_identity:
+                    resolved_sources[identity] = (source, full)
+            else:
+                source, full = resolved
+                # Check every pointer in authored order, preserving the last
+                # valid owner when source accounts share one notation view.
+                _pointer(full, reference.get("pointer"))
             key = _source_identity(source)
             indexed = cache.get(key) if cache is not None else None
             if indexed is None:
@@ -336,6 +390,132 @@ _SUBMITTED_SOURCE_FIELDS = {
 _SUBMITTED_IMPLEMENTATION_FIELDS = {"rule", "correspondence", "environment", "verification", "limitations", "configuration", "choices", "departures"}
 
 
+def _report_source_field_options(document, basis, details):
+    """Identify existing exact fields the Lead can inspect for a scoped repair.
+
+    This is advice, not a rewritten citation. The author must preserve the
+    scientific support and qualifications before replacing a broad selection.
+    """
+    from .report_privacy import ShareableReportPrivacy, UnshareableMaterial
+    privacy = ShareableReportPrivacy(basis, document)
+    linked_from = details.get("from_document")
+    linked_document_digests = set()
+    if linked_from:
+        for material in report_required_artifacts(document, basis):
+            if linked_from in {material.get(key) for key in ("authored_path", "path", "artifact_path", "uri", "artifact_id")
+                               if isinstance(material.get(key), str)}:
+                linked_document_digests.add(material.get("sha256") or material.get("artifact_sha256"))
+    result = []
+    for group in ("claims", "numerical_analysis", "expectation_outcomes"):
+        for index, row in enumerate(_rows(document.get(group))):
+            for field in ("source_refs", "evidence_refs", "exhibit_refs", "implementation_refs"):
+                for position, reference in enumerate(row.get(field, [])):
+                    source, _, full = resolve_report_source(reference, basis)
+                    pointer = reference.get("pointer") or ""
+                    # A citation needs narrowing only if it submitted the
+                    # document containing the failed link, or its own selected
+                    # text cannot be projected. Sharing the same omitted file
+                    # somewhere else does not implicate an unrelated finding.
+                    implicated = any((item.get("sha256") or item.get("artifact_sha256")) in linked_document_digests
+                                     for item in _artifact_pointers(source))
+                    if not implicated:
+                        try:
+                            privacy.project(source)
+                        except UnshareableMaterial:
+                            implicated = True
+                    if not implicated:
+                        continue
+                    fields = []
+                    if isinstance(source, dict) and re.fullmatch(r"/findings/\d+", pointer):
+                        required = ("statement", "reasoning_markdown", "consequence_markdown")
+                        if all(source.get(name) for name in required):
+                            fields = [pointer + "/" + name for name in required]
+                    elif (pointer == "/implementation_summary" and isinstance(source, dict) and isinstance(full, dict)
+                          and (full.get("reproduction") or {}).get("runtime_identity")):
+                        fields = [pointer + "/" + name for name in
+                                  ("rule", "correspondence", "verification", "limitations", "configuration", "choices", "departures")
+                                  if name in source]
+                        if not {"rule", "correspondence", "verification", "limitations"}.issubset(source):
+                            fields = []
+                        elif fields:
+                            fields.append("/reproduction/runtime_identity")
+                    if not fields:
+                        continue
+                    # Offer only individually shareable exact fields. Do not
+                    # silently discard a qualification if any selected field
+                    # cannot be shared without an additional scientific edit.
+                    try:
+                        for target in fields:
+                            value = _pointer(full, target)
+                            if privacy.project(value) != value:
+                                break
+                        else:
+                            exact = {key: reference[key] for key in
+                                     ("phase", "branch", "family", "generation_id", "content_sha256", "pointer")
+                                     if key in reference}
+                            result.append({"report_pointer": f"/{group}/{index}/{field}/{position}",
+                                "source_ref": exact, "field_pointers": fields})
+                    except UnshareableMaterial:
+                        pass
+    return result
+
+
+def _portable_material_details(details, privacy):
+    """Diagnostics identify dependencies without copying private locations."""
+    def location(value):
+        if not isinstance(value, str):
+            return None
+        # Only a relative authored name or internal artifact alias is useful
+        # for this repair. A machine location or URL token is never needed.
+        if (re.match(r"^(?:[\\/]|~[\\/]|[A-Za-z]:[\\/])", value)
+                or re.match(r"^[a-z][a-z0-9+.-]*:", value, re.IGNORECASE)
+                and not re.match(r"^(?:artifact|run)://", value)):
+            return "[private or unsupported location omitted]"
+        value = value.split("?", 1)[0] + (" [query omitted]" if "?" in value else "")
+        return privacy.text(value)
+
+    safe = {key: details[key] for key in ("reason", "kind") if key in details}
+    for key in ("linked_target", "from_document"):
+        if key in details:
+            safe[key] = location(details[key])
+    omitted = details.get("withheld_material")
+    if isinstance(omitted, dict):
+        material = {key: omitted[key] for key in
+                    ("artifact_id", "source_sha256", "privacy_reason", "omission_reason")
+                    if key in omitted}
+        origin = omitted.get("declaration_origin") or {}
+        declaration = {key: origin[key] for key in ("report_pointer", "source_pointer") if key in origin}
+        reference = origin.get("source_ref")
+        if isinstance(reference, dict):
+            declaration["source_ref"] = {key: reference[key] for key in
+                ("phase", "branch", "family", "generation_id", "content_sha256", "pointer") if key in reference}
+        if declaration:
+            material["declaration_origin"] = declaration
+        safe["withheld_material"] = privacy.project(material)
+    return safe
+
+
+def _portable_material_message(details):
+    if details.get("reason") == "privacy_withheld":
+        cause = ("The privacy check could not separate a machine path from surrounding prose. "
+                 if (details.get("withheld_material") or details).get("privacy_reason") == "ambiguous_local_directory" else "")
+        return ("A retained source was withheld from the shareable report by the privacy check. "
+                + cause +
+                "Adding the same file or an alias cannot make it shareable. "
+                "Repair only owned report links and citations: inspect details.source_field_options for exact scientific field selections "
+                "in the same frozen generation and digest. Keep each finding's statement, reasoning and consequence together, "
+                "and retain implementation limitations and actual runtime identity. Preserve claims, numerical values and qualifications. "
+                "A necessary linked dependency needs a declared privacy-safe scientific extract with exact source attribution. "
+                "Do not edit frozen research or copy private source bytes. Refresh affected owned digests and call validate_artifacts again.")
+    if details.get("reason") == "unsupported_location":
+        return ("A report link or image uses an unsupported or private local location. "
+                "Link a declared retained scientific material through its authored relative path. "
+                "Refresh affected owned digests and call validate_artifacts again.")
+    return ("A report link or image has no declared retained portable target. "
+            "Use details.linked_target and details.from_document to declare the exact retained dependency and its authored relative path. "
+            "Refresh affected owned digests and call validate_artifacts again.")
+
+
 def _submitted_excerpt(source):
     if isinstance(source, list):
         return [_submitted_excerpt(item) for item in source]
@@ -348,7 +528,7 @@ def _submitted_excerpt(source):
     return excerpt
 
 
-def report_submitted_source_materials(document: dict, basis: dict) -> dict:
+def report_submitted_source_materials(document: dict, basis: dict, *, shareable=False) -> dict:
     """Public cited science for a first reader, without private basis or audits."""
     basis = report_context_basis(basis, document)
     sources = {}
@@ -374,10 +554,14 @@ def report_submitted_source_materials(document: dict, basis: dict) -> dict:
     context_items = [{key: item[key] for key in ("item_id", "revision", "statement", "origin", "topic", "scope", "answer_refs", "source_refs", "amends") if key in item}
                      for item in _rows(account.get("items")) if (item.get("item_id"), item.get("revision")) in referenced
                      or item.get("topic") == "expectation" or item.get("kind") == "expectation"]
-    return {"claims": document.get("claims", []), "prose_values": document.get("prose_values", []),
+    result = {"claims": document.get("claims", []), "prose_values": document.get("prose_values", []),
             "numerical_analysis": document.get("numerical_analysis", []), "expectation_outcomes": document.get("expectation_outcomes", []),
             "problem_context_ref": document.get("problem_context_ref"), "referenced_context_items": context_items,
             "scientific_sources": list(sources.values())}
+    if shareable:
+        from .report_privacy import ShareableReportPrivacy
+        return ShareableReportPrivacy(basis, document).project(result)
+    return result
 
 
 _NUMERIC_METADATA_FIELDS = {"metadata", "configuration", "config", "settings", "parameters", "environment", "provenance", "budget",
@@ -646,8 +830,12 @@ def validate_technical_report(outputs: dict, basis: dict, *, artifact_roots: dic
                 for index, row in enumerate(_rows(document.get(name))):
                     if row.get("text") not in text or not row.get("anchor") or f'id="{row["anchor"]}"' not in text:
                         issue("report.prose_location", "The exact claim/value text and authored anchor must occur in the retained report source", f"/{name}/{index}")
-            for pointer in report_required_artifacts(document, basis):
-                resolve_report_artifact(pointer, basis, roots=roots)
+            for pointer, origin in _report_artifact_requirements(document, basis):
+                try:
+                    resolve_report_artifact(pointer, basis, roots=roots)
+                except (ArtifactError, OSError, ValueError) as exc:
+                    details = {**origin, "artifact_pointer": pointer}
+                    issue("report.artifact_unresolved", str(exc), origin["report_pointer"], details=details)
         except (ArtifactError, OSError, ValueError, UnicodeError) as exc:
             issue("report.artifact_unresolved", str(exc), "/report_artifact")
     derived = derive_report_completion(document, basis, artifact_roots=artifact_roots)
@@ -674,9 +862,16 @@ def validate_technical_report(outputs: dict, basis: dict, *, artifact_roots: dic
             export_technical_report(document, basis, generation_ref={}, artifact_roots=export_roots,
                                     exported_at="", validate_materials=True)
         except (ArtifactError, OSError, ValueError, UnicodeError, subprocess.TimeoutExpired) as exc:
-            issue("report.portable_unresolved",
-                  f"{exc}. Repair the owned report or declare its exact retained linked dependencies, refresh their digests, "
-                  "and call validate_artifacts again.", "/report_artifact")
+            from .report_privacy import UnshareableMaterial
+            details = deepcopy(getattr(exc, "details", {}))
+            if isinstance(exc, UnshareableMaterial):
+                details = {"reason": "privacy_withheld", "omission_reason": str(exc), "privacy_reason": exc.reason}
+            if details.get("reason") == "privacy_withheld":
+                details["source_field_options"] = _report_source_field_options(document, basis, details)
+            message = (_portable_material_message(details) if details else
+                       f"{exc}. Repair the owned report or declare its exact retained linked dependencies, refresh their digests, "
+                       "and call validate_artifacts again.")
+            issue("report.portable_unresolved", message, "/report_artifact", details=details)
     return findings
 
 
@@ -724,9 +919,12 @@ def completed_report_review_packets(project_dir: Path) -> list[dict]:
 def export_technical_report(document: dict, basis: dict, *, generation_ref: dict, artifact_roots: dict,
                             exported_at: str, review_packets: list[dict] | None = None, node_executable: str | None = None,
                             print_material_id: str | None = None, validate_materials: bool = False,
-                            html_download_base_url: str | None = None) -> bytes:
-    """Render immutable sources; only the hosted view uses HTTP HTML downloads."""
+                            html_download_base_url: str | None = None,
+                            standalone_material_id: str | None = None) -> bytes:
+    """Render a shareable scientific projection without changing retained sources."""
+    from .report_privacy import ShareableReportPrivacy, ShareableAsset, UnshareableMaterial, shareable_reproduction_archive, private_report_material
     basis = report_context_basis(basis, document)
+    privacy = ShareableReportPrivacy(basis, document)
     roots = list(artifact_roots.values())
     primary = resolve_report_artifact(document.get("report_artifact") or {}, basis, roots=roots)
     markdown = primary.read_bytes().decode("utf-8") if validate_materials else primary.read_text(encoding="utf-8")
@@ -743,7 +941,8 @@ def export_technical_report(document: dict, basis: dict, *, generation_ref: dict
     if not script.is_file():
         script = app_root / "web/scripts/export-report.mjs"
     report_pointer = document.get("report_artifact") or {}
-    materials = report_required_artifacts(document, basis)
+    material_requirements = _report_artifact_requirements(document, basis)
+    materials = [material for material, _ in material_requirements]
     if print_material_id is not None:
         selected = [pointer for pointer in materials if pointer.get("artifact_id") == print_material_id]
         if (not isinstance(print_material_id, str) or not print_material_id or len(selected) != 1
@@ -753,8 +952,10 @@ def export_technical_report(document: dict, basis: dict, *, generation_ref: dict
         selected_media = selected[0].get("media_type") or mimetypes.guess_type(selected_path.name)[0]
         if selected_media != "text/markdown":
             raise ArtifactError("Only a declared Markdown material can be printed separately")
-    request = {"markdown": markdown, "title": document.get("title", "Technical report"), "asset_files": {},
+    request = {"markdown": privacy.text(markdown), "title": privacy.text(document.get("title", "Technical report")), "asset_files": {},
+               "withheld_materials": {},
                "validate_materials": validate_materials,
+               "shareable_export": True, "standalone_material_id": standalone_material_id,
                "section_anchors": document.get("section_anchors") or {}, "print_material_id": print_material_id,
                "primary_path": (document.get("artifact_authored_paths") or {}).get(report_pointer.get("artifact_id"))
                                or report_pointer.get("authored_path") or primary.name,
@@ -771,20 +972,75 @@ def export_technical_report(document: dict, basis: dict, *, generation_ref: dict
         notation_markdown = resolve_report_artifact(notation_pointer.get("markdown") or {}, basis, roots=roots).read_text(encoding="utf-8")
         if not isinstance(notation_view, dict) or render_notation(notation_view) != notation_markdown:
             raise ArtifactError("The report's readable notation differs from its retained definitions")
-        request["notation_markdown"] = notation_markdown
-    for pointer in materials:
+        request["notation_markdown"] = privacy.text(notation_markdown)
+    shareable_materials = []
+    reproduction_materials = []
+    projected_assets = {}
+    private_datasets = {item.get("sha256") or item.get("content_sha256")
+        for item in [*(basis.get("p4_inputs", {}).get("inputs") or []), *(basis.get("artifacts") or [])]
+        if isinstance(item, dict) and item.get("role") == "dataset"}
+    for pointer, origin in material_requirements:
         path = resolve_report_artifact(pointer, basis, roots=roots)
         media = pointer.get("media_type") or mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         source = {"path": str(path.resolve()), "media_type": media, "artifact_id": pointer.get("artifact_id"),
                   "sha256": pointer.get("sha256") or pointer.get("artifact_sha256"),
                   "authored_path": pointer.get("authored_path") or pointer.get("path")}
+        if any(private_report_material(name) for name in (source.get("authored_path"), pointer.get("path"), path.name) if name):
+            raise ArtifactError("A private researcher, credential or operational source was declared as a shareable report material; declare its scientific extract instead")
+        aliases = [pointer.get(key) for key in ("authored_path", "path", "artifact_path", "uri", "artifact_id") if pointer.get(key)]
+        if any(not isinstance(key, str) for key in aliases):
+            raise ArtifactError("Portable report material aliases must be single nonempty strings; each artifact_authored_paths value must name one relative path, not an array")
+
+        def withhold(reason, message):
+            unavailable = privacy.project({"artifact_id": pointer.get("artifact_id"), "source_sha256": source["sha256"],
+                           "privacy_reason": reason, "omission_reason": message, "declaration_origin": origin})
+            for alias in aliases:
+                request["withheld_materials"].setdefault(alias, unavailable)
+
+        if source["sha256"] in private_datasets:
+            withhold("researcher_dataset", "Researcher dataset bytes are excluded from shareable reports")
+            shareable_materials.append({"artifact_id": pointer.get("artifact_id"), "source_sha256": source["sha256"],
+                "export_sha256": None, "kind": "omitted_researcher_dataset"})
+            continue
+        try:
+            if media == "text/html":
+                # HTML downloads are regenerated from declared Markdown. Keep
+                # only a safe routing descriptor, never raw authored HTML,
+                # which may contain arbitrary embedded binaries or scripts.
+                placeholder = b"<!doctype html><title>Derived scientific document</title>"
+                projection = ShareableAsset(placeholder, source["sha256"], sha256_bytes(placeholder), ("authored_html",))
+            else:
+                cache_key = (str(path.resolve()), media, path.suffix.lower())
+                if cache_key not in projected_assets:
+                    projected_assets[cache_key] = privacy.asset(path.read_bytes(), media, source.get("authored_path") or path.name)
+                projection = projected_assets[cache_key]
+        except UnshareableMaterial as exc:
+            withhold(exc.reason, str(exc))
+            shareable_materials.append({"artifact_id": pointer.get("artifact_id"), "source_sha256": source["sha256"],
+                "export_sha256": None, "kind": "omitted_uninspected_material"})
+            continue
+        source["source_sha256"] = projection.source_sha256
+        if projection.changed:
+            export_path = Path(str(source.get("authored_path") or path.name).replace("\\", "/"))
+            source.update(content_base64=base64.b64encode(projection.content).decode("ascii"), sha256=projection.sha256,
+                          export_filename=export_path.stem + ".shareable" + export_path.suffix,
+                          projection={"kind": "scientific_extract", "omitted_categories": list(projection.omitted_categories)})
+        if media != "text/html":
+            reproduction_materials.append((source.get("authored_path") or path.name, projection))
+        shareable_materials.append({"artifact_id": pointer.get("artifact_id"), "source_sha256": projection.source_sha256,
+            "export_sha256": None if media == "text/html" else projection.sha256,
+            "kind": "derived_html" if media == "text/html" else "scientific_extract" if projection.changed else "verified_source",
+            "omitted_categories": list(projection.omitted_categories)})
         if html_download_base_url and media == "text/html" and pointer.get("artifact_id"):
             source["download_url"] = html_download_base_url + "&material_id=" + quote(pointer["artifact_id"], safe="")
-        for key in (pointer.get("authored_path"), pointer.get("path"), pointer.get("artifact_path"), pointer.get("uri"), pointer.get("artifact_id")):
-            if key:
-                if not isinstance(key, str):
-                    raise ArtifactError("Portable report material aliases must be single nonempty strings; each artifact_authored_paths value must name one relative path, not an array")
-                request["asset_files"][key] = source
+        for key in aliases:
+            request["asset_files"][key] = source
+    reproduction_archive = shareable_reproduction_archive(reproduction_materials,
+        method_identity=privacy.project(document.get("method_identity")), generation_ref=privacy.project(generation_ref),
+        omitted_materials=[item for item in shareable_materials if item["kind"] in {"omitted_uninspected_material", "omitted_researcher_dataset", "derived_html"}])
+    if reproduction_archive is not None:
+        request.update(reproduction_archive_base64=base64.b64encode(reproduction_archive).decode("ascii"),
+                       reproduction_filename="report-reproduction.shareable.zip")
     if node_executable is None:
         from .math_validation import _node_executable
         node_executable = _node_executable()
@@ -793,28 +1049,55 @@ def export_technical_report(document: dict, basis: dict, *, generation_ref: dict
     if process.returncode:
         stderr = process.stderr.strip()
         error = re.search(r"^[A-Za-z]*Error: (.+)$", stderr, re.MULTILINE)
-        raise ArtifactError("Portable report rendering failed: " + (error[1] if error else stderr[:1000]))
+        diagnostic = re.search(r"MF_REPORT_MATERIAL (\{[^\r\n]+\})$", error[1] if error else stderr, re.MULTILINE)
+        if diagnostic:
+            details = _portable_material_details(json.loads(diagnostic[1]), privacy)
+            if details.get("reason") in {"privacy_withheld", "undeclared_dependency", "unsupported_location"}:
+                raise ReportMaterialError(_portable_material_message(details), details)
+        message = error[1] if error else "The renderer did not return a usable diagnostic"
+        message = re.sub(r"\?[^\s<>\"']+", "?[query omitted]", message)
+        try:
+            message = privacy.text(message)
+        except UnshareableMaterial:
+            message = "The renderer's diagnostic contains a private location; inspect the declared report materials"
+        raise ArtifactError("Portable report rendering failed: " + message[:1000])
     rendered = json.loads(process.stdout)
+    derived = {row["artifact_id"]: row for row in rendered.get("derived_materials", []) if row.get("artifact_id")}
+    encoded = {row["artifact_id"]: row["delivery"] for row in rendered.get("encoded_materials", []) if row.get("artifact_id")}
+    for material in shareable_materials:
+        if material["kind"] == "derived_html" and material.get("artifact_id") in derived:
+            material.update(derived[material["artifact_id"]])
+        if material.get("artifact_id") in encoded:
+            material["delivery"] = encoded[material["artifact_id"]]
     metadata = {"generation_id": generation_ref.get("generation_id"), "content_sha256": generation_ref.get("content_sha256") or generation_ref.get("sha256"),
                 "report_artifact_sha256": digest, "method_identity": document.get("method_identity"), "completion": completion,
                 "review_status": review_status, "exported_at": exported_at,
+                "export_kind": "shareable_scientific_projection", "materials": shareable_materials,
                 "print_material_id": print_material_id, "print_scopes": rendered.get("print_scopes")}
     if isinstance(notation_pointer, dict):
-        metadata["notation"] = {"snapshot_sha256": notation_pointer["sha256"], "snapshot": notation_view}
+        metadata["notation"] = {"snapshot_sha256": notation_pointer["sha256"], "snapshot": privacy.project(notation_view)}
+    if reproduction_archive is not None:
+        metadata["reproduction_archive"] = {"filename": request["reproduction_filename"],
+            "sha256": sha256_bytes(reproduction_archive), "status": "retained_materials_not_rerun"}
+    metadata = privacy.project(metadata)
+    display_completion = privacy.project(completion)
     identity = method_identity(document)
-    banner = (f"<aside><strong>{html.escape(completion['status'].capitalize())} technical report</strong>"
-              f"<p>This version {'has' if reviewed else 'has not'} been independently reviewed.</p>"
-              + ("<ul>" + "".join("<li>" + html.escape(item) + "</li>" for item in completion["missing_work"]) + "</ul>" if completion["missing_work"] else "")
-              + f"<details><summary>Source details</summary><p>Report generation: {html.escape(str(metadata['generation_id']))}. "
-              f"Model: {html.escape(str(identity[0]))}, version {identity[1]}. Exported: {html.escape(exported_at)}.</p></details></aside>")
+    report_label = (f"Supporting document for this {display_completion['status']} technical report" if standalone_material_id
+                    else f"{display_completion['status'].capitalize()} technical report")
+    banner = (f'<details class="report-publication"><summary>{html.escape(report_label)} · '
+              f"{'Independently reviewed' if reviewed else 'Not independently reviewed'}</summary>"
+              + ("<ul>" + "".join("<li>" + html.escape(item) + "</li>" for item in display_completion["missing_work"]) + "</ul>" if display_completion["missing_work"] else "")
+              + f"<dl><dt>Report generation</dt><dd><code>{html.escape(str(metadata['generation_id']))}</code></dd>"
+              f"<dt>Model</dt><dd><code>{html.escape(str(identity[0]))}</code></dd><dt>Model version</dt><dd>{identity[1]}</dd>"
+              f"<dt>Exported</dt><dd>{html.escape(exported_at)}</dd></dl></details>")
     metadata_json = json.dumps(metadata).replace("<", "\\u003c")
-    support = html.escape(json.dumps(report_submitted_source_materials(document, basis), ensure_ascii=False, indent=2))
+    support = html.escape(json.dumps(report_submitted_source_materials(document, basis, shareable=True), ensure_ascii=False, indent=2))
     return ("<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
-            + "<title>" + html.escape(request["title"]) + "</title><style>" + rendered["css"]
+            + "<title>" + html.escape((rendered.get("title") or request["title"]) if standalone_material_id else request["title"]) + '</title><style id="report-styles">' + rendered["css"]
             + "body{box-sizing:border-box;max-width:54rem;margin:2rem auto;padding:0 1.4rem;color:#20242c;font:17px/1.65 Georgia,serif;overflow-wrap:anywhere}img,svg{max-width:100%}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccd0d6;padding:.5rem}aside{background:#eef2f5;padding:1rem;font:14px/1.5 sans-serif}pre{overflow:auto}h1,h2,h3{line-height:1.25}"
             + ".report-table,.report-equation{display:block;max-width:100%;overflow-x:auto}.report-table{overflow-wrap:normal}.report-equation{overflow-y:hidden;padding:.2rem 0}.report-equation .katex-display>.katex{min-width:max-content}.report-table:focus-visible,.report-equation:focus-visible{outline:2px solid #2c5c87;outline-offset:3px}"
             + "@media print{body{max-width:none;margin:0;font-size:11pt}aside{background:white;border:1px solid #999}h1,h2,h3,p:has(+.report-table){break-after:avoid}figure,table,.katex-display{break-inside:avoid}.report-table,.report-equation{overflow:visible;max-width:none}.report-equation .katex-display>.katex{min-width:0}a{color:inherit}img{max-height:24cm}}"
             + rendered.get("print_css", "")
-            + "</style><body>" + banner + rendered["html"]
-            + '<details class="report-provenance"><summary>Exact scientific sources and expectation revisions</summary><pre>' + support + "</pre></details>"
+            + "</style><body>" + rendered["html"].replace("<!--report-publication-details-->", banner, 1)
+            + '<details class="report-provenance"><summary>Scientific source extracts and context references</summary><p>Shared extracts omit researcher notes and local file locations. Original source digests identify the retained private records; export digests identify the shared bytes.</p><pre>' + support + "</pre></details>"
             + '<script type="application/json" id="report-provenance">' + metadata_json + "</script></body></html>").encode("utf-8")

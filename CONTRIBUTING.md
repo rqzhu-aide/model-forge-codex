@@ -2,7 +2,7 @@
 
 Model Forge supports researcher-directed development of statistical models, machine learning models, and algorithms. Changes should help researchers understand the scientific account, make meaningful decisions, and obtain a technical report whose claims can be traced to their sources.
 
-Read the [README](README.md), [development guide](docs/development.md), and relevant [repository architecture documentation](https://github.com/rqzhu-aide/model-forge-codex/blob/main/architecture/README.md) before editing. Keep changes focused and preserve existing research history. Use only shared user-wide or machine-wide runtimes, packages, and development tools.
+Read the [README](README.md), [development guide](docs/development.md), and relevant [repository architecture documentation](architecture/README.md) before editing. Keep changes focused and preserve existing research history. Use only shared user-wide or machine-wide runtimes, packages, and development tools.
 
 ## Repository contents
 
@@ -16,7 +16,7 @@ Read the [README](README.md), [development guide](docs/development.md), and rele
 | `docs/` | Public setup and development guidance |
 | `architecture/`, `design-system/` | Workflow design, responsibilities, and interface specifications |
 
-The application release version and workflow catalog version have different meanings. The current source tree prepares application version 0.9.4; its workflow catalog version is recorded in `contracts/VERSION`. Source changes do not change an already published package. A catalog update is not an automatic migration of existing projects. Do not move or reseal catalog files as part of unrelated cleanup. Historical fixtures can remain necessary even when their format is older.
+The application version is recorded in `package.json` and the workflow catalog version in `contracts/VERSION`. Existing projects adopt a new catalog through a separate upgrade. Keep catalog files and historical fixtures intact during unrelated changes.
 
 ## Keep private and generated files local
 
@@ -30,4 +30,4 @@ Use focused checks from the [development guide](docs/development.md). For a work
 
 For interface changes, verify the affected interaction in a browser, including keyboard use and relevant viewport sizes. For any change to text a researcher reads, fill in the reader acceptance block in [AGENTS.md](AGENTS.md) and include it with the change. For model behavior claims, state the provider, scope, and limits of any live evaluation separately from deterministic tests.
 
-Before proposing a change, run `git diff --check`, inspect `git status --short`, and review the diff and file list. Explain the problem, the researcher-facing result, relevant verification, and any remaining limitation. Packaging and publication follow the [repository release guide](https://github.com/rqzhu-aide/model-forge-codex/blob/main/architecture/npm-release.md); rebuilding and testing a tarball do not publish it.
+Before proposing a change, run `git diff --check`, inspect `git status --short`, and review the diff and file list. Explain the problem, the researcher-facing result, relevant verification, and any remaining limitation. Packaging and publication follow the [repository release guide](architecture/npm-release.md); rebuilding and testing a tarball do not publish it.

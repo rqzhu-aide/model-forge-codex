@@ -14,7 +14,7 @@ const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.j
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-p4-reader-"));
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Empirical,{EmpiricalEvaluationHistory} from '${src}/components/EmpiricalWorkbench.jsx'; import {EmpiricalExhibit,EmpiricalQuestionTabs} from '${src}/components/EmpiricalQuestion.jsx'; import {EmpiricalProgressCard,EmpiricalPause,EmpiricalSavedDecisions,EmpiricalExecutionHistory,EmpiricalPlan} from '${src}/components/EmpiricalProgress.jsx'; export const render = props => renderToStaticMarkup(React.createElement(Empirical,props)); export const evaluationHistory = props => renderToStaticMarkup(React.createElement(EmpiricalEvaluationHistory,props)); export const exhibit = props => renderToStaticMarkup(React.createElement(EmpiricalExhibit,props)); export const progress = props => renderToStaticMarkup(React.createElement(EmpiricalProgressCard,props)); export const history = props => renderToStaticMarkup(React.createElement(EmpiricalExecutionHistory,props)); export const plan = props => renderToStaticMarkup(React.createElement(EmpiricalPlan,props)); export const pause = props => renderToStaticMarkup(React.createElement(EmpiricalPause,props)); export const savedDecisions = props => renderToStaticMarkup(React.createElement(EmpiricalSavedDecisions,props)); export const tabs = EmpiricalQuestionTabs; export {empiricalSource} from '${src}/components/EmpiricalDocument.jsx';`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Empirical,{EmpiricalEvaluationHistory,ProtocolSetup,CompleteNumbers} from '${src}/components/EmpiricalWorkbench.jsx'; import {EmpiricalExhibit,EmpiricalQuestionTabs,EmpiricalQuestionSetup,EmpiricalInterpretationDocument} from '${src}/components/EmpiricalQuestion.jsx'; import {EmpiricalProgressCard,EmpiricalPause,EmpiricalSavedDecisions,EmpiricalExecutionHistory,EmpiricalPlan} from '${src}/components/EmpiricalProgress.jsx'; export const protocol = props => renderToStaticMarkup(React.createElement(ProtocolSetup,props)); export const setup = props => renderToStaticMarkup(React.createElement(EmpiricalQuestionSetup,props)); export const interpretation = props => renderToStaticMarkup(React.createElement(EmpiricalInterpretationDocument,props)); export const numbers = props => renderToStaticMarkup(React.createElement(CompleteNumbers,props)); export const render = props => renderToStaticMarkup(React.createElement(Empirical,props)); export const evaluationHistory = props => renderToStaticMarkup(React.createElement(EmpiricalEvaluationHistory,props)); export const exhibit = props => renderToStaticMarkup(React.createElement(EmpiricalExhibit,props)); export const progress = props => renderToStaticMarkup(React.createElement(EmpiricalProgressCard,props)); export const history = props => renderToStaticMarkup(React.createElement(EmpiricalExecutionHistory,props)); export const plan = props => renderToStaticMarkup(React.createElement(EmpiricalPlan,props)); export const pause = props => renderToStaticMarkup(React.createElement(EmpiricalPause,props)); export const savedDecisions = props => renderToStaticMarkup(React.createElement(EmpiricalSavedDecisions,props)); export const tabs = EmpiricalQuestionTabs; export {empiricalSource} from '${src}/components/EmpiricalDocument.jsx';`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const render = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
 const noop = () => {};
 const buttonWithText = (html, text) => (html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g) || []).find((button) => button.includes(text)) || "";
@@ -60,17 +60,18 @@ test("question source control names the declared full Analyst account while pres
   assert.doesNotMatch(render.render(props), /Open full Analyst account/);
 });
 
-test("P4 owns three evidence cards and a single scientific tab layer with complete result blocks", () => {
+test("P4 owns three evidence cards and connected sections with complete supporting result blocks", () => {
   const html = render.render(props);
   for (const text of ["Summary", "Experiments and Results", "Error decreases by 0.2", "Mean error", "Proposed", "Baseline", "Matched seeds", "difference interval", "One numerical failure", "Recorded case outcomes: 10 completed, 1 failed and 0 not run, from 11 planned.", "accuracy gain needs a larger cost study", "Open original table", "Lead: the intended tradeoff", "Theorist: finite sample checks"]) assert.ok(html.includes(text), text);
-  assert.equal((html.match(/role="tablist"/g) || []).length, 1);
+  assert.equal((html.match(/aria-label="Numerical experiment sections"/g) || []).length, 1);
   assert.equal((html.match(/class="card /g) || []).length, 3);
-  assert.match(html, /role="tab"[^>]*aria-selected="true"[^>]*><span>Performance/);
+  assert.match(html, /href="#[^"]+-comparisons"[^>]*><span>Main results/);
+  assert.doesNotMatch(html, /role="tab(?:list|panel)?"/);
   assert.doesNotMatch(html, /question-picker|>Next steps<|>Results<|>Design<|Complete numerical source|Which runtime limit matters|Recorded repetitions/);
   const excluded = render.render({ ...props, questions: [{ ...question, result: { ...question.result, observed_counts: { ...question.result.observed_counts, invalidated: 3 } } }] });
   assert.match(excluded, /Excluded earlier case outcomes: 3\. These are retained in history and do not contribute to the reported results\./);
   assert.doesNotMatch(excluded, /Excluded earlier attempts/);
-  const panel = html.slice(html.indexOf('class="empirical-tab-panel"'));
+  const panel = html.slice(html.indexOf('class="empirical-numerical-section"'));
   assert.match(panel, /<details class="research-details empirical-review-details"><summary>/);
   assert.ok(panel.indexOf("Small example") < panel.indexOf("Finding"));
   assert.ok(panel.indexOf("Finding") < panel.indexOf("Conditions and caveats"));
@@ -80,18 +81,22 @@ test("P4 owns three evidence cards and a single scientific tab layer with comple
 test("categories select scientific topics without inferring them from prose", () => {
   const questions = [question, { ...question, question_id: "q.cost", title: "A cost question", result: { ...question.result, category: "cost", answer_markdown: "Only recorded fitting cost." } }, { ...question, question_id: "q.unclassified", title: "Unclassified performance question", result: { ...question.result, category: undefined, answer_markdown: "Older category omitted." } }];
   const computation = render.render({ ...props, questions, initialTab: "computation" });
-  assert.match(computation, /Only recorded fitting cost/); assert.doesNotMatch(computation, /Error decreases by 0.2|Older category omitted/);
+  assert.match(computation, /Only recorded fitting cost/); assert.match(computation, /Error decreases by 0.2|Older category omitted/);
   const setup = render.render({ ...props, questions, initialTab: "setup", progressData: progress, progressState: "running" });
-  assert.match(setup, /Use paired samples and identical data splits/); assert.match(setup, /Older category omitted/); assert.match(setup, /Current evaluation plan/); assert.match(setup, /No scaling conclusion is possible/);
-  const tuning = render.render({ ...props, initialTab: "tuning" }); assert.match(tuning, /No tuning answer is recorded/); assert.doesNotMatch(tuning, /Error decreases by 0.2/);
+  assert.doesNotMatch(setup, /Use paired samples and identical data splits/); assert.match(render.setup({ question }), /Use paired samples and identical data splits/); assert.match(setup, /Older category omitted/); assert.match(setup, /Current evaluation plan/); assert.match(setup, /No scaling conclusion is possible/);
+  const tuning = render.render({ ...props, initialTab: "tuning" }); assert.match(tuning, /No tuning answer is recorded/); assert.match(tuning, /Error decreases by 0.2/);
 });
 
 test("overview uses explicit implementation and theory accounts with truthful old-run fallbacks", () => {
   const summary = { implementation_markdown: "Reused the saved solver and ran the small example.", method_fidelity_markdown: "The deterministic check matches the Phase 2 update rule.", theory_relation: { status: "not_tested", explanation_markdown: "Consistency was available but was not tested empirically.", statement_ids: [] }, conclusion_markdown: "The small example supports further study.", tradeoff_markdown: "Accuracy costs extra time.", limitations_markdown: "Only one regime is studied.", coverage: [{ dimension: "performance", question_ids: [question.question_id] }] };
   const html = render.render({ ...props, summaries: [{ branch: "method.a", decision_summary: summary, generation_ref: ref }] });
-  for (const text of ["What was developed and tested", "Implementation assessment", "Relationship to the theory", "Numerical findings and limitations", "Reused the saved solver", "Available theory was not tested", "Numerical evidence is not a proof", question.title]) assert.ok(html.includes(text), text);
+  for (const text of ["What was developed and tested", "Implementation assessment", "Reused the saved solver", "Full interpretation", question.title]) assert.ok(html.includes(text), text);
+  const interpretation = render.interpretation({ record: { decision_summary: summary, generation_ref: ref } });
+  for (const text of ["Relationship to the theory", "Numerical findings and limitations", "Available theory was not tested", "Numerical evidence is not a proof"]) assert.ok(interpretation.includes(text), text);
   const old = render.render({ ...props, summaries: [{ decision_summary: { conclusion_markdown: "Old authored conclusion." } }] });
-  assert.match(old, /Old authored conclusion/); assert.match(old, /does not state whether Phase 3 theory was available or tested/); assert.doesNotMatch(old, /No Phase 3 theory was available/);
+  assert.match(old, /Full interpretation/); assert.doesNotMatch(old, /Old authored conclusion|No Phase 3 theory was available/);
+  const oldBody = render.interpretation({ record: { decision_summary: { conclusion_markdown: "Old authored conclusion." } } });
+  assert.match(oldBody, /Old authored conclusion/); assert.match(oldBody, /does not state whether Phase 3 theory was available or tested/);
   const empty = render.render({ branch: "method.a", awaitingDirection: true }); assert.match(empty, /waiting for your direction/); assert.match(empty, /Inspect the latest attempt in Activity/); assert.doesNotMatch(empty, /in Issues and decisions|Research Lead · published account/);
 });
 
@@ -105,9 +110,8 @@ test("implementation author survives new analyst ownership and historical lead o
     const source = buttonWithText(html, "Implementation source");
     assert.match(source, /title="Implementation record · protocol\.a"/);
     assert.doesNotMatch(source, /disabled/);
-    assert.match(html, /Independent assessment by Theorist · Same evaluation/);
-    assert.match(html, /The check could not run/);
-    assert.match(html, /Fidelity remains unassessed/);
+    assert.match(html, /Theorist assessment|Implementation details/);
+    assert.doesNotMatch(html, /The check could not run|Fidelity remains unassessed/);
     assert.match(html, /class="katex/);
   }
   const legacy = render.render({ branch: "method.a", implementations: [account] });
@@ -144,7 +148,8 @@ test("P4 overview and coverage share exact source controls while retaining prose
   const before = JSON.stringify(inputs);
   const html = render.render(inputs);
   const implementation = html.slice(html.indexOf("What was developed and tested"), html.indexOf("Implementation and Code"));
-  const assessment = html.slice(html.indexOf('class="implementation-assessment"'), html.indexOf('class="scientific-block"'));
+  const assessmentStart = html.indexOf('class="implementation-assessment"');
+  const assessment = html.slice(assessmentStart, html.indexOf("Implementation account author is not recorded", assessmentStart));
   const coverage = html.slice(html.indexOf('class="empirical-topic-account"'), html.indexOf('class="empirical-topic-exhibits"'));
   for (const passage of [implementation, assessment, coverage]) {
     assert.match(buttonWithText(passage, "test.gain"), /class="source-link ui-action"/);
@@ -197,7 +202,7 @@ test("P4 narrative run locators consume verified retained-source bindings withou
 test("Setup preserves the scientific protocol, including exact numerical and boolean settings", () => {
   const protocol = JSON.parse(fs.readFileSync(new URL("../../contracts/examples/empirical-protocol.example.json", import.meta.url), "utf8"));
   protocol.tuning_budget.maximum_trials = 0; protocol.repetitions_and_uncertainty.paired_design = false;
-  const html = render.render({ branch: "method.a", protocols: [{ ...protocol, branch: "method.a", generation_ref: ref }], onSource: noop });
+  const html = render.protocol({ protocol: { ...protocol, branch: "method.a", generation_ref: ref }, onSource: noop });
   for (const text of [protocol.data_or_simulation_unit.sampling_or_generation_process, protocol.baselines[0].rationale, protocol.baselines[0].compute_budget, protocol.metrics[0].definition, protocol.tuning_budget.selection_data, protocol.repetitions_and_uncertainty.interval_or_error_method, protocol.multiplicity.correction_method, protocol.stopping_rules[0].action, protocol.leakage_checks[0].procedure, protocol.decision_thresholds[0].criterion]) assert.ok(html.includes(text), text);
   assert.match(html, /Sample sizes[\s\S]*>200<[^]*>1000</); assert.match(html, /Maximum trials<\/dt><dd>[^]*?<p>0<\/p>/);
   assert.match(html, /Paired comparisons<\/dt><dd>[^]*?<p>false<\/p>/); assert.match(html, /Repetitions<\/dt><dd>[^]*?<p>500<\/p>/);
@@ -211,12 +216,15 @@ test("tables distinguish zero from missing data and preserve boolean values and 
   assert.match(flags, /<td>false<\/td>/); assert.match(flags, /<td>true<\/td>/); assert.match(flags, /<td>Not recorded<\/td>/);
 });
 
-test("evidence tab keyboard navigation wraps five topics without starting work", () => {
-  let selected; let focused;
+test("section navigation uses ordinary focusable links without tab keyboard interception", () => {
+  let selected;
   const tabs = render.tabs({ id: "q", selected: "setup", onSelect: (value) => { selected = value; } }).props.children;
-  const key = (index, value) => tabs[index].props.onKeyDown({ key: value, preventDefault() {}, currentTarget: { parentElement: { querySelectorAll: () => tabs.map((_, position) => ({ focus() { focused = position; } })) } } });
-  key(0, "ArrowLeft"); assert.equal(selected, "sensitivity"); assert.equal(focused, 4);
-  key(4, "ArrowRight"); assert.equal(selected, "setup"); key(1, "End"); assert.equal(selected, "sensitivity"); key(2, "Home"); assert.equal(selected, "setup");
+  assert.ok(tabs.every((link) => link.type === "a" && link.props.href && !link.props.role && link.props.tabIndex === undefined && !link.props.onKeyDown));
+  tabs[2].props.onClick({ preventDefault() {} }); assert.equal(selected, "sensitivity");
+  tabs[0].props.onClick({ ctrlKey: true, preventDefault() { throw new Error("A modified link click keeps native browser behavior."); } }); assert.equal(selected, "sensitivity");
+  assert.ok(tabs.every(link => link.props["aria-current"] === undefined), "A saved navigation hint does not claim the reader's current scroll location.");
+  const scope = render.tabs({ id: "q", onSelect: noop, coverage: [{ dimension: "tuning", status: "not_assessed" }], sections: [["scope", "Other scope"]] }).props.children[0];
+  assert.equal(scope.props.title, undefined); assert.equal(scope.props["aria-description"], undefined);
 });
 
 test("long authored coverage keeps tab support to unique statuses with a complete accessible description", () => {
@@ -231,14 +239,14 @@ test("long authored coverage keeps tab support to unique statuses with a complet
   const tabs = render.tabs({ id: "rmst", selected: "comparisons", onSelect: noop, coverage, questions: [question] }).props.children;
   assert.equal(tabs[1].props.title, description);
   assert.equal(tabs[1].props["aria-description"], description);
-  assert.equal(tabs[1].props["aria-controls"], "rmst-panel");
-  assert.equal(tabs[1].props["aria-selected"], true);
-  assert.equal(tabs[1].props.tabIndex, 0);
+  assert.equal(tabs[1].props.href, "#rmst-comparisons");
+  assert.equal(tabs[1].props["aria-current"], undefined);
+  assert.equal(tabs[1].props.tabIndex, undefined);
   const html = render.render({ branch: "method.a", questions: [question], summaries: [{ branch: "method.a", generation_ref: { ...ref, family: "empirical_synthesis" }, decision_summary: { coverage } }] });
-  const performance = html.match(/<button\b[^>]*role="tab"[^>]*><span>Performance<\/span><span class="empirical-tab-coverage">([^<]*)<\/span><\/button>/);
+  const performance = html.match(/<a\b[^>]*><span>Main results<\/span><span class="empirical-section-coverage">([^<]*)<\/span><\/a>/);
   assert.ok(performance);
   assert.equal(performance[1], "Partial · Not assessed");
-  assert.match(html, /<span>Tuning<\/span><span class="empirical-tab-coverage">Coverage not recorded<\/span>/);
+  assert.match(html, /<b>Tuning:<\/b> No tuning answer is recorded/);
   assert.match(html, /Population RMST point accuracy: Partial/);
   assert.match(html, /Clinical usefulness, awareness pathway and broader model comparisons: Not assessed/);
   assert.deepEqual(coverage, before);
@@ -368,7 +376,9 @@ test("legacy numerical diagnostics stay complete inside experiments while histor
   const diagnostics = [{ branch: "method.a", phase: "P4", generation_ref: { ...ref, family: "diagnostics" }, headline_numbers: [{ case_id: "case.small", metric: "metric.error", estimate: 0.31, mcse: 0.02, n_replicates: 10 }, { case_id: "case.baseline", metric: "metric.error", estimate: 0.53, mcse: 0.03, n_replicates: 10 }, { case_id: "case.small", metric: "metric.coverage", estimate: 9876 }, { case_id: "case.unrelated", metric: "metric.error", estimate: 5432 }] }];
   const protocol = { generation_ref: ref, metrics: [{ metric_id: "metric.error", name: "Mean squared error" }], baselines: [{ baseline_id: "baseline.median", name: "Sample median" }] };
   const html = render.render({ ...props, questions: [selected], exhibits: [], cases, diagnostics, protocols: [protocol] });
-  for (const text of ["Complete numerical results and recorded diagnostics", "0.31", "0.53", "MCSE 0.02", "One numerical failure", "9,876", "5,432"]) assert.ok(html.includes(text), text);
+  for (const text of ["Numerical results and diagnostics", "0.31", "0.53", "Monte Carlo standard error 0.02", "One numerical failure"]) assert.ok(html.includes(text), text);
+  const numericalReader = render.numbers({ diagnostics, cases });
+  for (const text of ["9,876", "5,432"]) { assert.ok(numericalReader.includes(text), text); assert.ok(!html.includes(text), text); }
   const answer = html.slice(html.indexOf('data-question-id="q.accuracy"'), html.indexOf('class="research-details empirical-complete-numbers"'));
   assert.doesNotMatch(answer, /9,876|5,432/);
   assert.match(answer, /Recorded results for this question/);
@@ -387,10 +397,13 @@ test("generic supplements retain a closed scoped numerical table with pagination
   const html = render.render(values);
   const answer = html.slice(html.indexOf('data-question-id="q.accuracy"'), html.indexOf('class="research-details empirical-complete-numbers"'));
   assert.match(answer, /<details class="research-details empirical-recorded-values"><summary>/);
-  for (const text of ["Recorded results for this question", "MCSE 0", "Not recorded", "Interval level", "Rows 1 to 25 of 30", "Next rows", "Diagnostics"]) assert.ok(answer.includes(text), text);
+  for (const text of ["Recorded results for this question", "Monte Carlo standard error 0", "Not recorded", "Interval level", "Rows 1 to 25 of 30", "Next rows", "Diagnostics"]) assert.ok(answer.includes(text), text);
   assert.doesNotMatch(answer, /987,654|95%/);
-  assert.match(html, /href="\/api\/results\.json"/);
-  assert.equal((html.match(/Open original exhibit/g) || []).length, 1);
+  assert.match(html, /Small example/);
+  const completeExhibit = render.exhibit({ exhibit: generic });
+  assert.match(completeExhibit, /href="\/api\/results\.json"/);
+  assert.equal((completeExhibit.match(/Open original exhibit/g) || []).length, 1);
+  assert.doesNotMatch(html, /Open original exhibit/, "The original file remains in the complete exhibit reader.");
   assert.match(answer, /data-reading-anchor="evaluation:[^"]+:question:q\.accuracy"|Recorded values/);
   assert.equal(JSON.stringify(values), before);
 });

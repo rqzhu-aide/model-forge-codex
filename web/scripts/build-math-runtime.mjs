@@ -44,7 +44,7 @@ export async function buildMathRuntime(outDir = path.join(webRoot, "runtime")) {
     build: {
       ssr: path.join(webRoot, "scripts/report-runtime-entry.mjs"),
       target: "node18", outDir, emptyOutDir: false, minify: false,
-      rollupOptions: { external: ["node:fs", "node:path", "node:crypto"], output: { entryFileNames: "export-report.mjs" } },
+      rollupOptions: { external: ["node:fs", "node:path", "node:crypto", "node:zlib"], output: { entryFileNames: "export-report.mjs" } },
     },
   });
   const notices = [];

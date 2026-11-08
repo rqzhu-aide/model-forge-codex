@@ -656,6 +656,11 @@
             "uncertainty"
           ],
           "properties": {
+            "population": {
+              "enum": ["completed", "attempted"],
+              "default": "completed",
+              "description": "Choose the metric's denominator. Omit or use completed for the existing summary of finite values on completed rows, including conditional metrics whose other rows are null. Use attempted for eligible completed and failed attempts, excluding not_run and invalidated rows. Record an outcome only when known: a failure can have a known no-issuance indicator, but it does not imply zero risk, reward or coverage. For attempted summaries every included attempt must have a finite recorded value; otherwise the estimate and standard uncertainty remain unavailable. n_replicates then counts all included attempts. Custom bounds with unknown outcomes need their own stated construction."
+            },
             "aggregation": {
               "enum": [
                 "mean",

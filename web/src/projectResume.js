@@ -1,7 +1,7 @@
 import { issueCardEntries, issueDisplayState, methodPhaseContexts } from "./phaseUiState.js";
 import { catalogMethodForProposal, catalogOnlyMethods, catalogSelectionKey, orderedProposals, proposalKey } from "./methodWorkspace.js";
 import { issueKey } from "./phaseWorkflow.js";
-import { phaseInputSummary } from "./phaseInputSummary.js";
+import { phaseInputSummary, phaseQuestionAnchor } from "./phaseInputSummary.js";
 import { goalCorrections } from "./phaseOneReader.js";
 
 // The project header restates the research question in its opening sentences.
@@ -49,6 +49,16 @@ export function p2DecisionContexts({ methods = [], proposals = [] }) {
   return selections;
 }
 
+export function p2DecisionSelection({ selections = [], p2ProposalKey, phase, branch }) {
+  // Method pages may omit the trunk proposals behind a retained P2 key. Keep
+  // their shared-question destination with the current registered method.
+  const explicit = selections.find((item) => item.p2ProposalKey === p2ProposalKey);
+  const currentMethod = ["P3", "P4", "P5"].includes(phase) && branch && branch !== "trunk"
+    ? selections.find(({ catalogMethod }) => catalogMethod?.registered
+      && [catalogMethod.branch_id, catalogMethod.method_id].includes(branch)) : null;
+  return explicit || currentMethod || selections[0];
+}
+
 export function waitingDecisions({ attention = [], answers = [], branches = [], methods = [], runs = [], proposals = [], p2ProposalKey: selectedKey }) {
   const methodBranches = methodPhaseContexts({ branches, methods, runs });
   const responses = (context) => issueCardEntries({ attention, answers, ...context }).entries
@@ -72,18 +82,18 @@ export function waitingDecisions({ attention = [], answers = [], branches = [], 
     const version = method.identity?.version ?? method.version;
     const label = method.title || method.name || catalogMethod?.title || methodId;
     return entries.length ? [{ phase: "P2", branch, count: entries.length,
-      methodLabel: `${label}${version != null ? ` · Version ${version}` : ""}`, p2ProposalKey }] : [];
+      methodLabel: `${label}${version != null ? ` · Version ${version}` : ""}`, p2ProposalKey, anchors: entries.map(phaseQuestionAnchor) }] : [];
   });
   const contexts = [["P1", "trunk"],
     ...["P3", "P4"].flatMap((phase) => methodBranches.map((item) => [phase, item.branch, item.label]))];
   const groups = contexts.flatMap(([phase, branch, label]) => {
     const method = branch === "trunk" ? null : methods.find((item) => item.branch_id === branch || item.method_id === branch);
-    const count = responses({ phase, branch, methodId: method?.method_id, modelRef: method?.identity || method?.current_identity }).length;
-    return count ? [{ phase, branch, count, methodLabel: branch === "trunk" ? null : label }] : [];
+    const entries = responses({ phase, branch, methodId: method?.method_id, modelRef: method?.identity || method?.current_identity });
+    return entries.length ? [{ phase, branch, count: entries.length, methodLabel: branch === "trunk" ? null : label, anchors: entries.map(phaseQuestionAnchor) }] : [];
   });
   if (!selections.length) {
-    const count = responses({ phase: "P2", branch: "trunk" }).length;
-    if (count) p2.push({ phase: "P2", branch: "trunk", count, methodLabel: null });
+    const entries = responses({ phase: "P2", branch: "trunk" });
+    if (entries.length) p2.push({ phase: "P2", branch: "trunk", count: entries.length, methodLabel: null, anchors: entries.map(phaseQuestionAnchor) });
   }
   const editorial = methodBranches.flatMap(({ branch, label }) => {
     const method = methods.find((item) => item.branch_id === branch || item.method_id === branch);

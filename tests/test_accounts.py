@@ -282,7 +282,7 @@ async def test_failed_login_never_exposes_errors_or_replaces_existing_workspace_
 
 async def test_api_rejects_cross_origin_and_forms_and_honors_read_only(accounts, monkeypatch):
     app = create_app(accounts.data_root, FakeCodexBridge(), account_service=accounts)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://workbench.local") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         for method, path in (("POST", "login"), ("POST", "connect"), ("DELETE", "login")):
             response = await client.request(method, "/api/v1/account/" + path, data={})
             assert response.status_code == 415
@@ -292,7 +292,7 @@ async def test_api_rejects_cross_origin_and_forms_and_honors_read_only(accounts,
         monkeypatch.setenv("MF_CODEX_READ_ONLY", "1")
         status = await client.get("/api/v1/account")
         assert status.status_code == 200 and status.json()["read_only"]
-        response = await client.post("/api/v1/account/login", json={}, headers={"Origin": "http://workbench.local"})
+        response = await client.post("/api/v1/account/login", json={}, headers={"Origin": "http://localhost"})
         assert response.status_code == 403 and accounts.calls == []
         with pytest.raises(AccountError, match="read-only"):
             await accounts.connect()
@@ -301,8 +301,8 @@ async def test_api_rejects_cross_origin_and_forms_and_honors_read_only(accounts,
 async def test_api_explicit_connection_and_future_project_and_member_configuration(accounts):
     auth(accounts.shared_home)
     app = create_app(accounts.data_root, FakeCodexBridge(), account_service=accounts)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://workbench.local") as client:
-        connected = await client.post("/api/v1/account/connect", json={}, headers={"Origin": "http://workbench.local"})
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
+        connected = await client.post("/api/v1/account/connect", json={}, headers={"Origin": "http://localhost"})
         assert connected.status_code == 200 and connected.json()["connected"]
         created = await client.post("/api/v1/projects", json={"name": "Account test"})
         assert created.status_code == 200

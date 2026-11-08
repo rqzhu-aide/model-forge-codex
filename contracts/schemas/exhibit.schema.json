@@ -30,17 +30,17 @@
     "title": {
       "type": "string",
       "maxLength": 120,
-      "description": "A readable scientific question or result label; labels and axis text in the artifact must remain legible and define measures and units."
+      "description": "A readable scientific question or result label; labels and axis text in the artifact must remain legible and define measures and units. Name the source-defined measured quantity when the result depends on it; do not relabel an unspecified score as a familiar statistical metric."
     },
     "caption": {
       "type": "string",
       "maxLength": 600,
-      "description": "Explain what the exhibit shows, its comparison and tested scope. Define uncertainty/error bars, repetitions and units when applicable; do not infer general validity from a plotted ordering. Explain comparison direction, units, attempted/returned denominators where relevant, uncertainty and tested scope, preserving the synthetic/actual-data boundary."
+      "description": "Within 600 characters, explain the source-defined target/statistic, comparison direction, units, tested scope and decisive denominator or matched subset. State applicable uncertainty type, sidedness and confidence level. Keep the qualifications needed to read the numbers here or in headers; put longer technical detail in detail_md without truncating a decisive qualifier. Preserve the synthetic/actual-data boundary. A plotted ordering does not establish general validity. Expand abbreviated statistics and define local mathematical headings, including any averaging operator. Explain shared units and parenthetical uncertainty here instead of repeating them in every heading; do not confuse standard deviation with a standard error."
     },
     "detail_md": {
       "type": "string",
       "maxLength": 2000,
-      "description": "Optional longer markdown explanation the UI can expand."
+      "description": "Optional longer explanation of technical design, uncertainty or source-mapping details that do not fit the caption. Keep decisive qualifications needed to read the display visible in its headers or caption; do not truncate them to meet a length limit."
     },
     "artifact_path": {
       "type": "string",
@@ -106,14 +106,15 @@
           "label": {
             "type": "string",
             "minLength": 1,
-            "pattern": "\\S"
+            "pattern": "\\S",
+            "description": "For a quantitative column, prefer concise source-defined mathematical notation in inline LaTeX when it is clear, using the supplied project symbols. Define the measure and any local summary notation in the caption or adjacent account; preserve the actual statistic, averaging subset and uncertainty type. Keep scenario and method headings descriptive. This display label does not change the source key or values."
           },
           "unit": {
             "type": "string"
           }
         }
       },
-      "description": "Optional presentation labels and units for columns read from the verified table artifact. Never duplicate data values here. New table artifacts use descriptive scientific scenario and method names in row values, grounded in supplied definitions; column labels do not translate internal case IDs. Preserve exact row mappings in structured references or supporting records without rewriting retained artifacts."
+      "description": "Labels and units for source columns, not a column-selection list. Omitting a column here does not hide it. For a compact primary display, the Analyst authors a separate supported table artifact containing the intended columns, with the complete evidence and mapping retained. Never duplicate data values here. Use descriptive scientific scenario and method names grounded in supplied definitions; labels do not translate internal case IDs. Preserve exact row mappings in structured references or supporting records without rewriting retained artifacts."
     },
     "data_exhibit_ids": {
       "type": "array",

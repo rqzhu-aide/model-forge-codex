@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { compareDecisionPriority, decisionDiscussionDraft, decisionDraft, decisionOptions, decisionSubmission, recommendedDecisionOption } from "../src/researcherDecisions.js";
+import { compareDecisionPriority, decisionBriefSections, decisionDiscussionDraft, decisionDraft, decisionOptions, decisionSubmission, decisionSupportSections, recommendedDecisionOption } from "../src/researcherDecisions.js";
 import { issueCardEntries } from "../src/phaseUiState.js";
 import { researcherDecisionCards } from "../src/contextualRequests.js";
 import { populationChoice, studyFact, resourceChoice, legacyQuestion } from "./fixtures/researcher-decisions.mjs";
@@ -46,6 +46,28 @@ test("a recommendation identifies an authored option without ordering or selecti
   for (const invalid of [undefined, "unlisted", "1", 1]) assert.equal(recommendedDecisionOption({ ...item, recommended_option_id: invalid }), null);
   assert.equal(recommendedDecisionOption({ ...item, response_kind: "study_fact" }), null);
   assert.deepEqual(item, before);
+});
+
+test("one authored rationale retains distinct scientific fields and exact-text deduplication", () => {
+  const item = { ...populationChoice, consequence_markdown: "An additional consequence under positivity.", why_it_matters: "The population claim is conditional on ascertainment.", why_it_matters_markdown: "Neither censoring independence nor positivity has been established.", expected_consequence: "The estimand changes to $p_s(B,H_s)$.", answer_consequences_markdown: "Keep the finite-horizon condition $H<\\infty$.", information_limits_markdown: "Observation times remain unverified.", summary_markdown: "Earlier scientific context remains available." };
+  const before = structuredClone(item), sections = decisionBriefSections(item);
+  const rationale = sections.filter(section => section.heading === "Why this matters");
+  assert.deepEqual(rationale.map(section => section.text), [item.context_markdown, item.likely_consequence, item.consequence_markdown, item.why_it_matters, item.why_it_matters_markdown, item.expected_consequence, item.answer_consequences_markdown, item.information_limits, item.information_limits_markdown]);
+  assert.equal(new Set(rationale.map(section => section.section)).size, rationale.length);
+  assert.deepEqual(decisionSupportSections(item).map(section => section.text), [item.summary_markdown]);
+  const duplicated = decisionBriefSections({ ...item, expected_consequence: item.likely_consequence, information_limits: item.context_markdown });
+  assert.equal(duplicated.filter(section => section.text === item.likely_consequence).length, 1);
+  assert.equal(duplicated.filter(section => section.text === item.context_markdown).length, 1);
+  assert.deepEqual(item, before);
+});
+
+test("recommendation relocation requires an exact authored option and preserves all fallback advice", () => {
+  const item = { ...populationChoice, recommended_option_id: "observed" };
+  assert.ok(decisionBriefSections(item).some(section => section.text === item.recommendation));
+  assert.ok(decisionBriefSections(item, { recommendationInResponse: true }).every(section => section.text !== item.recommendation));
+  for (const recommended_option_id of [undefined, "missing"]) assert.ok(decisionBriefSections({ ...item, recommended_option_id }, { recommendationInResponse: true }).some(section => section.text === item.recommendation));
+  const legacy = { ...legacyQuestion, recommendation: "Keep the collection mechanism unknown until records arrive." };
+  assert.ok(decisionBriefSections(legacy, { recommendationInResponse: true }).some(section => section.text === legacy.recommendation));
 });
 
 test("discussion snapshots preserve a selected choice without a note, alternatives and unknowns", () => {

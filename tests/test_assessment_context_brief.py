@@ -15,6 +15,7 @@ from test_researcher_workbench_engine import seed_theory, target, workbench
 
 
 MATH_CHOICE_GUIDANCE = "When a consequential choice has a mathematical distinction"
+FOCUSED_GUIDANCE = "next justified step and consequential unknown"
 
 
 @pytest.mark.parametrize("purpose", [
@@ -94,21 +95,18 @@ async def test_discussion_brief_scopes_mathematical_choices_and_preserves_unknow
 
     assert run.state is RunState.ASSESSED, run.terminal_reason
     brief = engine.bridge.turns[-1]["brief"]
-    assert MATH_CHOICE_GUIDANCE in brief
-    assert "the researcher requests a mathematical comparison" in brief
-    assert "affected target, model, constraint, assumption or guarantee" in brief
-    assert "defining symbols and any shared objective once" in brief
-    assert "alternative's changed equation or formulation" in brief
-    assert "concise practical consequence and material tradeoff" in brief
-    assert "conditions supporting the recommendation" in brief
-    assert "otherwise state the missing evidence or preference" in brief
-    assert "Answer the exact question first" in brief and "not a mandatory template" in brief
-    assert "Plain study facts, budgets and choices without a mathematical distinction need no artificial equation" in brief
-    assert "The Lead owns routine scientific choices within the agreed goal and budget" in brief
-    assert "unresolved preferences or unavailable facts that materially affect interpretation" in brief
-    assert "Reuse applicable saved answers, preserve unknowns and unsaved drafts" in brief
-    assert "do not ask the researcher to resolve a proof or implementation defect" in brief
-    assert "No follow-up question is required" in brief
+    assert FOCUSED_GUIDANCE in brief and MATH_CHOICE_GUIDANCE not in brief
+    assert "Answer the exact question first" in brief
+    assert "show the changed formulation in the frozen notation" in brief
+    assert "including its conditioning and policy or sampling law" in brief
+    assert "do not invent an equation" in brief
+    assert "Plain factual requests need no artificial equation" in brief
+    assert "A conservative strategy does not by itself change the objective" in brief
+    assert "Unknown to the researcher does not establish absence from the data" in brief
+    assert "preserve applicable saved answers and unsaved drafts" in brief
+    assert "Routine choices and unambiguous proof or coding repairs remain team work" in brief
+    assert "inquiry word ceilings do not apply to requested discussion" in brief
+    assert "no follow-up question is required" in brief
     if purpose in ("project_context", "model_dialogue"):
         assert "For any optional followup_questions, keep question as the direct request and scope exact" in brief
         assert "Use consequence_markdown for the affected formulation and practical answer effect" in brief
@@ -135,6 +133,38 @@ async def test_discussion_brief_scopes_mathematical_choices_and_preserves_unknow
     assert current_records(phase_dir) == records_before
     assert {path: path.read_bytes() for path in (project / "researcher").glob("*.json")} == researcher_files
     assert not list((project / "authority" / "receipts").glob("*.json"))
+
+
+async def test_retained_catalog_keeps_its_prior_discussion_instructions(workbench):
+    """The new authoring route is opt-in through the run's pinned catalog."""
+    import runpy
+    from model_forge_codex.storage import write_json_atomic
+
+    engine, project, branch = workbench
+    path = project / "contracts/contracts/phases/P3.json"
+    contract = read_json(path)
+    contract["capabilities"].remove("research_account_focus_v1")
+    write_json_atomic(path, contract)
+    registry_path = project / "contracts/contracts/phases.json"
+    registry = read_json(registry_path)
+    registry["contracts"] = [contract if row["phase_id"] == "P3" else row for row in registry["contracts"]]
+    write_json_atomic(registry_path, registry)
+    runpy.run_path(str(project / "contracts/refresh_manifest.py"))["refresh"](project / "contracts")
+    seed_theory(project, branch)
+    selected = issue_source(project, branch)[0]["explanation_target"]
+    engine.bridge.default_behavior = ("ok", {"assessment.json": json.dumps({
+        "headline": "Recorded conditions", "assessment_markdown": "The supplied conditions remain unverified.",
+        "limitations": [], "suggested_actions": [], "evidence_refs": [],
+    })})
+    run = await engine.start_run("project.test", phase="P3", mode="p3.assessment", branch_id=branch,
+        intent="assessment", assessment_purpose="issue_explanation", target=selected,
+        instructions="Explain the conditions.")
+    await engine._tasks[run.run_id]
+    brief = engine.bridge.turns[-1]["brief"]
+    assert MATH_CHOICE_GUIDANCE in brief and FOCUSED_GUIDANCE not in brief
+    assert "a different method requires upstream revision" in brief
+    assert "Reuse applicable saved answers, preserve unknowns and unsaved drafts" in brief
+    assert engine.load_run("project.test", run.run_id).state is RunState.ASSESSED
 
 
 async def test_report_section_brief_keeps_its_existing_readonly_mathematical_explanation(workbench):

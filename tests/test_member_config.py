@@ -86,7 +86,7 @@ async def test_member_update_overlays_without_wiping(engine):
     app = create_app(data_root=eng.data_root, bridge=bridge)
 
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://t") as client:
+    async with AsyncClient(transport=transport, base_url="http://localhost") as client:
         # Set a custom provider + soul on the analyst.
         resp = await client.put(
             f"/api/v1/projects/{project_id}/members/data_analyst",

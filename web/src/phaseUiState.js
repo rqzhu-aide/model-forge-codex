@@ -11,6 +11,7 @@ export const issueDisplayKind = (issue) => ["researcher_decision", "research_tas
 export function issueDisplayState(issue) {
   const open = issueIsOpen(issue);
   const kind = issueDisplayKind(issue);
+  if (issue.delivery_state?.portable_export_check === "passed") return { state: open ? "science" : "recorded", label: "Export check passed" };
   if (kind === "researcher_decision") {
     if (issue.researcher_answer) return { state: "saved", label: issue.researcher_answer.origin === "unknown" ? "Answer saved · still unknown" : "Answer saved" };
     return open ? { state: "response", label: "Open question" } : { state: "recorded", label: "Closed question" };
@@ -24,6 +25,7 @@ export function issueDisplayState(issue) {
 }
 
 export function issueUrgency(issue) {
+  if (issue.delivery_state?.portable_export_check === "passed") return { state: "recorded", label: "Export check passed" };
   const question = !["research_task", "scientific_issue"].includes(issueDisplayKind(issue));
   if (issue.researcher_answer?.origin === "unknown") return { state: "unknown", label: "Answer saved · still unknown" };
   if (issue.researcher_answer) return { state: "saved", label: "Answer saved" };
@@ -31,7 +33,7 @@ export function issueUrgency(issue) {
   if (question) return { state: "attention", label: "Open question" };
   if (issue.severity === "blocking") return { state: "blocking", label: "Blocking" };
   if (issue.severity === "reassessment_required") return { state: "reassess", label: "Reassess" };
-  return { state: "attention", label: "Discuss" };
+  return { state: "attention", label: "Open scientific work" };
 }
 
 export function issueCardEntries({ issues = [], attention = [], answers = [], phase, branch, methodId, modelRef }) {

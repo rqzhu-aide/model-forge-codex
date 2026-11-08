@@ -16,10 +16,29 @@ const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-ui-render-"
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
 await build({
-  stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Theory from '${src}/components/TheoryWorkbench.jsx'; import Empirical from '${src}/components/EmpiricalWorkbench.jsx'; import Literature, {SelectedPaper, LiteratureTabs, LiteratureHistory} from '${src}/components/LiteratureWorkspace.jsx'; import IssuesCard from '${src}/components/IssuesCard.jsx'; import ResearcherDialogue from '${src}/components/ResearcherDialogue.jsx'; import FurtherWorkCard from '${src}/components/FurtherWorkCard.jsx'; import Methods from '${src}/components/MethodProposals.jsx'; import {ProjectBriefEditor} from '${src}/components/ProjectBrief.jsx'; import PhaseOne from '${src}/components/PhaseOneWorkspace.jsx'; import PhaseTwoPreparation from '${src}/components/PhaseTwoPreparation.jsx'; import {ResearcherDecisions, TeamResearchFollowUp, EarlierOpenQuestions, RunCorrections, RunsAwaitingDirection} from '${src}/components/ContextualRequests.jsx'; import LaunchRun from '${src}/components/LaunchRun.jsx'; import {proposalReviews, MethodPicker, MethodReaderDisclosure, ExploreActions, SupersededNote} from '${src}/components/MethodProposals.jsx'; import {ResearchDocument, MethodStatusNote, MethodStatusPill} from '${src}/components/Shared.jsx'; import Assessments, {assessmentRepairRequest} from '${src}/components/Assessments.jsx'; import TestedTheorySource from '${src}/components/TestedTheorySource.jsx'; export const launchRun = props => renderToStaticMarkup(React.createElement(LaunchRun, props)); export const decisions = props => renderToStaticMarkup(React.createElement(ResearcherDecisions, props)); export const teamFollowUp = props => renderToStaticMarkup(React.createElement(TeamResearchFollowUp, props)); export const earlierQuestions = props => renderToStaticMarkup(React.createElement(EarlierOpenQuestions, props)); export const runCorrections = props => renderToStaticMarkup(React.createElement(RunCorrections, props)); export const waitingDirections = props => renderToStaticMarkup(React.createElement(RunsAwaitingDirection, props)); export const phaseTwoPreparation = props => renderToStaticMarkup(React.createElement(PhaseTwoPreparation, props)); export const briefEditor = props => renderToStaticMarkup(React.createElement(ProjectBriefEditor, props)); export const phaseOne = props => {
+  stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Theory from '${src}/components/TheoryWorkbench.jsx'; import Empirical from '${src}/components/EmpiricalWorkbench.jsx'; import Literature, {SelectedPaper, LiteratureTabs, LiteratureHistory} from '${src}/components/LiteratureWorkspace.jsx'; import IssuesCard from '${src}/components/IssuesCard.jsx'; import ResearcherDialogue from '${src}/components/ResearcherDialogue.jsx'; import FurtherWorkCard from '${src}/components/FurtherWorkCard.jsx'; import Methods from '${src}/components/MethodProposals.jsx'; import {ProjectBriefEditor} from '${src}/components/ProjectBrief.jsx'; import PhaseOne from '${src}/components/PhaseOneWorkspace.jsx'; import PhaseTwoPreparation from '${src}/components/PhaseTwoPreparation.jsx'; import {ResearcherDecisions, TeamResearchFollowUp, EarlierOpenQuestions, RunCorrections, RunsAwaitingDirection} from '${src}/components/ContextualRequests.jsx'; import LaunchRun from '${src}/components/LaunchRun.jsx'; import {proposalReviews, MethodPicker, ExploreActions, SupersededNote} from '${src}/components/MethodProposals.jsx'; import {ResearchDocument, MethodStatusNote, MethodStatusPill} from '${src}/components/Shared.jsx'; import Assessments, {assessmentRepairRequest} from '${src}/components/Assessments.jsx'; import TestedTheorySource from '${src}/components/TestedTheorySource.jsx'; export const launchRun = props => renderToStaticMarkup(React.createElement(LaunchRun, props)); export const decisions = props => renderToStaticMarkup(React.createElement(ResearcherDecisions, props)); export const teamFollowUp = props => renderToStaticMarkup(React.createElement(TeamResearchFollowUp, props)); export const earlierQuestions = props => renderToStaticMarkup(React.createElement(EarlierOpenQuestions, props)); export const runCorrections = props => renderToStaticMarkup(React.createElement(RunCorrections, props)); export const waitingDirections = props => renderToStaticMarkup(React.createElement(RunsAwaitingDirection, props)); export const phaseTwoPreparation = props => renderToStaticMarkup(React.createElement(PhaseTwoPreparation, props)); export const briefEditor = props => renderToStaticMarkup(React.createElement(ProjectBriefEditor, props)); export const phaseOne = props => {
     const history = <details className='research-details run-history' data-reading-anchor='research-history'><summary>Phase run history</summary><LiteratureHistory collections={props.artifacts?.literature_collections} coverage={props.artifacts?.literature_coverage} bases={props.artifacts?.research_bases} displayedBasis={props.basis} libraries={props.artifacts?.literature_libraries} cards={props.cards} onSource={props.onSource}/><EarlierOpenQuestions items={props.attentionItems} answers={props.researcherAnswers} branch='trunk' phase='P1' settingQuestions={props.basis?.research_setting?.clarification_questions} settingReference={props.basis?.generation_ref} onSource={props.onSource}/></details>;
-    return renderToStaticMarkup(<PhaseOne {...props} issues={<ResearcherDialogue project={props.project} problemContext={props.project.problem_context} projectId={props.project.project_id} phase='P1' branch='trunk' attention={props.attentionItems} answers={props.researcherAnswers} onSource={props.onSource} onSaved={props.onSaved}/>} furtherWork={<FurtherWorkCard projectId={props.project.project_id} phase='P1' branch='trunk' onStarted={props.onLaunch} history={history}/>}/>);
-  }; export const literatureTabs = props => LiteratureTabs(props); export const matchingReviews = proposalReviews; export const methodPicker = props => MethodPicker(props); export const methodReaderDisclosure = props => MethodReaderDisclosure(props); export const exploreActions = props => ExploreActions(props); export const supersededNote = props => SupersededNote(props); export const testedTheory = props => renderToStaticMarkup(React.createElement(TestedTheorySource, props)); export const selectedPaper = props => renderToStaticMarkup(React.createElement(SelectedPaper, props)); export const literature = props => renderToStaticMarkup(<><Literature {...props}/><LiteratureHistory {...props} bases={props.bases || (props.basis ? [{branch:"trunk",phase:"P1",...props.basis}] : [])}/></>); export const methods = props => renderToStaticMarkup(<Methods {...props} issues={context => <IssuesCard projectId={props.projectId} phase='P2' branch={context.methodBranch} methodId={context.methodId} methodLabel={context.method?.title} attention={context.catalogMethod ? context.requests : []} answers={context.catalogMethod ? context.answers : []} onSource={props.onSource}/>} furtherWork={context => <section className='card' data-card-role='action'><h2>Further model development</h2>{context.modificationOptions}{context.proposedWork}{context.modelHistory}</section>}/>); export const methodsRaw = props => renderToStaticMarkup(React.createElement(Methods, props)); export const theory = props => renderToStaticMarkup(React.createElement(Theory, props)); export const empirical = props => renderToStaticMarkup(React.createElement(Empirical, props)); export const assessments = props => renderToStaticMarkup(React.createElement(Assessments, props)); export const repairRequest = assessmentRepairRequest; export const document = text => renderToStaticMarkup(React.createElement(ResearchDocument, {text})); export const methodStatusNote = props => renderToStaticMarkup(React.createElement(MethodStatusNote, props)); export const methodStatusPill = props => renderToStaticMarkup(React.createElement(MethodStatusPill, props));`, resolveDir: src, loader: "jsx" },
+    return renderToStaticMarkup(<><PhaseOne {...props} issues={<ResearcherDialogue project={props.project} problemContext={props.project.problem_context} projectId={props.project.project_id} phase='P1' branch='trunk' attention={props.attentionItems} answers={props.researcherAnswers} onSource={props.onSource} onSaved={props.onSaved}/>} furtherWork={<FurtherWorkCard projectId={props.project.project_id} phase='P1' branch='trunk' onStarted={props.onLaunch}/>}/>{history}</>);
+  }; export const literatureTabs = props => LiteratureTabs(props); export const matchingReviews = proposalReviews; export const methodPicker = props => MethodPicker(props); export const exploreActions = props => ExploreActions(props); export const supersededNote = props => SupersededNote(props); export const testedTheory = props => renderToStaticMarkup(React.createElement(TestedTheorySource, props)); export const selectedPaper = props => renderToStaticMarkup(React.createElement(SelectedPaper, props)); export const literature = props => renderToStaticMarkup(<><Literature {...props}/><LiteratureHistory {...props} bases={props.bases || (props.basis ? [{branch:"trunk",phase:"P1",...props.basis}] : [])}/></>);
+  import {methodReadingDocuments} from '${src}/components/MethodProposals.jsx';
+  import {CompleteNumbers} from '${src}/components/EmpiricalWorkbench.jsx';
+  export {default as compactExhibitElement} from '${src}/components/CompactEmpiricalExhibit.jsx';
+  export {default as EmpiricalReadingButton,empiricalReadingSnapshot} from '${src}/components/EmpiricalReading.jsx';
+  export const renderElement=renderToStaticMarkup;
+  export const empiricalNumbers = props => renderToStaticMarkup(React.createElement(CompleteNumbers,props));
+  export function methodReader(props) {
+    let selected;
+    const html=renderToStaticMarkup(<Methods {...props} issues={context => {
+      selected=context;
+      return <IssuesCard projectId={props.projectId} phase='P2' branch={context.methodBranch} methodId={context.methodId} methodLabel={context.method?.title} attention={context.catalogMethod ? context.requests : []} answers={context.catalogMethod ? context.answers : []} onSource={props.onSource}/>;
+    }} furtherWork={context => <section className='card' data-card-role='action'><h2>Further model development</h2>{context.modificationOptions}{context.proposedWork}{context.modelHistory}</section>}/>);
+    const documents=selected.method ? methodReadingDocuments({selected:selected.proposal,catalogMethod:selected.catalogMethod,
+      method:selected.method,reviewed:selected.reviewed,reviews:props.reviews || [],proposals:props.proposals || [],
+      literatureSources:props.literatureSources || []},props.onSource).map(item=>({...item,html:renderToStaticMarkup(item.body)})) : [];
+    return {html,documents};
+  }
+  export const methods = props => methodReader(props).html;
+  export const methodsRaw = props => renderToStaticMarkup(React.createElement(Methods, props)); export const theory = props => renderToStaticMarkup(React.createElement(Theory, props)); export const empirical = props => renderToStaticMarkup(React.createElement(Empirical, props)); export const assessments = props => renderToStaticMarkup(React.createElement(Assessments, props)); export const repairRequest = assessmentRepairRequest; export const document = text => renderToStaticMarkup(React.createElement(ResearchDocument, {text})); export const methodStatusNote = props => renderToStaticMarkup(React.createElement(MethodStatusNote, props)); export const methodStatusPill = props => renderToStaticMarkup(React.createElement(MethodStatusPill, props));`, resolveDir: src, loader: "jsx" },
   outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" },
   alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") },
   logLevel: "silent",
@@ -29,6 +48,7 @@ fs.unlinkSync(bundle); fs.rmdirSync(directory);
 const noop = () => {};
 const buttonNamed = (html, label) => [...html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)].find((match) => match[2].replace(/<[^>]*>/g, "") === label);
 const renderedText = html => html.replace(/<[^>]*>/g, "");
+const methodDocument = (result, name) => result.documents.find(document => document.name === name).html;
 const ref = { branch: "method.a", phase: "P3", family: "theory_record", generation_id: "gen.a", sha256: "a".repeat(64), run_id: "run.a" };
 
 test("linked association formulas render as display math with their exact supplied TeX bodies", () => {
@@ -149,7 +169,7 @@ test("P1 presents the lead summary before distinct retained-record and member-as
   assert.match(html, /Current linked member assessments<\/dt><dd class="literature-count-value">3<\/dd>/);
   assert.match(html, /paper selector groups verified equivalent publication links/);
   assert.match(html, /latest linked account by each member for each source/);
-  assert.match(html, /<details[^>]*data-reading-anchor="earlier-synthesis"><summary>Read the earlier literature synthesis<\/summary>/);
+  assert.doesNotMatch(html, /earlier-synthesis|Read the earlier literature synthesis/);
   assert.ok(html.indexOf("The lead&#x27;s original landscape synthesis") < html.indexOf("literature-statistics"));
   assert.ok(html.indexOf("literature-statistics") > html.indexOf("literature-controls"));
   assert.ok(html.indexOf("literature-library-counts") > html.indexOf("Literature accounts, search scopes and review"));
@@ -174,11 +194,12 @@ test("P1 counts legacy sources without inventing unavailable totals or conflatin
 });
 
 test("P2 retains catalog entries when the latest run only authored another method card", () => {
-  const html = render.methods({ onSource: noop, methods: [{ method_id: "method.old", title: "Earlier method", version: 2, status: "proposed", definition: { summary: "Preserves the target marginal.", limitations: ["Mixing has not been established."] }, source_ref: ref }], cards: [{ card_id: "card.new", subject_ref: "method.new", title: "New method", innovation: "A different coupling." }] });
+  const result = render.methodReader({ onSource: noop, methods: [{ method_id: "method.old", title: "Earlier method", version: 2, status: "proposed", definition: { summary: "Preserves the target marginal.", limitations: ["Mixing has not been established."] }, source_ref: ref }], cards: [{ card_id: "card.new", subject_ref: "method.new", title: "New method", innovation: "A different coupling." }] });
+  const { html } = result;
   assert.match(html, /Earlier method/);
   assert.match(html, /Version 2/);
   assert.match(html, /Preserves the target marginal/);
-  assert.match(html, /Mixing has not been established/);
+  assert.match(methodDocument(result, "assumptions"), /Mixing has not been established/);
   assert.match(html, /New method/);
 });
 
@@ -303,14 +324,28 @@ test("rendered theory keeps equations, keyboard controls, exact-source assessmen
   assert.doesNotMatch(html, /Other method theorem/);
 });
 test("rendered P4 evidence keeps source figures without another method", () => {
+  const diagnostics = [{ branch: "method.a", phase: "P4", diagnostics_id: "diag.a", generation_ref: { ...ref, phase: "P4" }, headline_numbers: [{ case_id: "case.det", metric: "error", estimate: null, mcse: null, uncertainty_kind: "not_applicable" }], stability: Array.from({ length: 6 }, (_, i) => ({ case_id: `case.${i}`, metric: "error", mean: 1, sd: 0.1, n_seeds: 8, seed_flip: i === 5 })), solver_health: [], runtime: { total_ms: 20, per_case: [] } }];
+  const figure = { branch: "method.a", phase: "P4", exhibit_id: "exhibit.a", title: "Applicable conditions", caption: "The result varies by regime.", media_type: "image/svg+xml", artifact_url: "/api/v1/figure.svg" };
   const html = render.empirical({ branch: "method.a", onSource: noop,
-    diagnostics: [{ branch: "method.a", phase: "P4", diagnostics_id: "diag.a", generation_ref: { ...ref, phase: "P4" }, headline_numbers: [{ case_id: "case.det", metric: "error", estimate: null, mcse: null, uncertainty_kind: "not_applicable" }], stability: Array.from({ length: 6 }, (_, i) => ({ case_id: `case.${i}`, metric: "error", mean: 1, sd: 0.1, n_seeds: 8, seed_flip: i === 5 })), solver_health: [], runtime: { total_ms: 20, per_case: [] } }],
-    exhibits: [{ branch: "method.a", phase: "P4", exhibit_id: "exhibit.a", title: "Applicable conditions", caption: "The result varies by regime.", media_type: "image/svg+xml", artifact_url: "/api/v1/figure.svg" }, { branch: "method.b", phase: "P4", exhibit_id: "exhibit.b", title: "Private other-method result", media_type: "image/svg+xml", artifact_url: "/api/v1/wrong.svg" }],
+    diagnostics,
+    exhibits: [figure, { branch: "method.b", phase: "P4", exhibit_id: "exhibit.b", title: "Private other-method result", media_type: "image/svg+xml", artifact_url: "/api/v1/wrong.svg" }],
   });
-  assert.match(html, /src="\/api\/v1\/figure.svg"/);
+  assert.match(html, /Applicable conditions/);
+  assert.match(html, /class="empirical-supporting-exhibit"/);
+  const tree = render.compactExhibitElement({ exhibit: figure });
+  const control = tree.props.children.find(node => node?.type === render.EmpiricalReadingButton);
+  assert.ok(control);
+  const snapshot = render.empiricalReadingSnapshot({ ...control.props, scope: { projectId: "project.test", phase: "P4", branch: figure.branch }, onSource: noop });
+  const completeFigure = render.renderElement(snapshot.body);
+  assert.match(completeFigure, /src="\/api\/v1\/figure.svg"/);
+  assert.match(completeFigure, /The result varies by regime/);
+  assert.deepEqual(snapshot.body.props.children.props.exhibit, figure);
   assert.match(html, /Experiments and Results/);
-  assert.match(html, /Complete numerical results and recorded diagnostics/);
+  assert.match(html, /Numerical results and diagnostics/);
   assert.doesNotMatch(html, /Private other-method result|wrong\.svg|NaN|95% CI/);
+  const numbers = render.empiricalNumbers({ diagnostics, cases: [], onSource: noop });
+  assert.match(numbers, /Show all 6 rows/); assert.match(numbers, /Unstable/); assert.match(numbers, /Not applicable/);
+  assert.match(numbers, /Open source/); assert.doesNotMatch(numbers, /Private other-method result|wrong\.svg|NaN|95% CI/);
 });
 test("research documents render math and keep authored HTML inert", () => {
   const html = render.document("# A mathematical statement\n\nThe bound is $\\theta^2$.\n\n<img src=x onerror=alert(1)>\n\n[Unsafe](javascript:alert)");
@@ -435,10 +470,14 @@ test("P2 audits match both proposal identity and producing run", () => {
     { role: "data_analyst", generation_ref: { ...ref, run_id: "run.old" }, assessments: [{ proposal_id: "proposal.shared", assessment_markdown: "Stale audit must not apply." }] },
   ];
   assert.equal(render.matchingReviews(proposal, reviews).length, 1);
-  const html = render.methods({ proposals: [proposal], reviews, onSource: noop });
-  for (const text of ["Exact proposal", "Current targeted audit", "Algorithm, step 2", "independent trajectories", "Reuse would bias", "A generative simulator", "Evaluate constraint and reward separately"]) assert.ok(html.includes(text), text);
-  assert.doesNotMatch(html, /Stale audit must not apply|Different proposal audit/);
-  assert.match(html, /class="katex/);
+  const result = render.methodReader({ proposals: [proposal], reviews, onSource: noop }); const { html } = result;
+  const review = methodDocument(result, "review"), computation = methodDocument(result, "computation");
+  for (const text of ["Exact proposal", "Evaluate constraint and reward separately"]) assert.ok(html.includes(text), text);
+  for (const text of ["Current targeted audit", "Algorithm, step 2", "independent trajectories", "Reuse would bias"]) assert.ok(review.includes(text), text);
+  assert.match(computation, /A generative simulator/);
+  assert.doesNotMatch(html + review, /Stale audit must not apply|Different proposal audit/);
+  assert.doesNotMatch(html, /Current targeted audit|independent trajectories|A generative simulator/);
+  assert.match(computation, /class="katex/);
 });
 
 test("saved-record citations keep readable labels without inventing clickable destinations", () => {
@@ -457,7 +496,7 @@ test("P2 overview keeps internal references as prose and publication citations a
   const review = { review_id: "review.a", assessments: [], generation_ref: { ...current, generation_id: "gen.audit.exact" } };
   const comparison = { generation_ref: current, overview_markdown: "See [controller-mixture proposal](#proposal.a), [theorist audit](#review.a), [unavailable alternative](#proposal.missing), and [earlier audit](#review.old). Preserve $J=0$, **the stated limit**, [paper](https://example.test/paper), and `[literal](#proposal.a)`." };
   const html = render.methods({ proposals: [proposal], reviews: [review, { ...review, review_id: "review.old", generation_ref: { ...current, run_id: "run.old", generation_id: "gen.old" } }], comparisons: [comparison], onSource: noop });
-  const overview = html.match(/<div class="p2-comparison"[\s\S]*?(?=<div class="field method-branch-selector")/)[0];
+  const overview = html.slice(html.indexOf('class="p2-comparison"'), html.indexOf("</section>"));
   assert.equal(buttonNamed(overview, "controller-mixture proposal"), undefined);
   assert.equal(buttonNamed(overview, "theorist audit"), undefined);
   assert.equal(buttonNamed(overview, "unavailable alternative"), undefined);
@@ -470,7 +509,7 @@ test("P2 overview keeps internal references as prose and publication citations a
   const withoutSource = render.methods({ proposals: [proposal], reviews: [review], comparisons: [comparison] });
   assert.equal(buttonNamed(withoutSource, "controller-mixture proposal"), undefined);
   const ambiguous = render.methods({ proposals: [proposal, { ...proposal, method: { title: "Duplicate identity" } }], comparisons: [comparison], onSource: noop });
-  assert.equal(buttonNamed(ambiguous.match(/<div class="p2-comparison"[\s\S]*?(?=<div class="field method-branch-selector")/)[0], "controller-mixture proposal"), undefined);
+  assert.equal(buttonNamed(ambiguous.slice(ambiguous.indexOf('class="p2-comparison"'), ambiguous.indexOf("</section>")), "controller-mixture proposal"), undefined);
 });
 
 test("a lead response to general directions stays separate from selectable model proposals", () => {
@@ -552,11 +591,13 @@ test("canonical method information, features and derivatives remain in the reada
     execution_metadata: { private_path: "private.runtime.path" },
   };
   const original = JSON.stringify(canonical);
-  const html = render.methods({ proposals: [{ proposal_id: "proposal.information", role: "research_lead", generation_ref: ref,
+  const result = render.methodReader({ proposals: [{ proposal_id: "proposal.information", role: "research_lead", generation_ref: ref,
     method: { title: "Landmark calculation", mathematical_definition: { canonical_definition: canonical } } }], onSource: noop });
+  const html = methodDocument(result, "computation");
   for (const text of ["Use result availability times, never future results", "Fit centering and scaling on training patients only", "A finite marker and positive training scale", "The proposed Hessian includes every penalized coefficient"]) assert.ok(html.includes(text), text);
   for (const expression of ["\\mathcal H_i(L)=\\{Y_i(t):t\\le L\\}.", "Z_i=(B_i-\\mu_{\\rm tr})/s_{\\rm tr}.", "J(\\beta)=\\operatorname{Cov}(Z)+\\lambda I."]) assert.ok(html.includes(`<annotation encoding="application/x-tex">${expression}</annotation>`), expression);
   assert.doesNotMatch(html, /information.internal|features.internal|derivatives.internal|private.runtime.path|katex-error/);
+  assert.doesNotMatch(result.html, /Use result availability times|Fit centering and scaling|The proposed Hessian/);
   assert.equal(JSON.stringify(canonical), original, "Readable projection must preserve the authored source.");
 });
 
@@ -667,8 +708,12 @@ test("saved clarification remains in collapsed Decisions to Discuss after the op
   assert.match(html, /Saved for future work/);
   assert.match(html, /Why your answer matters/);
   assert.match(html, /class="katex/);
-  assert.equal((renderedText(html).match(/May a policy depend/g) || []).length, 1); // The compact row summary names the question once.
-  assert.doesNotMatch(html, /Earlier open questions|P2-only directions|Save clarification<\/button>|Clarify this setting/);
+  const [current, history] = html.split('class="saved-input-footer"');
+  assert.equal((renderedText(current).match(/May a policy depend/g) || []).length, 1);
+  assert.doesNotMatch(current, /P2-only directions/);
+  assert.match(history, /<details class="saved-input-group"[^>]*><summary>Phase 2 · 1 answer<\/summary>/);
+  assert.match(history, /P2-only directions/);
+  assert.doesNotMatch(html, /Earlier open questions|Save clarification<\/button>|Clarify this setting/);
   const isolated = render.decisions({ items: [], answers: [answer], branch: "trunk", phase: "P1", onSource: noop });
   assert.doesNotMatch(isolated, /<form|<textarea|Save clarification<\/button>/);
   assert.equal(render.decisions({ items: [], answers: [answer], branch: "trunk", phase: "P2" }), "");
@@ -722,13 +767,13 @@ test("P2 explore card keeps retained methods actionable and fires activation wit
     { proposal_id: "prop.a", status: "retain", rationale: "Strongest guarantee; the tail bound remains open." },
     { proposal_id: "prop.b", status: "exclude", rationale: "Excluded because the estimator is biased." },
   ] };
-  const html = render.methods({ projectId: "project.test", proposals: [proposal, excludedProposal], methods: [catalogMethod], comparisons: [comparison], onContinue: noop, onSource: noop });
+  const result = render.methodReader({ projectId: "project.test", proposals: [proposal, excludedProposal], methods: [catalogMethod], comparisons: [comparison], onContinue: noop, onSource: noop }); const { html } = result;
   assert.doesNotMatch(html, /Your call: choose a method|Needs your decision/);
-  assert.match(html, /Strongest guarantee; the tail bound remains open/);
+  assert.match(methodDocument(result, "review"), /Strongest guarantee; the tail bound remains open/);
   assert.equal((html.match(/Run this Method in Phase 3 - Theory/g) || []).length, 1);
   assert.equal((html.match(/Run this Method in Phase 4 - Numerical Eval/g) || []).length, 1);
-  assert.match(html, /Not retained in this catalog update \(1\)/);
-  assert.match(html, /Excluded because the estimator is biased/);
+  assert.match(html, /Reasons for excluding alternatives/);
+  assert.doesNotMatch(html, /Excluded because the estimator is biased/);
   assert.ok(html.indexOf("Proposed Methods</h2>") < html.indexOf("Choose a method</label>"));
   // The excluded proposal remains selectable for reading but offers no actions.
   const excluded = render.methods({ projectId: "project.test", proposals: [proposal, excludedProposal], methods: [catalogMethod], comparisons: [comparison], initialPick: "run.current:prop.b", onContinue: noop, onSource: noop });
@@ -800,18 +845,22 @@ test("switching methods shows only the selected model's content, questions, answ
   ];
   const comparison = { generation_ref: run, overview_markdown: "Overview.", method_dispositions: [{ proposal_id: "prop.a", status: "retain", rationale: "Lead prefers A's guarantee." }, { proposal_id: "prop.b", status: "retain", rationale: "Lead notes B's empirical fit." }] };
   const props = { projectId: "project.test", proposals: [proposalA, proposalB], methods, comparisons: [comparison], attentionItems: [questionA, questionB], researcherAnswers: [answerB], onContinue: noop, onSource: noop };
-  const htmlA = render.methods(props);
-  const htmlB = render.methods({ ...props, initialPick: "run.current:prop.b" });
+  const resultA = render.methodReader(props), resultB = render.methodReader({ ...props, initialPick: "run.current:prop.b" });
+  const htmlA = resultA.html, htmlB = resultB.html;
+  const reviewA = methodDocument(resultA, "review"), reviewB = methodDocument(resultB, "review");
   assert.match(htmlA, /Mechanism A\./);
   assert.match(htmlA, /Method A&#x27;s theory question/);
-  assert.match(htmlA, /Lead prefers A&#x27;s guarantee/);
+  assert.match(reviewA, /Lead prefers A&#x27;s guarantee/);
   assert.doesNotMatch(htmlA, /Mechanism B\.|Method B&#x27;s experiment question|Saved answer for method B|Lead notes B/);
   assert.match(htmlB, /Mechanism B\./);
   assert.match(htmlB, /Method B&#x27;s experiment question/);
   assert.match(htmlB, /Saved answer for method B/);
-  assert.match(htmlB, /Lead notes B&#x27;s empirical fit/);
+  assert.match(reviewB, /Lead notes B&#x27;s empirical fit/);
   assert.match(htmlB, /Version 3/);
   assert.doesNotMatch(htmlB, /Mechanism A\.|Method A&#x27;s theory question|Lead prefers A/);
+  assert.doesNotMatch(reviewA, /Lead notes B|J_B/); assert.doesNotMatch(reviewB, /Lead prefers A|J_A/);
+  assert.match(methodDocument(resultA, "computation"), /J_A/); assert.doesNotMatch(methodDocument(resultA, "computation"), /J_B/);
+  assert.match(methodDocument(resultB, "computation"), /J_B/); assert.doesNotMatch(methodDocument(resultB, "computation"), /J_A/);
   for (const html of [htmlA, htmlB]) {
     assert.equal((html.match(/Run this Method in Phase 3 - Theory/g) || []).length, 1);
     assert.equal((html.match(/Run this Method in Phase 4 - Numerical Eval/g) || []).length, 1);
@@ -848,19 +897,20 @@ test("a retained method from an earlier run keeps the same exploration capabilit
   const oldComparison = { generation_ref: oldRun, is_current_package: false, overview_markdown: "Earlier overview.", method_dispositions: [{ proposal_id: "prop.old", status: "retain", rationale: "Earlier lead rationale." }] };
   const newComparison = { generation_ref: newRun, overview_markdown: "Latest overview.", method_dispositions: [{ proposal_id: "prop.new", status: "retain", rationale: "Latest lead rationale." }] };
   const methods = [{ method_id: "method.a", branch_id: "method.a", identity, status: "active" }, { method_id: "method.b", branch_id: "method.b", identity: fresh.method.identity, status: "proposed" }];
-  const html = render.methods({ projectId: "project.test", proposals: [retained, fresh], methods, comparisons: [oldComparison, newComparison], attentionItems: [question], initialPick: "run.old:prop.old", onContinue: noop, onSource: noop });
+  const result = render.methodReader({ projectId: "project.test", proposals: [retained, fresh], methods, comparisons: [oldComparison, newComparison], attentionItems: [question], initialPick: "run.old:prop.old", onContinue: noop, onSource: noop }); const { html } = result;
   assert.match(html, /Retained from an earlier run/);
   assert.match(html, /Earlier authored mechanism/);
-  assert.match(html, /Earlier lead rationale/);
+  assert.match(methodDocument(result, "review"), /Earlier lead rationale/);
+  assert.doesNotMatch(methodDocument(result, "review"), /Latest lead rationale/);
   assert.match(html, /Retained method&#x27;s open question/);
   assert.match(html, /Save answer/);
   assert.match(html, /Run this Method in Phase 3 - Theory<\/button>/);
   assert.match(html, /Run this Method in Phase 4 - Numerical Eval<\/button>/);
-  assert.match(html, /One pass costs/);
+  assert.match(methodDocument(result, "computation"), /One pass costs/);
   assert.match(html, /current catalog definition/);
   assert.doesNotMatch(html, /kept as history|Superseded/);
-  // The earlier run's own comparison still heads the page; the latest comparison
-  // is retained as history, not borrowed for the retained method.
+  // The page shows the latest comparison; the retained method's document keeps
+  // its own earlier assessment rather than borrowing a later rationale.
   assert.match(html, /Latest overview/);
 });
 
@@ -918,7 +968,7 @@ test("legacy scores and earlier lead comparisons live in the collapsed history a
   assert.ok(html.indexOf("Model versions and comparisons") < html.indexOf("Earlier recorded model scores"));
 });
 
-test("P2 reader groups computation, assumptions, lead review and proposed work into four panels", () => {
+test("P2 supporting windows retain computation, assumptions and review while proposed work follows in its own card", () => {
   const identity = { stable_id: "method.a", version: 1, definition_sha256: "a".repeat(64) };
   const run = { ...ref, phase: "P2", branch: "trunk", run_id: "run.current" };
   const proposal = { proposal_id: "prop.a", role: "data_analyst", generation_ref: run, data_requirements_markdown: "A generative simulator.", proposed_evaluation_markdown: "Evaluate constraint and reward separately.",
@@ -929,15 +979,20 @@ test("P2 reader groups computation, assumptions, lead review and proposed work i
       { option_id: "mod.prop.a.exact", applies_to: "prop.a", title: "Exact-solve variant", what_changes_markdown: "Replace the sampled update with the exact solve $$x^*$$.", when_preferable_markdown: "Prefer when $n$ is small." },
       { option_id: "mod.prop.other", applies_to: "prop.other", title: "PRIVATE OTHER OPTION", what_changes_markdown: "Changes another proposal.", when_preferable_markdown: "Never shown here." },
     ] };
-  const html = render.methods({ projectId: "project.test", proposals: [proposal], methods: [{ method_id: "method.a", branch_id: "method.a", identity, status: "proposed" }], comparisons: [comparison], onContinue: noop, onSource: noop });
-  for (const text of ["Cost per iteration", "One update costs", "Memory footprint", "Stores two sufficient statistics", "Scaling with problem size", "grows linearly", "Exact-solve variant", "What changes mathematically", "Replace the sampled update", "When it is preferable", "Prefer when"]) assert.ok(html.includes(text), text);
+  const result = render.methodReader({ projectId: "project.test", proposals: [proposal], methods: [{ method_id: "method.a", branch_id: "method.a", identity, status: "proposed" }], comparisons: [comparison], onContinue: noop, onSource: noop }); const { html } = result;
+  const computation = methodDocument(result, "computation"), assumptions = methodDocument(result, "assumptions"), review = methodDocument(result, "review");
+  for (const text of ["Cost per iteration", "One update costs", "Memory footprint", "Stores two sufficient statistics", "Scaling with problem size", "grows linearly"]) assert.ok(computation.includes(text), text);
+  for (const text of ["Exact-solve variant", "What changes mathematically", "Replace the sampled update", "When it is preferable", "Prefer when"]) assert.ok(html.includes(text), text);
   assert.match(html, /The lead&#x27;s modification options \(1\)/);
-  assert.match(html, /Original assumptions and limitations<\/h3><p class="note p2-section-author">Data Analyst/);
-  assert.match(html, /Lead assessment source/);
-  assert.doesNotMatch(html, /PRIVATE OTHER OPTION|Changes another proposal/);
+  assert.match(assumptions, /Original assumptions and limitations<\/h3><p class="note p2-section-author">Data Analyst/);
+  assert.match(review, /Lead assessment source/);
+  assert.doesNotMatch(html + computation + assumptions + review, /PRIVATE OTHER OPTION|Changes another proposal/);
   assert.match(html, /class="katex/);
-  const order = ["Original assumptions and limitations", "Computational profile", "Data requirements", "Rationale and critical assessment", "Specialist reviews", "The lead&#x27;s modification options", "Proposed theory and experiment work"];
-  for (let i = 1; i < order.length; i++) assert.ok(html.indexOf(order[i - 1]) < html.indexOf(order[i]), `${order[i - 1]} before ${order[i]}`);
+  assert.ok(computation.indexOf("Computational profile") < computation.indexOf("Data requirements"));
+  assert.ok(review.indexOf("Rationale and critical assessment") < review.indexOf("Specialist reviews"));
+  assert.ok(html.indexOf("The lead&#x27;s modification options") < html.indexOf("Proposed theory and experiment work"));
+  assert.deepEqual(result.documents.map(document => document.name), ["assumptions", "computation", "review"]);
+  assert.doesNotMatch(html, /Computational profile|Original assumptions and limitations|Rationale and critical assessment|role="dialog"/);
 });
 
 test("P2 deep-dive labels missing computational profiles and modification options honestly", () => {
@@ -946,21 +1001,22 @@ test("P2 deep-dive labels missing computational profiles and modification option
   const proposal = { proposal_id: "prop.a", role: "theorist", generation_ref: run, method: { identity, title: "Method A", summary: "Authored mechanism." } };
   const catalog = [{ method_id: "method.a", branch_id: "method.a", identity, status: "proposed" }];
   const legacy = { generation_ref: run, overview_markdown: "Authored overview.", method_dispositions: [{ proposal_id: "prop.a", status: "retain", rationale: "Strongest guarantee." }] };
-  const html = render.methods({ projectId: "project.test", proposals: [proposal], methods: catalog, comparisons: [legacy], onContinue: noop, onSource: noop });
-  assert.match(html, /No computational profile was recorded for this proposal/);
+  const result = render.methodReader({ projectId: "project.test", proposals: [proposal], methods: catalog, comparisons: [legacy], onContinue: noop, onSource: noop }); const { html } = result;
+  assert.match(methodDocument(result, "computation"), /No computational profile was recorded for this proposal/);
   assert.match(html, /earlier assessment did not record separate modification options/);
-  assert.doesNotMatch(html, /Cost per iteration|Memory footprint|Scaling with problem size/);
-  const emptyProfile = render.methods({ projectId: "project.test", proposals: [{ ...proposal, computational_profile: {} }], methods: catalog, comparisons: [legacy], onContinue: noop, onSource: noop });
-  assert.match(emptyProfile, /The recorded computational profile has no readable entries/);
+  assert.doesNotMatch(methodDocument(result, "computation"), /Cost per iteration|Memory footprint|Scaling with problem size/);
+  const emptyProfile = render.methodReader({ projectId: "project.test", proposals: [{ ...proposal, computational_profile: {} }], methods: catalog, comparisons: [legacy], onContinue: noop, onSource: noop });
+  assert.match(methodDocument(emptyProfile, "computation"), /The recorded computational profile has no readable entries/);
   const noOptions = render.methods({ projectId: "project.test", proposals: [proposal], methods: catalog, comparisons: [{ ...legacy, modification_options: [] }], onContinue: noop, onSource: noop });
   assert.match(noOptions, /The lead recorded no modification options for this proposal/);
-  const unlinked = render.methods({ projectId: "project.test", proposals: [proposal], methods: catalog, onContinue: noop, onSource: noop });
-  assert.match(unlinked, /No lead assessment is linked to this exact proposal run/);
-  assert.match(unlinked, /No computational profile was recorded for this proposal/);
-  assert.doesNotMatch(unlinked, /Your call: choose a method/);
+  const unlinked = render.methodReader({ projectId: "project.test", proposals: [proposal], methods: catalog, onContinue: noop, onSource: noop });
+  assert.match(unlinked.html, /No lead assessment is linked to this exact proposal run/);
+  assert.match(methodDocument(unlinked, "review"), /No lead assessment is linked to this exact proposal run/);
+  assert.match(methodDocument(unlinked, "computation"), /No computational profile was recorded for this proposal/);
+  assert.doesNotMatch(unlinked.html, /Your call: choose a method/);
 });
 
-test("P2 disclosures preserve authored material while decisions and proposed studies follow in their own cards", () => {
+test("P2 reading windows preserve authored material while decisions and proposed studies follow in their own cards", () => {
   const identity = { stable_id: "method.a", version: 1, definition_sha256: "a".repeat(64) };
   const run = { ...ref, phase: "P2", branch: "trunk", run_id: "run.current" };
   const proposal = { proposal_id: "prop.a", role: "theorist", generation_ref: run, method: { identity, title: "Method A", summary: "Original proposal summary", assumptions: ["Original assumption"], mathematical_definition: { canonical_definition: { algorithm_or_update_rule: [{ order: 1, operation: "Exact algorithm step" }], calculation_defining_assumptions: [{ statement: "The calculation needs a finite score moment.", mathematical_role: "Justifies variance estimation." }] } } }, proposed_evaluation_markdown: "Run the authored experiment plan." };
@@ -969,14 +1025,14 @@ test("P2 disclosures preserve authored material while decisions and proposed stu
   const task = { ...question, attention_id: "task.a", kind: "research_task", target_phase: "P4", question: "Team task for A", context_markdown: "Team task mathematical context." };
   const props = { projectId: "project.test", proposals: [proposal], methods: [{ method_id: "method.a", branch_id: "method.a", identity, status: "proposed" }], comparisons: [{ generation_ref: run, method_dispositions: [{ proposal_id: "prop.a", status: "retain", method_summary_markdown: "Lead procedure: compute $x=1$, then update.", rationale: "Lead criticism: innovation remains uncertain." }] }], reviews, attentionItems: [question, task], onSource: noop, onContinue: noop };
   const sourceBefore = JSON.stringify(props);
-  const html = render.methods(props);
-  const account = html.slice(html.indexOf('Methodological account</h3>'), html.indexOf('data-reading-anchor="p2-model:'));
-  const sections = html.split('<details class="research-details p2-reader-disclosure"');
-  assert.equal(sections.length, 4);
-  const [, assumptions, computation, review] = sections;
+  const result = render.methodReader(props); const { html } = result;
+  const accountStart = html.indexOf('Methodological account</h3>');
+  const account = html.slice(accountStart, html.indexOf('<aside class="research-card-resources"', accountStart));
+  assert.equal(result.documents.length, 3);
+  const assumptions = methodDocument(result, "assumptions"), computation = methodDocument(result, "computation"), review = methodDocument(result, "review");
   assert.match(account, /Original proposal summary/);
   assert.doesNotMatch(account, /Exact algorithm step|calculation needs a finite score moment|Lead criticism|representative observations|User choice|Lead procedure/);
-  for (const section of [assumptions, computation, review]) assert.doesNotMatch(section.split('>', 1)[0], /\bopen=/);
+  assert.doesNotMatch(html, /p2-reader-disclosure|role="dialog"|Exact algorithm step|Lead procedure|representative observations/);
   assert.match(assumptions, /Data Analyst<\/h4>/); assert.match(assumptions, /representative observations/); assert.match(assumptions, /Original assumption/);
   assert.match(assumptions, /Data Analyst applicability source/);
   assert.match(computation, /Exact algorithm step/); assert.match(computation, /calculation needs a finite score moment/);
@@ -986,22 +1042,12 @@ test("P2 disclosures preserve authored material while decisions and proposed stu
   assert.match(next, /User choice for A/); assert.match(next, /Question mathematical context/); assert.match(next, /Question consequence/);
   assert.match(next, /Team task for A/); assert.match(next, /Team task mathematical context/); assert.match(next, /authored experiment plan/);
   assert.equal(JSON.stringify(props), sourceBefore);
-  assert.doesNotMatch(html, /STALE APPLICABILITY|role="tablist"|role="tabpanel"/);
+  assert.doesNotMatch(html + assumptions + computation + review, /STALE APPLICABILITY|role="tablist"|role="tabpanel"/);
   assert.equal((html.match(/<section\b[^>]*class="card(?: |")/g) || []).length, 4);
   const saved = render.methods({ ...props, researcherAnswers: [{ attention_id: question.attention_id, attention: question, note: "Use my saved choice", resolved_at: "2026-09-22T12:00:00Z" }] });
   assert.doesNotMatch(saved, /unanswered question/); assert.match(saved, /Use my saved choice/); assert.match(saved, /Edit your answer/);
 });
 
-test("P2 uses native disclosure controls and reports actual open-state changes", () => {
-  const toggles = [];
-  const tree = render.methodReaderDisclosure({ name: "assumptions", title: "Assumptions and limitations", modelKey: "run.exact:proposal.a", open: false, onToggle: value => toggles.push(value), children: "ORIGINAL_ACCOUNT" });
-  assert.equal(tree.type, "details"); assert.equal(tree.props.open, false);
-  assert.equal(tree.props["data-reading-anchor"], "p2-model:run.exact:proposal.a:assumptions");
-  assert.equal(tree.props.children[0].type, "summary"); assert.equal(tree.props.children[0].props.children, "Assumptions and limitations");
-  tree.props.onToggle({ currentTarget: { open: false } });
-  tree.props.onToggle({ currentTarget: { open: true } });
-  assert.deepEqual(toggles, [true]);
-});
 
 test("P1 scientific cards read directly without a primary tab level", () => {
   const html = render.phaseOne({ project: { project_id: "p1", research_instructions: "Brief" }, basis: { research_setting: { statement_markdown: "The authored setting is $X_i$." }, landscape: { summary_markdown: "The authored synthesis." } }, artifacts: {} });
@@ -1013,7 +1059,7 @@ test("P1 scientific cards read directly without a primary tab level", () => {
   assert.ok(html.indexOf("Phase run history") > html.indexOf("Instructions and run settings"));
 });
 
-test("P1 legacy disclosures retain whole authored fields and notation stays on demand", () => {
+test("P1 keeps whole authored fields in the current display and notation stays on demand", () => {
   const longField = label => `${label} first paragraph.\n\n${"Original qualification remains part of this account. ".repeat(30)}${label} final paragraph.`;
   const setting = longField("Setting"); const goal = longField("Goal"); const findings = longField("Findings");
   const explanation = longField("Contribution"); const fit = longField("Fit");
@@ -1022,9 +1068,10 @@ test("P1 legacy disclosures retain whole authored fields and notation stays on d
       component_interpretations: [{ symbol_latex: "X_i", mathematical_role_markdown: "Observation vector lookup.", problem_meaning_markdown: "Recorded measurement lookup." }] },
     landscape: { summary_markdown: findings, overview_item_ids: [] } };
   const html = render.phaseOne({ project: { project_id: "legacy.whole", name: "Original study", research_instructions: "Brief" }, basis, artifacts: {}, onGoal: noop });
-  for (const [anchor, summary] of [["earlier-setting", "Read the earlier study formulation"], ["earlier-goal", "Read the earlier interpreted goal"], ["earlier-synthesis", "Read the earlier literature synthesis"]]) {
-    assert.match(html, new RegExp(`<details[^>]*data-reading-anchor="${anchor}"><summary>${summary}</summary>`));
-  }
+  assert.doesNotMatch(html, /data-reading-anchor="earlier-(?:setting|goal)"|Read the earlier (?:study formulation|interpreted goal)/);
+  assert.match(html, /<h3>Study description<\/h3>[\s\S]*?Setting first paragraph/);
+  assert.match(html, /Study goal <span class="note">· Lead&#x27;s interpretation<\/span><\/h3>[\s\S]*?Goal first paragraph/);
+  assert.doesNotMatch(html, /earlier-synthesis|Read the earlier literature synthesis/);
   for (const label of ["Setting", "Goal", "Findings"]) {
     assert.match(html, new RegExp(`${label} first paragraph`));
     assert.match(html, new RegExp(`${label} final paragraph`));
@@ -1036,7 +1083,8 @@ test("P1 legacy disclosures retain whole authored fields and notation stays on d
 
   const paper = render.selectedPaper({ source: { title: "Original paper", cards: [{ role: "theorist", entry_id: "entry.original", explanation_markdown: explanation, relevance_markdown: fit,
     formulation_markdown: "Full formulation:\n$$J(\\pi)=\\mathbb E_\\pi\\sum_{t=0}^{\\infty}\\gamma^t r_t$$", limitations_markdown: "Every stated applicability limit remains inspectable.", reading_extent: "Sections 2 and 3 read; theorem not independently verified.", evidence_locations: ["Theorem 2, equation 7"] }] } });
-  assert.match(paper, /<details[^>]*data-reading-anchor="legacy-assessment:[^"]+"><summary>Read the earlier member assessment<\/summary>/);
+  assert.doesNotMatch(paper, /legacy-assessment|Read the earlier member assessment/);
+  assert.match(paper, /<h4>Contribution, theory and computation<\/h4>/);
   assert.match(paper, /<details[^>]*data-reading-anchor="paper-math:[^"]+"><summary>Full mathematics and reading basis<\/summary>/);
   for (const label of ["Contribution", "Fit"]) {
     assert.match(paper, new RegExp(`${label} first paragraph`));
@@ -1077,7 +1125,7 @@ test("P2 hands both following cards the same exact selected proposal without act
   assert.equal(issueContext.methodBranch, "method.b.branch");
   assert.ok(issueContext.draftStore instanceof Map);
   assert.ok(issueContext.proposedWork); assert.ok(issueContext.modificationOptions); assert.ok(issueContext.modelHistory); assert.equal(issueContext.exploreActions, undefined);
-  assert.ok(html.indexOf("ISSUE_SLOT") > html.indexOf("Reviews and scientific sources"));
+  assert.ok(html.indexOf("ISSUE_SLOT") > html.indexOf("Reviews and sources"));
   assert.ok(html.indexOf("FURTHER_SLOT") > html.indexOf("ISSUE_SLOT"));
   assert.deepEqual(calls, []);
   let empty;

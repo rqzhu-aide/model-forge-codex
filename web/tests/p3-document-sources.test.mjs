@@ -12,7 +12,7 @@ const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.j
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-p3-sources-"));
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import {ScientificDocuments,PhaseOverview} from '${src}/components/PhaseReading.jsx'; export {ScientificDocuments,PhaseOverview}; export {ResearchDocument,SourceRef} from '${src}/components/Shared.jsx'; export const render=props=>renderToStaticMarkup(<ScientificDocuments {...props}/>); export const overview=props=>renderToStaticMarkup(<PhaseOverview {...props}/>);`, resolveDir: src, loader: "jsx" }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import {ScientificDocuments,PhaseOverview} from '${src}/components/PhaseReading.jsx'; export {ScientificDocuments,PhaseOverview,React}; export {ResearchDocument,SourceRef} from '${src}/components/Shared.jsx'; export const render=props=>renderToStaticMarkup(<ScientificDocuments {...props}/>); export const overview=props=>renderToStaticMarkup(<PhaseOverview {...props}/>);`, resolveDir: src, loader: "jsx" }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const ui = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
 const reference = { branch: "method.a", phase: "P4", family: "decision", generation_id: "generation.earlier", sha256: "a".repeat(64), run_id: "run.earlier", package_id: "package.earlier" };
 const candidate = "run://run.revision/outputs/p3.theorist/theory_candidate.json";
@@ -28,6 +28,15 @@ const find = (node, predicate) => {
   return predicate(node) ? node : find(node.props?.children, predicate);
 };
 const documentLink = (doc, onSource = () => {}) => find(ui.ScientificDocuments({ documents: [doc], onSource }), (node) => node.type === ui.ResearchDocument && node.props.renderSourceLink).props.renderSourceLink;
+
+// PhaseOverview reads the reading host; a fixture dispatcher stands in for React rendering.
+const hooked = (component, props) => {
+  const dispatcher = ui.React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher;
+  const previous = dispatcher.current;
+  dispatcher.current = { useContext: context => context._currentValue, useId: () => "fixture-id", useState: initial => [typeof initial === "function" ? initial() : initial, () => {}],
+    useRef: initial => ({ current: initial }), useEffect() {}, useLayoutEffect() {} };
+  try { return component(props); } finally { dispatcher.current = previous; }
+};
 
 test("P3 account renders verified run, artifact, generation and relative citations with readable labels", () => {
   const before = structuredClone(document);
@@ -68,7 +77,7 @@ test("overview proof citation uses the decision's exact published document and o
     generation_ref: { ...proof, family: "decision", generation_id: "generation.decision" },
     inline_sources: [{ ...file(artifact, "original.md"), generation_ref: proof }] };
   let opened;
-  const tree = ui.PhaseOverview({ phase: "P3", decision, onSource: ref => { opened = ref; } });
+  const tree = hooked(ui.PhaseOverview, { phase: "P3", decision, onSource: ref => { opened = ref; } });
   const account = find(tree, node => node.type === ui.ResearchDocument);
   const link = account.props.renderSourceLink(artifact, "full proof and interpretation");
   assert.equal(link.type, ui.SourceRef);

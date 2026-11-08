@@ -1,8 +1,9 @@
 import { issueCardEntries, issueDisplayKind } from "./phaseUiState.js";
 import { issueIsOpen, issueKey, issueSourceIdentity, issueVersionKey } from "./phaseWorkflow.js";
-import { answerContextOwner, contextApplies } from "./researcherDialogue.js";
+import { answerContextOwner, contextApplies, contextScopeIdentity } from "./researcherDialogue.js";
 import { decisionDraft } from "./researcherDecisions.js";
 import { notationCorrectionApplies } from "./sharedNotation.js";
+import { scopedSavedNotes } from "./savedInput.js";
 
 const ordered = (value) => value && typeof value === "object"
   ? Array.isArray(value) ? value.map(ordered) : Object.fromEntries(Object.keys(value).sort().map((key) => [key, ordered(value[key])]))
@@ -13,8 +14,10 @@ const identity = (value) => JSON.stringify(ordered(value));
 // phase. Each question is counted only where its answer is edited.
 export const phaseInputScopeKey = ({ phase, branch, methodId, modelRef }) => identity([phase, branch, methodId, modelRef]);
 export const phaseQuestionKey = (issue) => identity([issueKey(issue), issueSourceIdentity(issue)
-  || [issue.phase, issue.branch || issue.branch_id, issue.question_version_id]]);
-export const phaseQuestionAnchor = (issue) => `issue:${issueVersionKey(issue)}`;
+  || [issue.phase, issue.branch || issue.branch_id, issue.question_version_id], contextScopeIdentity(issue.scope)]);
+// Reading anchors identify scientific sources. Editor drafts deliberately keep
+// their existing, stricter presentation-version keys below.
+export const phaseQuestionAnchor = (issue) => `issue:${phaseQuestionKey(issue)}`;
 export const phaseQuestionDraftKey = (projectId, issue) => `issue-response:${JSON.stringify([projectId, issueVersionKey(issue)])}`;
 
 function isCurrentQuestion(issue, scope) {
@@ -55,11 +58,7 @@ export function phaseInputSummary({ projectId, problemContext, contextAnswers, g
       unsaved: hasUnsavedDraft(issue, answer, getDraft?.(draftKey)),
     }];
   });
-  const saved = (problemContext?.items || []).filter((item) => item.status === "confirmed"
-    && !answerContextOwner(item, contextAnswers ?? scope.answers)
-    && contextApplies(item.scope, scope.branch, scope.modelRef) && notationCorrectionApplies(item, scope)).map((item) => ({
-    key: identity([item.item_id, item.revision]), item, anchor: `problem-context:${item.item_id}:${item.revision}`,
-  }));
+  const saved = scopedSavedNotes({ ...scope, problemContext, contextAnswers });
   const proposals = (problemContext?.proposals || []).filter((proposal) => proposal.status === "pending"
     && !answerContextOwner(proposal.item, contextAnswers ?? scope.answers)
     && contextApplies(proposal.item?.scope, scope.branch, scope.modelRef) && notationCorrectionApplies(proposal.item, scope)).map((proposal) => ({

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { humanLabel } from "../research";
 import { EMPTY_MEMBER_FORM, memberForm, memberDraft, refreshMemberDrafts, memberUpdatePayload, providerIsControlled, providerLabel } from "../teamSettings";
@@ -35,6 +35,10 @@ export default function TeamView({ projectId, embedded = false }) {
   const [optionsError, setOptionsError] = useState(null);
   const [editingProviderFile, setEditingProviderFile] = useState(false);
   const editorRegion = useRef(null);
+  const settingsHeader = useRef(null);
+  const providerNoticeRegion = useRef(null);
+  const memberSettingsRegion = useRef(null);
+  const providerInvoker = useRef(null);
   const drafts = useRef({});
   const saveLock = useRef(false);
   const selectedRef = useRef(null);
@@ -79,7 +83,25 @@ export default function TeamView({ projectId, embedded = false }) {
     load();
     return () => { loadId.current += 1; };
   }, [projectId]);
-  useEffect(() => { if (editingProviderFile) editorRegion.current?.focus(); }, [editingProviderFile]);
+  useLayoutEffect(() => {
+    if (editingProviderFile) { editorRegion.current?.focus({ preventScroll: true }); return; }
+    const invocation = providerInvoker.current;
+    if (!invocation) return;
+    providerInvoker.current = null;
+    if (invocation.projectId !== projectId) return;
+    const available = (element) => element?.isConnected && !element.disabled && !element.closest?.("[hidden]");
+    const region = invocation.origin === "notice" ? providerNoticeRegion.current : memberSettingsRegion.current;
+    const controls = [...(region?.querySelectorAll('button[data-action="edit"]') || [])].filter(available);
+    const target = available(invocation.element) ? invocation.element
+      : controls.find((element) => element.textContent.trim() === invocation.label) || controls[0]
+        || [...(providerNoticeRegion.current?.querySelectorAll('button[data-action="edit"]') || [])].find(available)
+        || settingsHeader.current;
+    target?.focus({ preventScroll: true });
+  }, [editingProviderFile, projectId]);
+  const openProviderEditor = (origin) => (event) => {
+    providerInvoker.current = { element: event.currentTarget, label: event.currentTarget.textContent.trim(), origin, projectId };
+    setEditingProviderFile(true);
+  };
   const remember = (next) => {
     if (saving) return;
     const reconciled = memberForm(members[selected], next, providerConfig);
@@ -113,7 +135,7 @@ export default function TeamView({ projectId, embedded = false }) {
 
   return (
     <>
-      <header className="page">
+      <header className="page" ref={settingsHeader} tabIndex={-1}>
         <div>
           {!embedded && <h1>Team Settings</h1>}
           <div className="sub">Agent models, providers, instructions, and context settings.
@@ -124,8 +146,8 @@ export default function TeamView({ projectId, embedded = false }) {
       {error && <div className="error" role="alert">{error} <ActionButton action="retry" onClick={load} disabled={saving || refreshing}>Reload settings</ActionButton></div>}
       {loading && <p className="note" role="status">Loading team settings…</p>}
       {optionsError && <div className="note warn">Agent model choices could not be refreshed: {optionsError} <ActionButton action="retry" onClick={load} disabled={saving || refreshing}>Retry refresh</ActionButton></div>}
-      <ProviderConfigNotice config={providerConfig} refreshing={refreshing} disabled={saving} onRefresh={load}
-        onEdit={editingProviderFile ? undefined : () => setEditingProviderFile(true)} />
+      <div ref={providerNoticeRegion}><ProviderConfigNotice config={providerConfig} refreshing={refreshing} disabled={saving} onRefresh={load}
+        onEdit={editingProviderFile ? undefined : openProviderEditor("notice")} /></div>
       {editingProviderFile && <section className="team-provider-editor-region" ref={editorRegion} tabIndex={-1} aria-label="Configure agent models and providers">
         <ProviderFileEditor projectId={projectId} initialRole={selected} reasoningEfforts={reasoningEfforts}
           onSaved={load} onClose={() => setEditingProviderFile(false)} />
@@ -151,11 +173,11 @@ export default function TeamView({ projectId, embedded = false }) {
           <div>
             <div className="card">
               <h2>{roleLabel(selected)} · agent model &amp; provider</h2>
-              <div className="body">
+              <div className="body" ref={memberSettingsRegion}>
                 {controlled ? <EffectiveProviderSettings member={members[selected]} invalid={Boolean(providerConfig?.error)}
-                  onEdit={() => setEditingProviderFile(true)} disabled={saving} /> : <>
+                  onEdit={openProviderEditor("member")} disabled={saving} /> : <>
                 <div className="team-provider-actions"><span className="note">These settings apply to this project.</span>
-                  <ActionButton action="edit" onClick={() => setEditingProviderFile(true)} disabled={saving}>Configure provider and API key</ActionButton></div>
+                  <ActionButton action="edit" onClick={openProviderEditor("member")} disabled={saving}>Configure provider and API key</ActionButton></div>
                 <div className="field">
                   <label>Provider mode</label>
                   <div className="segs">

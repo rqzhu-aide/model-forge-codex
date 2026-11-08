@@ -13,7 +13,29 @@ const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.j
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-p2-starting-point-"));
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Methods from '${src}/components/MethodProposals.jsx'; import Instructions from '${src}/components/PhaseTwoInstructions.jsx'; export const methods=props=>renderToStaticMarkup(React.createElement(Methods,props)); export const instructions=props=>renderToStaticMarkup(React.createElement(Instructions,props));`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `
+  import React from 'react';
+  import {renderToStaticMarkup} from 'react-dom/server';
+  import Methods, {methodReadingDocuments} from '${src}/components/MethodProposals.jsx';
+  import {SourceRef} from '${src}/components/Shared.jsx';
+  import Instructions from '${src}/components/PhaseTwoInstructions.jsx';
+  function sources(node) {
+    if (Array.isArray(node)) return node.flatMap(sources);
+    if (!React.isValidElement(node)) return [];
+    if (node.type === SourceRef) return node.props.reference ? [node.props.reference] : [];
+    return sources(node.props.children);
+  }
+  export function reader(props) {
+    let context;
+    const html=renderToStaticMarkup(<Methods {...props} issues={value=>{context=value;return null;}}/>);
+    const documents=context.method ? methodReadingDocuments({selected:context.proposal,catalogMethod:context.catalogMethod,
+      method:context.method,reviewed:context.reviewed,reviews:props.reviews || [],proposals:props.proposals || [],
+      literatureSources:props.literatureSources || []},props.onSource).map(item=>({...item,html:renderToStaticMarkup(item.body),sources:sources(item.body)})) : [];
+    return {html,documents};
+  }
+  export const methods=props=>reader(props).html;
+  export const instructions=props=>renderToStaticMarkup(React.createElement(Instructions,props));
+`, resolveDir: src, loader: "jsx" }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const ui = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
 
 test("a method starting point retains exact catalog and original proposal sources beside editable text", () => {
@@ -62,18 +84,22 @@ test("seeded lead proposals retain original-source authorship and launch preview
   const catalogRef = { ...proposalRef, family: "method_catalog", generation_id: "catalog.selected" };
   const supplied = methodStartingPoint(original, { proposal_id: "proposal.original", generation_ref: proposalRef }, { source_ref: catalogRef });
   const candidate = { title: "Lead candidate", identity: { ...identity, stable_id: "method.lead", version: 1 }, mathematical_definition: { canonical_definition: { target_or_estimand: "Corrected primitive-input target" } } };
-  const html = ui.methods({ proposals: [{ proposal_id: "proposal.lead", role: "research_lead", method: candidate, researcher_origin: supplied, generation_ref: { ...proposalRef, family: "lead_proposal", generation_id: "lead.candidate", run_id: "run.seeded" } }] });
+  const result = ui.reader({ proposals: [{ proposal_id: "proposal.lead", role: "research_lead", method: candidate, researcher_origin: supplied, generation_ref: { ...proposalRef, family: "lead_proposal", generation_id: "lead.candidate", run_id: "run.seeded" } }] });
+  const { html } = result; const computation = result.documents.find(document => document.name === "computation");
   assert.match(html, /Proposed by Research Lead/);
   assert.match(html, /From a selected model starting point/);
   assert.doesNotMatch(html, /From your idea/);
-  assert.match(html, /Version 3 supplied the lead/);
-  assert.match(html, /Starting original proposal source/);
-  assert.doesNotMatch(html, /p2-reader-section contribution-surface/, "A selected team-authored model does not become researcher-authored when used as a starting point.");
-  const originalDisclosure = html.match(/<details class="research-details"><summary>Original starting formulation<\/summary>([\s\S]*?)<\/details>/);
+  assert.doesNotMatch(html, /Version 3 supplied the lead|Original mean target|Corrected primitive-input target|role="dialog"/);
+  assert.match(computation.html, /Version 3 supplied the lead/);
+  assert.match(computation.html, /Starting original proposal source/);
+  assert.doesNotMatch(computation.html, /p2-reader-section contribution-surface/, "A selected team-authored model does not become researcher-authored when used as a starting point.");
+  assert.ok(computation.sources.some(source => source.generation_id === catalogRef.generation_id && source.sha256 === catalogRef.sha256));
+  assert.ok(computation.sources.some(source => source.generation_id === proposalRef.generation_id && source.sha256 === proposalRef.sha256));
+  const originalDisclosure = computation.html.match(/<details class="research-details"><summary>Original starting formulation<\/summary>([\s\S]*?)<\/details>/);
   assert.ok(originalDisclosure, "The supplied parent formulation is retained in a native collapsed disclosure.");
   assert.match(originalDisclosure[1], /Original mean target/);
   assert.doesNotMatch(originalDisclosure[0], /<details[^>]*\bopen(?:=|\s|>)/);
-  const outsideOriginal = html.replace(originalDisclosure[0], "");
+  const outsideOriginal = computation.html.replace(originalDisclosure[0], "");
   assert.match(outsideOriginal, /Corrected primitive-input target/, "The current candidate's own formulation remains readable.");
   assert.doesNotMatch(outsideOriginal, /Original mean target/, "The parent's scientific prose is not duplicated beside the corrected candidate.");
   assert.match(outsideOriginal, /Starting catalog definition source|Starting original proposal source/);
@@ -85,17 +111,19 @@ test("seeded lead proposals retain original-source authorship and launch preview
 });
 
 test("an unseeded researcher idea remains readable without being relabeled as a parent model", () => {
-  const html = ui.methods({ proposals: [{ proposal_id: "proposal.idea", role: "research_lead", method: { title: "Idea candidate", summary: "The team's reformulated mechanism.", identity: { stable_id: "method.idea", version: 1, definition_sha256: "a".repeat(64) } }, researcher_origin: { specification_markdown: "The researcher's original proposed mechanism.", source_reference: "Research manuscript, section 2" }, generation_ref: { run_id: "run.idea", generation_id: "lead.idea" } }] });
+  const result = ui.reader({ proposals: [{ proposal_id: "proposal.idea", role: "research_lead", method: { title: "Idea candidate", summary: "The team's reformulated mechanism.", identity: { stable_id: "method.idea", version: 1, definition_sha256: "a".repeat(64) } }, researcher_origin: { specification_markdown: "The researcher's original proposed mechanism.", source_reference: "Research manuscript, section 2" }, generation_ref: { run_id: "run.idea", generation_id: "lead.idea" } }] });
+  const { html } = result; const computation = result.documents.find(document => document.name === "computation");
   assert.match(html, /From your idea|Your supplied method and source/);
-  assert.match(html, /The researcher&#x27;s original proposed mechanism/);
-  assert.match(html, /Research manuscript, section 2/);
-  const original = html.match(/<section class="p2-reader-section contribution-surface">([\s\S]*?)<\/section>/)?.[1];
+  assert.match(computation.html, /The researcher&#x27;s original proposed mechanism/);
+  assert.match(computation.html, /Research manuscript, section 2/);
+  assert.doesNotMatch(html, /The researcher&#x27;s original proposed mechanism|Research manuscript, section 2|role="dialog"/);
+  const original = computation.html.match(/<section class="p2-reader-section contribution-surface">([\s\S]*?)<\/section>/)?.[1];
   assert.ok(original, "The researcher's original words retain the contribution treatment.");
   assert.match(original, /The researcher&#x27;s original proposed mechanism/);
   assert.match(original, /Research manuscript, section 2/);
   assert.doesNotMatch(original, /The team&#x27;s reformulated mechanism/);
   assert.match(html, /The team&#x27;s reformulated mechanism/);
-  assert.doesNotMatch(html, /Original starting formulation|Selected model starting point and source/);
+  assert.doesNotMatch(html + computation.html, /Original starting formulation|Selected model starting point and source/);
 });
 
 test("the comparison omits internal source controls and keeps the excluded method reason", () => {
@@ -104,12 +132,12 @@ test("the comparison omits internal source controls and keeps the excluded metho
   const comparison = { generation_ref, overview_markdown: "The alternatives have different conditions.", method_dispositions: [{ proposal_id: proposal.proposal_id, status: "exclude", rationale_markdown: "Its required observations are unavailable." }] };
   const before = structuredClone({ proposal, comparison });
   const html = ui.methods({ proposals: [proposal], comparisons: [comparison], onSource: () => {} });
-  const card = html.match(/<div class="p2-comparison"[\s\S]*?(?=<div class="field method-branch-selector")/)?.[0];
+  const card = html.slice(html.indexOf('class="p2-comparison"'), html.indexOf("</section>"));
   assert.ok(card);
   assert.equal((card.match(/>Lead assessment source<\/button>/g) || []).length, 0);
   assert.doesNotMatch(card, /assessment.exact/);
-  assert.match(card, /Not retained in this catalog update \(1\)/);
-  assert.match(card, /Excluded original model/);
-  assert.match(card, /Its required observations are unavailable/);
+  assert.match(card, /Reasons for excluding alternatives/);
+  assert.match(card, /About \d+ words/);
+  assert.doesNotMatch(card, /Its required observations are unavailable/);
   assert.deepEqual({ proposal, comparison }, before);
 });

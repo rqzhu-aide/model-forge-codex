@@ -12,7 +12,7 @@ from model_forge_codex.service import create_app
 from test_accounts import Accounts, SECRET, auth
 
 
-BASE = "http://workbench.local"
+BASE = "http://localhost"
 HEADERS = {"Content-Type": "application/json", "Origin": BASE}
 OPENAI_DRAFT = {"members": {"theorist": {"type": "openai", "model": "account-draft-model"}}}
 

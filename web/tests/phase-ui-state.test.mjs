@@ -22,6 +22,26 @@ const question = { issue_id: "decision.a", phase: "P3", branch: "method.a", targ
 const answer = { attention_id: question.issue_id, attention: question, revision: 2, note: "Study the dependent setting.", previously_applied_to: ["run.old"] };
 const props = { projectId: "test", phase: "P3", branch: "method.a" };
 
+test("an open team task names its scientific status rather than an action", () => {
+  const task = { ...question, kind: "research_task", severity: "minor" };
+  assert.equal(issueUrgency(task).label, "Open scientific work");
+  assert.equal(issueDisplayState(task).state, "science");
+});
+
+test("a passed export check does not close scientific content in the same issue", () => {
+  const issue = { ...question, phase: "P5", kind: "scientific_issue", title: "Export check passed",
+    statement: "The earlier export failed, and a numerical bound is still unverified.", consequence: "Repair export and verify the numerical bound.",
+    delivery_state: { publication: "published", portable_export_check: "passed", message: "The report passed publication checks and was published.",
+      authored_delivery_note: "The earlier export request is historical; scientific concerns remain as recorded." } };
+  assert.equal(issueDisplayState(issue).state, "science");
+  assert.equal(issueUrgency(issue).label, "Export check passed");
+  const html = render.issues({ ...props, phase: "P5", issues: [issue] });
+  assert.match(html, /Export check passed/);
+  assert.match(html, /Recorded concern and scientific context/);
+  assert.match(html, /numerical bound is still unverified/);
+  assert.doesNotMatch(html, /The team needs to investigate this question/);
+});
+
 test("P2 response helper follows the recorded destination rather than the displayed source phase", () => {
   for (const target_phase of ["P2", "P3", "P4", undefined]) {
     const html = render.issues({ projectId: "test", phase: "P2", branch: "trunk", issues: [{ ...question, phase: "P2", branch: "trunk", target_phase }] });

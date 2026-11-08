@@ -41,6 +41,14 @@ def test_producing_brief_includes_exact_frozen_references(workbench, phase, mode
                 text = (catalog.root / "references/research-presentation" / f"{name}.md").read_text(encoding="utf-8").strip()
                 assert brief.count(text) == 1
             assert "NEWER PROJECT GUIDANCE MUST NOT LEAK" not in brief
+            assert "Use the terminology of statistical and machine-learning papers" in brief
+            assert "If a definition is missing, state that limitation" in brief
+            if phase != "P1":
+                assert "Name the actual recorded quantity in table headings, figure axes, legends and captions" in brief
+                assert "Cost-exceedance probability" in brief
+                assert "Datasets with a selected policy" in brief
+            assert "name the actual target, objective, constraint or measured tradeoff" in brief
+            assert "Handle a missing table statistic or comparison through the existing analysis" in brief
 
 
 def test_legacy_catalog_does_not_gain_new_authoring_rules(workbench):

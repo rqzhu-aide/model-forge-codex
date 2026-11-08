@@ -53,7 +53,7 @@
           "type": "string",
           "minLength": 1,
           "pattern": "\\S",
-          "description": "Briefly state what code was developed, revised or reused and what was actually tested on synthetic and supplied actual data, naming absence or unperformed work honestly. Cite the implementation and result sources. Keep the detailed scientific account, numerical tables and figures in their existing records and Experiments and Results."
+          "description": "Briefly state what code was developed, revised or reused, what was actually tested on synthetic and supplied actual data, and any execution qualification consequential for interpretation. Name absence or unperformed work honestly. Cite implementation and result sources; the existing implementation and audit readers retain detailed checks. Keep the scientific numerical account, tables and figures in Experiments and Results."
         },
         "method_fidelity_markdown": {
           "type": "string",
@@ -133,7 +133,7 @@
           "pattern": "\\S"
         },
         "conclusion_markdown": {
-          "description": "Start with the decisive supported observation and its boundary for the stated researcher goal, including applicable uncertainty and tested scope. Follow the supplied summary and claims-and-evidence references. Preserve unsuccessful fits, inconclusive comparisons and synthetic/actual-data limits; absence of demonstrated benefit or nonsignificance does not establish no benefit or equivalence. Execution success is not scientific support. Keep the primary conclusion here and link detail rather than repeating every result.",
+          "description": "Give the fuller interpretation of the decisive supported observation and its boundary for the researcher goal, adding explanation beyond the first visible scientific_outcome.conclusion. Follow the supplied summary and claims-and-evidence references. Preserve applicable uncertainty, unsuccessful fits, inconclusive comparisons and synthetic/actual-data limits; absent benefit or nonsignificance does not establish no benefit or equivalence. Execution success is not scientific support. Link detail rather than replay every result.",
           "type": "string",
           "minLength": 1,
           "pattern": "\\S"
@@ -157,7 +157,7 @@
           "pattern": "\\S"
         },
         "coverage": {
-          "description": "One primary topical account composed from Analyst answers and verified exhibits, following the supplied summary reference. Use synthetic_example, performance, computation, tuning, robustness and actual_data when supplied, with assessed/partial evidence or an explicit not_assessed/not_applicable reason. Preserve scientific substance and do not require extra experiments to fill a topic.",
+          "description": "Compose the primary numerical account from Analyst answers and inspected retained exhibits as a compact numerical experiments section, introducing design and measures before results. p4.exhibits is a required read: use its retained manifest and resolved attachment paths/digests to open the actual table files and inspect headers, cells, captions and mappings. Labels alone do not select source columns. Use native retained-file reads, not the publication-only preview. Select whole available displays and state an unresolved presentation limitation if needed; there is no ordinary return to a completed Analyst for cosmetic changes or authority to create replacement numerical evidence. Use synthetic_example, performance, computation, tuning, robustness and actual_data when supplied, with assessed/partial evidence or an explicit not_assessed/not_applicable reason. Keep the same study's conditions together when they answer one question, listing each interpreted exhibit in every applicable topic's exhibit_ids. The first coverage entry declaring it owns the display; later entries show a link. Put the intended primary entry first and keep placement instructions out of prose; do not require extra experiments to fill a topic.",
           "type": "array",
           "minItems": 1,
           "items": {
@@ -190,22 +190,22 @@
                 "type": "string",
                 "minLength": 1,
                 "pattern": "\\S",
-                "description": "Direct topic account, with actual data origin and study scope. Synthetic example describes the DGP and simulation setup; performance addresses the declared target; computation reports recorded timing/convergence; tuning separates selection from sensitivity; robustness describes changed DGPs. Never invent an unmeasured result."
+                "description": "The design or principal observed result that begins this part of the numerical section, with selected verified exhibits. Introduce design and measures before interpretation. Select principal patterns, negative findings, useful magnitudes and uncertainty without retelling every cell. Explain a negative result here through an established analytical relation or recorded diagnostic when available; otherwise leave the cause unresolved. Synthetic example explains data generation, observations, independent replication, fixed/varied settings, comparators, measures and reference truth/error. Code-specific agreement and engineering checks remain in the protocol or implementation reader unless essential to the comparison; keep pilots and finite checks distinct from principal repeated-simulation results. Performance addresses the target or decision benefit and return/failure behavior; analytical informativeness can belong here. Computation selects measured method costs and included operations, with convergence only if recorded; managed budgets and execution accounting stay in history. Tuning separates permitted settings from investigated sensitivity; robustness explains the justified generator/observation change beside its results. Do not invent evidence or duplicate actual-data absence, which has its own disposition."
               },
               "limitation_markdown": {
                 "type": "string",
                 "minLength": 1,
                 "pattern": "\\S",
-                "description": "The scientific uncertainty or condition that limits this topic, without retelling its primary account. Display-routing or platform availability is not a scientific limitation. Keep distinct missing, failed and unstarted work truthful."
+                "description": "Distinct continuation after the exhibit: the evidence or claim boundary limiting this comparison. Keep a qualification that changes a claim beside that claim. Do not retell the primary result or its explanation, or list every unperformed study. Display-routing or platform availability is not a scientific limitation. Keep missing, failed and unstarted work distinct and truthful."
               },
               "implication_markdown": {
                 "type": "string",
                 "minLength": 1,
                 "pattern": "\\S",
-                "description": "Concise consequence for interpretation, intended use or next work; link the primary topic account instead of repeating its numbers or full explanation. Do not authorize a run or infer a researcher preference."
+                "description": "Distinct continuation after the exhibit: what the observed comparison implies for interpretation, intended use or next work under the tested conditions. Link the primary account or shared exhibit rather than repeating its numbers or full explanation. Do not authorize a run or infer a researcher preference."
               },
               "question_ids": {
-                "description": "Exact effective protocol.claim_tests[].test_id values covered by this decision dimension, including prospectively added_tests. Use the same identifiers as analyst question_results and lead question_reviews; do not invent aliases.",
+                "description": "Exact effective protocol.claim_tests[].test_id values covered by this decision dimension, including prospectively added_tests. Use the same identifiers as analyst question_results and lead question_reviews; do not invent aliases. A test may support more than one topic.",
                 "type": "array",
                 "items": {
                   "type": "string",
@@ -221,7 +221,7 @@
                   "type": "string",
                   "pattern": "^exhibit\\.[a-z0-9_.-]+$"
                 },
-                "description": "Exact same-evaluation table/figure IDs supporting this topic, selected from existing analyst exhibits. New authored accounts name relevant exhibits here; empty when no observed exhibit applies. Optional for retained accounts. This routes complete exhibits without changing their values, scope or interpretation."
+                "description": "List every exact same-evaluation table/figure ID interpreted by this topic, including shared exhibits also listed by another topic, selected from existing analyst exhibits. The first coverage entry declaring an exhibit owns its display; later entries show a link. Put the intended primary entry first. Keep exhibit IDs and placement instructions in structured fields, not prose. Empty only when no observed exhibit applies. Optional for retained accounts. This routes complete exhibits without changing values, scope or interpretation; related exact questions may share them."
               }
             }
           }
@@ -239,7 +239,7 @@
           "type": "string",
           "minLength": 1,
           "pattern": "\\S",
-          "description": "Authored visible short recap: exact implemented target, defining mechanism, returned output and decisive condition. Follow the supplied scientific-explanation reference and interpret essential symbols locally. Cite the frozen method/implementation sources. Keep the full formulation in method_formulation_markdown; do not extract the recap heuristically or create new mathematics."
+          "description": "Authored visible short recap of the exact implemented target and main mechanism around its essential equation, connecting them to the finding and decisive condition. Follow the supplied scientific-explanation reference and define essential symbols locally. Cite the frozen method/implementation sources. The complete procedure belongs in method_formulation_markdown and method/implementation readers; do not compress it into this recap, extract it heuristically or create new mathematics."
         },
         "notation_markdown": {
           "type": "string",
@@ -270,7 +270,7 @@
             "pattern": "\\S"
           },
           "review_markdown": {
-            "description": "Assess the analyst answer against evidence available in this evaluation, retaining uncertainty and limitations and attributing disagreements. State the assessment, support and consequence without repeating every table or implying independent review of another version.",
+            "description": "Assess the Analyst answer against retained evidence, stating support, consequence and unique qualifications and disagreements, with attribution. A concise concurrence may link to the primary account. Retain applicable uncertainty and limitations; do not repeat the whole table, create a missing contrast or imply independent review of later Lead bytes.",
             "type": "string",
             "minLength": 1,
             "pattern": "\\S"
@@ -293,7 +293,7 @@
     "scientific_outcome": {
       "properties": {
         "conclusion": {
-          "description": "State the decisive supported observation and its boundary for the researcher goal, including applicable uncertainty and tested scope. Follow the supplied summary and claims-and-evidence references. Successful execution is not a favorable scientific outcome; missing comparisons, failed attempts and synthetic-only support remain explicit."
+          "description": "The first visible Summary finding: state the principal finding for the scientific purpose, whether a comparison, return/failure rate or inconclusive result, with useful magnitude and applicable uncertainty. Include a tested failure or no-useful-output condition when it changes the practical assessment, and the condition that most limits interpretation for the research goal. Select what changes the assessment rather than every metric, experiment or the whole method. Follow the supplied summary and claims-and-evidence references. Never fabricate a result; execution success is not scientific support, and missing comparisons, failed attempts and synthetic-only support stay explicit. The fuller decision_summary.conclusion_markdown adds interpretation rather than duplicating this finding."
         }
       }
     }

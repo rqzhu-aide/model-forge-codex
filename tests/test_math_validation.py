@@ -63,6 +63,47 @@ def test_unclosed_display_equation_returns_its_field_to_the_author():
     assert findings[0].json_pointer == "/research_setting/statement_markdown"
 
 
+@pytest.mark.parametrize("family", ["p1.research_basis", "p2.theory_proposal", "p3.theory_candidate",
+                                    "p4.analyst_synthesis", "p5.technical_report_candidate"])
+def test_orphan_inline_math_is_checked_in_authored_fields_across_phases(family):
+    documents = {family: {"account": {"overview_markdown": r"Use $x$ with $Y unfinished."}}}
+    before = copy.deepcopy(documents)
+    findings = validate_authored_math(documents)
+    assert len(findings) == 1
+    assert findings[0].code == "math.invalid_delimiter"
+    assert findings[0].object_id == family
+    assert findings[0].json_pointer == "/account/overview_markdown"
+    assert findings[0].blocks_publication
+    assert documents == before
+
+
+def test_orphan_inline_goal_reaches_draft_and_publication_gates(draft_engine):
+    engine = draft_engine
+    record, stages, _ = run(engine, "P1", "p1.literature_update")
+    stage = stages[-1]
+    role = MemberRole.RESEARCH_LEAD
+    document = p1_documents()["p1.research_basis"]
+    document["research_setting"]["research_goal_markdown"] = (
+        r"First lower partial moments $L_1(c;Y)=\mathbb E[(c-Y)_+]$, where $(u)_+=\max(u,0)$ "
+        r"and $c$ is a reference in the scalar outcome $Y without fixing an estimator.")
+    pointer = "/research_setting/research_goal_markdown"
+    workspace = engine.member_workspace(record, stage.stage_id, role)
+    write_outputs(workspace, {"p1.research_basis": document})
+    result = check(engine, record, stage, role)
+    assert any(f["code"] == "math.invalid_delimiter" and f["json_pointer"] == pointer
+               for f in result["findings"])
+    assert result["scientific_correctness"] == "not_assessed"
+    sealed = engine.run_dir(record.project_id, record.run_id) / "outputs" / stage.stage_id
+    write_outputs(sealed, {"p1.research_basis": document})
+    findings = engine._validate_run_outputs(record, [stage], [], scoped_outputs={"p1.research_basis"})
+    assert any(f.code == "math.invalid_delimiter" and f.json_pointer == pointer and f.blocks_publication
+               for f in findings)
+    document["research_setting"]["research_goal_markdown"] = document["research_setting"][
+        "research_goal_markdown"].replace("$Y without", "$Y$ without")
+    write_outputs(workspace, {"p1.research_basis": document})
+    assert "math.invalid_delimiter" not in codes(check(engine, record, stage, role))
+
+
 def test_prose_code_urls_and_valid_aligned_equations_do_not_block():
     documents = {"p1.research_basis": {"text": "Plain words. `$\\badMacro$`\n```tex\n$\\badMacro$\n```",
                     "url": "https://example.org/$\\badMacro$",

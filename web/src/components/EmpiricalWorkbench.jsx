@@ -1,14 +1,17 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { diagnosticOverview, fmtMs, humanLabel, scoped } from "../research";
-import { coverageForTab, coverageTab, diagnosticsForQuestion, exhibitKey, exhibitsForQuestion, questionDataLabel, questionDataOrigins, questionHomeTab, questionOutcome, questionTopics, referencedCoverageExhibits, routeEmpiricalExhibits } from "../empirical";
+import { coverageForTab, coverageHomeTab, coverageTab, diagnosticsForQuestion, exhibitKey, exhibitsForQuestion, numericalSectionTopics, questionDataLabel, questionDataOrigins, questionHomeTab, questionOutcome, questionTopics, referencedCoverageExhibits, routeEmpiricalExhibits } from "../empirical";
 import { DiagnosticsTables } from "./PhaseEvidence";
-import { Outcome, SourceRef } from "./Shared";
+import { Outcome, ResearchInline, SourceRef } from "./Shared";
 import ResearchDocument, { EmpiricalSourceProvider } from "./EmpiricalDocument";
-import EmpiricalQuestion, { EmpiricalDecisionSummary, EmpiricalExhibit, EmpiricalFullInterpretation, EmpiricalNotation, EmpiricalQuestionSetup, EmpiricalQuestionTabs, EVIDENCE_TABS, evidenceTab } from "./EmpiricalQuestion";
+import EmpiricalQuestion, { EmpiricalDecisionSummary, EmpiricalExhibit, EmpiricalFullInterpretation, EmpiricalNotation, EmpiricalQuestionSetup, EmpiricalQuestionTabs, EVIDENCE_TABS } from "./EmpiricalQuestion";
 import { EmpiricalPlan } from "./EmpiricalProgress";
 import ImplementationReading from "./ImplementationReading";
 import { ActionButton } from "./Visuals";
 import { hasSharedNotation } from "../sharedNotation";
+import EmpiricalReadingButton, { empiricalReadingSize } from "./EmpiricalReading";
+import CompactEmpiricalExhibit from "./CompactEmpiricalExhibit";
+import { primaryEmpiricalExhibits } from "../compactEmpiricalResults";
 
 const hasInlineResult = (exhibit) => exhibit.source_verified !== false && !exhibit.source_error && Boolean(
   exhibit.table?.columns?.length && exhibit.table?.rows?.length
@@ -32,7 +35,7 @@ const protocolFields = (record, fields) => fields.flatMap(([key, title]) => {
 });
 
 function ProtocolDetails({ entries, compact = false }) {
-  return <dl className={compact ? "empirical-setup-fields empirical-setting-summary" : "empirical-setup-fields"}>{entries.map((entry, index) => <div key={index}><dt>{entry.title}</dt><dd>{entry.body ? <ProtocolDetails entries={entry.body} /> : <ResearchDocument text={entry.text} />}</dd></div>)}</dl>;
+  return <dl className={compact ? "empirical-setup-fields empirical-setting-summary" : "empirical-setup-fields"}>{entries.map((entry, index) => <div key={index}><dt><ResearchInline text={entry.title} /></dt><dd>{entry.body ? <ProtocolDetails entries={entry.body} /> : <ResearchDocument text={entry.text} />}</dd></div>)}</dl>;
 }
 
 export function focusHeadlineExhibit(target) {
@@ -69,95 +72,138 @@ export function ProtocolSetup({ protocol, onSource }) {
     {protocol.deviations?.length > 0 && <details className="research-details empirical-protocol-deviations"><summary>Protocol departures ({protocol.deviations.length})</summary>{protocol.deviations.map((departure, index) => <section key={departure.deviation_id || index}><ProtocolDetails entries={protocolFields({ ...departure, disposition: departure.disposition && humanLabel(departure.disposition), affected_questions: departure.affected_test_ids?.map((test) => protocol.claim_tests?.find((item) => item.test_id === test)?.hypothesis || humanLabel(test)) }, [["description", "Departure"], ["reason", "Reason"], ["impact_assessment", "Impact on interpretation"], ["disposition", "Disposition"], ["affected_questions", "Affected questions"]])} /><SourceRef reference={source(`/deviations/${index}`)} onOpen={onSource} label="Departure source" /></section>)}</details>}
     {sections.some(([, body]) => body.length) && <details className="research-details empirical-protocol-details"><summary>Full setup and comparison rules</summary>{sections.filter(([, body]) => body.length).map(([title, body]) => <section key={title}><h4>{title}</h4><ProtocolDetails entries={body} /></section>)}</details>}<SourceRef reference={protocol.generation_ref} onOpen={onSource} /></section>;
 }
-function TopicProtocol({ protocol, tab, onSource }) {
-  const sources = [...(protocol.data_sources || []), ...(protocol.amendments || []).flatMap((entry) => entry.added_data_sources || [])];
-  const synthetic = sources.length ? sources.every((source) => source.origin === "synthetic") : ["simulation", "synthetic"].includes(protocol.data_or_simulation_unit?.source_type);
-  const fields = tab === "setup" ? [
-    ...protocolFields(protocol.data_or_simulation_unit, [["sampling_or_generation_process", "Data generation"], ["unit_definition", "Observation unit"], ["sample_sizes", "Sample sizes"], ["independence_structure", "Independence and pairing"], ["splits", "Data splits"]]),
-    ...protocolFields({ baselines: (protocol.baselines || []).map((item) => item.name).filter(Boolean) }, [["baselines", "Comparators"]]),
-    ...protocolFields(protocol.repetitions_and_uncertainty, [["repetitions", "Repetitions"], ["paired_design", "Paired comparisons"]]),
-  ] : tab === "tuning" ? protocolFields(protocol.tuning_budget, [["selection_data", "Data used for selection"], ["search_space", "Settings considered"], ["optimization_rule", "Selection rule"], ["maximum_trials", "Maximum trials"], ["compute_limit", "Computation limit"], ["fairness_rule", "Fairness across models"]]) : [];
-  return fields.length ? <section className="empirical-topic-protocol"><h3>{tab === "setup" ? synthetic ? "Synthetic design" : "Study design" : "Tuning protocol"}</h3><ProtocolDetails entries={fields} compact /><SourceRef reference={tab === "tuning" && protocol.generation_ref ? { ...protocol.generation_ref, entry_pointer: "/tuning_budget" } : protocol.generation_ref} onOpen={onSource} label="Protocol source" /></section> : null;
-}
-
-function CompleteNumbers({ diagnostics, cases, onSource }) {
+export function CompleteNumbers({ diagnostics, cases, protocols = [], onSource }) {
   if (!diagnostics.length) return null;
   const overview = diagnosticOverview(diagnostics);
-  const names = Object.fromEntries(cases.map((item) => [item.case_id || item.id, item.label || item.title || humanLabel(item.case_id || item.id)]));
-  return <details className="research-details empirical-complete-numbers"><summary>Complete numerical results and recorded diagnostics</summary><p className="note">Across the evaluation: {overview.stabilityRows ? `${overview.unstable} verdict flips / ${overview.stabilityRows} comparisons` : "Repetition stability not recorded"}. {overview.recordedChecks ? `${overview.incompleteOrNonconverged} incomplete or nonconverged / ${overview.recordedChecks} recorded checks` : "Completion totals not recorded"}. {diagnostics.some((item) => typeof item.runtime?.total_ms === "number") ? `Sum of recorded case times: ${fmtMs(diagnostics.reduce((sum, item) => sum + (item.runtime?.total_ms || 0), 0))}.` : "Case times not recorded."}</p>{diagnostics.map((diagnostic, index) => <section key={diagnostic.diagnostics_id || index}><DiagnosticsTables d={{ ...diagnostic, headline_numbers: (diagnostic.headline_numbers || []).map((row) => ({ ...row, case_id: names[row.case_id] || humanLabel(row.case_id), metric: diagnostic.metric_labels?.[row.metric] || humanLabel(row.metric) })) }} /><SourceRef reference={diagnostic.generation_ref} onOpen={onSource} /><details className="research-details"><summary>Complete numerical source</summary><pre className="record">{JSON.stringify(diagnostic, null, 2)}</pre></details></section>)}</details>;
+  return <div className="empirical-complete-numbers"><p className="note">Across the evaluation: {overview.stabilityRows ? `${overview.unstable} verdict flips / ${overview.stabilityRows} comparisons` : "Repetition stability not recorded"}. {overview.recordedChecks ? `${overview.incompleteOrNonconverged} incomplete or nonconverged / ${overview.recordedChecks} recorded checks` : "Completion totals not recorded"}. {diagnostics.some((item) => typeof item.runtime?.total_ms === "number") ? `Sum of recorded case times: ${fmtMs(diagnostics.reduce((sum, item) => sum + (item.runtime?.total_ms || 0), 0))}.` : "Case times not recorded."}</p>{diagnostics.map((diagnostic, index) => {
+    const ref = diagnostic.generation_ref;
+    const matches = (item) => ref?.run_id && item.generation_ref?.run_id === ref.run_id && item.generation_ref.package_id === ref.package_id
+      && (!ref.branch || !item.generation_ref.branch || item.generation_ref.branch === ref.branch)
+      && (!ref.phase || !item.generation_ref.phase || item.generation_ref.phase === ref.phase);
+    const protocol = protocols.find(matches);
+    const metrics = Object.fromEntries([...(protocol?.metrics || []), ...(protocol?.amendments || []).flatMap((item) => item.added_metrics || [])].map((item) => [item.metric_id, item]));
+    const names = Object.fromEntries(cases.filter((item) => !item.generation_ref || matches(item)).map((item) => [item.case_id || item.id, item.label || item.title || item.case_id || item.id]));
+    const namedRows = (rows) => (rows || []).map((row) => ({ ...row, case_id: names[row.case_id] || row.case_id }));
+    return <section key={diagnostic.diagnostics_id || index}><DiagnosticsTables metrics={metrics} d={{ ...diagnostic, headline_numbers: namedRows(diagnostic.headline_numbers), stability: namedRows(diagnostic.stability), ...(diagnostic.runtime ? { runtime: { ...diagnostic.runtime, per_case: namedRows(diagnostic.runtime.per_case) } } : {}) }} /><SourceRef reference={ref} onOpen={onSource} /><details className="research-details"><summary>Complete numerical source</summary><pre className="record">{JSON.stringify(diagnostic, null, 2)}</pre></details></section>;
+  })}</div>;
 }
 
-export default function EmpiricalWorkbench({ diagnostics = [], exhibits = [], questions = [], cases = [], protocols = [], summaries = [], implementations = [], progress = null, progressData = null, progressState, issues = null, furtherWork = null, awaitingDirection = false, loadErrors = [], branch, onSource, onRequest, onTheory, initialTab, reading = {}, onReadingChange }) {
+export function diagnosticReadingLabel(diagnostics) {
+  const tables = diagnostics.reduce((count, record) => count + [record.headline_numbers?.length, record.stability?.length, record.solver_health?.length, record.runtime].filter(Boolean).length, 0);
+  const rows = diagnostics.reduce((count, record) => count + (record.headline_numbers?.length || 0) + (record.stability?.length || 0) + (record.solver_health?.length || 0) + (record.runtime ? (record.runtime.per_case?.length || 0) + 1 : 0), 0);
+  return `${diagnostics.length} ${diagnostics.length === 1 ? "record" : "records"} · ${tables} ${tables === 1 ? "table" : "tables"} · ${rows} ${rows === 1 ? "row" : "rows"}`;
+}
+
+export function EmpiricalQuestionDesignDocument({ question, cases, onSource }) {
+  // A supporting reader belongs to the frozen evaluation. Always inspect its
+  // tested generation, even if a newer theory becomes current while it is open.
+  return <EmpiricalQuestionSetup question={question} cases={cases} onSource={onSource}
+    onTheory={(statementId, reference) => onSource?.(reference, statementId)} />;
+}
+
+export function ExperimentSetupDocument({ protocols = [], progressData, onSource }) {
+  const plans = protocols.filter((protocol) => protocol.work_items?.length || protocol.amendments?.length);
+  return <div className="empirical-study-background">
+    {progressData && <section className="empirical-current-plan"><h3>Completed evaluation plan</h3><EmpiricalPlan progress={progressData} settled compact /></section>}
+    {plans.map((plan, index) => <section className="empirical-current-plan" key={plan.protocol_id || index}><h3>{plan.title || "Recorded experiment plan"}</h3><EmpiricalPlan progress={{ plan }} planOnly compact /><SourceRef reference={plan.generation_ref} onOpen={onSource} /></section>)}
+    {protocols.map((protocol, index) => <ProtocolSetup key={protocol.protocol_id || index} protocol={protocol} onSource={onSource} />)}
+  </div>;
+}
+
+export default function EmpiricalWorkbench({ diagnostics = [], exhibits = [], questions = [], cases = [], protocols = [], summaries = [], implementations = [], progress = null, progressData = null, progressState, progressRun, issues = null, furtherWork = null, awaitingDirection = false, loadErrors = [], branch, onSource, onRequest, onTheory, decisionQuestions = [], onDecision, initialTab, reading = {}, onReadingChange }) {
   const { diags, figures, protocolList, caseList, items } = evaluationSources({ branch, diagnostics, exhibits, questions, cases, protocols });
   const summary = summaries.filter((item) => !item.branch || item.branch === branch).find((item) => item.decision_summary);
   const coverage = summary?.decision_summary?.coverage || [];
   const hasNotation = hasSharedNotation(summary) || typeof summary?.decision_summary?.notation_markdown === "string" && Boolean(summary.decision_summary.notation_markdown.trim());
   const id = useId(); const panel = useRef(null);
-  const [focusQuestion, setFocusQuestion] = useState(null); const [focusExhibit, setFocusExhibit] = useState(null); const [notationOpen, setNotationOpen] = useState(null);
+  const [focusQuestion, setFocusQuestion] = useState(null); const [focusExhibit, setFocusExhibit] = useState(null); const [notationOpen, setNotationOpen] = useState(null); const [focusTab, setFocusTab] = useState(null);
   const normalizeTab = (value) => ({ results: "comparisons", design: "setup", review: "comparisons", next: "comparisons" }[value] || (EVIDENCE_TABS.some(([key]) => key === value) ? value : null));
-  const firstTopic = () => EVIDENCE_TABS.find(([key]) => coverageForTab(coverage, key, items).length || items.some((question) => questionTopics(question, coverage).includes(key)))?.[0] || "setup";
-  const [tab, setTab] = useState(() => normalizeTab(reading.tab || initialTab) || firstTopic());
-  const tabChosen = useRef(Boolean(normalizeTab(reading.tab || initialTab)));
-  const chooseTab = (value) => { tabChosen.current = true; setTab(value); };
+  const [tab, setTab] = useState(() => normalizeTab(reading.tab || initialTab) || "setup");
+  const explore = (value) => { setTab(value); setFocusTab(value); };
   const readingChange = useRef(onReadingChange); readingChange.current = onReadingChange;
-  useEffect(() => { readingChange.current?.({ tab }); }, [tab]);
-  useEffect(() => { tabChosen.current = Boolean(normalizeTab(reading.tab || initialTab)); setTab(normalizeTab(reading.tab || initialTab) || firstTopic()); setFocusQuestion(null); setFocusExhibit(null); setNotationOpen(false); }, [branch]);
-  // An intentionally selected empty topic remains selected through polling.
-  useEffect(() => { if (!tabChosen.current && items.length) setTab(firstTopic()); }, [items.map((question) => `${question.id}:${questionTopics(question, coverage).join(",")}`).join("|")]);
-  useEffect(() => { if (focusQuestion) { const target = [...(panel.current?.querySelectorAll("[data-question-id]") || [])].find((element) => element.dataset.questionId === focusQuestion); if (target?.tagName === "DETAILS") target.open = true; target?.querySelector("summary")?.focus(); target?.scrollIntoView({ block: "nearest" }); setFocusQuestion(null); } }, [tab, focusQuestion]);
+  useEffect(() => { if (normalizeTab(tab)) readingChange.current?.({ tab }); }, [tab]);
+  useEffect(() => { setTab(normalizeTab(reading.tab || initialTab) || "setup"); setFocusQuestion(null); setFocusExhibit(null); setNotationOpen(false); }, [branch]);
+  useEffect(() => { if (focusQuestion) { const target = [...(panel.current?.querySelectorAll("[data-question-id]") || [])].find((element) => element.dataset.questionId === focusQuestion); if (target?.tagName === "DETAILS") target.open = true; focusHeadlineExhibit(target); target?.querySelector("summary")?.focus({ preventScroll: true }); setFocusQuestion(null); } }, [tab, focusQuestion]);
   useEffect(() => { if (focusExhibit) { focusHeadlineExhibit(document.getElementById(focusExhibit)); setFocusExhibit(null); } }, [tab, focusExhibit]);
-  const choose = (questionId) => { const question = items.find((item) => item.id === questionId); if (question) { chooseTab(questionHomeTab(question, coverage)); setFocusQuestion(questionId); } };
+  useEffect(() => { if (focusTab) { focusHeadlineExhibit(document.getElementById(`${id}-${focusTab}`) || document.getElementById(`${id}-scope`)); setFocusTab(null); } }, [tab, focusTab, id]);
+  const choose = (questionId) => { if (items.some((item) => item.id === questionId)) setFocusQuestion(questionId); };
   const routed = routeEmpiricalExhibits(figures, items, coverage, summary);
   const exhibitAnchor = (entry) => `${id}-exhibit-${encodeURIComponent(entry.key)}`;
-  const showExhibit = (exhibit) => { const entry = routed.find((item) => item.key === exhibitKey(exhibit)); if (entry) { if (entry.topic !== "other") chooseTab(entry.topic); setFocusExhibit(exhibitAnchor(entry)); } };
-  const selected = items.filter((question) => questionTopics(question, coverage).includes(tab));
-  const topicCoverage = coverageForTab(coverage, tab, items);
+  const showExhibit = (exhibit) => { const entry = routed.find((item) => item.key === exhibitKey(exhibit)); if (entry) { setTab(entry.topic); setFocusExhibit(exhibitAnchor(entry)); } };
   const headlineIds = summary?.decision_summary?.headline_exhibit_ids || [];
   const missingHeadlines = headlineIds.filter((exhibitId) => !figures.some((exhibit) => exhibit.exhibit_id === exhibitId && exhibit.source_verified === true && !exhibit.source_error && exhibit.generation_ref?.run_id === summary?.generation_ref?.run_id && exhibit.generation_ref?.package_id === summary?.generation_ref?.package_id));
-  const topicExhibits = routed.filter((entry) => entry.topic === tab).sort((a, b) => { const rank = (entry) => headlineIds.includes(entry.exhibit.exhibit_id) ? headlineIds.indexOf(entry.exhibit.exhibit_id) : headlineIds.length; return rank(a) - rank(b); });
-  const publishedPlans = protocolList.filter((protocol) => protocol.work_items?.length || protocol.amendments?.length);
-  const displayedPublishedPlan = progressData ? null : publishedPlans[0]; const otherPlans = publishedPlans.filter((plan) => plan !== displayedPublishedPlan);
+  const primaryExhibits = primaryEmpiricalExhibits(routed, summary);
+  const orderedExhibits = [...routed].sort((a, b) => { const rank = (entry) => primaryExhibits.includes(entry) ? primaryExhibits.indexOf(entry) : primaryExhibits.length + (headlineIds.includes(entry.exhibit.exhibit_id) ? headlineIds.indexOf(entry.exhibit.exhibit_id) : headlineIds.length); return rank(a) - rank(b); });
+  const topics = numericalSectionTopics(coverage, items, routed, summary);
+  const sections = [...EVIDENCE_TABS, ["actual_data", "Actual-data application"]].filter(([key]) => topics.includes(key)).sort(([a], [b]) => Number(b === "comparisons") - Number(a === "comparisons"));
+  const sectionCoverage = (key) => coverageForTab(coverage, key, items, summary);
+  const accountHome = (entry) => { const home = coverageHomeTab(entry, items, summary); return sections.some(([key]) => key === home) ? home : "scope"; };
+  const scopeCoverage = coverage.filter((entry) => accountHome(entry) === "scope");
   const implementationList = implementations.filter((record) => !record.branch || record.branch === branch);
-  const anchor = `evaluation:${summary?.generation_ref?.generation_id || protocolList[0]?.generation_ref?.generation_id || branch}`;
+  const producingRef = summary?.generation_ref || protocolList[0]?.generation_ref;
+  const anchor = `evaluation:${branch}:${producingRef?.run_id || producingRef?.generation_id || "unpublished"}:${producingRef?.package_id || ""}`;
   const currentPlan = progressData && <section className="empirical-current-plan"><h3>{progressState === "published" ? "Completed evaluation plan" : "Current evaluation plan"}</h3>{progressState !== "published" && <p className="note">This plan and its progress are provisional. Published findings above retain their original evidence.</p>}<EmpiricalPlan progress={progressData} settled={["published", "assessed", "failed", "cancelled"].includes(progressState)} compact /></section>;
   const empty = { setup: "No synthetic example or implementation-check answer is recorded.", comparisons: "No performance evidence is recorded. Unstudied performance remains unassessed.", computation: "No computation-cost evidence is recorded. Experiment-budget time does not establish per-fit method cost.", tuning: "No tuning answer is recorded. Tuning remains unassessed unless the saved protocol states it is not applicable.", sensitivity: "No robustness evidence is recorded. Behavior outside the studied conditions remains unassessed." };
-  const renderExhibit = (entry) => <div key={entry.key} className="empirical-canonical-exhibit">{entry.association === "related" && <p className="note">Related result, linked by the recorded test or case. A more specific topic assignment is unavailable.</p>}<EmpiricalExhibit exhibit={entry.exhibit} anchorId={exhibitAnchor(entry)} readingAnchor={`${anchor}:exhibit:${entry.key}`} onSource={onSource} /></div>;
-  const sources = { branch, onSource, artifacts: summary?.source_artifacts || [], records: [summary, ...protocolList, ...items.map((item) => item.result), ...items.map((item) => item.review), ...implementationList, ...implementationList.map((item) => item.theorist_review)], files: [...(summary?.run_sources || []), ...figures, ...implementationList.flatMap((record) => (record.files || []).map((file) => ({ ...file, branch: record.generation_ref?.branch || record.branch })))] };
-  return <EmpiricalSourceProvider value={sources}><EmpiricalDecisionSummary record={summary} questions={items} dataSources={protocolList.flatMap((protocol) => [...(protocol.data_sources || []), ...(protocol.amendments || []).flatMap((item) => item.added_data_sources || [])])} onSelect={choose} onSource={onSource} onNotation={() => setNotationOpen(summary)} awaitingDirection={awaitingDirection} hasProgress={Boolean(progressData)} progressState={progressState} />{progress}
-    <section className="card empirical-code-card" data-card-role="research" data-reading-anchor={`${anchor}:implementation`}><h2>Implementation and Code</h2><div className="body"><ImplementationReading records={implementationList} protocols={protocolList} summary={summary} onSource={onSource} /></div></section>
-    <section className="card empirical-workspace" data-card-role="research"><h2>Experiments and Results</h2><div className="body">
-      <EmpiricalQuestionTabs id={id} selected={tab} onSelect={chooseTab} questions={items} coverage={coverage} />
-      {hasNotation && <div className="btnrow empirical-support-links"><ActionButton action="details" variant="link" aria-haspopup="dialog" onClick={() => setNotationOpen(summary)}>Notation</ActionButton></div>}
+  const renderExhibit = (entry) => <div key={entry.key} className="empirical-canonical-exhibit">{entry.association === "related" && <p className="note">Related result, linked by the recorded test or case. A more specific topic assignment is unavailable.</p>}<CompactEmpiricalExhibit exhibit={entry.exhibit} primary={primaryExhibits.includes(entry)} anchorId={exhibitAnchor(entry)} readingAnchor={`${anchor}:exhibit:${entry.key}`} onSource={onSource} /></div>;
+  const accountAnchor = (entry) => `${id}-coverage-${coverage.indexOf(entry)}`;
+  const renderAccount = (entry, ownedExhibits = []) => <section className="empirical-topic-account" key={coverage.indexOf(entry)} id={accountAnchor(entry)} tabIndex={-1} data-reading-anchor={`${anchor}:coverage:${entry.dimension}:${coverage.filter((item) => item.dimension === entry.dimension).indexOf(entry)}`}>
+    <h4>{humanLabel(entry.dimension)} <span className="note">Research Lead · {humanLabel(entry.status || "Assessment not recorded")}</span></h4>
+    {entry.summary ? <ResearchDocument text={entry.summary} /> : <p className="note">No authored account is recorded for this topic.</p>}
+    {ownedExhibits.map(renderExhibit)}
+    {referencedCoverageExhibits(entry, figures, summary).filter((exhibit) => !ownedExhibits.some((item) => item.key === exhibitKey(exhibit))).map((exhibit) => <p className="empirical-shared-result" key={exhibitKey(exhibit)}><ActionButton action="details" variant="link" onClick={() => showExhibit(exhibit)}>View {exhibit.title || "recorded result"} in {EVIDENCE_TABS.find(([key]) => key === routed.find((item) => item.key === exhibitKey(exhibit))?.topic)?.[1] || (routed.find((item) => item.key === exhibitKey(exhibit))?.topic === "actual_data" ? "Actual-data application" : "Other recorded results")}</ActionButton></p>)}
+    {(entry.limitation_markdown || entry.limitations_markdown) && <section className="empirical-topic-continuation"><h5>Limitations</h5><ResearchDocument text={entry.limitation_markdown || entry.limitations_markdown} /></section>}
+    {entry.implication_markdown && <section className="empirical-topic-continuation"><h5>Implication</h5><ResearchDocument text={entry.implication_markdown} /></section>}
+    <SourceRef reference={summary?.generation_ref && { ...summary.generation_ref, entry_pointer: `/decision_summary/coverage/${coverage.indexOf(entry)}` }} onOpen={onSource} label={coverageTab(entry.dimension) === "actual_data" ? "Actual-data coverage source" : "Coverage source"} />
+  </section>;
+  const renderQuestion = (question) => {
+    const evidence = diagnosticsForQuestion(question, diags, caseList, protocolList);
+    const protocol = protocolList.find((item) => item.generation_ref?.run_id && item.generation_ref.run_id === question.generation_ref?.run_id && item.generation_ref.package_id === question.generation_ref?.package_id);
+    const questionCoverage = coverage.filter((entry) => entry.question_ids?.includes(question.id));
+    const designSettings = caseList.filter((item) => question.case_ids?.includes(item.case_id)).length;
+    const designSize = empiricalReadingSize([question.result?.design_markdown || question.caption || question.design, question.result?.conditions_markdown || question.scope || question.conditions, question.falsification_rule], [designSettings ? `${designSettings} experiment ${designSettings === 1 ? "setting" : "settings"}` : "", question.statement_ids?.length ? `${question.statement_ids.length} tested ${question.statement_ids.length === 1 ? "claim" : "claims"}` : ""]);
+    return <details className="question-detail empirical-question-row" key={question.id} data-question-id={question.id} tabIndex={-1} data-reading-anchor={`${anchor}:question:${question.id}`}><summary><span className="empirical-question-title">{question.title}</span><span className="empirical-question-state">{question.result && <span>{question.review?.review_markdown || question.review?.theorist_findings_markdown ? "Analyst account and scientific review" : "Analyst account"}</span>}<Outcome state={questionOutcome(question)} /><span>{questionDataLabel(questionDataOrigins(question, caseList, protocolList))}</span>{questionCoverage.length ? questionCoverage.map((entry, index) => <span key={index}>{humanLabel(entry.dimension)}: {humanLabel(entry.status)}</span>) : <span>Coverage not recorded</span>}</span></summary><div className="empirical-question-answer"><QuestionTheoryContext question={question} onSource={onSource} /><EmpiricalQuestion question={question} cases={caseList} diagnostics={evidence.diagnostics} hasMapping={evidence.hasMapping} protocol={protocol} onSource={onSource} onRequest={onRequest} onTheory={onTheory} showEvidence={false} showRecordedValues={!question.exhibits.some(hasInlineResult)} onExhibit={showExhibit} />{designSize ? <div className="reading-toolbar empirical-support-toolbar"><EmpiricalReadingButton kind="p4-question-design" title="Experiment design and sources" sizeLabel={designSize} input={{ question, cases: caseList }} renderBody={(input, openSource) => <EmpiricalQuestionDesignDocument {...input} onSource={openSource} />} onSource={onSource} /></div> : <p className="note">No separate experiment design or settings are recorded for this question.</p>}</div></details>;
+  };
+  const sources = { branch, onSource, decisionQuestions, onDecision, artifacts: summary?.source_artifacts || [], records: [summary, ...protocolList, ...items.map((item) => item.result), ...items.map((item) => item.review), ...implementationList, ...implementationList.map((item) => item.theorist_review)].filter(Boolean), files: [...(summary?.run_sources || []), ...figures, ...implementationList.flatMap((record) => (record.files || []).map((file) => ({ ...file, branch: record.generation_ref?.branch || record.branch })))] };
+  const hasInterpretation = Boolean(summary?.decision_summary);
+  const hasSetupReading = protocolList.length > 0 || progressData && progressState === "published";
+  return <EmpiricalSourceProvider value={sources}><EmpiricalDecisionSummary record={summary} questions={items} dataSources={protocolList.flatMap((protocol) => [...(protocol.data_sources || []), ...(protocol.amendments || []).flatMap((item) => item.added_data_sources || [])])} onSelect={choose} onSource={onSource} onNotation={() => setNotationOpen(summary)} onExplore={explore} awaitingDirection={awaitingDirection} hasProgress={Boolean(progressData)} progressState={progressState} progressRun={progressRun} branch={branch} />{progress}
+    <section className="card empirical-code-card" data-card-role="research" data-reading-anchor={`${anchor}:implementation`}><div className="card-heading"><h2>Implementation and Code</h2></div><div className="body"><ImplementationReading records={implementationList} protocols={protocolList} summary={summary} hasNotation={hasNotation} onNotation={() => setNotationOpen(summary)} onSource={onSource} /></div></section>
+    <section className="card empirical-workspace" data-card-role="research"><div className="card-heading"><h2>Experiments and Results</h2></div><div className="body">
+      <EmpiricalQuestionTabs id={id} selected={tab} onSelect={explore} questions={items} coverage={coverage} summary={summary} sections={[...sections, ["scope", "Other scope"]]} />
+      {(hasNotation || diags.length > 0 || hasInterpretation || hasSetupReading) && <div className="reading-toolbar empirical-support-toolbar empirical-support-row" aria-label="Experiment supporting documents">
+        {hasNotation && <ActionButton action="details" variant="link" aria-haspopup="dialog" onClick={() => setNotationOpen(summary)}>Notation</ActionButton>}
+        {diags.length > 0 && <EmpiricalReadingButton kind="p4-diagnostics" title="Numerical results and diagnostics" sizeLabel={diagnosticReadingLabel(diags)} input={{ diagnostics: diags, cases: caseList, protocols: protocolList }} renderBody={(input, openSource) => <CompleteNumbers {...input} onSource={openSource} />} onSource={onSource} />}
+        <EmpiricalFullInterpretation record={summary} onSource={onSource} />
+        {hasSetupReading && <EmpiricalReadingButton kind="p4-experiment-setup" title="Setup and recorded plans" sizeLabel={`${protocolList.length} ${protocolList.length === 1 ? "protocol" : "protocols"}${progressData && progressState === "published" ? " · Completed evaluation plan" : ""}`} input={{ protocols: protocolList, progressData: progressState === "published" ? progressData : null }} renderBody={(input, openSource) => <ExperimentSetupDocument {...input} onSource={openSource} />} onSource={onSource} />}
+      </div>}
       {scoped(loadErrors, branch, "P4").map((issue, index) => <p className="note warn" role="alert" key={index}>A source from this evaluation could not be verified or loaded: {issue.message}.</p>)}
-      {missingHeadlines.length > 0 && <p className="note warn" role="alert">{missingHeadlines.length} referenced result {missingHeadlines.length === 1 ? "exhibit could" : "exhibits could"} not be verified or loaded. Inspect the retained sources before interpreting it.</p>}
-      <div className="empirical-tab-panel" role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${tab}`} tabIndex={0} ref={panel}>
-        {topicCoverage.map((entry, index) => <section className="empirical-topic-account" key={index}><h3>{humanLabel(entry.dimension)} <span className="note">Research Lead · {humanLabel(entry.status)}</span></h3>{[entry.summary, entry.limitation_markdown || entry.limitations_markdown, entry.implication_markdown].filter(Boolean).map((text, i) => <ResearchDocument key={i} text={text} />)}<SourceRef reference={summary?.generation_ref && { ...summary.generation_ref, entry_pointer: `/decision_summary/coverage/${coverage.indexOf(entry)}` }} onOpen={onSource} label="Coverage source" />
-          {referencedCoverageExhibits(entry, figures, summary).filter((exhibit) => routed.find((item) => item.key === exhibitKey(exhibit))?.topic !== tab).map((exhibit) => <ActionButton key={exhibitKey(exhibit)} action="details" variant="link" onClick={() => showExhibit(exhibit)}>View {exhibit.title || "recorded result"} in {EVIDENCE_TABS.find(([key]) => key === routed.find((item) => item.key === exhibitKey(exhibit))?.topic)?.[1] || "Other recorded results"}</ActionButton>)}
-        </section>)}
-        {protocolList.map((protocol, index) => <TopicProtocol key={protocol.protocol_id || index} protocol={protocol} tab={tab} onSource={onSource} />)}
-        {topicExhibits.map(renderExhibit)}
-        {selected.map((question) => {
-          if (questionHomeTab(question, coverage) !== tab) return <p key={question.id} className="empirical-shared-question"><ActionButton action="details" variant="link" onClick={() => choose(question.id)}>Read the full answer: {question.title}</ActionButton></p>;
-          const evidence = diagnosticsForQuestion(question, diags, caseList, protocolList);
-          const protocol = protocolList.find((item) => item.generation_ref?.run_id && item.generation_ref.run_id === question.generation_ref?.run_id && item.generation_ref.package_id === question.generation_ref?.package_id);
-          const questionCoverage = coverage.filter((entry) => entry.question_ids?.includes(question.id));
-          return <details className="question-detail empirical-question-row" key={question.id} data-question-id={question.id} tabIndex={-1} data-reading-anchor={`${anchor}:question:${question.id}`}><summary><span className="empirical-question-title">{question.title}</span><span className="empirical-question-state">{question.result && <span>{question.review?.review_markdown || question.review?.theorist_findings_markdown ? "Analyst account and scientific review" : "Analyst account"}</span>}<Outcome state={questionOutcome(question)} /><span>{questionDataLabel(questionDataOrigins(question, caseList, protocolList))}</span>{questionCoverage.length ? questionCoverage.map((entry, index) => <span key={index}>{humanLabel(entry.dimension)}: {humanLabel(entry.status)}</span>) : <span>Coverage not recorded</span>}</span></summary><div className="empirical-question-answer"><QuestionTheoryContext question={question} onSource={onSource} /><EmpiricalQuestion question={question} cases={caseList} diagnostics={evidence.diagnostics} hasMapping={evidence.hasMapping} protocol={protocol} onSource={onSource} onRequest={onRequest} onTheory={onTheory} showEvidence={false} showRecordedValues={!question.exhibits.some(hasInlineResult)} onExhibit={showExhibit} /><details className="research-details"><summary>Experiment design and exact sources</summary><EmpiricalQuestionSetup question={question} cases={caseList} onSource={onSource} onTheory={onTheory} /></details></div></details>;
+      {missingHeadlines.length > 0 && <p className="note warn" role="alert">{missingHeadlines.length} referenced result {missingHeadlines.length === 1 ? "exhibit could" : "exhibits could"} not be verified or loaded. Inspect the retained sources before interpreting {missingHeadlines.length === 1 ? "it" : "them"}.</p>}
+      <div className="empirical-numerical-section" ref={panel}>
+        {sections.map(([key, label]) => {
+          const relatedAccounts = sectionCoverage(key);
+          const accounts = relatedAccounts.filter((entry) => accountHome(entry) === key);
+          const topicExhibits = orderedExhibits.filter((entry) => entry.topic === key);
+          const homes = new Map(topicExhibits.map((entry) => [entry.key, accounts.find((account) => referencedCoverageExhibits(account, [entry.exhibit], summary).length)]));
+          const topicQuestions = items.filter((question) => questionTopics(question, coverage).includes(key));
+          return <section className="empirical-reading-section" key={key} id={`${id}-${key}`} tabIndex={-1} data-reading-anchor={`${anchor}:topic:${key}`} aria-labelledby={`${id}-${key}-heading`}>
+            <h3 id={`${id}-${key}-heading`}>{label}</h3>
+            {accounts.map((entry) => renderAccount(entry, topicExhibits.filter((exhibit) => homes.get(exhibit.key) === entry)))}
+            {relatedAccounts.filter((entry) => accountHome(entry) !== key).map((entry) => <p className="empirical-shared-account" key={coverage.indexOf(entry)}><ActionButton action="details" variant="link" onClick={() => { setTab(accountHome(entry)); setFocusExhibit(accountAnchor(entry)); }}>Read {humanLabel(entry.dimension)} in {sections.find(([topic]) => topic === accountHome(entry))?.[1] || "Other scope"}</ActionButton></p>)}
+            {!relatedAccounts.length && <p className="note">{key === "setup" ? protocolList.length ? "No authored experimental setup is recorded in the primary account. The complete saved protocol remains available in Setup and recorded plans." : "No authored experimental setup or complete protocol is recorded for this evaluation." : "No authored topic account is recorded. The saved exhibits and per-test accounts retain their original scope."}</p>}
+            {topicExhibits.filter((entry) => !homes.get(entry.key)).map(renderExhibit)}
+            {topicQuestions.length > 0 && <div className="empirical-topic-accounts"><h4>Supporting accounts and scientific reviews</h4>{topicQuestions.map((question) => questionHomeTab(question, coverage) === key ? renderQuestion(question) : <p key={question.id} className="empirical-shared-question"><ActionButton action="details" variant="link" onClick={() => choose(question.id)}>Read the full answer: {question.title}</ActionButton></p>)}</div>}
+          </section>;
         })}
-        {!selected.length && !topicCoverage.length && !topicExhibits.length && <p className="note">{empty[tab]}</p>}
+        <section className="empirical-reading-section empirical-other-scope" id={`${id}-scope`} tabIndex={-1} data-reading-anchor={`${anchor}:scope`} aria-labelledby={`${id}-scope-heading`}><h3 id={`${id}-scope-heading`}>Other scope</h3>
+          {scopeCoverage.map((entry) => renderAccount(entry))}
+          {EVIDENCE_TABS.filter(([key]) => key !== "setup" && !topics.includes(key) && !scopeCoverage.some((entry) => sectionCoverage(key).includes(entry))).map(([key, label]) => <p className="note" key={key}><b>{label}:</b> {empty[key]}</p>)}
+          {!scopeCoverage.length && EVIDENCE_TABS.every(([key]) => topics.includes(key)) && <p className="note">No additional unassessed topic is recorded in this account.</p>}
+          {items.filter((question) => !sections.some(([key]) => questionHomeTab(question, coverage) === key)).map(renderQuestion)}
+        </section>
+        {routed.some((entry) => entry.topic === "other") && <details className="research-details empirical-other-results" data-reading-anchor={`${anchor}:other-results`}><summary>Other recorded results</summary><p className="note">These results have no unambiguous topic assignment. Their saved sources and original scope are retained.</p>{orderedExhibits.filter((entry) => entry.topic === "other").map(renderExhibit)}</details>}
       </div>
-      {coverage.filter((entry) => coverageTab(entry.dimension) === "actual_data").map((entry, index) => <section className="empirical-actual-data" key={index}><h3>Actual-data application <span className="note">{humanLabel(entry.status)}</span></h3>{[entry.summary, entry.limitation_markdown || entry.limitations_markdown, entry.implication_markdown].filter(Boolean).map((text, i) => <ResearchDocument key={i} text={text} />)}<SourceRef reference={summary?.generation_ref && { ...summary.generation_ref, entry_pointer: `/decision_summary/coverage/${coverage.indexOf(entry)}` }} onOpen={onSource} label="Actual-data coverage source" />{referencedCoverageExhibits(entry, figures, summary).map((exhibit) => <ActionButton key={exhibitKey(exhibit)} action="details" variant="link" onClick={() => showExhibit(exhibit)}>View {exhibit.title || "actual-data result"} in {EVIDENCE_TABS.find(([key]) => key === routed.find((item) => item.key === exhibitKey(exhibit))?.topic)?.[1] || "Other recorded results"}</ActionButton>)}</section>)}
-      {routed.some((entry) => entry.topic === "other") && <details className="research-details empirical-other-results" data-reading-anchor={`${anchor}:other-results`}><summary>Other recorded results</summary><p className="note">These results have no unambiguous topic assignment. Their saved sources and original scope are retained.</p>{routed.filter((entry) => entry.topic === "other").map(renderExhibit)}</details>}
-      <CompleteNumbers diagnostics={diags} cases={caseList} onSource={onSource} />
-      <EmpiricalFullInterpretation record={summary} onSource={onSource} />
       {currentPlan && progressState !== "published" && currentPlan}
-      <details className="research-details empirical-study-background" data-reading-anchor={`${anchor}:study-design`}><summary>Detailed setup, checks and evaluation plan</summary>
-        {!protocolList.length && !items.length && !progressData && <p className="note">{awaitingDirection ? "The evaluation is waiting for your direction. Its setup will appear when the analyst saves a plan." : "No experiments have been completed for this model yet. The study setup will appear here when it is recorded."}</p>}
-        {currentPlan && progressState === "published" && <details className="research-details empirical-completed-plan" data-reading-anchor={`${anchor}:completed-plan`}><summary>Completed evaluation plan</summary>{currentPlan}</details>}
-        {displayedPublishedPlan && <details className="research-details empirical-completed-plan" data-reading-anchor={`${anchor}:recorded-plan`}><summary>Recorded experiment plan</summary><section className="empirical-current-plan"><h3>Recorded experiment plan</h3><EmpiricalPlan progress={{ plan: displayedPublishedPlan }} planOnly compact /><SourceRef reference={displayedPublishedPlan.generation_ref} onOpen={onSource} /></section></details>}
-        {otherPlans.length > 0 && <details className="research-details empirical-recorded-plans"><summary>Other recorded plans and sources ({otherPlans.length})</summary>{otherPlans.map((plan, index) => <section key={plan.protocol_id || index}><h3>{plan.title || "Recorded experiment plan"}</h3><EmpiricalPlan progress={{ plan }} planOnly /><SourceRef reference={plan.generation_ref} onOpen={onSource} /></section>)}</details>}
-        {protocolList.map((protocol, index) => <ProtocolSetup key={protocol.protocol_id || index} protocol={protocol} onSource={onSource} />)}
-        {coverage.some((entry) => !coverageTab(entry.dimension)) && <section className="empirical-coverage"><h3>Additional recorded scope</h3>{coverage.filter((entry) => !coverageTab(entry.dimension)).map((entry, index) => <section key={index}><h4>{humanLabel(entry.dimension)} · {humanLabel(entry.status)}</h4>{[entry.summary, entry.limitation_markdown || entry.limitations_markdown, entry.implication_markdown].filter(Boolean).map((text, i) => <ResearchDocument key={i} text={text} />)}</section>)}</section>}
-      </details>
+      {!protocolList.length && !items.length && !figures.length && !summary && !progressData && <p className="note">{awaitingDirection ? "The evaluation is waiting for your direction. Its setup will appear when the analyst saves a plan." : "No experiments have been completed for this model yet. The study setup will appear here when it is recorded."}</p>}
     </div></section>{issues}{furtherWork}{notationOpen && <EmpiricalNotation record={notationOpen} onSource={onSource} onClose={() => setNotationOpen(null)} />}</EmpiricalSourceProvider>;
 }
 

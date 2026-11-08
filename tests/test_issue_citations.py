@@ -137,7 +137,7 @@ async def test_p3_text_source_refs_keep_artifacts_and_decision_inbox_readable(di
     before = {path: path.read_bytes() for path in (project / "branches").rglob("*") if path.is_file()}
     app = create_app(engine.data_root, engine.bridge)
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         artifacts = await client.get(f"/api/v1/projects/{PID}/artifacts")
         assert artifacts.status_code == 200
         pending = await client.get(f"/api/v1/projects/{PID}/decisions-pending")

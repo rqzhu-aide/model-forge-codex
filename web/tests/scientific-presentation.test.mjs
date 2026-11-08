@@ -14,7 +14,7 @@ const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-scientific-
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
 await build({
-  stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Workbench from '${src}/components/EmpiricalWorkbench.jsx'; import {EmpiricalDecisionSummary,EmpiricalNotation} from '${src}/components/EmpiricalQuestion.jsx'; import {EmpiricalSourceProvider} from '${src}/components/EmpiricalDocument.jsx'; export const render = props => renderToStaticMarkup(React.createElement(Workbench,props)); export const summary = props => renderToStaticMarkup(React.createElement(EmpiricalDecisionSummary,props)); export const notation = (props,sources) => renderToStaticMarkup(React.createElement(EmpiricalSourceProvider,{value:sources},React.createElement(EmpiricalNotation,props))); export const summaryElement = EmpiricalDecisionSummary; export const notationElement = EmpiricalNotation;`, resolveDir: src },
+  stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Workbench from '${src}/components/EmpiricalWorkbench.jsx'; import {EmpiricalDecisionSummary,EmpiricalNotation} from '${src}/components/EmpiricalQuestion.jsx'; import {EmpiricalSourceProvider} from '${src}/components/EmpiricalDocument.jsx'; export {EmpiricalFullInterpretation as interpretationElement} from '${src}/components/EmpiricalQuestion.jsx'; export {default as EmpiricalReadingButton,empiricalReadingSnapshot} from '${src}/components/EmpiricalReading.jsx'; export const renderElement=renderToStaticMarkup; export const render = props => renderToStaticMarkup(React.createElement(Workbench,props)); export const summary = props => renderToStaticMarkup(React.createElement(EmpiricalDecisionSummary,props)); export const notation = (props,sources) => renderToStaticMarkup(React.createElement(EmpiricalSourceProvider,{value:sources},React.createElement(EmpiricalNotation,props))); export const summaryElement = EmpiricalDecisionSummary; export const notationElement = EmpiricalNotation;`, resolveDir: src },
   outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" },
   alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent",
 });
@@ -37,29 +37,44 @@ const record = {
 function elements(node) {
   if (Array.isArray(node)) return node.flatMap(elements);
   if (!node || typeof node !== "object" || !node.props) return [];
-  return [node, ...elements(node.props.children)];
+  return [node, ...elements(node.props.children), ...elements(node.props.resources)];
+}
+function readerFromControl(control) {
+  assert.equal(control.type, render.EmpiricalReadingButton);
+  const snapshot = render.empiricalReadingSnapshot({ ...control.props, scope: { projectId: "project.test", phase: "P4", branch: ref.branch }, onSource: noop });
+  const document = snapshot.body.props.children;
+  return { tree: document.type(document.props), html: render.renderElement(snapshot.body) };
+}
+function formulationReader(value) {
+  const wrapper = elements(render.summaryElement({ record: value })).find(node => node.type?.name === "FormulationButton");
+  assert.ok(wrapper, "The primary surface offers the complete formulation");
+  return readerFromControl(wrapper.type(wrapper.props));
 }
 
 test("authored recap is visible and the complete formulation retains its exact separate source", () => {
   const before = structuredClone(record);
   const html = render.summary({ record, onSource: noop, onNotation: noop });
-  const detail = html.indexOf('<details class="research-details empirical-method-definition"');
-  assert.ok(detail > 0);
-  assert.match(html.slice(0, detail), /The method estimates a population mean/);
-  assert.doesNotMatch(html.slice(0, detail), /The complete formulation defines/);
-  assert.match(html.slice(detail), /The complete formulation defines every fitting quantity/);
-  assert.match(html.slice(detail), /\\widehat\\mu=\\frac/);
+  assert.match(html, /The method estimates a population mean/);
+  assert.doesNotMatch(html, /The complete formulation defines/);
+  assert.match(html, /aria-haspopup="dialog"[^>]*>[^]*?Full formulation/);
+  const reader = formulationReader(record);
+  assert.match(reader.html, /The complete formulation defines every fitting quantity/);
+  assert.match(reader.html, /\\widehat\\mu=\\frac/);
+  assert.deepEqual(elements(reader.tree).find(node => node.props.label === "Formulation source").props.reference, { ...ref, entry_pointer: "/decision_summary/method_formulation_markdown" });
   const sources = elements(render.summaryElement({ record, onSource: noop })).filter((node) => node.props.reference);
   assert.deepEqual(sources.find((node) => node.props.label === "Method recap").props.reference, { ...ref, entry_pointer: "/decision_summary/method_recap_markdown" });
   assert.deepEqual(sources.find((node) => node.props.label === "Implemented method").props.reference, { ...ref, entry_pointer: "/decision_summary/method_formulation_markdown" });
   assert.deepEqual(record, before);
 });
 
-test("a deliberately authored recap retains even a one-paragraph full formulation in details", () => {
+test("a deliberately authored recap retains even a one-paragraph full formulation in its reader", () => {
   const value = { ...record, decision_summary: { ...record.decision_summary, method_formulation_markdown: "Complete single-paragraph criterion with its conditions." } };
   const html = render.summary({ record: value });
-  assert.match(html, /<details class="research-details empirical-method-definition"[^>]*><summary>Full mathematical formulation and fitting criterion<\/summary><div class="research-document"><p>Complete single-paragraph criterion/);
-  assert.equal((html.match(/Complete single-paragraph criterion/g) || []).length, 1);
+  assert.match(html, /Full formulation/);
+  assert.doesNotMatch(html, /Complete single-paragraph criterion/);
+  const reader = formulationReader(value);
+  assert.match(reader.html, /<section class="empirical-method-definition"><div class="research-document"><p>Complete single-paragraph criterion with its conditions\./);
+  assert.equal((reader.html.match(/Complete single-paragraph criterion/g) || []).length, 1);
 });
 
 test("older records keep their first-paragraph recap and single-block equations without an invented glossary", () => {
@@ -67,12 +82,16 @@ test("older records keep their first-paragraph recap and single-block equations 
   const legacy = { ...record, decision_summary };
   const before = structuredClone(legacy);
   const html = render.summary({ record: legacy, onNotation: noop });
-  assert.match(html.slice(0, html.indexOf('<details class="research-details empirical-method-definition"')), /Legacy definition stays readable/);
-  assert.equal((html.match(/Legacy definition stays readable/g) || []).length, 2);
+  assert.match(html, /Legacy definition stays readable/);
+  assert.equal((html.match(/Legacy definition stays readable/g) || []).length, 1);
+  const reader = formulationReader(legacy);
+  assert.equal((reader.html.match(/Legacy definition stays readable/g) || []).length, 1);
+  assert.match(reader.html, /class="katex-display"/);
+  assert.match(reader.html, /\\theta=\\mathbb E\[X\]/);
   assert.doesNotMatch(html, />Notation<\/button>|Method recap/);
   const single = render.summary({ record: { ...legacy, decision_summary: { ...decision_summary, method_formulation_markdown: "$$\\theta=\\mathbb E[X]$$" } } });
   assert.match(single, /class="katex-display"/);
-  assert.doesNotMatch(single, /empirical-method-definition/);
+  assert.doesNotMatch(single, /empirical-method-definition|Full formulation/);
   assert.deepEqual(legacy, before);
 });
 
@@ -92,13 +111,16 @@ test("a recorded scope qualifier remains once beside its finding or in legacy in
   for (const conclusion of ["The observed advantage is conditional.", undefined]) {
     const value = { ...record, scientific_outcome: { conclusion, scope } };
     const html = render.render({ branch: ref.branch, summaries: [value] });
-    assert.equal((html.match(/The bound applies only to the specified observation law and independent assessment sample\./g) || []).length, 1);
     const primary = html.slice(0, html.indexOf("Implementation and Code"));
     if (conclusion) {
+      assert.equal((html.match(/The bound applies only to the specified observation law and independent assessment sample\./g) || []).length, 1);
       assert.match(primary, /Current finding and scope/);
       assert.ok(primary.includes(scope));
     } else {
-      assert.ok(html.slice(html.indexOf('class="research-details empirical-full-interpretation"')).includes(scope));
+      assert.match(html, /Full interpretation/);
+      assert.doesNotMatch(html, /The bound applies only to the specified observation law/);
+      const reader = readerFromControl(render.interpretationElement({ record: value }));
+      assert.equal((reader.html.match(/The bound applies only to the specified observation law and independent assessment sample\./g) || []).length, 1);
       assert.doesNotMatch(primary, /Current finding/);
     }
   }
@@ -181,7 +203,10 @@ test("summary and experimental topics open the same lookup while the Lead accoun
   const input = { branch: ref.branch, summaries: [record], questions: [question], initialTab: "comparisons" };
   const before = structuredClone(input);
   const html = render.render(input);
-  assert.equal((html.match(/aria-haspopup="dialog"/g) || []).length, 2);
+  const notationControls = [...html.matchAll(/<button\b[^>]*>[^]*?<\/button>/g)].map(match => match[0]).filter(button => />Notation<\/button>$/.test(button));
+  assert.equal(notationControls.length, 2);
+  for (const control of notationControls) assert.match(control, /aria-haspopup="dialog"/);
+  for (const title of ["Full formulation", "Experiment design and sources"]) assert.ok(html.includes(title), title);
   assert.equal((html.match(/>Notation<\/button>/g) || []).length, 2);
   assert.doesNotMatch(html, /role="dialog"|Notation and measures/);
   const lead = html.indexOf('class="empirical-topic-account"');
@@ -212,13 +237,30 @@ test("a shared exhibit has one primary topic home and retains publication-specif
   const input = { branch: ref.branch, summaries: [summary], exhibits: [current, older], questions };
   const performance = render.render({ ...input, initialTab: "comparisons" });
   const robustness = render.render({ ...input, initialTab: "sensitivity" });
-  assert.equal((performance.match(/<h4>Shared observed comparison<\/h4>/g) || []).length, 1);
+  const topicSection = (html, topic) => {
+    const start = html.indexOf(`:topic:${topic}"`);
+    assert.ok(start >= 0, `The ${topic} section is present in the connected numerical account.`);
+    const end = html.indexOf('<section class="empirical-reading-section', start);
+    return html.slice(start, end < 0 ? undefined : end);
+  };
+  for (const html of [performance, robustness]) {
+    const main = topicSection(html, "comparisons"), sensitivity = topicSection(html, "sensitivity"), tuning = topicSection(html, "tuning");
+    const currentKey = encodeURIComponent(exhibitKey(current)), olderKey = encodeURIComponent(exhibitKey(older));
+    assert.equal((html.match(/class="empirical-canonical-exhibit"/g) || []).length, 2);
+    assert.equal(html.split(`-exhibit-${currentKey}"`).length - 1, 1);
+    assert.equal(html.split(`-exhibit-${olderKey}"`).length - 1, 1);
+    assert.ok(main.includes(`-exhibit-${currentKey}"`));
+    assert.ok(!sensitivity.includes(`-exhibit-${currentKey}"`));
+    assert.match(sensitivity, /View Shared observed comparison in Main results/);
+    assert.doesNotMatch(sensitivity, /Earlier observed comparison/);
+    assert.ok(tuning.includes(`-exhibit-${olderKey}"`));
+    assert.ok(!tuning.includes(`-exhibit-${currentKey}"`));
+    assert.match(main, /The original table is not available inline/);
+    assert.match(tuning, /Earlier observed comparison/);
+  }
   assert.doesNotMatch(performance.slice(0, performance.indexOf("Implementation and Code")), /<figure/);
-  assert.doesNotMatch(robustness, /<h4>Shared observed comparison<\/h4>/);
-  assert.match(robustness, /View Shared observed comparison in Performance/);
-  assert.doesNotMatch(robustness, /View Earlier observed comparison/);
-  const anchor = performance.match(/<figure id="([^"]+)"/)[1];
+  const anchor = performance.match(/<div id="([^"]+-exhibit-[^"]+)"[^>]+class="empirical-supporting-exhibit"/)[1];
   const sameAfterNotationUpdate = render.render({ ...input, summaries: [{ ...summary, decision_summary: { ...summary.decision_summary, notation_markdown: "Updated definitions remain source-owned." } }], initialTab: "comparisons" });
-  assert.ok(sameAfterNotationUpdate.includes(`<figure id="${anchor}"`));
+  assert.ok(sameAfterNotationUpdate.includes(`<div id="${anchor}"`));
   assert.deepEqual({ current, older, questions, summary }, before);
 });

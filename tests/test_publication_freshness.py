@@ -73,7 +73,7 @@ async def test_old_summary_correction_cannot_replace_newer_accepted_theory(workb
 
     monkeypatch.delenv("MF_CODEX_READ_ONLY", raising=False)
     app = create_app(data_root=eng.data_root, bridge=eng.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         preview = (await client.get(f"/api/v1/projects/project.test/runs/{failed.run_id}/correction-preview")).json()
     assert preview["eligible"] is False
     assert preview["attempts_remaining"] == 1

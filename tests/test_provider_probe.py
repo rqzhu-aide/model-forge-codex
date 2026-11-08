@@ -13,11 +13,11 @@ from model_forge_codex.domain import MemberConfig, MemberRole
 from model_forge_codex.execution import capture_execution
 from model_forge_codex.members import provision_member
 from model_forge_codex.probe import PROBE_PROMPT, PROBE_TIMEOUT_SECONDS, probe_tool_spec, public_probe_result, run_provider_probe
-from model_forge_codex.providers import FILE_KEY_ENV
+from model_forge_codex.providers import FILE_KEY_ENV, editor_view, write_provider_config
 from model_forge_codex.service import create_app
 
 SECRET = "PRIVATE_PROBE_SECRET"
-BASE = "http://workbench.local"
+BASE = "http://localhost"
 HEADERS = {"Content-Type": "application/json", "Origin": BASE}
 
 
@@ -93,6 +93,8 @@ async def test_probe_partial_when_tool_exchange_does_not_complete(app, tmp_path,
 
 @pytest.mark.parametrize("stage,text,category", [
     ("connection", "The installed Windows sandbox is not ready. Complete its setup in Codex", "runtime_setup"),
+    ("connection", "The installed Windows sandbox is not ready. Update the existing Windows sandbox in the same installed Codex before starting research; no model work has been started.", "runtime_setup"),
+    ("connection", "The installed Windows sandbox is not ready. Complete Windows sandbox setup in the same installed Codex before starting research; no model work has been started.", "runtime_setup"),
     ("connection", "The Windows sandbox runtime must be signed in to the same OpenAI account as this team.", "runtime_setup"),
     ("connection", "HTTP 401 Unauthorized: invalid api key", "authentication"),
     ("connection", "429 too many requests", "rate_limit"),
@@ -171,6 +173,47 @@ async def test_probe_draft_document_is_tested_without_saving(app, tmp_path):
     assert "PRIVATE_DRAFT_KEY" not in response.text
     assert not (tmp_path / "providers.toml").exists()
     assert not (tmp_path / "probes").exists()
+
+
+@pytest.mark.parametrize("member_override", [False, True])
+async def test_draft_probe_retains_only_the_saved_key_for_its_effective_scope(app, tmp_path, member_override):
+    app, bridge = app
+    shared = {"type": "custom", "id": "shared", "base_url": "https://shared.example.test/v1", "model": "shared-model", "api_key": SECRET}
+    override = {**shared, "id": "theory", "base_url": "https://theory.example.test/v1", "api_key": "PRIVATE_MEMBER_PROBE_KEY"}
+    path = tmp_path / "providers.toml"
+    write_provider_config(path, {"provider": shared, "members": {"theorist": override} if member_override else {}})
+    before = path.read_bytes()
+    draft = editor_view(tmp_path)["document"]
+    table = draft["members"]["theorist"] if member_override else draft["provider"]
+    table["model"] = "unsaved-model"
+    async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as client:
+        project_id = await make_project(client)
+        response = await client.post(probe_url(project_id), json={"document": draft}, headers=HEADERS)
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "ok" and response.json()["model"] == "unsaved-model"
+    assert bridge.probe_calls[0]["environment"] == {FILE_KEY_ENV: "PRIVATE_MEMBER_PROBE_KEY" if member_override else SECRET}
+    assert path.read_bytes() == before
+    assert SECRET not in response.text and "PRIVATE_MEMBER_PROBE_KEY" not in response.text
+    assert not (tmp_path / "probes").exists()
+
+
+async def test_draft_probe_rejects_stale_or_redirected_saved_keys_without_provider_call(app, tmp_path):
+    app, bridge = app
+    path = tmp_path / "providers.toml"
+    doc = {"provider": {"type": "custom", "id": "shared", "base_url": "https://shared.example.test/v1", "model": "m", "api_key": SECRET}, "members": {}}
+    write_provider_config(path, doc)
+    draft = editor_view(tmp_path)["document"]
+    async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as client:
+        project_id = await make_project(client)
+        redirected = json.loads(json.dumps(draft))
+        redirected["provider"]["base_url"] = "https://another.example.test/v1"
+        rejected = await client.post(probe_url(project_id), json={"document": redirected}, headers=HEADERS)
+        assert rejected.json()["failure"]["category"] == "invalid_configuration"
+        write_provider_config(path, {"provider": {**doc["provider"], "api_key": "PRIVATE_CHANGED_KEY"}, "members": {}})
+        stale = await client.post(probe_url(project_id), json={"document": draft}, headers=HEADERS)
+        assert stale.json()["failure"]["category"] == "invalid_configuration"
+        assert SECRET not in stale.text and "PRIVATE_CHANGED_KEY" not in stale.text
+    assert bridge.probe_calls == []
 
 
 async def test_probe_invalid_draft_fails_configuration_without_calling_provider(app, tmp_path):

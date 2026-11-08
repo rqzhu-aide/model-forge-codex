@@ -10,28 +10,18 @@ This local workbench supports developing statistical and machine learning models
 
 ## Install and use
 
-Use shared **Node.js 22+ with npm** and **Python 3.11+** installations. Run the following commands from the repository root, using `python` for your selected shared Python executable. Install packages user-wide or machine-wide; do not create a project-local environment.
+This checkout contains version **0.9.5**. From the repository root, follow the one-time setup for [Windows](docs/installation.md#windows), [macOS](docs/installation.md#macos), or [Linux](docs/installation.md#linux). The guide selects a shared Python 3.11+ installation and uses Node.js 22+ with npm to build the interface.
 
-Install the backend and development dependencies:
+After setup, start the workbench from the same terminal. On macOS and Linux:
 
 ```sh
-python -m pip install --user "setuptools>=68" wheel
-python -m pip install --user --no-build-isolation ".[dev]"
+"$MF_PYTHON" -B scripts/run_from_source.py
 ```
 
-Install the frontend dependencies globally, then build the interface:
+In Windows PowerShell:
 
-```sh
-npm install --global react@18.3.1 react-dom@18.3.1 katex@0.18.7 vite@5.4.11 @vitejs/plugin-react@4.3.4 @fontsource-variable/ibm-plex-sans@5.3.0 @fontsource/ibm-plex-mono@5.3.0 @fontsource/marcellus@5.3.0
-node web/scripts/vite.mjs build
-```
-
-If the build cannot find the shared frontend packages, set `MF_SHARED_NODE_MODULES` to the output of `npm root --global` before building. In PowerShell, use `$env:MF_SHARED_NODE_MODULES = npm root --global`; in a POSIX shell, use `export MF_SHARED_NODE_MODULES="$(npm root --global)"`.
-
-Start the app:
-
-```sh
-python -B scripts/run_from_source.py
+```powershell
+& $env:MF_PYTHON -B scripts/run_from_source.py
 ```
 
 The app opens at **[http://127.0.0.1:8766](http://127.0.0.1:8766)**. Keep the terminal open while using it. The Codex desktop app is optional.
@@ -46,16 +36,7 @@ On native Windows, complete the shared Codex runtime's one-time sandbox setup. M
 
 Projects and settings are saved separately from application files. Use `--data-root PATH` for another folder. The source launcher uses the Python executable that invokes it. See `--help` for all options.
 
-Finish or cancel active research before stopping. Use the same data folder and port when checking or stopping a custom instance:
-
-```sh
-python -B scripts/run_from_source.py status
-python -B scripts/run_from_source.py stop
-```
-
-For further setup and development guidance, see the [development guide](docs/development.md#source-checkout).
-
-Windows package launch and browser onboarding have been checked locally. Native clean-profile macOS/Linux verification remains pending. Model-generated scientific claims and results require researcher review.
+Use the same launcher with `status` to check the workspace or `stop` to close it. Finish or cancel active research before stopping. See the [installation guide](docs/installation.md) for commands and project storage.
 
 ## Five research phases
 

@@ -1,4 +1,5 @@
-import React, { useEffect, useId, useRef } from "react";
+import React, { createContext, useContext, useEffect, useId, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import katex from "katex";
 import "katex/dist/katex.min.css";
 import "../researchMath.css";
@@ -6,12 +7,50 @@ import { inlineTokens, inlineStrongParts, mathBody, renderMath } from "../resear
 import { humanLabel, OUTCOMES, methodUpdateMessage, methodStatusBadge } from "../research";
 import { readableSections } from "../researchContent";
 import { referenceMarkdown, researchBlocks } from "../researchMarkdown";
+import { reportTableCaption } from "../reportTableCaption";
+import { reportReferenceEmphasis } from "../reportReferenceEmphasis";
 import { executionStatus } from "../visualSemantics";
 import { ActionButton, ActionIcon } from "./Visuals";
 import { availableFocusTarget, dialogFocusTargets, crossDocumentReturnTarget } from "../dialogFocus";
 import { bareRunSourceParts } from "../researchSourceLinks";
 
 const dialogStack = [];
+const DialogParent = createContext(null);
+const dialogParents = new WeakMap();
+const dialogLayers = new WeakMap();
+const dialogBackground = new Map();
+let dialogOverflow, dialogObserver;
+
+function restoreDialogBackground(element, attributes) {
+  for (const [name, value] of Object.entries(attributes)) {
+    if (value === null) element.removeAttribute(name); else element.setAttribute(name, value);
+  }
+}
+function exposeTopDialog(onExposed) {
+  const top = dialogStack.at(-1);
+  const backdrop = top?.parentElement;
+  // Each client dialog is a body sibling, so hiding the previous window never
+  // hides the newly opened source or notation window inside its React tree.
+  if (backdrop && dialogBackground.has(backdrop)) {
+    restoreDialogBackground(backdrop, dialogBackground.get(backdrop)); dialogBackground.delete(backdrop);
+  }
+  const baseLayer = Math.max(0, ...dialogStack.map((box) => dialogLayers.get(box)));
+  for (const [index, box] of dialogStack.entries()) {
+    box.parentElement.style.zIndex = String(baseLayer + index);
+    if (box === top) box.setAttribute("aria-modal", "true"); else box.removeAttribute("aria-modal");
+  }
+  onExposed?.();
+  if (top) {
+    for (const element of document.body.children) {
+      if (element === backdrop) continue;
+      if (!dialogBackground.has(element)) dialogBackground.set(element, { inert: element.getAttribute("inert"), "aria-hidden": element.getAttribute("aria-hidden") });
+      element.setAttribute("inert", ""); element.setAttribute("aria-hidden", "true");
+    }
+  } else {
+    for (const [element, attributes] of dialogBackground) restoreDialogBackground(element, attributes);
+    dialogBackground.clear();
+  }
+}
 
 export function Outcome({ state }) {
   // Execution states must never become a scientific finding by fallback.
@@ -23,17 +62,31 @@ export function RunState({ state }) {
   const { tone, label } = executionStatus(state);
   return <span className={`pill ${tone}`}>{label}</span>;
 }
-export function Dialog({ title, children, onClose, busy = false, className = "", returnFocus }) {
+export function Dialog({ title, subtitle, children, onClose, busy = false, className = "", returnFocus, bodyRef, onBodyScroll }) {
+  const parentDialog = useContext(DialogParent);
   const titleId = useId(); const ref = useRef(null); const closeRef = useRef(onClose); closeRef.current = onClose;
   const busyRef = useRef(busy); busyRef.current = busy;
   const returnRef = useRef(returnFocus); returnRef.current = returnFocus;
   useEffect(() => {
     const previous = document.activeElement;
     const box = ref.current;
-    dialogStack.push(box);
+    dialogParents.set(box, parentDialog?.current);
+    dialogLayers.set(box, Number.parseInt(getComputedStyle(box.parentElement).zIndex, 10) || 0);
+    // Child effects mount before parent effects. Insert a parent before its
+    // already-mounted descendants rather than making it cover their windows.
+    const descendant = dialogStack.findIndex((candidate) => {
+      for (let parent = dialogParents.get(candidate); parent; parent = dialogParents.get(parent)) if (parent === box) return true;
+      return false;
+    });
+    dialogStack.splice(descendant < 0 ? dialogStack.length : descendant, 0, box);
     const active = () => dialogStack.at(-1) === box;
     const firstFocus = () => (dialogFocusTargets(box)[0] || box).focus({ preventScroll: true });
-    firstFocus();
+    if (dialogStack.length === 1) {
+      dialogOverflow = document.body.style.overflow; document.body.style.overflow = "hidden";
+      dialogObserver = new MutationObserver(() => exposeTopDialog());
+      dialogObserver.observe(document.body, { childList: true });
+    }
+    exposeTopDialog(() => { if (active()) firstFocus(); });
     const repairFocus = () => {
       if (active() && (!box.contains(document.activeElement) || !availableFocusTarget(document.activeElement))) firstFocus();
     };
@@ -50,10 +103,14 @@ export function Dialog({ title, children, onClose, busy = false, className = "",
       else if (!event.shiftKey && (document.activeElement === last || !elements.includes(document.activeElement))) { event.preventDefault(); first.focus(); }
     };
     document.addEventListener("keydown", handle);
-    const overflow = document.body.style.overflow; document.body.style.overflow = "hidden";
     return () => {
       observer.disconnect(); document.removeEventListener("keydown", handle);
-      dialogStack.splice(dialogStack.indexOf(box), 1); document.body.style.overflow = overflow;
+      const wasActive = active();
+      dialogStack.splice(dialogStack.indexOf(box), 1);
+      if (!dialogStack.length) { dialogObserver.disconnect(); document.body.style.overflow = dialogOverflow; }
+      exposeTopDialog();
+      // Removing a covered parent must not steal focus from its surviving child.
+      if (!wasActive) return;
       const fallback = typeof returnRef.current === "function" ? returnRef.current() : returnRef.current?.current || returnRef.current;
       const parent = dialogStack.at(-1);
       const invoker = previous !== document.body && availableFocusTarget(previous) ? previous : null;
@@ -61,17 +118,19 @@ export function Dialog({ title, children, onClose, busy = false, className = "",
       target?.focus({ preventScroll: true });
     };
   }, []);
-  return <div className="modal-back" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
-    <section className={`modal ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-busy={busy} tabIndex={-1} ref={ref}>
-      <div className="section-heading modal-header"><h2 id={titleId}>{title}</h2><ActionButton action="close" aria-label="Close dialog" onClick={onClose} disabled={busy}>Close</ActionButton></div>
-      <div className="modal-body" role="region" aria-label={`${title} content`} tabIndex={0}>{children}</div>
+  const content = <DialogParent.Provider value={ref}><div className="modal-back" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
+    <section className={`modal ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={subtitle ? `${titleId}-subtitle` : undefined} aria-busy={busy} tabIndex={-1} ref={ref}>
+      <div className="section-heading modal-header">{subtitle ? <div className="modal-title"><h2 id={titleId}>{title}</h2><p className="modal-subtitle" id={`${titleId}-subtitle`}>{subtitle}</p></div> : <h2 id={titleId}>{title}</h2>}<ActionButton action="close" aria-label="Close dialog" onClick={onClose} disabled={busy}>Close</ActionButton></div>
+      <div className="modal-body" role="region" aria-label={`${title} content`} tabIndex={0} ref={bodyRef} onScroll={onBodyScroll}>{children}</div>
     </section>
-  </div>;
+  </div></DialogParent.Provider>;
+  return typeof document === "undefined" ? content : createPortal(content, document.body);
 }
 
 export function MathText({ latex, display = true }) {
+  const html = useMemo(() => latex ? renderMath(katex, String(latex), display) : "", [latex, display]);
   if (!latex) return null;
-  return <span className={display ? "math-block" : "math-inline"} dangerouslySetInnerHTML={{ __html: renderMath(katex, String(latex), display) }} />;
+  return <span className={display ? "math-block" : "math-inline"} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 // Disclosure labels keep authored inline mathematics without nested links or
@@ -155,8 +214,15 @@ function inline(text, renderInternalLink, renderImage, renderAnchor, path = "doc
   });
 }
 
+// Table cells and headers use the same authored inline notation as prose,
+// without adding block elements or altering scientific labels.
+export function ResearchInline({ text }) {
+  return <>{inline(String(text ?? ""))}</>;
+}
+
 const headingTag = (level) => `h${Math.max(1, Math.min(6, level))}`;
-function DocumentBlocks({ blocks, headingLevel, renderInternalLink, renderImage, renderAnchor, renderFileLink, renderSourceLink, renderHeading, path }) {
+function DocumentBlocks({ blocks, headingLevel, renderInternalLink, renderImage, renderAnchor, renderFileLink, renderSourceLink, renderHeading, referenceHeadingIndex, path }) {
+  const documentId = useId();
   const firstLevel = Math.min(...blocks.filter((block) => block.kind === "heading").map((block) => block.level));
   return blocks.map((block, index) => {
     const blockPath = `${path}.block${index}`;
@@ -169,14 +235,40 @@ function DocumentBlocks({ blocks, headingLevel, renderInternalLink, renderImage,
     if (block.kind === "code") return <pre key={index} className="record"><code>{block.text}</code></pre>;
     if (block.kind === "quote") return <blockquote key={index}><DocumentBlocks blocks={block.blocks} headingLevel={headingLevel} path={`${blockPath}.quote`} {...{ renderInternalLink, renderImage, renderAnchor, renderFileLink, renderSourceLink, renderHeading }} /></blockquote>;
     if (block.kind === "list") { const List = block.ordered ? "ol" : "ul"; return <List key={index} start={block.ordered ? block.items[0]?.value : undefined}>{block.items.map((item, j) => <li key={j} value={item.value}><DocumentBlocks blocks={item.blocks} headingLevel={headingLevel} path={`${blockPath}.item${j}`} {...{ renderInternalLink, renderImage, renderAnchor, renderFileLink, renderSourceLink, renderHeading }} /></li>)}</List>; }
-    if (block.kind === "table") return <div className="table-scroll" key={index} tabIndex={0} role="region" aria-label="Research table, scroll to inspect all columns"><table><thead><tr>{block.headers.map((cell, j) => <th scope="col" key={j}>{inline(cell, renderInternalLink, undefined, undefined, `${blockPath}.header${j}`, renderFileLink, renderSourceLink)}</th>)}</tr></thead><tbody>{block.rows.map((row, j) => <tr key={j}>{row.map((cell, k) => <td key={k}>{inline(cell, renderInternalLink, undefined, undefined, `${blockPath}.row${j}.cell${k}`, renderFileLink, renderSourceLink)}</td>)}</tr>)}</tbody></table></div>;
+    if (block.kind === "table") {
+      const caption = reportTableCaption(blocks[index - 1]);
+      const captionId = caption ? `${documentId}-caption-${index}` : undefined;
+      return <div className="table-scroll" key={index} tabIndex={0} role="region"
+        aria-labelledby={captionId} aria-label={caption ? undefined : "Research table, scroll to inspect all columns"}>
+        <table>
+          {caption && <caption id={captionId}><span className="report-caption-text">{inline(caption, renderInternalLink, renderImage, renderAnchor, `${path}.block${index - 1}`, renderFileLink, renderSourceLink)}</span></caption>}
+          <thead><tr>{block.headers.map((cell, j) => <th scope="col" key={j}>{inline(cell, renderInternalLink, undefined, undefined, `${blockPath}.header${j}`, renderFileLink, renderSourceLink)}</th>)}</tr></thead>
+          <tbody>{block.rows.map((row, j) => <tr key={j}>{row.map((cell, k) => <td key={k}>{inline(cell, renderInternalLink, undefined, undefined, `${blockPath}.row${j}.cell${k}`, renderFileLink, renderSourceLink)}</td>)}</tr>)}</tbody>
+        </table>
+      </div>;
+    }
+    if (blocks[index + 1]?.kind === "table" && reportTableCaption(block)) return null;
+    if (index > referenceHeadingIndex && block.text.includes("*")) {
+      const contents = reportReferenceEmphasis(block.text).map(({ text, emphasis }, part) => {
+        const children = inline(text, renderInternalLink, renderImage, renderAnchor, blockPath, renderFileLink, renderSourceLink);
+        return emphasis ? <em key={part}>{children}</em> : <React.Fragment key={part}>{children}</React.Fragment>;
+      });
+      return <p key={index}>{contents}</p>;
+    }
     return <p key={index}>{inline(block.text, renderInternalLink, renderImage, renderAnchor, blockPath, renderFileLink, renderSourceLink)}</p>;
   });
 }
 
+// All source/anchor callbacks remain part of React's normal prop comparison.
+// Parsing depends only on authored text, even when a source binding changes.
+const ScientificMarkdown = React.memo(function ScientificMarkdown({ text, headingLevel, ...renderers }) {
+  const blocks = useMemo(() => researchBlocks(referenceMarkdown(text)), [text]);
+  return <div className="research-document"><DocumentBlocks blocks={blocks} headingLevel={headingLevel} {...renderers} /></div>;
+});
+
 // Render the common research-document subset without executing authored HTML.
 // Original content remains available in the source drawer for unsupported markup.
-export function ResearchDocument({ text, headingLevel = 3, renderInternalLink, renderImage, renderAnchor, renderFileLink, renderSourceLink, renderHeading, path = "document" }) {
+export function ResearchDocument({ text, headingLevel = 3, renderInternalLink, renderImage, renderAnchor, renderFileLink, renderSourceLink, renderHeading, referenceHeadingIndex, path = "document" }) {
   if (text == null || text === "") return <p className="note">No readable document has been recorded yet.</p>;
   if (Array.isArray(text)) return text.every((item) => typeof item === "string")
     ? <ul className="research-items">{text.map((item, i) => <li key={i}><ResearchDocument text={item} headingLevel={headingLevel} path={`${path}.item${i}`} {...{ renderInternalLink, renderImage, renderAnchor, renderFileLink, renderSourceLink, renderHeading }} /></li>)}</ul>
@@ -197,7 +289,7 @@ export function ResearchDocument({ text, headingLevel = 3, renderInternalLink, r
     </div>;
   }
   if (typeof text !== "string") return null;
-  return <div className="research-document"><DocumentBlocks blocks={researchBlocks(referenceMarkdown(text))} headingLevel={headingLevel} {...{ renderInternalLink, renderImage, renderAnchor, renderFileLink, renderSourceLink, renderHeading, path }} /></div>;
+  return <ScientificMarkdown text={text} headingLevel={headingLevel} {...{ renderInternalLink, renderImage, renderAnchor, renderFileLink, renderSourceLink, renderHeading, referenceHeadingIndex, path }} />;
 }
 
 export function SourceRef({ reference, onOpen, label = "Open source" }) {

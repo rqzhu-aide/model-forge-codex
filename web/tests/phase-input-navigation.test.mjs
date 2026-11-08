@@ -29,7 +29,7 @@ function fixture({ reduced = false } = {}) {
     getBoundingClientRect() { const top = this.y - window.scrollY; return { top, bottom: top + 100, height: 100 }; }
     focus(options) { focused.push({ element: this, options }); }
   }
-  globalThis.window = { scrollY: 800, innerHeight: 700, matchMedia: () => ({ matches: reduced }), scrollTo: options => { scrolls.push(options); window.scrollY = options.top; } };
+  globalThis.window = { scrollY: 800, innerHeight: 700, addEventListener() {}, removeEventListener() {}, matchMedia: () => ({ matches: reduced }), scrollTo: options => { scrolls.push(options); window.scrollY = options.top; } };
   globalThis.getComputedStyle = element => ({ visibility: "visible", display: element.display, top: "0px" });
   globalThis.MutationObserver = class { observe() {} disconnect() {} };
   globalThis.requestAnimationFrame = callback => { const id = ++sequence; frames.set(id, callback); return id; };
@@ -114,6 +114,22 @@ test("heading destinations use a programmatic focus target and reduced motion di
     assert.deepEqual(f.scrolls, [{ top: 1824, behavior: "instant" }]);
     session.dispose();
   } finally { f.cleanup(); }
+});
+
+test("Back closes only the saved-input disclosures that the shortcut opened", () => {
+  for (const wasOpen of [false, true]) {
+    const f = fixture();
+    try {
+      f.outer.open = wasOpen;
+      const session = navigatePhaseInput(f.props); f.flush();
+      assert.ok(f.outer.open && f.question.open);
+      session.back(); f.flush();
+      assert.equal(f.outer.open, wasOpen);
+      assert.equal(f.question.open, false);
+      assert.equal(f.card.open, true);
+      assert.equal(f.focused.at(-1).element, f.origin);
+    } finally { f.cleanup(); }
+  }
 });
 
 test("first-run P3 preparation focuses the visible settings container when its summary is hidden", () => {

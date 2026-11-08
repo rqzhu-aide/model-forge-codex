@@ -77,17 +77,19 @@ const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-empirical-r
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
 await build({
-  stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Empirical,{EmpiricalEvaluationHistory} from '${src}/components/EmpiricalWorkbench.jsx'; export const render = props => renderToStaticMarkup(React.createElement(React.Fragment,null,React.createElement(Empirical, props),React.createElement(EmpiricalEvaluationHistory,props)));`, resolveDir: src },
+  stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Empirical,{CompleteNumbers,EmpiricalEvaluationHistory} from '${src}/components/EmpiricalWorkbench.jsx'; import {EmpiricalQuestionSetup} from '${src}/components/EmpiricalQuestion.jsx'; export const render = props => renderToStaticMarkup(React.createElement(React.Fragment,null,React.createElement(Empirical, props),React.createElement(EmpiricalEvaluationHistory,props))); export const renderNumbers = props => renderToStaticMarkup(React.createElement(CompleteNumbers,props)); export const renderSetup = props => renderToStaticMarkup(React.createElement(EmpiricalQuestionSetup,props));`, resolveDir: src },
   outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" },
   alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent",
 });
-const { render } = require(bundle);
+const { render, renderNumbers, renderSetup } = require(bundle);
 fs.unlinkSync(bundle); fs.rmdirSync(directory);
 const noop = () => {};
 
 test("complete diagnostics preserve rare failures and missing uncertainty context", () => {
   const source = { ...diagnostic, headline_numbers: [{ case_id: "case.shared", metric: "metric.error", estimate: 0, mcse: 0, n_replicates: 100000, ci_lo: 0, ci_hi: 0.00001 }], solver_health: [{ regime: "rare failures", n_runs: 100000, n_failures: 1, failure_rate: 0.00001 }] };
-  const html = render({ branch: "method.a", diagnostics: [source], onSource: noop });
+  const primary = render({ branch: "method.a", diagnostics: [source], onSource: noop });
+  assert.match(primary, /Numerical results and diagnostics/); assert.doesNotMatch(primary, /rare failures/);
+  const html = renderNumbers({ diagnostics: [source], cases, onSource: noop });
   assert.match(html, /0\.001%/); assert.doesNotMatch(html, />0\.0%<|95%/);
   assert.match(html, /100,000/); assert.match(html, /Usable repetitions/); assert.match(html, /Interval level/);
   assert.match(html, /aria-label="Diagnostic table, scroll to inspect all columns"/);
@@ -98,7 +100,9 @@ test("recorded noncompletion is not presented as solver failure", () => {
   // Older records expose only the aggregate fields, not separate status counts.
   const source = { ...diagnostic, solver_health: [{ regime: "all", n_runs: 335, n_failures: 19, failure_rate: 19 / 335 }] };
   const before = JSON.stringify(source);
-  const html = render({ branch: "method.a", diagnostics: [source], onSource: noop });
+  const primary = render({ branch: "method.a", diagnostics: [source], onSource: noop });
+  assert.match(primary, /Numerical results and diagnostics/); assert.doesNotMatch(primary, /19 incomplete or nonconverged/);
+  const html = renderNumbers({ diagnostics: [source], cases, onSource: noop });
   assert.match(html, /19 incomplete or nonconverged \/ 335 recorded checks/);
   assert.match(html, /<h3>Completion and convergence<\/h3>/);
   assert.match(html, /<th>Recorded checks<\/th><th>Incomplete or nonconverged<\/th><th>Share<\/th>/);
@@ -111,34 +115,44 @@ test("recorded noncompletion is not presented as solver failure", () => {
 });
 
 test("missing legacy completion totals remain unrecorded", () => {
-  const html = render({ branch: "method.a", diagnostics: [{ ...diagnostic, solver_health: [] }], onSource: noop });
+  const source = { ...diagnostic, solver_health: [] };
+  const primary = render({ branch: "method.a", diagnostics: [source], onSource: noop });
+  assert.match(primary, /Numerical results and diagnostics/);
+  const html = renderNumbers({ diagnostics: [source], cases, onSource: noop });
   assert.match(html, /Completion totals not recorded/);
   assert.doesNotMatch(html, /<h3>Completion and convergence<\/h3>|0 incomplete or nonconverged/);
 });
 
 test("question view retains interpretation and exact scoped values in a closed disclosure", () => {
-  const html = render({ branch: "method.a", questions: [{ ...question, branch: "method.a", phase: "P4", followup_target: target, theory_context: { state: "affected", tested_ref: testedRef, affected_statement_ids: ["statement.error"], message: "A dependency changed after these experiments." } }], cases, protocols, diagnostics: [diagnostic], onSource: noop, onRequest: noop, onTheory: noop });
+  const exactQuestion = { ...question, branch: "method.a", phase: "P4", followup_target: target, theory_context: { state: "affected", tested_ref: testedRef, affected_statement_ids: ["statement.error"], message: "A dependency changed after these experiments." } };
+  const html = render({ branch: "method.a", questions: [exactQuestion], cases, protocols, diagnostics: [diagnostic], onSource: noop, onRequest: noop, onTheory: noop });
   const start = html.indexOf('<details class="question-detail empirical-question-row"');
-  const selected = html.slice(start, html.indexOf('class="research-details empirical-complete-numbers"', start));
+  const selected = html.slice(start, html.indexOf('<details class="research-details complete-evaluation"', start));
   assert.match(selected, /1,234/);
   assert.match(selected, /<details class="research-details empirical-recorded-values"><summary>Recorded values, uncertainty and repetitions/);
   assert.doesNotMatch(selected, /9,?876|5,?432|999999|Solver health|<b>total<\/b>/);
   assert.match(html, /<details class="research-details complete-evaluation" data-card-role="history"><summary>/);
-  assert.match(html, /9,876|5,432/);
+  const numbers = renderNumbers({ diagnostics: [diagnostic], cases, onSource: noop });
+  assert.match(numbers, /9,876/); assert.match(numbers, /5,432/);
   assert.match(html, /Reassessment needed after a theory change/);
   assert.match(html, /Theory used for this evaluation/);
   assert.match(html, /Request another check/);
-  assert.match(html, /Inspect tested claim: Error/);
-  assert.match(html, /role="tab"[^>]*aria-selected="true"[^>]*><span>Synthetic example/);
+  assert.match(html, /Experiment design and sources/);
+  assert.match(renderSetup({ question: exactQuestion, cases, onSource: noop, onTheory: noop }), /Inspect tested claim: Error/);
+  assert.match(html, /<a[^>]*href="#[^"]+-setup"[^>]*><span>Experimental setup/);
   assert.doesNotMatch(html, /class="question-picker"/);
 });
 
 test("older question remains readable without inventing a follow-up target or current theory link", () => {
-  const html = render({ branch: "method.a", questions: [{ question_id: "old", title: "An older research question", statement_ids: ["statement.error"], branch: "method.a", phase: "P4" }], diagnostics: [diagnostic], onRequest: noop, onTheory: noop });
+  const olderQuestion = { question_id: "old", title: "An older research question", statement_ids: ["statement.error"], branch: "method.a", phase: "P4" };
+  const html = render({ branch: "method.a", questions: [olderQuestion], diagnostics: [diagnostic], onRequest: noop, onTheory: noop });
   assert.match(html, /does not identify which numerical rows answer this question/);
   assert.doesNotMatch(html, /Request another check/);
-  assert.match(html, /aria-label="Inspect tested claim: Error" disabled=""/);
-  assert.match(html, /Complete numerical results and recorded diagnostics/);
+  assert.match(html, /Experiment design and sources/);
+  const setup = renderSetup({ question: olderQuestion, onTheory: noop });
+  assert.match(setup, /aria-label="Inspect tested claim: Error" disabled=""/);
+  assert.match(setup, /exact theory source is unavailable/);
+  assert.match(html, /Numerical results and diagnostics/);
 });
 
 test("preliminary exploration is displayed without suggesting completed theory", () => {

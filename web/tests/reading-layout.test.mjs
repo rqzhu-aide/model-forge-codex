@@ -39,7 +39,7 @@ test("activity distinguishes execution states and retains details in a closed na
   for (const [state, label] of Object.entries(states)) {
     const html = render.progress({ phase: "P3", run: { state, run_id: "exact.run" }, retained: true, onOpenRun: () => {}, onShowIssues: () => {} });
     assert.match(html, /^<details[^>]*data-work-state=/);
-    assert.ok(html.includes(`P3 latest update: ${label}. Activity details`));
+    assert.ok(html.includes(`Phase 3 - Theory latest update: ${label}. Activity details`));
     assert.doesNotMatch(html.split(">", 1)[0], /\bopen=/);
     assert.match(html, /Activity details[\s\S]*Open run history/);
     if (["failed", "cancelled"].includes(state)) assert.match(html, /did not replace the retained results/);

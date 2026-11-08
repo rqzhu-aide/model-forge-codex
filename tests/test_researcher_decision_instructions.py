@@ -10,9 +10,10 @@ import pytest
 from model_forge_codex.catalog import Catalog
 from model_forge_codex.domain import MemberRole
 from model_forge_codex.math_validation import validate_authored_math
+from model_forge_codex.p4_execution import P4Controller
 from model_forge_codex.problem_context import frozen_problem_context, save_context_item
 from model_forge_codex.researcher_pause import pause_brief
-from model_forge_codex.researcher_language import RESEARCHER_LANGUAGE_GUIDANCE
+from model_forge_codex.researcher_language import RESEARCHER_INPUT_POLICY, RESEARCHER_LANGUAGE_GUIDANCE
 from model_forge_codex.storage import read_json, write_json_atomic
 from test_researcher_workbench_engine import record, workbench
 
@@ -30,7 +31,19 @@ def assert_delivered_inquiry_guidance(text):
     assert "Explain mathematical changes and their scientific meaning in the supplied setting" in guide
     assert "its practical effect and material benefit/cost" in guide
     assert "defining shared symbols once" in guide
+    assert 'one connected "Why this matters" account' in guide
+    assert "practical effect and decisive uncertainty once" in guide
+    assert "without restarting the explanation or repeating options" in guide
+    assert "each option explains its own consequential tradeoff" in guide
+    assert "displayed beside that option" in guide
     assert "same answer settles both without reinterpretation" in guide
+    assert "even when no member proposed it" in guide
+    assert "Missing analysis or a routine next task alone is not a researcher choice" in guide
+    assert "Do not manufacture alternatives, reopen a settled preference" in guide
+    assert "plain contextual labels" in guide
+    assert "name the scientific alternatives in the question itself in plain study terms" in guide
+    assert "place the triggering finding nearby when relevant" in guide
+    assert "Keep numerical precision proportionate to the comparison and uncertainty" in guide
     assert "Entire choice inquiry | 180" in guide
     assert "Actual run/request state" in guide or "actual run/request state" in guide
 
@@ -42,6 +55,7 @@ def assert_mathematical_choice_guidance(text, context_field="context_markdown"):
     assert "defining symbols and any shared objective once" in text
     assert "consequence gives its formulation or changed equation under that shared context" in text
     assert "concise practical effect" in text
+    assert "scientific meaning in the supplied study" in text
     assert "prose-only options do not explain a mathematical distinction" in text
     assert "Plain study facts, budgets and choices without a mathematical distinction need no artificial equation" in text
 
@@ -113,10 +127,15 @@ def test_all_stage_objectives_include_reader_context_without_new_output(phase):
         assert stage["objective"].count(RESEARCHER_LANGUAGE_GUIDANCE) == 1
         assert "within your owned outputs and permitted interaction scope" in stage["objective"]
     if phase == "P5":
-        assert all("Researcher-directed attention and pauses remain limited to indispensable editorial choices" in stage["objective"]
-                   for stage in contract["role_stages"])
-        assert all("Scientific open-question findings stay in the owned review output or source records" in stage["objective"]
-                   for stage in contract["role_stages"])
+        for stage in contract["role_stages"]:
+            objective = stage["objective"]
+            if stage["roles"] == ["research_lead"]:
+                assert "attention and actual pauses remain limited to indispensable editorial choices" in objective
+                assert "requires responsible upstream development" in objective or "responsible upstream resolving work" in objective
+            else:
+                assert "Flag hidden assumptions, omitted qualifications and unresolved modeling alternatives in existing owned findings" in objective
+                assert "use no private researcher dialogue, hidden context or new user-inquiry dependency" in objective
+                assert "do not create direct attention or pause" in objective
 
 
 @pytest.mark.parametrize("example", ["donor_weighting", "pairing_unknown", "cost_timing"])
@@ -177,13 +196,19 @@ def test_executable_lead_instructions_author_compact_decisions(phase):
             assert "primary inquiry word ceilings" in objective
             assert all(field in objective for field in ("decision_priority", "response_kind", "{id,label,consequence}", "recommendation"))
             assert "recommended_option_id" in objective
+            assert "context_markdown and likely_consequence form one connected Why this matters account" in objective
+            assert "state the practical effect and decisive uncertainty once" in objective
+            assert "Do not repeat that account in optional supporting fields" in objective
+            assert "each explaining its own distinguishing change and consequential tradeoff" in objective
+            assert "otherwise explain briefly why no ranking is justified and omit the pointer" in objective
             assert "one decision" in objective
+            if phase == "P5":
+                assert "Also inspect the report findings and reviews" in objective
+                assert "Do not turn an unresolved upstream development priority into an editorial question" in objective
+            else:
+                assert "for a consequential next choice the researcher owns, even when no member proposed it" in objective
             if phase != "P5":
-                assert "including all-attempted accounting and failure handling" in objective
-                assert "Preserve intended claims and exact applicable saved answers" in objective
-                assert "Useful nonblocking invitations remain appropriate while justified conditional work continues" in objective
-                assert "Use an existing authorized pause only when missing input makes the next action unjustified" in objective
-                assert "there is no question quota" in objective
+                assert objective.count(RESEARCHER_INPUT_POLICY) == 1
             else:
                 assert "attention and actual pauses remain limited to indispensable editorial choices" in objective
                 assert "without choosing a new scientific definition" in objective
@@ -211,13 +236,18 @@ def test_generated_lead_brief_distinguishes_invitation_team_work_and_blocker(wor
     # The actual member brief must offer steering despite conditional progress,
     # while retaining scientific ownership and a distinct blocking threshold.
     assert_delivered_inquiry_guidance(brief)
-    assert "Useful nonblocking invitations remain appropriate while justified conditional work continues" in brief
-    assert "The Lead owns routine scientific and implementation choices within the goal and budget" in brief
-    assert "Use an existing authorized pause only when missing input makes the next action unjustified" in brief
-    assert "Preserve intended claims and exact applicable saved answers" in brief
-    assert "Unknown/no-data answers and empty attention output are valid" in brief
-    assert "there is no question quota" in brief
-    assert "the researcher cannot certify assumptions by preference" in brief
+    phase_specific = {
+        "P1": "In P1, this may concern the target, population, observation or information scope",
+        "P2": "In P2, this may concern which scientific formulation",
+        "P3": "In P3, this may concern the assumption or guarantee scope to develop",
+        "P4": "In P4, this may concern a materially different evaluation or development priority exposed by the results",
+    }
+    assert phase_specific[phase] in brief
+    assert "for a consequential next choice the researcher owns, even when no member proposed it" in brief
+    assert brief.count(RESEARCHER_INPUT_POLICY) == 1
+    assert "Apply the stage's inquiry instructions to any new invitation" in brief
+    assert "Ask only when an unresolved researcher preference or unavailable study fact" not in brief
+    assert "Different mathematical alternatives alone are not a researcher decision" not in brief
     assert "revisit only when needed" not in brief
     assert unknown in brief
     assert frozen_problem_context(project) == context
@@ -240,11 +270,12 @@ def test_generated_parallel_brief_keeps_invitation_at_designated_lead_stage(work
         brief = engine._render_brief(candidate, stage, role, engine.member_workspace(candidate, stage.stage_id, role))
         assert parallel_rule in brief
         assert_delivered_inquiry_guidance(brief)
-        assert "Members propose them in existing owned outputs; the designated Lead consolidates them" in brief
-        assert "within this stage's existing output and pause authority" in brief
+        assert brief.count(RESEARCHER_INPUT_POLICY) == 1
         if phase == "P1":
             assert "affected premise and sufficient mathematical formulation when relevant in context_markdown" in brief
-            assert "make mathematically distinct alternatives explicit for Lead consolidation" in brief
+            assert "Make mathematically distinct alternatives explicit for Lead consolidation" in brief
+            assert "context_markdown and answer_consequences_markdown as one connected account" in brief
+            assert "answer_consequences_markdown completes what the answer changes without restarting the explanation" in brief
     assert engine.bridge.turns == [] and engine._tasks == {}
 
 
@@ -262,8 +293,11 @@ def test_generated_p5_lead_brief_keeps_scientific_steering_upstream(workbench):
     assert "missing scientific inputs" in brief.lower()
     assert_delivered_inquiry_guidance(brief)
     assert "without choosing a new scientific definition" in brief
+    assert "Also inspect the report findings and reviews" in brief
+    assert "Do not turn an unresolved upstream development priority into an editorial question" in brief
     assert "claim to support first or reference standard for judging success" not in brief
     assert "an unresolved consequential preference remains eligible for a useful nonblocking invitation" not in brief
+    assert RESEARCHER_INPUT_POLICY not in brief
     assert engine.bridge.turns == [] and engine._tasks == {}
 
 
@@ -271,18 +305,43 @@ def test_nonblocking_pause_guidance_does_not_manufacture_a_question():
     stage = SimpleNamespace(execution="serial", roles=["research_lead"])
     brief = pause_brief(SimpleNamespace(phase="P2", intent="run"), stage, "research_lead")
     assert "Attention may be empty; do not manufacture a question" in brief
-    assert "Otherwise continue justified work with explicit conditions" in brief
-    assert "existing owned attention output at its designated stage even if conditional work can proceed" in brief
-    assert "If that missing input makes the next authorized action unjustified" in brief
-    assert "reuse exact applicable saved answers" in brief.lower()
-    assert "no question quota" in brief
+    assert "Otherwise continue justified work under explicit provisional conditions" in brief
+    assert "If the next authorized action is unjustified without researcher input" in brief
+    assert brief.count(RESEARCHER_INPUT_POLICY) == 1
+    assert "Theorist and Data Analyst use their existing handoff.unresolved_issues" in brief
+    assert "the Lead consolidates in its owned attention output at the designated stage" in brief
     assert "revisit only when needed" not in brief
     assert "author an informational attention question" not in brief
     assert_mathematical_choice_guidance(brief, "reason")
     editorial = pause_brief(SimpleNamespace(phase="P5", intent="run"), stage, "research_lead")
     assert "indispensable editorial choice" in editorial
     assert "Do not reopen problem, collection, method or study-design questions" in editorial
+    assert RESEARCHER_INPUT_POLICY not in editorial
+    assert "handoff.unresolved_issues" not in editorial
     assert_editorial_formulation_guidance(editorial, "reason")
+
+
+@pytest.mark.parametrize("supply_empty_options", [False, True], ids=["omitted", "empty"])
+def test_p4_factual_pause_accepts_no_authored_options(tmp_path, supply_empty_options):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    controller = P4Controller(tmp_path / "run", workspace, stage_id="p4.analyst", member="data_analyst")
+    request = {
+        "operation": "request_decision",
+        "question": "When are the recorded outcomes available?",
+        "reason": "Faithful evaluation needs the observation timing; the supplied records do not establish it.",
+        "evidence_refs": [],
+    }
+    if supply_empty_options:
+        request["options"] = []
+
+    result = controller.request(request)
+
+    assert result["accepted"] and result["stop_turn"]
+    saved = controller.snapshot()["pause_request"]
+    assert saved["question"] == request["question"] and saved["reason"] == request["reason"]
+    if supply_empty_options:
+        assert saved["options"] == []
 
 
 @pytest.mark.parametrize("role", [MemberRole.DATA_ANALYST, MemberRole.THEORIST, MemberRole.RESEARCH_LEAD])
@@ -299,4 +358,5 @@ def test_generated_p4_member_brief_explains_mathematical_pause_options(workbench
     assert "A pause uses request_decision" in brief
     assert_mathematical_choice_guidance(brief, "reason")
     assert "Do not manufacture alternatives for a study fact" in brief
+    assert "For a study-fact request, use options=[] rather than invented factual answers" in brief
     assert engine.bridge.turns == [] and engine._tasks == {}

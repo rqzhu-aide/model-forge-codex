@@ -2,6 +2,7 @@ import React, { useId, useState } from "react";
 import { humanLabel } from "../research";
 import { buildFrameworkGraph, graphTitleLines, landscapeRecords, paperReviewFindings, resolveLandscapeEntry } from "../literatureLandscape";
 import { ResearchDocument, SourceRef } from "./Shared";
+import { CitedResearchDocument } from "./LiteratureCitation";
 import { ActionButton } from "./Visuals";
 
 const roleLabel = (role) => ({ research_lead: "Research Lead", theorist: "Theorist", data_analyst: "Data Analyst" }[role] || "Member");
@@ -47,28 +48,29 @@ function FrameworkGraph({ landscape, selectedId, onSelect }) {
   </div>;
 }
 
-export function LandscapeRecord({ selection, landscape, sources = [], review, basisReference, onSelect, onEvidence, onSource, focusRef }) {
+export function LandscapeRecord({ selection, landscape, sources = [], review, basisReference, basis, onOpenCitation, onSelect, onEvidence, onSource, focusRef }) {
   if (!selection) return null;
   const { record, kind, id } = selection; const all = landscapeRecords(landscape);
   const title = (recordId) => all.find((item) => item.id === recordId)?.record.title || "Unavailable formulation";
   const related = kind === "framework" ? all.filter((item) => item.kind === "variant" && item.record.framework_id === id || item.kind === "algorithm" && item.record.framework_ids?.includes(id)) : [];
   const field = { framework: "frameworks", variant: "variants", relationship: "relationships", algorithm: "algorithm_families" }[kind];
   const index = (landscape[field] || []).indexOf(record);
+  const cited = (text, section) => <CitedResearchDocument {...{ text, basis, onOpenCitation }} section={`framework:${kind}:${id}:${section}`} />;
   return <article className="framework-inspector" ref={focusRef} tabIndex={-1} aria-label={`Selected ${kind === "algorithm" ? "algorithm family" : kind}`}>
     <h3>{record.title}</h3><p className="note framework-inspector-meta">{kind === "algorithm" ? "Existing algorithm family" : humanLabel(kind)} · Research Lead</p>
     {kind === "relationship" && <p className="framework-connection"><ActionButton action="details" variant="link" onClick={() => onSelect?.(record.from_id)}>{title(record.from_id)}</ActionButton><span aria-hidden="true"> → </span><span className="visually-hidden"> to </span><ActionButton action="details" variant="link" onClick={() => onSelect?.(record.to_id)}>{title(record.to_id)}</ActionButton><span className="note">{humanLabel(record.relationship_type)}</span></p>}
     {kind === "variant" && <p className="note">Variant of <ActionButton action="details" variant="link" onClick={() => onSelect?.(record.framework_id)}>{title(record.framework_id)}</ActionButton></p>}
     {kind === "algorithm" && record.framework_ids?.length > 0 && <p className="framework-connection"><span className="note">Addresses</span>{record.framework_ids.map((frameworkId) => <ActionButton action="details" variant="link" key={frameworkId} onClick={() => onSelect?.(frameworkId)}>{title(frameworkId)}</ActionButton>)}</p>}
     {record.support_status && <p className={`note framework-support ${record.support_status !== "source_supported" ? "warn" : ""}`}>Lead's source assessment of this {kind === "algorithm" ? "algorithm family" : kind}: {supportLabel[record.support_status] || humanLabel(record.support_status)}.</p>}
-    {record.formulation_markdown && <><h4>{kind === "relationship" ? "Mathematical relationship" : "Mathematical formulation"}</h4><ResearchDocument text={record.formulation_markdown} /></>}
-    {record.assumptions_markdown && <><h4>{kind === "relationship" ? "Conditions" : "Assumptions"}</h4><ResearchDocument text={record.assumptions_markdown} /></>}
-    {record.changes_markdown && <><h4>What changes mathematically</h4><ResearchDocument text={record.changes_markdown} /></>}
-    {record.explanation_markdown && <><h4>Interpretation</h4><ResearchDocument text={record.explanation_markdown} /></>}
-    {record.consequences_markdown && <><h4>Consequences</h4><ResearchDocument text={record.consequences_markdown} /></>}
-    {record.limitations?.length > 0 && <div className="framework-limitations"><h4>Limits and unresolved questions</h4><ResearchDocument text={record.limitations} /></div>}
+    {record.formulation_markdown && <><h4>{kind === "relationship" ? "Mathematical relationship" : "Mathematical formulation"}</h4>{cited(record.formulation_markdown, "formulation")}</>}
+    {record.assumptions_markdown && <><h4>{kind === "relationship" ? "Conditions" : "Assumptions"}</h4>{cited(record.assumptions_markdown, "assumptions")}</>}
+    {record.changes_markdown && <><h4>What changes mathematically</h4>{cited(record.changes_markdown, "changes")}</>}
+    {record.explanation_markdown && <><h4>Interpretation</h4>{cited(record.explanation_markdown, "explanation")}</>}
+    {record.consequences_markdown && <><h4>Consequences</h4>{cited(record.consequences_markdown, "consequences")}</>}
+    {record.limitations?.length > 0 && <div className="framework-limitations"><h4>Limits and unresolved questions</h4>{cited(record.limitations, "limitations")}</div>}
     {(record.relevance_markdown || record.computational_requirements_markdown || related.length > 0) && <details className="research-details framework-further-details"><summary>Relevance and related approaches</summary>
-      {record.relevance_markdown && <><h4>Relevance to this setting</h4><ResearchDocument text={record.relevance_markdown} /></>}
-      {record.computational_requirements_markdown && <><h4>Information and computational requirements</h4><ResearchDocument text={record.computational_requirements_markdown} /></>}
+      {record.relevance_markdown && <><h4>Relevance to this setting</h4>{cited(record.relevance_markdown, "relevance")}</>}
+      {record.computational_requirements_markdown && <><h4>Information and computational requirements</h4>{cited(record.computational_requirements_markdown, "computation")}</>}
       {related.length > 0 && <div className="framework-related"><h4>Variants and existing algorithm families</h4><ul>{related.map((item) => <li key={item.id}><ActionButton action="details" variant="link" onClick={() => onSelect?.(item.id)}>{item.record.title}</ActionButton><span className="note">{item.kind === "algorithm" ? "Existing algorithm family" : "Variant"}</span></li>)}</ul></div>}
     </details>}
     <SupportingEntries references={record.entry_refs} sources={sources} review={review} onEvidence={onEvidence ? (match) => onEvidence(match, selection) : undefined} />
@@ -76,7 +78,7 @@ export function LandscapeRecord({ selection, landscape, sources = [], review, ba
   </article>;
 }
 
-export default function FrameworkLandscape({ basis, sources = [], selectedId, onSelect, onEvidence, onSource, focusRef, embedded = false }) {
+export default function FrameworkLandscape({ basis, sources = [], selectedId, onSelect, onEvidence, onOpenCitation, onSource, focusRef, embedded = false }) {
   const [localSelectedId, setLocalSelectedId] = useState(""); const id = useId();
   const landscape = basis?.landscape || {}; const records = landscapeRecords(landscape);
   const currentId = selectedId === undefined ? localSelectedId : selectedId;
@@ -96,7 +98,7 @@ export default function FrameworkLandscape({ basis, sources = [], selectedId, on
           })}
         </select></div>
       </div>
-      {selection ? <LandscapeRecord selection={selection} landscape={landscape} sources={sources} review={basis?.scientific_review} basisReference={basis?.generation_ref} onSelect={select} onEvidence={onEvidence} onSource={onSource} focusRef={focusRef} /> : <p className="note framework-empty">Select a map item or use the dropdown to read its mathematical formulation and evidence.</p>}
+      {selection ? <LandscapeRecord selection={selection} landscape={landscape} sources={sources} review={basis?.scientific_review} basisReference={basis?.generation_ref} basis={basis} onOpenCitation={onOpenCitation} onSelect={select} onEvidence={onEvidence} onSource={onSource} focusRef={focusRef} /> : <p className="note framework-empty">Select a map item or use the dropdown to read its mathematical formulation and evidence.</p>}
     </> : <p className="note framework-empty">No framework map has been published yet. Available paper assessments remain in Papers.</p>}
   </div></section>;
 }

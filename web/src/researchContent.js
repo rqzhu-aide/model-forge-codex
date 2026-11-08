@@ -47,6 +47,7 @@ export const collectionFields = [
   ["open_questions", "Open questions"], ["open_items", "Open questions"],
   ["material_disagreement", "Unresolved differences"], ["suggested_actions", "Possible next steps"],
   ["available_actions", "Possible next steps"], ["required_checks", "Checks still needed"],
+  ["recorded_checks", "Recorded checks and scientific requirements"],
   ["evidence_that_would_change_assessment", "What would change the assessment"],
   ["completed_work", "Work completed"], ["material_changes", "What changed"],
   ["sections", "Manuscript"], ["claim_tests", "Empirical questions"],
@@ -200,19 +201,21 @@ export const researchDocumentTitle = (document) => document.kind === "review_iss
 
 // Present the whole declared Analyst account in its authored order. These
 // labels never join its informal question keys to structured question IDs.
+export function analystQuestionContent(question) {
+  const fields = [["answer_markdown", "Finding"], ["relevance_markdown", "Relevance"],
+    ["design_markdown", "Study design"], ["conditions_markdown", "Conditions"], ["comparison_markdown", "Model comparison"],
+    ["reliability_markdown", "Reliability"], ["uncertainty_markdown", "Uncertainty"],
+    ["limitations_markdown", "Limitations"], ["decision_implication_markdown", "Implication for the model"],
+    ["next_steps_markdown", "Next steps"]];
+  return { title: question.title, state: question.outcome, body: labeledResearchFields(question, fields).map(({ title, text }) => ({ title, body: text })) };
+}
+
 function analystAccountContent(account) {
   const sections = (value, fields) => labeledResearchFields(value, fields).map(({ title, text }) => ({ title, body: text }));
   const questions = Array.isArray(account.questions) ? account.questions : account.question_results;
   return { title: account.title, body: [
-    ...sections(account, [["summary_markdown", "Summary"], ["conclusion", "Conclusion"], ["scope", "Scope"], ["conditions", "Conditions"], ["design", "Study design"]]),
-    ...(Array.isArray(questions) ? [{ title: "Empirical questions", body: questions.map((question) => typeof question === "object" && question ? {
-      title: question.title, state: question.outcome,
-      body: sections(question, [["answer_markdown", "Finding"], ["relevance_markdown", "Relevance"],
-        ["design_markdown", "Study design"], ["conditions_markdown", "Conditions"], ["comparison_markdown", "Model comparison"],
-        ["reliability_markdown", "Reliability"], ["uncertainty_markdown", "Uncertainty"],
-        ["limitations_markdown", "Limitations"], ["decision_implication_markdown", "Implication for the model"],
-        ["next_steps_markdown", "Next steps"]]),
-    } : question) }] : []),
+    ...sections(account, [["summary_markdown", "Summary"], ["experimental_setting_markdown", "Experimental setting"], ["conclusion", "Conclusion"], ["scope", "Scope"], ["conditions", "Conditions"], ["design", "Study design"]]),
+    ...(Array.isArray(questions) ? [{ title: "Empirical questions", body: questions.map((question) => typeof question === "object" && question ? analystQuestionContent(question) : question) }] : []),
     ...(account.implementation_summary && typeof account.implementation_summary === "object" ? [{ title: "Implementation summary", body: sections(account.implementation_summary,
       [["rule", "Implemented calculation"], ["correspondence", "Correspondence to the model"], ["environment", "Environment"],
         ["verification", "Verification"], ["limitations", "Limitations"], ["configuration", "Configuration"],
@@ -221,8 +224,12 @@ function analystAccountContent(account) {
 }
 
 export function researchDocumentContent(document) {
+  if (document.display_structured) return document.display_structured;
   if (document.kind === "analyst_synthesis" && document.primary_source_verified && document.primary_artifact_kind === "json" && document.primary_content) {
     return analystAccountContent(document.primary_content);
+  }
+  if (document.kind === "analyst_synthesis" && (document.structured?.summary_markdown || document.structured?.experimental_setting_markdown)) {
+    return analystAccountContent(document.structured);
   }
   if (document.kind === "analyst_audit" && document.structured) {
     return { ...document.structured, body_md: document.body_md || document.body || document.structured.body_md };

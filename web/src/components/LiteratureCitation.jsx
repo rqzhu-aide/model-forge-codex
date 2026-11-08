@@ -14,7 +14,7 @@ export function LiteratureCitation({ label, citation, anchor, onOpen }) {
   return <span className="literature-citation-preview" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
     <button type="button" className="inline-citation" data-reading-anchor={anchor} aria-describedby={open ? id : undefined}
       aria-label={`${label}. Read the exact cited paper assessment`} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)}
-      onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); setOpen(false); } }}
+      onKeyDown={(event) => { if (event.key === "Escape" && open) { event.stopPropagation(); setOpen(false); } }}
       onClick={(event) => { setOpen(false); onOpen?.(citation, { anchor, label, element: event.currentTarget }); }}>{label}</button>
     {open && <span id={id} role="tooltip" className="citation-tooltip">{bibliographyText(citation.bibliography)}</span>}
   </span>;

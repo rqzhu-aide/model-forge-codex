@@ -10,8 +10,8 @@ const draw = markdown => renderReport(katex, "", { markdown, assets: {} }).html;
 
 test("wide portable tables have named keyboard-scroll regions without changing their cell values", () => {
   const html = draw("| Target | Estimate | Source |\n| --- | --- | --- |\n| 180 days | -0.0006028432811984 | `generation.long_retained_identity` |\n\nAfter the table.");
-  assert.match(html, /<div class="report-table" tabindex="0" role="region" aria-label="Report table"><table>/);
-  assert.match(html, /<td>180 days<\/td><td>-0\.0006028432811984<\/td><td><code>generation\.long_retained_identity<\/code><\/td>/);
+  assert.match(html, /<div class="report-table" tabindex="0" role="region" aria-labelledby="report-table-1-caption"><table>/);
+  assert.match(html, /<td>180 days<\/td><td class="report-number">-0\.0006028432811984<\/td><td><code>generation\.long_retained_identity<\/code><\/td>/);
   assert.match(html, /<\/table><\/div>\n<p>After the table\.<\/p>/);
   assert.equal((html.match(/<table>/g) || []).length, 1);
 });
@@ -32,7 +32,9 @@ test("nested report tables remain native tables and ordinary prose gains no scro
   assert.equal((html.match(/<thead>/g) || []).length, 2);
   assert.match(html, /<blockquote><div class="report-table"/);
   assert.match(html, /<li value="1"><p>Retained account<\/p>\n<div class="report-table"/);
-  assert.equal(draw("Plain conclusion with **retained emphasis**."), "<p>Plain conclusion with <strong>retained emphasis</strong>.</p>");
+  const plain = draw("Plain conclusion with **retained emphasis**.");
+  assert.match(plain, /<p>Plain conclusion with <strong>retained emphasis<\/strong>\.<\/p>/);
+  assert.doesNotMatch(plain, /class="report-table"|class="report-equation"/);
 });
 
 test("a primary document link without a fragment has an existing target even without supplements", () => {
@@ -49,7 +51,7 @@ test("declared References partitions one parsed report and retains citation and 
   const input = JSON.parse(original);
   const rendered = renderReport(katex, "math-css", input);
   assert.match(rendered.html, /class="report-body"[^>]*>[\s\S]*Main reproducibility\.[\s\S]*<\/section>\n<section class="report-references"/);
-  assert.match(rendered.html, /class="report-references"[^>]*><p><a id="report-references"><\/a><\/p>\n<h2>Sources<\/h2>/);
+  assert.match(rendered.html, /class="report-references"[^>]*>\s*<h2 id="report-references" tabindex="-1">Sources<\/h2>/);
   assert.match(rendered.html, /href="#reference-one"/);
   assert.match(rendered.html, /id="reference-one"/);
   assert.match(rendered.html, /href="#problem"/);
@@ -65,8 +67,10 @@ test("declared References partitions one parsed report and retains citation and 
 
 test("a historical report keeps its unpartitioned account even when it has a References heading", () => {
   const rendered = renderReport(katex, "", { markdown: "# Main\n\n## References\n\nHistorical bibliography.", assets: {} });
-  assert.equal(rendered.html, "<h1>Main</h1>\n<h2>References</h2>\n<p>Historical bibliography.</p>");
-  assert.equal(rendered.print_css, "");
+  assert.match(rendered.html, /<h1[^>]*>Main<\/h1>/);
+  assert.match(rendered.html, /<h2[^>]*>References<\/h2>\n<p>Historical bibliography\.<\/p>/);
+  assert.doesNotMatch(rendered.html, /class="report-body"|class="report-references"/);
+  assert.match(rendered.html, /id="report-print-main" checked/);
 });
 
 test("inline code examples cannot create citation anchors or offline asset reads", () => {

@@ -45,6 +45,8 @@ test("exact assessment identity and a bounded disclosure path survive normalizat
   assert.equal(normalizeReader({ tab: "claims", focusQuestion: "transient", query: null }, "P4").tab, undefined);
   assert.equal(normalizeReader({ entrySelection: { sourceId: "legacy.paper", reference: {}, memberKey: "legacy.member" } }, "P1").entrySelection.memberKey, "legacy.member");
   assert.equal(normalizeReader({ position: { anchor: { kind: "data-card-role", value: "research", index: 1 } } }, "P1").position.anchor.index, 1);
+  for (const tab of ["report", "evidence", "reviews", "changes", "candidates"]) assert.equal(normalizeReader({ tab }, "P5").tab, tab);
+  assert.equal(normalizeReader({ tab: "manuscripts" }, "P5").tab, undefined);
 });
 const table = { page_size: 100, total_rows: 401, next_page_url: `/api/v1/projects/project.a/runs/run.a/outputs/results/table?path=values.csv&sha256=${"a".repeat(64)}&exhibit_id=table.a&offset=100` };
 test("a visible sticky Activity anchor cannot replace the scientific reading location", () => {
@@ -86,7 +88,7 @@ test("returning to a selected paper restores open sibling and nested disclosures
     querySelector: () => ({ textContent: title, contains: () => false }) });
   const paper = element("paper:mean", -20);
   const activity = detail("work-activity", "Complete Activity", 0, null, true);
-  const earlier = detail("legacy-assessment:exact-digest", "Read the earlier member assessment", 80, paper);
+  const earlier = detail("approach-detail:exact-digest", "Mathematics, assumptions and evidence", 80, paper);
   const nested = detail("assessment-evidence:exact-digest", "Evidence locations", 200, earlier);
   const mathematics = detail("paper-math:exact-digest", "Full mathematics and reading basis", 500, paper);
   const closed = detail("closed-history", "Other history", 600, paper); closed.open = false;
@@ -94,7 +96,7 @@ test("returning to a selected paper restores open sibling and nested disclosures
   const details = [activity, earlier, nested, mathematics, closed, concealed];
   root = { querySelector: () => null, querySelectorAll: selector => selector === "details" ? details : [paper, ...details] };
   paper.parentElement = root; activity.parentElement = root;
-  globalThis.window = { innerHeight: 700, scrollY: 1104.5, scrollTo: ({ top }) => {
+  globalThis.window = { innerHeight: 700, scrollY: 1104.5, addEventListener() {}, removeEventListener() {}, scrollTo: ({ top }) => {
     assert.ok(earlier.open && mathematics.open && nested.open, "Expanded research content must exist before scrolling.");
     scrolls.push(top); window.scrollY = top;
   } };

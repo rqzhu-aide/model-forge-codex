@@ -37,7 +37,7 @@ def test_workflow_keeps_existing_roles_outputs_and_publication_families():
     contract = read_json(CONTRACTS / "contracts/phases/P4.json")
     registry = read_json(CONTRACTS / "contracts/phases.json")
     assert next(phase for phase in registry["contracts"] if phase["phase_id"] == "P4") == contract
-    assert contract["contract_version"] == "3.6.2"
+    assert contract["contract_version"] == "3.6.12"
     assert {"p4.workflow_templates.v1", "p4.declared_source_snapshots.v1"} <= set(contract["capabilities"])
     assert [stage["roles"] for stage in contract["role_stages"]] == [["data_analyst"], ["theorist"], ["research_lead"]]
     assert [len(stage["writes"]) for stage in contract["role_stages"]] == [8, 2, 5]
@@ -205,6 +205,41 @@ def test_p4_accounts_keep_method_math_and_topical_evidence_in_their_owned_fields
     assert next(row for row in portable["decision_summary"]["coverage"] if row["dimension"] == "tuning")["status"] == "not_applicable"
 
 
+def test_p4_numerical_section_assigns_design_comparison_and_qualification_to_existing_fields():
+    contract = read_json(CONTRACTS / "contracts/phases/P4.json")
+    analyst, theorist, lead = [stage["objective"] for stage in contract["role_stages"]]
+    assert "what one independent replication contains" in analyst
+    assert "what each comparator is allowed to know" in analyst
+    assert "label different subsets explicitly" in analyst
+    assert "ordinary kind=table exhibit" in analyst
+    assert "Keep engineering pilots and finite code checks separate" in analyst
+    assert "which reported claim or comparison each qualification affects and why" in theorist
+    assert "preserving its exact premise and evidence boundary" in theorist
+    assert "compact numerical experiments section" in lead
+    assert "introduce design and measures before using them to interpret results" in lead
+    assert "coverage[].summary for the design or principal result" in lead
+    assert "Use limitation_markdown for evidence or claim boundaries" in lead
+    assert "Per-test reviews preserve every required assessment and unique qualification" in lead
+    assert "cannot invent a denominator, calculate an interval or new contrast" in lead
+    assert "whether a comparison, return/failure rate or inconclusive result" in lead
+    assert "tested failure or no-useful-output condition when it changes the practical assessment" in lead
+    assert "first coverage entry declaring an exhibit owns its display; later entries show a link" in lead
+    assert "managed execution budgets and accounting records stay in history" in lead
+
+    fields = read_json(CONTRACTS / "schemas/p4-lead-synthesis.schema.json")["properties"]
+    coverage = fields["decision_summary"]["properties"]["coverage"]["items"]
+    assert set(coverage["required"]) == {
+        "dimension", "status", "summary", "limitation_markdown", "implication_markdown", "question_ids"}
+    assert "design or principal observed result" in coverage["properties"]["summary"]["description"]
+    assert "otherwise leave the cause unresolved" in coverage["properties"]["summary"]["description"]
+    assert "evidence or claim boundary" in coverage["properties"]["limitation_markdown"]["description"]
+    assert "Explain a negative result" not in coverage["properties"]["limitation_markdown"]["description"]
+    assert "under the tested conditions" in coverage["properties"]["implication_markdown"]["description"]
+    assert "including shared exhibits also listed by another topic" in coverage["properties"]["exhibit_ids"]["description"]
+    assert "later entries show a link" in coverage["properties"]["exhibit_ids"]["description"]
+    assert "condition that most limits interpretation" in fields["scientific_outcome"]["properties"]["conclusion"]["description"]
+
+
 def test_concrete_table_and_figure_are_linked_to_real_bytes():
     exhibits = read_json(CONTRACTS / "examples/p4-result-exhibits.example.json")
     assert not errors("exhibit-collection.schema.json", exhibits)
@@ -261,7 +296,7 @@ def test_explicit_historical_protocol_fixture_stays_on_its_producing_schema():
 
 def test_catalog_version_and_manifest_are_coherent():
     catalog = Catalog(CONTRACTS)
-    assert catalog.version == (CONTRACTS / "VERSION").read_text().strip() == "1.30.2"
+    assert catalog.version == (CONTRACTS / "VERSION").read_text().strip() == "1.31.13"
     assert read_json(CONTRACTS / "catalog-index.json")["catalog_version"] == catalog.version
     assert not catalog.verify_manifest()
 

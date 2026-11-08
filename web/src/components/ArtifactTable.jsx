@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
-import { humanLabel } from "../research";
+import { ResearchInline } from "./Shared";
 import { ActionButton } from "./Visuals";
 import { tablePageIdentity, tablePageUrl, tableReadings, tableResumeOffset } from "../tableReading";
 import { isVisibleElement } from "../dialogFocus";
@@ -36,27 +36,31 @@ export function artifactTablePage(table, inlineOffset = 0) {
 
 // Each page comes from the verified artifact or complete inline table. Never
 // infer column units or numerical uncertainty from a header or a caption.
-export default function ArtifactTable({ table, title = "Recorded results", caption, describedBy }) {
+export default function ArtifactTable({ table, title = "Recorded results", caption, describedBy, readingKey }) {
   const tableContent = JSON.stringify(table); const identity = tablePageIdentity(table);
-  const remembered = identity && tableReadings.get(identity);
+  const readingIdentity = identity || readingKey;
+  const remembered = readingIdentity && tableReadings.get(readingIdentity);
   const saved = remembered?.content === tableContent ? remembered : null;
   const [page, setPage] = useState(table); const [busy, setBusy] = useState(Boolean(saved?.offset)); const [error, setError] = useState(null);
   const [inlineOffset, setInlineOffset] = useState(0);
+  const inlineRef = useRef(inlineOffset); inlineRef.current = inlineOffset;
   const request = useRef(0); const region = useRef(null);
   const coordinates = useRef(null);
   const pageRef = useRef(page); pageRef.current = page;
   // Generated tables are reconstructed during polling, even when unchanged.
   useLayoutEffect(() => {
-    request.current += 1; setPage(table); setBusy(false); setError(null); setInlineOffset(0);
-    if (identity && remembered && !saved) tableReadings.delete(identity);
+    request.current += 1; setPage(table); setBusy(false); setError(null);
+    const inline = artifactTablePage(table).inline;
+    setInlineOffset(inline && saved && Number.isInteger(saved.offset) && saved.offset >= 0 && saved.offset < table.rows.length && saved.offset % INLINE_PAGE_SIZE === 0 ? saved.offset : 0);
+    if (readingIdentity && remembered && !saved) tableReadings.delete(readingIdentity);
     const offset = tableResumeOffset(table, saved?.offset);
     coordinates.current = saved ? { top: saved.top, left: saved.left } : { top: 0, left: 0 };
     if (offset && offset !== (table.row_offset || 0)) load(tablePageUrl(identity, offset), false);
     return () => {
       request.current += 1;
-      if (identity && isVisibleElement(region.current) && tablePageIdentity(pageRef.current) === identity) tableReadings.set(identity, { content: tableContent, offset: pageRef.current.row_offset || 0, top: region.current.scrollTop, left: region.current.scrollLeft });
+      if (readingIdentity && isVisibleElement(region.current) && (!identity || tablePageIdentity(pageRef.current) === identity)) tableReadings.set(readingIdentity, { content: tableContent, offset: identity ? pageRef.current.row_offset || 0 : inlineRef.current, top: region.current.scrollTop, left: region.current.scrollLeft });
     };
-  }, [tableContent]);
+  }, [tableContent, readingIdentity]);
   useLayoutEffect(() => {
     if (busy || !coordinates.current || !region.current) return;
     const apply = () => {
@@ -70,9 +74,9 @@ export default function ArtifactTable({ table, title = "Recorded results", capti
     return () => disclosures.forEach((details) => details.removeEventListener("toggle", apply));
   }, [page, busy]);
   const remember = (next = page) => {
-    if (identity) tableReadings.set(identity, { content: tableContent, offset: next.row_offset || 0, top: region.current?.scrollTop || 0, left: region.current?.scrollLeft || 0 });
+    if (readingIdentity) tableReadings.set(readingIdentity, { content: tableContent, offset: identity ? next.row_offset || 0 : inlineRef.current, top: region.current?.scrollTop || 0, left: region.current?.scrollLeft || 0 });
   };
-  const moveInline = (offset) => { setInlineOffset(offset); region.current?.focus(); };
+  const moveInline = (offset) => { inlineRef.current = offset; setInlineOffset(offset); remember(); region.current?.focus({ preventScroll: true }); };
   const load = async (url, focus = true) => {
     if (focus && busy || !/^\/api\//.test(url || "")) return;
     const token = ++request.current; setBusy(true); setError(null);
@@ -93,10 +97,10 @@ export default function ArtifactTable({ table, title = "Recorded results", capti
   const { rows, offset, total, inline } = artifactTablePage(page, inlineOffset);
   const hasRoundedValues = rows.some((row) => page.columns.some((column) => artifactTableCell(row[column.key]).original));
   return <div className="artifact-table" aria-busy={busy} data-reading-pending={busy}>
-    <div ref={region} onScroll={() => remember()} data-reading-anchor={identity ? `table:${identity}` : undefined} className="table-scroll" tabIndex={0} role="region" aria-label={title}><table aria-describedby={describedBy}>
-      <caption className="sr-only">{caption || title}</caption>
-      <thead><tr>{page.columns.map((column) => <th scope="col" key={column.key}>{!column.label || column.label === column.key ? humanLabel(column.key) : column.label}{column.unit && <span className="table-unit"> ({column.unit})</span>}</th>)}</tr></thead>
-      <tbody>{rows.map((row, index) => <tr key={offset + index}>{page.columns.map((column) => { const cell = artifactTableCell(row[column.key]); return <td key={column.key} title={cell.original ? `Recorded value: ${cell.original}` : undefined}>{cell.text}</td>; })}</tr>)}</tbody>
+    <div ref={region} onScroll={() => remember()} data-reading-anchor={readingIdentity ? `table:${readingIdentity}` : undefined} className="table-scroll" tabIndex={0} role="region" aria-label={title}><table aria-describedby={describedBy}>
+      <caption className={caption || page.caption ? undefined : "sr-only"}><ResearchInline text={caption || page.caption || title} /></caption>
+      <thead><tr>{page.columns.map((column) => <th scope="col" key={column.key}><ResearchInline text={column.label || column.key} />{column.unit && <span className="table-unit"> (<ResearchInline text={column.unit} />)</span>}</th>)}</tr></thead>
+      <tbody>{rows.map((row, index) => <tr key={offset + index}>{page.columns.map((column) => { const value = row[column.key]; const cell = artifactTableCell(value); return <td key={column.key} title={cell.original ? `Recorded value: ${cell.original}` : undefined}>{typeof value === "string" ? <ResearchInline text={cell.text} /> : cell.text}</td>; })}</tr>)}</tbody>
     </table></div>
     {hasRoundedValues && <p className="note">Values are rounded for display; the original table retains full precision.</p>}
     {(page.truncated || offset > 0 || total > rows.length) && <div className="table-pagination"><p className="note" role="status">Rows {rows.length ? offset + 1 : 0} to {offset + rows.length} of {total}. Each page preserves the saved row order.</p><div className="btnrow">{inline ? <><ActionButton action="details" disabled={offset === 0} onClick={() => moveInline(offset - INLINE_PAGE_SIZE)}>Previous rows</ActionButton><ActionButton action="details" disabled={offset + rows.length >= total} onClick={() => moveInline(offset + INLINE_PAGE_SIZE)}>Next rows</ActionButton></> : <>{page.previous_page_url && <ActionButton action="details" disabled={busy} onClick={() => load(page.previous_page_url)}>Previous rows</ActionButton>}{page.next_page_url && <ActionButton action="details" disabled={busy} onClick={() => load(page.next_page_url)}>Next rows</ActionButton>}</>}</div>{!inline && !page.next_page_url && !page.previous_page_url && <p className="note">The original table contains the complete results.</p>}</div>}

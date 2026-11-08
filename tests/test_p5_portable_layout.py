@@ -27,11 +27,12 @@ def test_portable_source_renderer_keeps_wide_tables_and_equations_accessible(rep
     html = technical_reports.export_technical_report(
         report, basis, generation_ref={"generation_id": "generation.report", "content_sha256": "c" * 64},
         artifact_roots=roots, exported_at="2026-10-13T15:30:00Z").decode()
-    assert '<div class="report-table" tabindex="0" role="region" aria-label="Report table"><table>' in html
+    assert '<div class="report-table" tabindex="0" role="region" aria-labelledby="report-table-1-caption"><table>' in html
+    assert '<caption id="report-table-1-caption" class="report-table-caption-fallback">Target; Estimate; Source</caption>' in html
     assert '<span class="report-equation" tabindex="0" role="region" aria-label="Mathematical equation">' in html
     assert '-0.0006028432811984' in html and 'generation.long_retained_identity' in html
     assert '<annotation encoding="application/x-tex">a+b+c+d+e+f+g+h+i+j=1</annotation>' in html
-    css = re.search(r"<style>(.*?)</style>", html, re.S).group(1)
+    css = re.search(r'<style id="report-styles">(.*?)</style>', html, re.S).group(1)
     screen, printing = css.split("@media print", 1)
     assert re.search(r"\.report-table,\.report-equation\{[^}]*max-width:100%;[^}]*overflow-x:auto", screen)
     assert re.search(r"\.report-table,\.report-equation\{[^}]*overflow:visible;[^}]*max-width:none", printing)

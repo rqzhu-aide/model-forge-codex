@@ -150,23 +150,63 @@ def package_committed(phase_dir: Path, package_id: str) -> bool:
 
 
 def source_artifact_path(project_dir: Path, record_pointer: dict, artifact: dict) -> Path:
-    """Resolve exact bytes only inside the record's producing run outputs."""
+    """Resolve exact retained outputs or an explicitly named frozen artifact."""
     run_id = _segment(str(record_pointer.get("run_id", "")))
     relative = str(artifact.get("path") or artifact.get("artifact_path") or "")
     expected = artifact.get("sha256") or artifact.get("artifact_sha256")
+    uri = artifact.get("uri")
+    locator = re.fullmatch(r"run://([^/]+)/(.+)", uri) if isinstance(uri, str) else None
+    if not relative and locator:
+        if locator[1] != run_id:
+            raise ArtifactError("Artifact source paths must identify the same run")
+        relative = locator[2]
+        if relative.startswith("inputs/") and not relative.startswith("inputs/artifacts/"):
+            raise ArtifactError("Artifact must name an exact retained artifact input")
+        if not relative.startswith(("outputs/", "inputs/")):
+            relative = "outputs/" + relative
     if not relative or Path(relative).is_absolute() or ".." in Path(relative).parts or not expected:
         raise ArtifactError("Artifact needs a safe relative path and exact digest")
+    parts = relative.replace("\\", "/").split("/")
+    if parts[:2] == ["inputs", "artifacts"]:
+        if len(parts) != 3 or any(part in ("", ".", "..") for part in parts):
+            raise ArtifactError("Artifact needs a safe relative path and exact digest")
+        alternate = artifact.get("artifact_path")
+        if (artifact.get("path") and alternate and str(alternate).replace("\\", "/") != "/".join(parts)
+                or isinstance(uri, str) and uri.startswith("run://") and
+                (not locator or locator[1] != run_id or locator[2] != "/".join(parts))):
+            raise ArtifactError("Artifact source paths must identify the same run and retained input")
+        runs = (project_dir / "runs").resolve()
+        run = (runs / run_id).resolve()
+        boundary = run / "inputs" / "artifacts"
+        path = (boundary / parts[2]).resolve()
+        if (run.is_relative_to(runs) and path.is_relative_to(boundary) and path.is_file()
+                and sha256_bytes(path.read_bytes()) == expected):
+            return path
+        raise ArtifactError(f"The supporting frozen artifact could not be verified (file: {relative}; source run {run_id})")
     outputs = (project_dir / "runs" / run_id / "outputs").resolve()
     if not outputs.is_dir():
         raise ArtifactError(f"Source run {run_id} has no retained output files")
-    stages = sorted((p for p in outputs.iterdir() if p.is_dir()),
-                    key=lambda p: (p.name != record_pointer.get("stage_id"), p.name))
-    for stage in stages:
-        roots = [stage] + sorted(p for p in (stage / "working").glob("*") if p.is_dir())
-        for root in roots:
-            path = (root / relative).resolve()
-            if path.is_relative_to(outputs) and path.is_file() and sha256_bytes(path.read_bytes()) == expected:
-                return path
+    if parts[0] == "outputs":
+        if len(parts) < 3 or any(part in ("", ".", "..") for part in parts):
+            raise ArtifactError("Artifact needs a safe relative path and exact digest")
+        stage = outputs / _segment(parts[1])
+        alternate = artifact.get("artifact_path")
+        uri = artifact.get("uri")
+        locator = re.fullmatch(r"run://([^/]+)/(?:outputs/)?(.+)", uri) if isinstance(uri, str) and uri.startswith("run://") else None
+        if (artifact.get("path") and alternate and str(alternate).replace("\\", "/") != "/".join(parts)
+                or isinstance(uri, str) and uri.startswith("run://") and
+                (not locator or locator[1] != run_id or locator[2] != "/".join(parts[1:]))):
+            raise ArtifactError("Artifact source paths must identify the same run and output stage")
+        candidates = [(stage, stage.joinpath(*parts[2:]))]
+    else:
+        stages = sorted((p for p in outputs.iterdir() if p.is_dir()),
+                        key=lambda p: (p.name != record_pointer.get("stage_id"), p.name))
+        candidates = ((outputs, root / relative) for stage in stages
+                      for root in [stage, *sorted(p for p in (stage / "working").glob("*") if p.is_dir())])
+    for boundary, candidate in candidates:
+        path = candidate.resolve()
+        if path.is_relative_to(boundary) and path.is_file() and sha256_bytes(path.read_bytes()) == expected:
+            return path
     raise ArtifactError(f"The supporting file could not be verified from the retained outputs (file: {relative}; source run {run_id})")
 
 

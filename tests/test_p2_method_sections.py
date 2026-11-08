@@ -75,7 +75,22 @@ def test_sections_are_authored_in_existing_role_turns(direct_engine, mode):
     assert "which stays canonical and complete" in comparison.objective
     assert "State missing input facts and specifications honestly" in comparison.objective
     assert "do not change its mathematics, introduce new assumptions or silently complete missing steps" in comparison.objective
-    assert "not a replay of each candidate account" in comparison.objective
+    assert "every actual candidate assessed in this run, including excluded proposals" in comparison.objective
+    assert "not an account of only the explored or recommended method" in comparison.objective
+    assert "Name each candidate's mathematical or statistical framework" in comparison.objective
+    assert "directly contrast its central mechanism and target" in comparison.objective
+    assert "applicability conditions, inferential support or proposed computational demands" in comparison.objective
+    assert "one or two short paragraphs or a few compact bullets" in comparison.objective
+    assert "roughly 120-180 words" in comparison.objective
+    assert "soft guide: expand for necessary scientific conditions" in comparison.objective
+    assert "no hard word, line or equation cap" in comparison.objective
+    assert "keeping only those that affect scientific interpretation or use" in comparison.objective
+    assert "State shared conditions once" in comparison.objective
+    assert "do not force a winner" in comparison.objective
+    assert "proposer-role, phase-routing, workflow or permission commentary" in comparison.objective
+    assert "Do not invent rankings, target equivalence, established results or researcher preferences" in comparison.objective
+    assert "keep its decisive limitation beside it" in comparison.objective
+    assert "Do not repeat individual procedures" in comparison.objective
     assert "ordered algorithm or estimation steps" not in comparison.objective
     assert "concise candidate purpose and mechanism" in proposal.objective
     assert "no fixed sentence, line or equation count" in proposal.objective
@@ -104,6 +119,7 @@ def test_member_briefs_deliver_the_frozen_section_instructions_and_owned_schemas
     write_json_atomic(project_contracts / "contracts/phases/P2.json", live_phase)
     live_schema = read_json(project_contracts / "schemas/catalog-assessment.schema.json")
     live_schema["properties"]["method_dispositions"]["items"]["properties"]["method_summary_markdown"]["description"] = "PROJECT_SUMMARY_CHANGED_AFTER_FREEZE"
+    live_schema["properties"]["overview_markdown"]["description"] = "PROJECT_OVERVIEW_CHANGED_AFTER_FREEZE"
     write_json_atomic(project_contracts / "schemas/catalog-assessment.schema.json", live_schema)
     stages = engine._stages(record)
     proposal, audit, reconciliation = stages
@@ -115,6 +131,8 @@ def test_member_briefs_deliver_the_frozen_section_instructions_and_owned_schemas
         assert "applicability_markdown" in brief
         assert f"### `{output}.json`" in brief
         assert "### `catalog_assessment.json`" not in brief
+        assert "A worst-case upper bound is not a universal lower bound" in brief
+        assert "full validity proofs and experiments remain in P3 and P4" in brief
     lead = engine._render_brief(record, reconciliation, MemberRole.RESEARCH_LEAD,
                                engine.member_workspace(record, reconciliation.stage_id, MemberRole.RESEARCH_LEAD))
     assert reconciliation.objective in lead
@@ -124,8 +142,20 @@ def test_member_briefs_deliver_the_frozen_section_instructions_and_owned_schemas
     assert "essential inputs, exact target and model relationships" in lead
     assert "without repeating the complete ordered algorithm" in lead
     assert "State missing input facts and specifications honestly" in lead
+    assert "every actual candidate assessed in this run, including excluded proposals" in lead
+    assert "compact direct comparison of every actual candidate" in lead
+    assert "proposed computational demands" in lead
+    assert "Do not invent rankings, target equivalence, established results or researcher preferences" in lead
+    assert "one or two short paragraphs or a few compact bullets" in lead
+    assert "roughly 120-180 words" in lead
+    assert "State shared conditions once" in lead
+    assert "necessary conditions, sufficient conditions, special cases and heuristics" in lead
+    assert "recorded, reconstructible from documented design or estimated" in lead
+    assert "actually executed comparison or system verification result" in lead
+    assert "defer an inquiry that only matters under an unchosen direction" in lead
     assert "PROJECT_CHANGED_AFTER_FREEZE" not in lead
     assert "PROJECT_SUMMARY_CHANGED_AFTER_FREEZE" not in lead
+    assert "PROJECT_OVERVIEW_CHANGED_AFTER_FREEZE" not in lead
     for role in proposal.roles:
         brief = engine._render_brief(record, proposal, role, engine.member_workspace(record, proposal.stage_id, role))
         assert proposal.objective in brief
@@ -133,6 +163,9 @@ def test_member_briefs_deliver_the_frozen_section_instructions_and_owned_schemas
         assert "concise candidate purpose and mechanism" in brief
         assert "There is no fixed sentence, line or equation count" in brief
         assert "Exactly two lines" not in brief
+        assert "quantity actually optimized or ranked" in brief
+        assert "analytical screening, not a full validity proof or simulation" in brief
+        assert "changing an earlier calculation uses an owned method revision" in brief
         assert "one intended-mechanism sentence and one defining equation" not in brief
         assert "PROJECT_CHANGED_AFTER_FREEZE" not in brief
         assert "### `catalog_assessment.json`" not in brief
@@ -171,6 +204,58 @@ def test_scientific_fixture_keeps_each_method_summary_with_its_candidate():
     assert options["proposal.lead"]["title"] == "Data-driven clipping bound"
     assert options["proposal.theory"]["title"] == "Cross-validated series order"
     assert options["proposal.empirical"]["title"] == "Stronger tail penalty"
+
+
+def test_overview_guidance_and_example_preserve_all_frameworks_and_open_comparisons():
+    catalog = Catalog(REPO / "contracts")
+    schema = catalog.output_schema("p2.catalog_assessment")
+    guidance = schema["properties"]["overview_markdown"]["description"]
+    for instruction in (
+        "every actual candidate assessed in this run, including excluded proposals",
+        "mathematical or statistical framework",
+        "central mechanism and target",
+        "applicability conditions, inferential support or proposed computational demands",
+        "one or two short paragraphs or a few compact bullets",
+        "roughly 120-180 words",
+        "expanding for necessary scientific conditions",
+        "soft guide with no hard word, line or equation cap or display clipping",
+        "State shared conditions once",
+        "proposer-role, phase-routing, workflow or permission commentary",
+        "Do not invent rankings, target equivalence, established results or researcher preferences",
+    ):
+        assert instruction in guidance
+    # This is authoring guidance in an existing field, not a new shape, length
+    # validator, inference result or permission to rewrite the original methods.
+    assert "maxLength" not in schema["properties"]["overview_markdown"]
+    assessment = read_json(REPO / "contracts/examples/catalog-assessment.example.json")
+    original = copy.deepcopy(assessment)
+    overview = assessment["overview_markdown"]
+    for scientific_fact in (
+        "overlap-stabilized orthogonal score",
+        "doubly robust series",
+        "penalized inverse-propensity sieve",
+        "population target must be resolved before causal or inference claims",
+        "series-order error unresolved",
+        "coefficient penalization does not establish weight-tail control",
+        "lacks the other candidates' exact equations and tuning specifications",
+        "no comparative computational evidence",
+        "no overall advantage",
+    ):
+        assert scientific_fact in overview
+    assert "All three target the same estimand" not in assessment["comparison_markdown"]
+    assert "modifies the residual correction in the cross-fitted augmented score" in assessment["comparison_markdown"]
+    assert "keeps the orthogonal estimating equation" not in assessment["comparison_markdown"]
+    assert "weighted equation's population target and orthogonality remain unresolved" in assessment["comparison_markdown"]
+    # Exclusion does not remove a proposal from the comparison or require a
+    # replacement overview field; it remains an exact disposition in this record.
+    assessment["method_dispositions"][2]["status"] = "exclude"
+    assessment["method_dispositions"][2]["rationale"] = (
+        "Exclude this synthetic variant from further development because the required "
+        "weight-tail evidence is absent; that omission does not establish estimator failure."
+    )
+    assert not catalog.validate_output("p2.catalog_assessment", assessment)
+    assert assessment["overview_markdown"] == original["overview_markdown"]
+    assert assessment["method_dispositions"][2]["method_summary_markdown"] == original["method_dispositions"][2]["method_summary_markdown"]
 
 
 def test_concise_example_keeps_defining_equations_constraints_and_unknowns():

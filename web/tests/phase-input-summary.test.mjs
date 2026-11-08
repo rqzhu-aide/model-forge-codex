@@ -37,7 +37,7 @@ test("shared representations count once and every destination exists in the cano
   const result = phaseInputSummary(options);
   assert.deepEqual(counts(result), { total: 1, answered: 1, unanswered: 0, unknown: 0, unsaved: 0 });
   const current = issueCardEntries(options).entries;
-  assert.deepEqual(result.questions.items.map(({ anchor }) => anchor), current.map((issue) => `issue:${issueVersionKey(issue)}`));
+  assert.deepEqual(result.questions.items.map(({ anchor }) => anchor), current.map(phaseQuestionAnchor));
   assert.equal(result.questions.items[0].draftKey, `issue-response:${JSON.stringify([scope.projectId, issueVersionKey(item)])}`);
 });
 
@@ -178,7 +178,7 @@ test("drafts of earlier exact sources do not mark the current question unsaved",
 
 test("study understanding counts only confirmed contributions and pending interpretations in scope", () => {
   const project = { kind: "project" }, exact = { kind: "model", branch: scope.branch, model_ref: modelRef };
-  const contextItem = (id, itemScope = project, status = "confirmed") => ({ item_id: id, revision: 2, statement: "Saved information.", status, scope: itemScope });
+  const contextItem = (id, itemScope = project, status = "confirmed") => ({ item_id: id, revision: 2, statement: "Saved information.", origin: "researcher_reported", status, scope: itemScope });
   const proposal = (id, item, status = "pending") => ({ amendment_id: id, item, status });
   const problemContext = { items: [contextItem("project"), contextItem("exact", exact), contextItem("old", { ...exact, model_ref: { ...modelRef, version: 1 } }), contextItem("retired", project, "superseded"), contextItem("unconfirmed", project, "proposed")],
     proposals: [proposal("shared", contextItem("shared")), proposal("model", contextItem("model", exact)), proposal("elsewhere", contextItem("elsewhere", { ...exact, branch: "method.b" })), proposal("old-version", contextItem("old-version", { ...exact, model_ref: { ...modelRef, version: 1 } })), proposal("confirmed", contextItem("confirmed"), "confirmed")],
@@ -198,7 +198,9 @@ test("navigation keys survive reordering and cosmetic source metadata but detect
   const item = question("navigation");
   const reordered = { ...item, title: "A clearer title", explanation_target: { label: "Display metadata", ...Object.fromEntries(Object.entries(item.explanation_target).reverse()) } };
   assert.equal(phaseQuestionKey(item), phaseQuestionKey(reordered));
-  assert.equal(phaseQuestionAnchor(item), `issue:${issueVersionKey(item)}`);
+  assert.equal(phaseQuestionAnchor(item), phaseQuestionAnchor(reordered));
+  assert.notEqual(phaseQuestionAnchor(item), phaseQuestionAnchor({ ...item, scope: { kind: "model", model_ref: modelRef } }));
+  assert.notEqual(phaseQuestionAnchor(item), phaseQuestionAnchor({ ...item, explanation_target: { ...item.explanation_target, generation_id: "another.generation" } }));
   assert.equal(phaseInputScopeKey(scope), phaseInputScopeKey({ ...scope, modelRef: Object.fromEntries(Object.entries(modelRef).reverse()) }));
   for (const changed of [{ phase: "P3" }, { branch: "method.b" }, { modelRef: { ...modelRef, version: 3 } }]) assert.notEqual(phaseInputScopeKey(scope), phaseInputScopeKey({ ...scope, ...changed }));
 });
@@ -208,7 +210,7 @@ test("copied answers never count as extra information, including earlier phases,
   const saved = answerFor(current, { context_ref: { item_id: "custom.answer-copy", revision: 1 } });
   const prior = answerFor(earlier, { context_ref: { item_id: "new.custom-copy", revision: 2 }, history: [{ context_ref: { item_id: "historical.custom-copy", revision: 1 } }] });
   const ref = { kind: "researcher_answer", attention_id: current.attention_id, question_ref: current.explanation_target, answer_revision: 1 };
-  const item = (item_id, extra = {}) => ({ item_id, revision: 1, status: "confirmed", statement: "Keep this exact statement.", scope: { kind: "project" }, ...extra });
+  const item = (item_id, extra = {}) => ({ item_id, revision: 1, status: "confirmed", origin: "researcher_reported", statement: "Keep this exact statement.", scope: { kind: "project" }, ...extra });
   const problemContext = { items: [item("context.answer.current", { answer_refs: [ref] }), item("context.answer.pause"), item("custom.answer-copy"), item("historical.custom-copy"), item("context.note"), item("context.interpretation", { answer_refs: [ref] })], proposals: [] };
   for (const phase of ["P1", "P2", "P3", "P4", "P5"]) {
     const result = summarize({ phase, issues: [current], answers: [saved, prior], problemContext });

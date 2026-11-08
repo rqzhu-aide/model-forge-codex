@@ -311,6 +311,20 @@ def test_lead_can_explain_assumption_sensitivity_without_replacing_its_sources(d
     assert result["status"] == "passed", result["findings"]
 
 
+@pytest.mark.parametrize("mutation", [None, "assumption_text"])
+def test_authored_assumption_label_does_not_relax_the_formal_boundary(draft_engine, mutation):
+    prepared = case(draft_engine)
+    for family in ("p3.theory_candidate", "p3.complete_theory"):
+        prepared[2][family]["assumptions"][0]["label"] = "Common outcome law"
+    if mutation == "assumption_text":
+        prepared[2]["p3.complete_theory"]["assumptions"][0]["text"] += " Stronger condition."
+    result = actual_check(draft_engine, prepared)
+    if mutation is None:
+        assert result["status"] == "passed", result["findings"]
+    else:
+        assert "theory.unaudited_math_change" in codes(result)
+
+
 @pytest.mark.parametrize(("field", "value"), [
     ("status", []), ("status", {}), ("origin", []), ("origin", {}),
     ("component_ids", 1), ("component_ids", {}), ("component_ids", "statement.fixture"),

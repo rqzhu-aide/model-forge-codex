@@ -446,8 +446,8 @@ The frame is a navy ramp lit from within by one orange; the reading room is warm
 - **Control Stone** (#ebe8e2, dark #1e2632), hover (#e1ddd5), ink (#1f2b3f, dark #d7dde6) and border (#c9c2b5): ghost buttons and unselected tabs.
 
 ### Role markers and status
-- **Role dots**: team #2b5592 (dark #8fb3e6), system #2f7a6b (dark #6fc2ae), researcher #c2480b (dark #ff9a5c). They appear as 6px dots on card titles, in the sidebar legend (lightened for the iron: #8fb3e6, #6fc2ae, #ff9a5c) and on the Next label.
-- **Attention Amber** (ink #92400e on #fff7eb, line #f2c397; dark #ffcf94 on #382819): phases that need input and waiting questions, always beside a word. On the lintel it becomes #ffcf8a on #3d2a12.
+- **Role dots**: team #2b5592 (dark #8fb3e6), system #2f7a6b (dark #6fc2ae), researcher #c2480b (dark #ff9a5c). Card titles and the Next label use 6px dots. The sidebar legend uses 16px circles with a 1px Wall Ink outline and the light-theme role colors in both themes, giving the color key a clear edge on the shared silver wall. This local palette does not change card markers or controls.
+- **Attention Amber** (ink #92400e on #fff7eb, line #f2c397; dark #ffcf94 on #382819): paused work and unanswered-question counts, always beside a word. On the lintel it becomes #ffcf8a on #3d2a12.
 - **Status inks**: ok #2f6c4f, warn #8b5e13, danger #a63b36 (soft #fcf0ee), run #2b4f86. On the lintel they lighten to #8fd3a8, #f2c879, #f5a39c and #9cc3f2.
 - **Selection** (#ffe0c9, dark #5a3018): the text-selection highlight.
 
@@ -458,7 +458,7 @@ The frame is a navy ramp lit from within by one orange; the reading room is warm
 
 **The Warm Hands Rule.** Warm peach, cream and ember belong to the researcher: what they type, what they saved and actions taken for them. A control does not inherit the ownership of the prose around it; Cancel inside a researcher editor stays a system control.
 
-**The Dot, Not Tint Rule.** A card's role is a 6px dot before its title and a 12px muted label after it (Team, Your input, Activity, Record, Revision). Card bodies stay white and heading bands stay neutral; the violet revision summary and the parchment history record are the only surfaces tinted whole.
+**The Dot, Not Tint Rule.** A card's role is a 6px dot before its title and a 12px muted label after it (Team, Your input, Activity, Record, Revision). Most card bodies stay white and heading bands stay neutral. Decisions to Discuss uses the warm peach contribution surface, a stronger peach title band and an orange outline in both themes so the researcher can find their input area. Its expanded team content keeps its blue research surface. The violet revision summary and parchment history record also retain their whole-surface tints. These tints identify purpose, not urgency or whether an answer is required.
 
 **The Beside-Text Rule.** Amber and red appear only next to words that say the same thing. If you removed every color, every state would still read.
 
@@ -486,7 +486,8 @@ The frame is a navy ramp lit from within by one orange; the reading room is warm
 - **Meta** (500, 13px, 20px): source links, metadata and the setting link.
 - **Field** (400, 13px, 20px): field text and sidebar items; fields rise to 16px below 600px so phones do not zoom.
 - **Stepper** (500, 12.5px, 1.3): phase names on the tab plates in Forge Text; the current phase is 650 in forge-0 on the fire. Status cues are 600, 12px, tabular.
-- **Caption** (500, 12px, 1.3): role labels, the brand subtitle and the sidebar legend. Meaningful status never goes below this size.
+- **Caption** (500, 12px, 1.3): role labels and the brand subtitle. Meaningful status never goes below this size.
+- **Sidebar legend** (500, 14px, 20px): the three role descriptions in Wall Ink, beside their 16px color markers.
 - **Mono** (400, 0.92em): code, identifiers and ids, with tabular figures.
 
 ### Named Rules
@@ -508,7 +509,7 @@ Responsive behavior:
 - Below 1200px, the theory graph and its inspector stack.
 - From 601px to 1100px, phase wells stack above their full-width names; phase names wrap only between words.
 - Below 800px, the sidebar becomes a flat iron band above the content behind a "Projects & settings" toggle, its edge rules and brand rule drop away, the lintel narrows to 10px overhangs with 10px bottom corners, and grids fall to one column.
-- Below 600px, the lintel title drops to 21px and its brackets are hidden, card padding drops to 12px, stepper names hide, and each tab plate centres its state well and concise status. Only the current phase's full name shows beneath the plates. The question drops to 15px and the Next button takes the full width.
+- Below 600px, the lintel title drops to 21px and its brackets are hidden, card padding drops to 12px, full stepper names hide, and each tab plate keeps a visible Phase 1 through Phase 5 label beside its state well, above its concise status. The current phase's full name also shows beneath the plates. The question drops to 15px and the Next button takes the full width.
 - At 440px and below, phase plates form three then two columns so exact status words remain readable at 12px, including when a vertical scrollbar reduces the available width.
 - On coarse pointers, every control, summary and sidebar item grows to 44px.
 
@@ -576,10 +577,10 @@ The frame is iron and announces the project; the reading room is quiet, compact 
 The sticky project header is a navy band hung from the top of the workspace, with 14px beveled lower corners and the same riveted plating under a slanting sheen. Two angular iron brackets with a steel edge and two rivets each hold its lower corners, a deliberate Horde note in the joinery. Along its bottom edge a 2px line of heat glows at the centre and fades toward the ends, with a soft warm spill above it, as if the forge below lit the stone. The title is Marcellus 26px in Forge Title with a slight shadow. The activity strip is a recessed panel on the band and opens into a white body.
 
 ### Phase stepper (signature)
-Five equal raised iron tab plates in a row on the lintel, 8px apart, with no rule joining them. Each is a 44px button with 6px beveled corners: navy iron (#29446e to #142a4c) lit along its top edge, crossed by a faint slanting sheen and shadowed at its foot, a shade brighter (#34557f to #19325a) once the phase has results. Hovering an iron plate brightens its top edge; pressing sinks it. A round 22px well recessed at the plate's left holds a glyph for the state: a check on a steel boss with a steel rim when results exist, a drawn exclamation mark with a #ffcf8a rim when the phase needs input or holds waiting questions, a pulsing run-blue dot while work runs (static under reduced motion), and the phase number otherwise, rimmed in #f2c879 when results are interrupted or outdated. A running phase's plate glows along its edge and breathes with its dot: a run-blue rim with a soft halo on iron, a molten gold rim on the plate in the fire; under reduced motion the rim holds at full glow. The current phase is the plate in the fire: Illini Orange deepening to #f05a00 at its shoulders and white-hot at its foot, with a molten lower lip, heat rising above it and a coal-dark well whose glyph glows. Its name is forge-0 at 650, which holds at least 4.7:1 on every orange under the text, and the plate holds still so it never pulls at a long read; only a running phase's rim breathes. In forced-colors mode the current plate keeps a 2px Highlight border. A text cue under each name (for example "2 questions", Needs input, Running, Outdated) means state never depends on color, and the question count matches the Next line.
+Five equal raised iron tab plates in a row on the lintel, 8px apart, with no rule joining them. Each is a 44px button with 6px beveled corners: navy iron (#29446e to #142a4c) lit along its top edge, crossed by a faint slanting sheen and shadowed at its foot, a shade brighter (#34557f to #19325a) once the phase has results. Hovering an iron plate brightens its top edge; pressing sinks it. A round 22px well recessed at the plate's left holds a glyph for the state: a check on a steel boss with a steel rim when results exist, a drawn exclamation mark with a #ffcf8a rim only when a run is paused for user input, a conversation outline with a steel rim for unanswered questions when work is not paused, a pulsing run-blue dot while work runs (static under reduced motion), and the phase number otherwise, rimmed in #f2c879 when results are interrupted or outdated. A running phase's plate glows along its edge and breathes with its dot: a run-blue rim with a soft halo on iron, a molten gold rim on the plate in the fire; under reduced motion the rim holds at full glow. The current phase is the plate in the fire: Illini Orange deepening to #f05a00 at its shoulders and white-hot at its foot, with a molten lower lip, heat rising above it and a coal-dark well whose glyph glows. Its name is forge-0 at 650, which holds at least 4.7:1 on every orange under the text, and the plate holds still so it never pulls at a long read; only a running phase's rim breathes. In forced-colors mode the current plate keeps a 2px Highlight border. A text cue under each name (for example "2 unanswered questions", Paused, Running, Outdated) means state never depends on color, and the question count matches the Next line.
 
 ### Resume header and Next line (signature)
-The research question sits under the lintel in 16px prose, clamped to two lines, followed by a "Read the full setting" link in Citation Blue. Below it, the Next line is a white beveled strip with a 1px card line. It has a bold "Next" label with a 6px dot (researcher ember for a waiting decision, run blue while work runs, strong line otherwise), a 14px sentence naming the waiting decisions and their phase, and the heat button.
+The research question sits under the lintel in 16px prose, clamped to two lines, followed by a "Read the full setting" link in Citation Blue. Below it, the Next line is a white beveled strip with a 1px card line. It has a bold "Next" label, a 14px sentence naming unanswered questions or the active pause and its phase, and the heat button. A conversation outline marks unanswered questions; a pause icon marks work actually paused for input. Other states keep the small dot (run blue while work runs, strong line otherwise). Unanswered questions alone never imply that work is paused or that a question is optional.
 
 ### Selected method
 In the method comparison, the selected method's heading is preceded by a small heat lozenge, an 8px square turned 45 degrees with a 6px glow. It is the only heat inside the reading column.
@@ -613,9 +614,11 @@ KaTeX renders all mathematics on plain panels. A display equation wider than its
 ### Interface voice
 
 Use **you/your** for the researcher and **I/me** for the harness speaking. Say
-**What you told me**, **Your answers to my questions**, **Other information you
-gave me**, **Please check my interpretation**, and **Tell me what to do next**.
-The revision summary explains **What I’ll use in the next run**. Name individual
+**Your saved input** for the phase badges at the foot of Decisions to Discuss,
+**Your saved notes** for the rerun shortcut to independent notes, and
+**Please check my interpretation** for a pending review. Use **Review your input
+and run settings** for Phases 1 through 4 and **What I’ll use in the next run**
+for report revision. Name individual
 team members where attribution matters. Stock choices say **Not sure yet**;
 never rewrite an authored or saved response to fit this convention.
 

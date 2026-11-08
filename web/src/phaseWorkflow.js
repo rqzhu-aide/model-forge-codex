@@ -35,8 +35,9 @@ export function issueAnswerPhase(issue) {
 }
 // Earlier projections used the source object ID as a title even when the
 // author supplied a statement. Keep identifiers in provenance, not row labels.
+export const issueIdentifiers = (issue) => new Set([issue.issue_id, issue.attention_id, issue.object_id, issue.finding_id, issue.explanation_target?.object_id].filter(Boolean));
 export function issueLabel(issue, preferQuestion = false) {
-  const identifiers = new Set([issue.issue_id, issue.attention_id, issue.object_id, issue.finding_id, issue.explanation_target?.object_id].filter(Boolean));
+  const identifiers = issueIdentifiers(issue);
   const labels = preferQuestion ? [issue.question, issue.title] : [issue.title, issue.question];
   return [...labels, issue.statement, issue.issue, issue.summary_markdown].find((value) => typeof value === "string" && value.trim() && !identifiers.has(value)) || "Research issue";
 }

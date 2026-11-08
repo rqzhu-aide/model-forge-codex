@@ -1,6 +1,8 @@
 # Phase 3: Theory Development
 
-Contract version: 2.13.2. Catalog: 1.30.2.
+Contract version: 2.13.9. Catalog: 1.31.13.
+
+Scientific accounts use standard statistical and machine-learning terminology for the source-defined target and quantities, preserving their definitions across summaries, comparisons, decisions and displays. The frozen [scientific-explanation reference](../references/research-presentation/scientific-explanation.md) governs this meaning; undefined measures stay unresolved rather than being renamed or calculated for presentation.
 
 ## 1. Purpose
 
@@ -180,9 +182,23 @@ demonstrated failure remain distinct. An unknown consequence names the next
 argument or probe instead of inventing a conclusion.
 
 The analyst reviews operational meaning, testability and the fidelity of these
-explanations within the frozen read set. The lead's decision account explains
-what is established, conditional, refuted or open and why it matters. The lead
-checks its final synthesis without changing unaudited statement wording.
+explanations, including short assumption labels, within the frozen read set.
+The lead's decision account explains what is established, conditional, refuted
+or open and why it matters. The lead checks its final synthesis without changing
+unaudited statement wording or authored assumption labels.
+
+The visible P3 overview is the Lead decision: `headline`, then
+`current_conclusion` (projected as `conclusion`), followed by **What this
+analysis adds**, **What remains uncertain**, **Main risk or limitation**,
+**Unresolved differences**, **What changed** and **Next useful step**. The
+phase summary is a fallback only when no decision account exists; the compact
+theory is downstream context, not a second overview. An optional authored
+assumption `label` names graph nodes and the inspector; unlabeled historical
+assumptions keep their identifier-derived fallback. The inspector explains
+that proof support describes an argument while the statement assessment also
+accounts for conditions and unresolved work, and that a probe may test a
+stronger claim or relaxed assumptions. These are explanatory copy; status logic
+and authored probe outcomes are unchanged.
 
 The four reading purposes are the overall theoretical account; scientific
 detail in Claims, Assumptions, Arguments and Review; unresolved issues and real
@@ -271,22 +287,84 @@ facts can remain explicit conditions when work can proceed responsibly.
 
 ## Scientific meaning for the intended reader
 
+Also inspect the theoretical findings, limitations and original goal for a consequential next choice the researcher owns, even when no member proposed it. In P3, this may concern the assumption or guarantee scope to develop, or a materially different next theory direction. Preserve the retained claim and proof status; a researcher's development preference cannot verify an assumption or repair a proof, and changed method definitions need upstream revision.
+
 Apply the [shared question-language guidance](researcher-question-language.md) within this phase's existing output ownership and interaction rules. It refines the existing question, context, option consequences and recommendation; it adds no artifact, questionnaire or question quota.
 
-In P3, connect an assumption to the specific claim it supports and its meaning in the study. Ask for relevant study information, never for permission to treat an assumption as true. Missing proofs and numerical correctness remain team work.
+In P3, connect an assumption to the specific claim it supports and its meaning in
+the study. The researcher may choose to develop under a proposed restriction;
+adoption is distinct from empirical plausibility and proof validity. Missing
+proofs and numerical correctness remain team work.
+
+The Theorist raises material assumption or theorem-scope choices discovered in
+the argument. State the mathematical condition, literature basis, supplied-study
+meaning, what it enables and what it excludes. Compare stronger tractable
+conditions with weaker or different directions when meaningful; label uncertain
+proof feasibility honestly. The Data Analyst assesses compatibility with intended
+observations, information and computation, including an exact but impractical
+construction versus an approximation requiring different guarantees. Keep
+proposals in the existing audit and handoff fields for Lead consolidation.
+The Theorist keeps every adopted restriction explicit in dependent results and
+their user-facing summaries. Researcher adoption alone never changes proof status.
+
+The Lead consolidates the Theorist handoff and the Analyst's `audit.issues` or
+`handoff.unresolved_issues`; an Analyst issue may be recorded once in either
+owned location. Preserve stable issue identity without requiring a duplicate.
+The Lead offers only genuinely distinct directions, explaining their mathematical
+difference and study meaning. Developing under proposed conditions and retaining
+a conditional result are not automatically separate options. Label directions
+requiring method revision and identify the existing upstream route.
+A missing study fact or previously stated preference is not a prerequisite, and
+a team recommendation does not settle the choice. Check the instructions,
+applicable answers, sources and affordable analysis first; preserve both
+specialists' consequences when one answer settles their shared fork. An unknown
+answer is not consent, and any justified continuation states its provisional
+team direction. A conditional theorem for the selected method differs from
+changing its target, objective, constraint or estimator. Those changes use the
+existing upstream revision route; a saved answer cannot alter the published
+method, rewrite audited statements or authorize a run. Adopting an assumption
+also cannot redefine the original scientific goal. Technical proof choices that
+preserve the retained model, conditions and result ordinarily stay with the team.
 
 ## Writing duties in existing outputs
 
 The executable objectives give the task, shared writing core, owned output duties
-and separate scientific/execution constraints. The decision,
-`phase_summary.evaluation_markdown` and `theory_compact.summary_markdown` interpret
-the supported result and practical boundary in the supplied study. Clearer prose
-cannot rewrite audited statement text, quantifiers, assumptions or proof support.
-For example, a sufficient finite stationary state keeps those qualifications.
-Existing theory summaries and audits explain what is supported and what loses
-justification, without turning absence of a proof into demonstrated failure.
+and separate scientific/execution constraints. The Theorist establishes, refutes
+or records as unresolved the claim assigned for the exact selected method under
+explicit premises, reporting any stated clause not addressed and keeping a useful
+stronger result separate. Clearer prose cannot rewrite audited statement text, quantifiers,
+threshold strictness, conditioning, probability spaces, assumptions or proof
+support, or turn a sufficient condition into a necessary one. The Analyst checks
+what the result permits, distinguishing an invalid argument, a valid restricted
+result and an unexamined or unresolved claim. Keep established, conditional,
+incomplete, contradicted, retracted and untested assessments distinct in the
+Lead account; absence of a proof is not demonstrated failure.
+The primary account selects the decisive supported relation and limiting premise
+classes, then links the full statement and conditions. Exact mathematical meaning
+is preserved across the account without repeating the complete premise inventory
+in its opening. Stop when the reader's scientific question is answered; adjacent
+fields add their own uncertainty, implication or next step.
 Proposed next work remains a conditional recommendation within its stated scope;
 prioritization does not authorize or launch another run.
+
+Under contract 2.13.5 each existing output has one reading purpose:
+
+| Output | Reader's question | Content |
+| --- | --- | --- |
+| Lead decision (overview) | What does the result mean for my goal? | `headline`: finding and decisive boundary. `current_conclusion`: result for the goal with the target visible, decisive relation, local definitions, premise classes and the nearest misleading stronger reading. `fundamental_contribution`: the mechanism that produces the result. `principal_uncertainty`: the most consequential missing evidence. `principal_risk`: the main limitation and its practical meaning. `smallest_decisive_result`: one bounded next question, the gap it resolves and why it comes first, as a research recommendation unless a supplied result makes the earlier step a mathematical prerequisite; `available_actions` and any owning task agree with it. |
+| Readable manuscript | How does the science fit together? | Question, mechanism, supported results with decisive assumptions, interpretation and limits, starting at the scientific account. Canonical statements, assumptions, justifications and source bytes stay exact; the Lead's own narrative may be reorganized faithfully. Retention and answer-routing accounting stay in structured records. |
+| `phase_summary.evaluation_markdown` | What did this run establish or change? | Outcome, material development or unchanged conclusion, the audit's distinctive effect and the unresolved next question. |
+| `theory_compact.summary_markdown` | What may later work rely on? | Standalone technical context: result, scope and assumptions, proof mechanism, limitations and sources, with no page target. Material corrections and comparison qualifications are retained. |
+| Theorist account | What result or open question, and why? | Opens with the result and its meaning for the goal; short scientific assumption labels; argument roles in `justification.summary`; sensitivity separating demonstrated failure from unknown consequence. |
+| Analyst audit | What did the examination confirm, qualify or dispute? | Opens with that outcome and its consequence, develops distinctive checks with the equation or premise needed to judge them, and links the common method account instead of repeating it. |
+
+The adjacent overview fields usually need one to three sentences each; this is a
+selection guide, not a length cap. Theorist and Analyst state any condition under
+which the procedure cannot give an informative result, distinguishing a limitation
+of this bound or algorithm from one proved for the scientific problem. When new
+evidence bears on an existing question, the Lead explains it at that question's
+owner rather than creating an overlapping question. These duties are P3-specific;
+other phases keep their own field duties.
 
 ## Shared notation and presentation (catalog 1.30.0)
 

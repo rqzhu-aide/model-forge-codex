@@ -74,7 +74,7 @@ async def test_contextual_answers_keep_shared_setting_and_p2_lead_delivery(direc
     monkeypatch.delenv("MF_CODEX_READ_ONLY", raising=False)
     app = create_app(engine.data_root, engine.bridge)
     shared_answer = "SHARED_SETTING: use discount factor 0.95."
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         for phase, note in (("P1", shared_answer), ("P2", NOTE)):
             response = await client.post(f"/api/v1/projects/{PID}/attention/question.{phase}/resolve", json={"note": note})
             assert response.status_code == 200, response.text
@@ -125,7 +125,7 @@ async def test_unified_input_routes_only_to_lead_and_reviews_only_real_proposals
     monkeypatch.delenv("MF_CODEX_READ_ONLY", raising=False)
     app = create_app(engine.data_root, engine.bridge)
     basis = engine.compute_basis(PID, "P2", "trunk", "p2.full_catalog")
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         response = await client.post(f"/api/v1/projects/{PID}/runs", json={
             "phase": "P2", "mode": "p2.full_catalog", "instructions": NOTE,
             "basis_sha256": basis["sha256"], "idempotency_key": "single-p2-text-input"})

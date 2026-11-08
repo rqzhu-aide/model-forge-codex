@@ -68,7 +68,7 @@ async def test_published_theory_links_retained_proofs_in_claims_and_glossary(pub
     assert "artifact_url" not in statement["justification"]["artifacts"][0]
     monkeypatch.delenv("MF_CODEX_READ_ONLY", raising=False)
     app = create_app(data_root=eng.data_root, bridge=eng.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         response = await client.get(proof["artifact_url"])
     assert response.status_code == 200
     assert response.content == retained.read_bytes()
@@ -101,6 +101,37 @@ async def test_corrupt_retained_proof_does_not_become_a_usable_or_favorable_clai
     assert claim["status"] == statement["status"]
     assert claim["justification"]["summary"] == statement["justification"]["summary"]
     assert proof == view["glossaries"][0]["glossary"][statement["statement_id"]]["justification"]["artifacts"][0]
+
+
+async def test_authored_assumption_label_reaches_claim_map_and_glossary_unchanged(workbench):
+    # The existing projection copies the authored label; no projection code is needed.
+    eng, project, branch = workbench
+    label = "Common outcome law"
+
+    def add_label(documents):
+        for output in ("p3.theory_candidate", "p3.complete_theory"):
+            documents[output]["assumptions"][0]["label"] = label
+    script_scientific_run(eng, project, branch, "P3", "p3.theory_establishment", transform=add_label)
+    run = await eng.start_run("project.test", phase="P3", mode="p3.theory_establishment", branch_id=branch)
+    await eng._tasks[run.run_id]
+    final = eng.load_run("project.test", run.run_id)
+    assert final.state is RunState.PUBLISHED, (final.terminal_reason, final.findings_history)
+    phase = project / "branches" / branch / "phases" / "p3"
+    pointers = current_records(phase)
+    before = {family: generation_path(phase, family, pointer).read_bytes() for family, pointer in pointers.items()}
+    theory = read_generation(phase, "theory_record", pointers["theory_record"])
+    source = theory["assumptions"][0]
+    assert source["label"] == label
+    view = artifacts_view(project, branch)
+    projected = {item["assumption_id"]: item for item in view["claim_maps"][0]["assumptions"]}
+    glossary = view["glossaries"][0]["glossary"]
+    for item in (projected[source["assumption_id"]], glossary[source["assumption_id"]]):
+        assert item["label"] == label
+        for key in ("text", "scope", "used_by_statement_ids", "sensitivity"):
+            assert item[key] == source[key]
+    for other in theory["assumptions"][1:]:
+        assert "label" not in projected[other["assumption_id"]]
+    assert before == {family: generation_path(phase, family, pointer).read_bytes() for family, pointer in pointers.items()}
 
 
 def test_unverified_authored_urls_are_discarded_without_mutating_the_statement(tmp_path):

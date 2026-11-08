@@ -86,6 +86,60 @@ def test_lead_without_source_artifacts_resolves_exact_records_and_declared_prima
     assert docs == before and "source_artifacts" not in docs["empirical_synthesis"]
 
 
+def test_only_requested_pointer_bytes_are_resolved_once_per_projection(tmp_path, monkeypatch):
+    from model_forge_codex.records import source_artifact_path
+
+    _, docs, records, uris, primary = retained_sources(tmp_path)
+    pointer = docs["analyst_synthesis"]["representations"][0]["artifact"]
+    irrelevant = primary.with_name("unrequested.json")
+    irrelevant.write_bytes(b'{"not_requested":true}')
+    docs["analyst_synthesis"]["retained_outputs"] = [
+        {"artifact": copy.deepcopy(pointer)} for _ in range(30)] + [
+        {"artifact": {"path": irrelevant.name, "sha256": sha256_file(irrelevant)}} for _ in range(30)]
+    before = copy.deepcopy(records)
+    resolutions = []
+
+    def resolve(project, ref, artifact):
+        resolutions.append((ref["stage_id"], artifact["path"]))
+        return source_artifact_path(project, ref, artifact)
+
+    monkeypatch.setattr("model_forge_codex.research_sources.source_artifact_path", resolve)
+    links = empirical_run_sources(tmp_path, docs["empirical_synthesis"], records["empirical_synthesis"][1], records)
+    assert {link["uri"] for link in links} == set(uris)
+    assert resolutions == [("p4.analyst", primary.name)]
+    assert records == before
+
+
+def test_repeated_pointer_resolution_keeps_the_producing_stage(tmp_path):
+    run, docs, records, _, _ = retained_sources(tmp_path)
+    targets = [run / "outputs" / stage / "shared.json" for stage in ("p4.analyst", "p4.theorist")]
+    for target in targets:
+        target.write_bytes(b'{"same_bytes":"separate_stage"}')
+    pointer = {"path": "shared.json", "sha256": sha256_file(targets[0])}
+    for family in ("analyst_synthesis", "theory_audit"):
+        docs[family]["source_artifacts"] = [copy.deepcopy(pointer)]
+    uris = [f"run://{run.name}/outputs/{target.relative_to(run / 'outputs').as_posix()}" for target in targets]
+    lead = {"body_md": " ".join(f"[Stage source]({uri})" for uri in uris)}
+    links = empirical_run_sources(tmp_path, lead, records["empirical_synthesis"][1], records)
+    assert {link["uri"] for link in links} == set(uris)
+    assert {link["artifact_url"].split("/outputs/")[1].split("/")[0] for link in links} == {"p4.analyst", "p4.theorist"}
+
+
+@pytest.mark.parametrize("damage", ["changed_bytes", "missing_file"])
+def test_projection_file_reuse_does_not_survive_a_later_request(tmp_path, damage):
+    _, docs, records, uris, primary = retained_sources(tmp_path)
+    before = copy.deepcopy(records)
+    assert {link["uri"] for link in empirical_run_sources(
+        tmp_path, docs["empirical_synthesis"], records["empirical_synthesis"][1], records)} == set(uris)
+    if damage == "changed_bytes":
+        primary.write_bytes(b'{"changed":true}')
+    else:
+        primary.unlink()
+    links = empirical_run_sources(tmp_path, docs["empirical_synthesis"], records["empirical_synthesis"][1], records)
+    assert {link["uri"] for link in links} == set(uris[:-1])
+    assert records == before
+
+
 @pytest.mark.parametrize("damage", [None, "tampered_readme", "other_package"])
 def test_run_locators_resolve_declared_reproduction_files_without_artifact_uri_substitution(tmp_path, damage):
     run, docs, records, uris, primary = retained_sources(tmp_path, reproduction=True)
@@ -183,7 +237,7 @@ async def test_projected_run_source_url_rechecks_bytes_when_opened(workbench):
     run, docs, records, uris, _ = retained_sources(project, branch)
     link = next(item for item in empirical_run_sources(project, docs["empirical_synthesis"], records["empirical_synthesis"][1], records) if item["uri"] == uris[0])
     app = create_app(data_root=engine.data_root, bridge=engine.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         response = await client.get(link["artifact_url"])
         assert response.status_code == 200
         assert response.content == (run / "outputs/p4.analyst/protocol.json").read_bytes()

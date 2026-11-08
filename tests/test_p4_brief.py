@@ -13,7 +13,8 @@ from model_forge_codex.storage import write_json_atomic
 
 
 def render(tmp_path):
-    renderer = SimpleNamespace(_progressive_p4=lambda _: True, run_dir=lambda *_: tmp_path)
+    renderer = SimpleNamespace(_progressive_p4=lambda _: True, run_dir=lambda *_: tmp_path,
+                               _catalog=lambda _: SimpleNamespace(root=tmp_path / "contracts"))
     record = SimpleNamespace(project_id="project.test", run_id="run.test")
     text = P4LifecycleMixin._p4_brief(renderer, record, None, MemberRole.DATA_ANALYST)
     encoded = text.split("Current controller state", 1)[1].split("```json\n", 1)[1].split("\n```", 1)[0]
@@ -86,3 +87,46 @@ def test_unamended_and_unsaved_plans_keep_existing_control_facts(tmp_path, plan)
     assert path.read_bytes() == before
     assert delivered["budget"] == state["budget"] and delivered["finish_requested"] is True
     assert delivered["plan_summary"] == (plan or {})
+
+
+@pytest.mark.parametrize("role", [MemberRole.THEORIST, MemberRole.RESEARCH_LEAD])
+def test_adopted_p4_reviewers_keep_review_authority_without_batch_authoring(tmp_path, role):
+    contract = tmp_path / "contracts/contracts/phases/P4.json"
+    renderer = SimpleNamespace(_progressive_p4=lambda _: True, run_dir=lambda *_: tmp_path,
+                               _catalog=lambda _: SimpleNamespace(root=tmp_path / "contracts"))
+    record = SimpleNamespace(project_id="project.test", run_id="run.test")
+    write_json_atomic(contract, {"capabilities": ["research_account_focus_v1"]})
+    reviewer = P4LifecycleMixin._p4_brief(renderer, record, None, role)
+    analyst = P4LifecycleMixin._p4_brief(renderer, record, None, MemberRole.DATA_ANALYST)
+
+    for instruction in ("run_batch requires", "script_path", "Declare result_paths in run_batch",
+                        "MODEL_FORGE_P4_ATTEMPT_ID", "call save_plan with protocol_path",
+                        "analyst calls complete only", "Provide an analysis script",
+                        "Record prospective amendments before changed work", "generate the data before starting the timer"):
+        assert instruction in analyst and instruction not in reviewer
+    for requirement in ("For a checkpoint, send", "request_decision", "final eligible rows and tables",
+                        "paired difference", "timing boundaries", "exact captured script and support files",
+                        "prospective amendments", "host-recorded budget", "Invalidated rows retain their values",
+                        "finish_requested", "read the full saved plan at saved_state_path",
+                        "normal owned outputs", "changed method requires upstream revision",
+                        "Reviewers must not call complete or run_batch", "Check that the declared analysis script"):
+        assert requirement in reviewer
+    assert len(reviewer.encode()) < len(analyst.encode())
+
+    # Adoption is frozen with the run. An old or absent capability preserves
+    # the common authoring text for all three roles.
+    write_json_atomic(contract, {"capabilities": []})
+    legacy = P4LifecycleMixin._p4_brief(renderer, record, None, role)
+    assert legacy == P4LifecycleMixin._p4_brief(renderer, record, None, MemberRole.DATA_ANALYST)
+    assert legacy == analyst
+
+
+def test_reviewer_instructions_use_the_resolved_catalog_without_a_run_copy(tmp_path):
+    catalog_root = tmp_path / "project-catalog"
+    write_json_atomic(catalog_root / "contracts/phases/P4.json", {"capabilities": ["research_account_focus_v1"]})
+    renderer = SimpleNamespace(_progressive_p4=lambda _: True, run_dir=lambda *_: tmp_path / "run",
+                               _catalog=lambda _: SimpleNamespace(root=catalog_root))
+    record = SimpleNamespace(project_id="project.test", run_id="run.test")
+    text = P4LifecycleMixin._p4_brief(renderer, record, None, MemberRole.RESEARCH_LEAD)
+    assert "run_batch requires" not in text
+    assert "host-recorded budget" in text and "Check that the declared analysis script" in text

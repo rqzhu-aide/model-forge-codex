@@ -179,7 +179,7 @@ async def test_api_goal_save_generic_reedit_and_scoped_answer_routing(developmen
     engine, project = development
     reference, _ = published_goal(project)
     app = create_app(data_root=engine.data_root, bridge=engine.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         saved = await client.put("/api/v1/projects/project.test/problem-context", json={
             "expected_revision": 1, "statement": "Use a new patient target.", "source_refs": [reference], "topic": "research_goal"})
         assert saved.status_code == 200, saved.text

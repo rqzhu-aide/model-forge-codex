@@ -13,7 +13,7 @@ const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.j
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-p5-reader-"));
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Reading,{TechnicalReportDocument} from '${src}/components/TechnicalReportReading.jsx'; import {ScientificDocuments,ManuscriptReviewStatus} from '${src}/components/PhaseReading.jsx'; import {ResearchDocument,SourceRef,MethodStatusNote} from '${src}/components/Shared.jsx'; const draw=C=>props=>renderToStaticMarkup(React.createElement(C,props)); export const document=draw(TechnicalReportDocument); export const manuscriptStatus=draw(ManuscriptReviewStatus); export const scientific=draw(ScientificDocuments); export const reading=draw(Reading); export const research=draw(ResearchDocument); export const documentTree=props=>TechnicalReportDocument(props); export const scientificTree=props=>ScientificDocuments(props); export const reviewTree=props=>Reading(props).props.children.props.tabs.find(tab=>tab.id==='reviews').content; export const sourceRef=SourceRef; export const statusNote=MethodStatusNote;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Reading,{TechnicalReportDocument,ReportSummary} from '${src}/components/TechnicalReportReading.jsx'; import {ScientificDocuments} from '${src}/components/PhaseReading.jsx'; import {ResearchDocument,SourceRef,MethodStatusNote} from '${src}/components/Shared.jsx'; const draw=C=>props=>renderToStaticMarkup(React.createElement(C,props)); export const document=draw(TechnicalReportDocument); export const summary=draw(ReportSummary); export const scientific=draw(ScientificDocuments); export const reading=draw(Reading); export const research=draw(ResearchDocument); export const documentTree=props=>TechnicalReportDocument(props); export const scientificTree=props=>ScientificDocuments(props); export const reviewTree=props=>Reading(props).props.children.props.tabs.find(tab=>tab.id==='reviews').content; export const changesTree=props=>Reading(props).props.children.props.tabs.find(tab=>tab.id==='changes').content; export const sourceRef=SourceRef; export const statusNote=MethodStatusNote;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const ui = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
 const ref = { branch: "method.conditional", phase: "P5", family: "technical_report", generation_id: "report.current", sha256: "a".repeat(64), run_id: "run.report", package_id: "package.report" };
 const document = { kind: "technical_report", title: "Conditional technical report", generation_ref: ref, body_md: "## Scientific conclusion\n\nThe synthetic ordering is inconclusive; clinical benefit was not assessed. Use $n=90$.", completion: { status: "interim", missing_work: ["Numerical coverage remains conditional."] }, method_identity: { stable_id: "method.conditional", version: 2 }, problem_context_ref: { revision: 4 }, review_status: "not_independently_reviewed", portable_artifact_url: "/api/v1/report?view=portable" };
@@ -29,6 +29,42 @@ function disclosuresAt(html, passage) {
 }
 const bodyDocument = (body_md, report_materials = [material]) => ({ ...document, body_md, report_materials });
 
+test("corrected delivery is current while complete mixed concerns and independent review stay readable", () => {
+  const state = { publication: "published", portable_export_check: "passed", message: "The report passed publication checks and was published.",
+    authored_delivery_note: "The earlier portable-rendering check passed after correction. Scientific concerns and independent review requirements remain as recorded.", report_ref: ref };
+  const concern = { statement: "The earlier export failed, and its numerical tolerance remains unverified.", consequence: "Repair export and verify the numerical bound." };
+  const html = ui.scientific({ documents: [{ kind: "assembly_report", delivery_state: state,
+    structured: { unresolved_issues: [concern] }, display_structured: { unresolved_issues: [{ statement: "Population transport remains unverified." }], recorded_checks: ["Independently review the exact report."] },
+    delivery_history: [concern] }] });
+  assert.match(html, /Export check passed/);
+  assert.match(html, /Population transport remains unverified/);
+  assert.match(html, /Independently review the exact report/);
+  assert.match(html, /Recorded checks and scientific requirements/);
+  assert.ok(html.indexOf("Export check passed") < html.indexOf("The earlier export failed"));
+  const disclosures = disclosuresAt(html, "The earlier export failed");
+  assert.ok(disclosures.length > 0 && disclosures.every(tag => !/\bopen(?:[=\s>])/.test(tag)));
+  assert.match(html, /numerical tolerance remains unverified/);
+});
+
+test("a numbered report table has one caption, including its authored target and scientific notation", () => {
+  const source = [
+    'Table 1 gives the comparison.',
+    '',
+    '<a id="results-table"></a>',
+    '**Table 1. Estimated reward.** Mean $R$ among eligible datasets.',
+    '',
+    '| Method | Mean |', '| --- | ---: |', '| Baseline | 0.5 |',
+  ].join('\n');
+  const html = ui.document({ document: bodyDocument(source) });
+  const caption = html.match(/<caption id="([^"]+)">([\s\S]*?)<\/caption>/);
+  assert.ok(caption);
+  assert.ok(html.includes('aria-labelledby="' + caption[1] + '"'));
+  assert.match(caption[2], /results-table/);
+  assert.match(caption[2], /katex/);
+  assert.equal(html.split('Estimated reward.').length - 1, 1);
+  assert.match(html, /<p>Table 1 gives the comparison\.<\/p>/);
+});
+
 test("missing review evidence stays distinct from confirmed absence and review of another version", () => {
   for (const review_status of [undefined, "unknown", "unrecognized-historical-status"]) {
     const retained = { ...document, review_status }, before = structuredClone(retained);
@@ -41,9 +77,6 @@ test("missing review evidence stays distinct from confirmed absence and review o
   const earlier = ui.document({ document: { ...document, review_status: "independently_reviewed", reviewed_report_ref: { ...ref, generation_id: "earlier", sha256: "b".repeat(64) } } });
   assert.match(earlier, /Review concerns an earlier version/);
   assert.doesNotMatch(earlier, /This version has not been independently reviewed|This version was independently reviewed/);
-  assert.match(ui.manuscriptStatus({}), /I can&#x27;t confirm an independent review of this draft/);
-  assert.match(ui.manuscriptStatus({ context: { status: "not_reviewed" } }), /has not received an independent review/);
-  assert.match(ui.manuscriptStatus({ context: { status: "reviewed" } }), /assessed this exact draft/);
 });
 
 test("Analyst source reader renders complete primary prose and math with an exact original link", () => {
@@ -238,4 +271,114 @@ test("P5 Source details restore by exact report anchor and the optional hook lea
   const shared = ui.research({ text: "[Relative data](values.csv) and [Unsafe](javascript:alert) and [Remote](https://example.org/data)." });
   assert.match(shared, /\[Relative data\]\(values.csv\)/); assert.match(shared, /\[Unsafe\]\(javascript:alert\)/);
   assert.match(shared, /href="https:\/\/example.org\/data"/); assert.doesNotMatch(shared, /href="javascript:/);
+});
+
+test("P5 Summary states the report conclusion first and owns status, exports and supporting reading", () => {
+  const decision = { conclusion: "The report assembles the retained safety theorem and audited synthetic evidence.", headline: "Conditional safety is established; synthetic mixing helped reward.",
+    fundamental_contribution: "An exact-real safety theorem with audited numerical evidence.", principal_uncertainty: "The partial-moment search remains mixed.", principal_risk: "Coverage is conditional on the audited regime.",
+    material_disagreement: ["The reviewer prefers a wider regime."], smallest_decisive_result: "A complete partial-moment search.", what_changed: "Scientific conclusions are unchanged.",
+    generation_ref: { ...ref, family: "decision_record", generation_id: "decision.current", sha256: "b".repeat(64) } };
+  const ledger = { kind: "review_issue_ledger", title: "Review issue ledger", body_md: "Two issues remain open.", generation_ref: { ...ref, family: "review_issue_ledger", generation_id: "ledger.current", sha256: "c".repeat(64) } };
+  const html = ui.summary({ documents: [document, ledger], decision, methodLabel: "Conditional estimator", onSource() {}, onReadReport() {} });
+  assert.match(html, /<section class="card phase-overview report-summary" data-card-role="summary"><div class="card-heading"><h2>Current report conclusion<\/h2>/);
+  assert.match(html, /Model: Conditional estimator/);
+  assert.match(html, /<dt>Completion<\/dt><dd>Interim report<\/dd>/); assert.match(html, /<dt>Independent review<\/dt><dd>This version has not been independently reviewed/);
+  assert.match(html, /Research Lead assessment/);
+  assert.match(html, /<div class="phase-overview-headline">[\s\S]*?Conditional safety is established/);
+  assert.ok(html.indexOf("Conditional safety is established") < html.indexOf("The report assembles the retained safety theorem"));
+  for (const title of ["Contribution", "Main uncertainty", "Main risk or limitation", "Unresolved differences", "What remains to be established"]) assert.match(html, new RegExp(`<h3>${title}</h3>`));
+  assert.match(html, /<div class="research-card-actions"[^>]*aria-label="Report actions"><section><h3>Read the report<\/h3><div class="btnrow">/);
+  for (const label of ["Report", "Supporting evidence", "Reviews", "Changes"]) assert.match(html, new RegExp(`>${label}<`));
+  assert.doesNotMatch(html, />Retained candidates</);
+  assert.match(html, /href="\/api\/v1\/report\?view=portable&amp;download=1"[^>]*>[\s\S]*?Download offline HTML/); assert.match(html, /href="\/api\/v1\/report\?view=portable"[^>]*>[\s\S]*?Open HTML report/);
+  assert.match(html, /<aside class="research-card-resources"[^>]*aria-label="Report supporting reading">/);
+  assert.match(html, /<h3>Supporting reading<\/h3>/); assert.match(html, /Review findings and resolution status/); assert.match(html, /Inspect exact report source/); assert.match(html, /Lead decision source/);
+  const reviewsTab = ui.reading({ documents: [document, ledger], initialTab: "reviews", onSource() {} }); assert.match(reviewsTab, /No independent report review has been retained yet/); assert.doesNotMatch(reviewsTab, /Review findings and resolution status|Two issues remain open/);
+  assert.match(ui.reading({ documents: [document, ledger], initialTab: "evidence", onSource() {} }), /Review findings and resolution status/);
+  assert.match(html, /data-reading-anchor="report-summary:report.current:source-details"/); assert.match(html, /<dt>Model identity<\/dt><dd>method.conditional<\/dd>/); assert.match(html, /<dt>Model version<\/dt><dd>2<\/dd>/);
+  assert.doesNotMatch(html, /<h3>Notation<\/h3>|Report tools|report-utility-row/);
+});
+
+test("P5 Summary and Changes require matching producing identity and retain their own exact decision source", () => {
+  const decision = { conclusion: "Paired conclusion with conditional scope.", what_changed: "The guarantee now requires independent trajectories.",
+    generation_ref: { ...ref, family: "decision_record", generation_id: "decision.paired", sha256: "b".repeat(64) } };
+  const cases = [
+    { name: "matching run and package", report: document, decision, matches: true },
+    { name: "matching package without run metadata", report: { ...document, generation_ref: { ...ref, run_id: undefined } }, decision: { ...decision, generation_ref: { ...decision.generation_ref, run_id: undefined } }, matches: true },
+    { name: "matching run when account package is unavailable", report: document, decision: { ...decision, generation_ref: { ...decision.generation_ref, package_id: undefined } }, matches: true },
+    { name: "different producing run and package", report: document, decision: { ...decision, generation_ref: { ...decision.generation_ref, run_id: "run.other", package_id: "package.other" } } },
+    { name: "matching run cannot override conflicting package", report: document, decision: { ...decision, generation_ref: { ...decision.generation_ref, package_id: "package.other" } } },
+    { name: "matching package cannot override conflicting run", report: document, decision: { ...decision, generation_ref: { ...decision.generation_ref, run_id: "run.other" } } },
+    { name: "conflicting branch", report: document, decision: { ...decision, generation_ref: { ...decision.generation_ref, branch: "method.other" } } },
+    { name: "conflicting phase", report: document, decision: { ...decision, generation_ref: { ...decision.generation_ref, phase: "P4" } } },
+    { name: "unidentified account", report: document, decision: { ...decision, generation_ref: { ...decision.generation_ref, run_id: undefined, package_id: undefined } } },
+    { name: "unidentified report", report: { ...document, generation_ref: { ...ref, run_id: undefined, package_id: undefined } }, decision },
+    { name: "missing account", report: document },
+  ];
+  for (const item of cases) {
+    const before = structuredClone(item), opened = [];
+    const props = { documents: [item.report], decision: item.decision, onSource: source => opened.push(source) };
+    const summary = ui.summary(props), changes = ui.reading({ ...props, initialTab: "changes" });
+    if (item.matches) {
+      assert.match(summary, /Paired conclusion with conditional scope/, item.name);
+      assert.match(changes, /The guarantee now requires independent trajectories/, item.name);
+      for (const node of walk(ui.changesTree(props)).filter(node => node.type === ui.sourceRef)) ui.sourceRef(node.props).props.onClick();
+      assert.deepEqual(opened, [{ ...item.decision.generation_ref, entry_pointer: "/what_changed" }], item.name);
+    } else {
+      assert.doesNotMatch(summary, /Paired conclusion|Research Lead assessment|Lead decision source|Lead summary source/, item.name);
+      assert.match(summary, /No matching Lead assessment is recorded for this report/, item.name);
+      assert.doesNotMatch(changes, /The guarantee now requires|Change account source/, item.name);
+      assert.match(changes, /No change account is recorded for this report/, item.name);
+    }
+    assert.match(summary, /Interim report|Completion not established/, item.name);
+    assert.match(summary, /Download offline HTML/, item.name);
+    assert.match(summary, /Inspect exact report source/, item.name);
+    assert.match(ui.reading(props), /The synthetic ordering is inconclusive; clinical benefit was not assessed/, item.name);
+    assert.deepEqual(item, before, item.name);
+  }
+});
+
+test("P5 Lead-summary fallback follows the same positive report identity rule", () => {
+  const lead = { generation_ref: { ...ref, family: "lead_summary", generation_id: "lead.current" }, evaluation_markdown: "The Lead's summary stands in with its qualification." };
+  const unrelated = { ...lead, evaluation_markdown: "Unrelated Lead assessment.", generation_ref: { ...lead.generation_ref, package_id: "package.other" } };
+  const unidentified = { ...lead, evaluation_markdown: "Unidentified Lead assessment.", generation_ref: undefined };
+  const fallback = ui.summary({ documents: [document], summaries: [unrelated, unidentified, lead], onSource() {} });
+  assert.match(fallback, /The Lead&#x27;s summary stands in with its qualification/);
+  assert.match(fallback, /Lead summary source/);
+  assert.doesNotMatch(fallback, /Unrelated Lead assessment|Unidentified Lead assessment|Research Lead assessment/);
+  const unmatched = ui.summary({ documents: [document], summaries: [unrelated, unidentified] });
+  assert.match(unmatched, /No matching Lead assessment is recorded for this report/);
+  assert.doesNotMatch(unmatched, /Unrelated Lead assessment|Unidentified Lead assessment|Lead summary source|Lead decision source/);
+});
+
+test("P5 no-report state has one owner and partial supporting documents remain reachable", () => {
+  const stale = { conclusion: "A previous report conclusion.", what_changed: "A previous report change.", generation_ref: { ...ref, family: "decision_record", generation_id: "decision.previous" } };
+  const limitations = { kind: "limitations_record", title: "Current supporting limitations", body_md: "The available evidence remains conditional.", generation_ref: { ...ref, family: "limitations_record", generation_id: "limitations.current" } };
+  for (const documents of [[], [limitations]]) {
+    const props = { documents, decision: stale, onSource() {} }, before = structuredClone({ documents, decision: stale });
+    assert.equal(ui.summary(props), "");
+    const html = ui.summary(props) + ui.reading(props);
+    assert.equal((html.match(/No technical report has been assembled for this model yet/g) || []).length, 1);
+    assert.doesNotMatch(html, /Current report conclusion|A previous report conclusion|A previous report change/);
+    assert.match(html, />Supporting evidence</);
+    if (documents.length) assert.match(ui.reading({ ...props, initialTab: "evidence" }), /Current supporting limitations/);
+    assert.doesNotMatch(ui.reading({ ...props, initialTab: "changes" }), /A previous report change|Change account source/);
+    assert.deepEqual({ documents, decision: stale }, before);
+  }
+  assert.doesNotMatch(ui.summary({ documents: [{ ...document, portable_artifact_url: undefined }], decision: stale }), /Read the report|Download offline HTML/);
+});
+
+test("P5 Report tab keeps the complete report while the Summary owns status and tools once", () => {
+  const decision = { conclusion: "The frozen report conclusion.", generation_ref: { ...ref, family: "decision_record", generation_id: "decision.current" } };
+  const html = ui.reading({ documents: [document], decision, onSource() {} });
+  assert.match(html, /<section class="card technical-report-reader" data-card-role="research" data-reading-anchor="report-reading" tabindex="-1">/);
+  assert.match(html, /Technical report and reviews/); assert.match(html, /The synthetic ordering is inconclusive/);
+  assert.doesNotMatch(html, /Report tools|Download offline HTML|report-utility-row|Source details|Interim report|Independent review<\/dt>|Historical manuscripts/);
+  const candidate = { ...document, kind: "technical_report_candidate", generation_ref: { ...ref, generation_id: "report.candidate", sha256: "d".repeat(64) } };
+  const candidates = ui.reading({ documents: [document, candidate], initialTab: "candidates", onSource() {} });
+  assert.match(candidates, /Report tools/); assert.match(candidates, /have their own exact sources/);
+  const changes = ui.reading({ documents: [document], decision: { ...decision, what_changed: "The appendix adds the conditioning step." }, initialTab: "changes", onSource() {} });
+  assert.match(changes, /<h3>What changed<\/h3>/); assert.match(changes, /adds the conditioning step/); assert.match(changes, /Change account source/); assert.doesNotMatch(changes, /<p class="note"><\/p>|No report revision account/);
+  assert.match(ui.reading({ documents: [], onSource() {} }), /No technical report has been assembled for this model yet/);
+  assert.match(ui.reading({ documents: [document], initialTab: "reviews", onSource() {} }), /No independent report review has been retained yet/);
 });

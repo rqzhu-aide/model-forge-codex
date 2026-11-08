@@ -20,6 +20,7 @@ from .domain import TERMINAL_STATES, MemberRole
 from .storage import read_json, read_jsonl
 from .records import current_records, read_generation
 from .run_progress import project_run_progress
+from .report_delivery import project_run_terminal_reason
 
 _IDENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
@@ -40,6 +41,7 @@ def list_runs(project_dir: Path) -> list[dict]:
         doc = read_json(run_dir / "run.json")
         if not doc:
             continue
+        doc = project_run_terminal_reason(doc)
         out.append(
             {
                 "run_id": doc["run_id"],
@@ -57,6 +59,8 @@ def list_runs(project_dir: Path) -> list[dict]:
                 "assessment_id": doc.get("assessment_id"),
                 "assessment_purpose": doc.get("assessment_purpose", "assessment"),
                 "terminal_reason": doc.get("terminal_reason"),
+                **({"recorded_terminal_reason": doc["recorded_terminal_reason"]}
+                   if doc.get("recorded_terminal_reason") else {}),
                 "progress": project_run_progress(run_dir, doc),
             }
         )

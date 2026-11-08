@@ -324,6 +324,19 @@ def _check_reassessment(outputs: dict, frozen_basis: dict | None, findings: list
             family, "/revision_account/prior_generation_id"))
 
 
+def _metric_sample(rows: list[dict], metric_id: str, summary: dict) -> tuple[list[dict], list, bool]:
+    """Select the declared population without inventing missing outcomes."""
+    attempted = summary.get("population") == "attempted"
+    sampled = [row for row in rows
+               if row.get("eligibility") != "invalidated"
+               and (not attempted or row.get("eligibility") in (None, "eligible"))
+               and row.get("status") in ({"completed", "failed"} if attempted else {"completed"})
+               and (attempted or _number((row.get("metrics") or {}).get(metric_id)))]
+    values = [(row.get("metrics") or {}).get(metric_id) for row in sampled
+              if _number((row.get("metrics") or {}).get(metric_id))]
+    return sampled, values, len(values) == len(sampled)
+
+
 def recompute_diagnostics(protocol: dict, rows: list[dict]) -> dict:
     """Recompute supported summaries from recorded replicates, without a model.
 
@@ -353,24 +366,23 @@ def recompute_diagnostics(protocol: dict, rows: list[dict]) -> dict:
                 regimes[case.get("regime", case_id)].append(row)
         for metric_id in case.get("metric_ids", []):
             definition = metrics.get(metric_id, {}).get("summary", {})
-            sampled = [r for r in observed if r.get("status") == "completed" and _number((r.get("metrics") or {}).get(metric_id))]
-            values = [r["metrics"][metric_id] for r in sampled]
+            sampled, values, complete = _metric_sample(observed, metric_id, definition)
             aggregation = definition.get("aggregation")
             estimate = None
-            if values:
+            if values and complete:
                 if aggregation == "mean": estimate = statistics.mean(values)
                 elif aggregation == "median": estimate = statistics.median(values)
                 elif aggregation == "sum": estimate = sum(values)
                 elif aggregation == "identity" and len(values) == 1: estimate = values[0]
             uncertainty = definition.get("uncertainty", "not_assessed")
-            mcse = statistics.stdev(values) / math.sqrt(len(values)) if uncertainty == "mcse" and aggregation == "mean" and len(values) > 1 else None
+            mcse = statistics.stdev(values) / math.sqrt(len(values)) if complete and uncertainty == "mcse" and aggregation == "mean" and len(values) > 1 else None
             result["headline_numbers"].append({"case_id": case_id, "metric": metric_id, "estimate": estimate, "mcse": mcse,
-                                                "uncertainty_kind": uncertainty, "n_replicates": len(values), "aggregation": aggregation})
+                                                "uncertainty_kind": uncertainty, "n_replicates": len(sampled), "aggregation": aggregation})
             rule = definition.get("decision_rule") or {}
-            verdicts = {operations[rule["operator"]](v, rule["threshold"]) for v in values} if rule.get("operator") in operations and _number(rule.get("threshold")) else set()
+            verdicts = {operations[rule["operator"]](v, rule["threshold"]) for v in values} if complete and rule.get("operator") in operations and _number(rule.get("threshold")) else set()
             result["stability"].append({"case_id": case_id, "metric": metric_id,
-                                         "mean": statistics.mean(values) if values else None,
-                                         "sd": statistics.stdev(values) if len(values) > 1 else None,
+                                         "mean": statistics.mean(values) if values and complete else None,
+                                         "sd": statistics.stdev(values) if complete and len(values) > 1 else None,
                                          "n_seeds": len({r["seed"] for r in sampled if "seed" in r}),
                                          "seed_flip": len(verdicts) > 1 if len(values) > 1 and verdicts else None})
     for regime, observations in regimes.items():
@@ -440,6 +452,9 @@ def _check_empirical(outputs: dict, findings: list[Finding]) -> None:
     if not cases:
         return  # Schema validation reports the missing declared design.
     expected_diagnostics = recompute_diagnostics(original_protocol, rows)
+    observations_by_case = defaultdict(list)
+    for observation in _objects(rows):
+        observations_by_case[observation.get("case_id")].append(observation)
     for section, keys, fields in (
         ("headline_numbers", ("case_id", "metric"), ("estimate", "mcse", "n_replicates")),
         ("stability", ("case_id", "metric"), ("mean", "sd", "n_seeds", "seed_flip")),
@@ -457,6 +472,8 @@ def _check_empirical(outputs: dict, findings: list[Finding]) -> None:
                 findings.append(Finding("diagnostics.nonfinite_estimate", "A reported estimate must be finite or explicitly unavailable.", "p4.diagnostics", f"/{section}/{index}/estimate"))
             for field in fields:
                 if field == "n_replicates" and field not in row:
+                    if metrics.get(row.get("metric"), {}).get("summary", {}).get("population") == "attempted":
+                        findings.append(Finding("diagnostics.population_count_required", "Report the attempted trial count for a summary over attempted trials.", "p4.diagnostics", f"/{section}/{index}/{field}"))
                     continue
                 if section == "headline_numbers":
                     if field == "estimate" and expected_item.get("aggregation") == "custom":
@@ -467,6 +484,16 @@ def _check_empirical(outputs: dict, findings: list[Finding]) -> None:
                         continue
                 expected_value = expected_item.get(field)
                 matches = row.get(field) is expected_value if field == "seed_flip" else _same_number(row.get(field), expected_value)
+                if (not matches and section == "headline_numbers" and field == "mcse"
+                        and expected_item.get("aggregation") == "mean"
+                        and expected_item.get("uncertainty_kind") == "mcse"):
+                    definition = metrics[row["metric"]].get("summary", {})
+                    _, values, complete = _metric_sample(observations_by_case[row["case_id"]], row["metric"], definition)
+                    # Binary means also admit the binomial plug-in convention;
+                    # the sample-SD convention above remains valid for all means.
+                    if complete and len(values) >= 2 and all(value in (0, 1) for value in values):
+                        proportion = statistics.mean(values)
+                        matches = _same_number(row.get(field), math.sqrt(proportion * (1 - proportion) / len(values)))
                 if not matches:
                     findings.append(Finding("diagnostics.aggregate_mismatch", f"{section} {key}: {field} does not recompute from recorded replicates.", "p4.diagnostics", f"/{section}/{index}/{field}"))
             if section == "headline_numbers" and row.get("uncertainty_kind") != expected_item.get("uncertainty_kind"):
@@ -475,6 +502,11 @@ def _check_empirical(outputs: dict, findings: list[Finding]) -> None:
                 lower, upper = row.get("ci_lo"), row.get("ci_hi")
                 if not _number(lower) or not _number(upper) or lower > upper:
                     findings.append(Finding("diagnostics.invalid_interval", "An interval requires finite ordered lower and upper endpoints.", "p4.diagnostics", f"/{section}/{index}"))
+                definition = metrics[row["metric"]].get("summary", {})
+                if definition.get("population") == "attempted" and definition.get("uncertainty") != "custom":
+                    _, _, complete = _metric_sample(observations_by_case[row["case_id"]], row["metric"], definition)
+                    if not complete:
+                        findings.append(Finding("diagnostics.unavailable_interval", "An attempted trial's outcome is unknown. Bounds using unknown outcomes need a declared custom uncertainty construction; the standard check for a complete sample cannot verify them.", "p4.diagnostics", f"/{section}/{index}"))
         # Headline results are the research account, even when all runs fail.
         if section == "headline_numbers" and seen != set(expected_items):
             findings.append(Finding("diagnostics.missing_group", "Headline results must cover every declared case/metric, with null estimates when unavailable.", "p4.diagnostics", "/headline_numbers"))

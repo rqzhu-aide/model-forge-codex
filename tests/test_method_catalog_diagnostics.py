@@ -88,7 +88,7 @@ async def test_methods_endpoint_exposes_diagnostics_and_dependent_outputs(workbe
     publish(project, "trunk", "P2", {"method_catalog": {"methods": [malformed]}}, "run.broken")
     monkeypatch.delenv("MF_CODEX_READ_ONLY", raising=False)
     app = create_app(data_root=eng.data_root, bridge=eng.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         payload = (await client.get("/api/v1/projects/project.test/methods")).json()
     assert payload["methods"] == []
     diagnostic = payload["diagnostics"][0]

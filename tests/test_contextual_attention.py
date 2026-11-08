@@ -121,7 +121,7 @@ async def test_researcher_decision_needs_an_answer_and_preserves_original_contex
     original_bytes = original.read_bytes()
     app = create_app(engine.data_root, engine.bridge)
     url = f"/api/v1/projects/{PID}/attention/attention.policy/resolve"
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         for body in ({}, {"note": " \n "}, {"note": None}, {"note": {"invalid": True}}):
             assert (await client.post(url, json=body)).status_code == 422
         assert not (project / "researcher/attention_resolutions.json").exists()
@@ -153,7 +153,7 @@ async def test_edit_clarification_preserves_question_and_supplies_only_latest_an
     app = create_app(engine.data_root, engine.bridge)
     url = f"/api/v1/projects/{PID}/attention/attention.policy/resolve"
     store = project / "researcher/attention_resolutions.json"
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         first = (await client.post(url, json={"note": "Use stationary policies."})).json()["answer"]
         previous_basis = engine.compute_basis(PID, "P1", "trunk", "p1.literature_update")
         edited = await client.post(url, json={"note": "Allow policies to use remaining budget."})
@@ -195,7 +195,7 @@ async def test_saved_answers_omit_empty_or_invalid_entries_without_rewriting_leg
         "missing.note": {"resolved_at": "2026-09-11T02:00:00Z"},
     })
     app = create_app(engine.data_root, engine.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         response = await client.get(f"/api/v1/projects/{PID}/decisions-pending")
         assert response.status_code == 200
     assert response.json()["researcher_answers"] == [{**valid, "attention_id": "legacy.answer", "applied_to": [], "previously_applied_to": []}]
@@ -207,7 +207,7 @@ async def test_team_task_cannot_be_closed_as_a_human_answer_and_unknown_id_is_re
     publish(project, {"attention_items": [request(kind="research_task", target_phase="P3")]})
     app = create_app(engine.data_root, engine.bridge)
     base = f"/api/v1/projects/{PID}/attention"
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         assert (await client.post(base + "/attention.policy/resolve", json={"note": "Done"})).status_code == 409
         assert (await client.post(base + "/not.present/resolve", json={"note": "Done"})).status_code == 404
     assert not (project / "researcher/attention_resolutions.json").exists()

@@ -28,8 +28,7 @@ function AccountSource({ reference, error, onSource, label }) {
     : <SourceRef reference={reference} onOpen={onSource} label={label} />;
 }
 
-// Narrative source projections identify which sealed file is a record's primary
-// readable document. Match those bytes, never a filename or today's theory.
+// Match verified primary or declared auxiliary bytes, never a filename or today's theory.
 export function theoryProofSource(artifact, proofSources = []) {
   const verified = (source) => source?.source_verified === true && !source.source_error && /^\/api\//.test(source.artifact_url || "");
   if (!verified(artifact) || !artifact.uri || !/^[a-f0-9]{64}$/.test(artifact.sha256 || "")
@@ -41,10 +40,13 @@ export function theoryProofSource(artifact, proofSources = []) {
     const reference = source.generation_ref;
     if (!hasExactRef(reference) || reference.phase !== "P3" || reference.entry_pointer || reference.card_id
       || !["theory_record", "complete_theory", "theory_candidate", "analyst_audit"].includes(reference.family)) return null;
-    const key = [reference.branch, reference.phase, reference.family, reference.generation_id, reference.sha256, reference.run_id, reference.stage_id, reference.package_id].join("|");
+    if (reference.artifact_ref && (reference.artifact_ref.uri !== artifact.uri || reference.artifact_ref.sha256 !== artifact.sha256)) return null;
+    const key = [reference.branch, reference.phase, reference.family, reference.generation_id, reference.sha256, reference.run_id, reference.stage_id, reference.package_id, reference.artifact_ref?.uri, reference.artifact_ref?.sha256].join("|");
     references.set(key, reference);
   }
-  return references.size === 1 ? { ...references.values().next().value } : null;
+  if (references.size !== 1) return null;
+  const reference = references.values().next().value;
+  return { ...reference, ...(reference.artifact_ref && artifact.locator ? { source_locator: artifact.locator } : {}) };
 }
 
 export function TheoryJustification({ justification, heading, proofSources, onSource }) {

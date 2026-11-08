@@ -61,7 +61,7 @@ async def test_saved_draft_api_reads_original_paper_and_supplements_after_revisi
     assert current["generation_ref"]["generation_id"] == new["generation_id"]
     base = f"/api/v1/projects/project.test/branches/{branch}/phases/P5/records/manuscript/{old['generation_id']}"
     app = create_app(data_root=eng.data_root, bridge=eng.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         # Existing raw-source consumers keep the immutable package record.
         assert (await client.get(base)).json() == document
         response = await client.get(base + "?view=document")
@@ -98,7 +98,7 @@ async def test_legacy_inline_paper_remains_readable_without_inventing_scope(work
     package = publish(project, branch, "P5", {"manuscript": {"text": "# The saved inline manuscript\n\nA qualified result."}})
     generation = package["records"]["manuscript"]["generation_id"]
     app = create_app(data_root=eng.data_root, bridge=eng.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         response = await client.get(f"/api/v1/projects/project.test/branches/{branch}/phases/P5/records/manuscript/{generation}?view=document")
         assert response.status_code == 200
         saved = response.json()

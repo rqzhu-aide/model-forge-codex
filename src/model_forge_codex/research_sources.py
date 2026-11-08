@@ -98,12 +98,32 @@ def empirical_run_sources(project_dir: Path, document: dict, meta: dict, records
     from .research import _same_evaluation
 
     requested = set(re.findall(r"run://[A-Za-z0-9._-]+/[^\s)\"<>\\#]+", json.dumps(document)))
+    requested.update(uri for uri in _citation_uris(document) if uri.startswith("artifact://"))
+
+    def relative_alias(value):
+        return (isinstance(value, str) and bool(value) and not re.match(r"(?:[a-z][a-z\d+.-]*:|[/\\])", value, re.I)
+                and "\\" not in value and all(part not in ("", ".", "..") for part in value.split("/")))
+
+    def request_retained_paths(source):
+        # A markdown path is only an alias request. It never supplies a digest
+        # or permission to open an arbitrary file on the machine.
+        for value in walk_objects(source):
+            for text in value.values():
+                if isinstance(text, str):
+                    for match in re.finditer(r"\[[^\]\n]+\]\((?:<([^>\n]+)>|([^\s)]+))\)", text):
+                        uri = (match[1] or match[2]).split("#", 1)[0]
+                        if re.match(r"(?:[A-Za-z]:/|/(?!/))", uri) or relative_alias(uri):
+                            requested.add(uri)
+
+    request_retained_paths(document)
     ref = meta["generation_ref"]
     # This map also serves the displayed Analyst answers, implementation and
     # exhibit captions. Declarations alone are not requests for a source link.
     for source, source_meta in records.values():
         if (_same_evaluation(meta, source_meta)
                 and source_meta.get("generation_ref", {}).get("family") not in ("empirical_synthesis", "empirical_synthesis_candidate")):
+            request_retained_paths(source)
+            requested.update(uri for uri in _citation_uris(source) if uri.startswith("artifact://"))
             for value in walk_objects(source):
                 for text in value.values():
                     if isinstance(text, str) and "run://" in text:
@@ -118,11 +138,65 @@ def empirical_run_sources(project_dir: Path, document: dict, meta: dict, records
         return []
     outputs = (run_dir / "outputs").resolve()
     links, seals, ambiguous, manifest_digests = {}, {}, set(), {}
+    binding_identities, exhibit_aliases = {}, {}
+    # These lookups belong to this projection only. Opening a returned URL
+    # still verifies the retained bytes again, as does the next projection.
+    output_files, resolved_pointers = {}, {}
+
+    def output_file(target):
+        if target not in output_files:
+            try:
+                resolved = target.resolve()
+                output_files[target] = ((resolved, resolved.relative_to(outputs), sha256_file(resolved))
+                                        if resolved.is_relative_to(outputs) and resolved.is_file() else None)
+            except (OSError, ValueError):
+                output_files[target] = None
+        return output_files[target]
+
+    # A path pointer can contribute its declared alias or the canonical URI
+    # of its verified output. Check the requested canonical files once before
+    # searching all producing stages for every nested declaration.
+    requested_output_digests = set()
+    for uri in requested:
+        locator = re.fullmatch(r"run://([A-Za-z0-9._-]+)/(?:outputs/)?(.+)", uri)
+        if uri.startswith(outputs.as_posix() + "/"):
+            relative = uri[len(outputs.as_posix()) + 1:]
+        elif locator and locator[1] == ref["run_id"]:
+            relative = locator[2]
+        else:
+            continue
+        parts = relative.split("/")
+        if len(parts) < 2 or "\\" in relative or any(part in ("", ".", "..") for part in parts):
+            continue
+        info = output_file(outputs.joinpath(*parts))
+        if info:
+            requested_output_digests.add(info[2])
 
     def same_publication(source_meta):
         source = source_meta.get("generation_ref", {})
         return (source.get("run_id") == ref["run_id"]
                 and all(ref.get(key) and source.get(key) == ref[key] for key in ("branch", "phase", "package_id")))
+
+    # Artifact output IDs are aliases for this exact publication, never names
+    # to search for in the current slot. Keep an attention collection's exact
+    # researcher questions so a unique current question can be reached in place.
+    for source, source_meta in records.values():
+        if not same_publication(source_meta):
+            continue
+        reference = source_meta["generation_ref"]
+        uri = f"artifact://{reference['phase'].lower()}.{reference['family']}"
+        if uri not in requested:
+            continue
+        link = {"uri": uri, "sha256": reference["sha256"], "branch": ref["branch"],
+                "producing_run_id": ref["run_id"], "source_verified": True,
+                "generation_ref": deepcopy(reference)}
+        if reference.get("family") == "attention_items":
+            items = source if isinstance(source, list) else source.get("items", []) if isinstance(source, dict) else []
+            link["question_targets"] = [{"attention_id": item["attention_id"], "question": item.get("question"),
+                "reference": {**reference, "entry_pointer": f"/{index}" if isinstance(source, list) else f"/items/{index}"}}
+                for index, item in enumerate(items) if isinstance(item, dict) and item.get("attention_id")
+                and item.get("kind") == "researcher_decision"]
+        links[uri] = link
 
     output_stages = {}
     for _, source_meta in records.values():
@@ -132,15 +206,15 @@ def empirical_run_sources(project_dir: Path, document: dict, meta: dict, records
                 output_id = f"{source_ref.get('phase', '').lower()}.{source_ref['family']}"
                 output_stages.setdefault(output_id, set()).add(source_ref["stage_id"])
 
-    def bind(target, digest, declared_uri=None, aliases=(), *, output_alias=False, title=None):
-        target = target.resolve()
-        if not target.is_relative_to(outputs) or not target.is_file():
+    def bind(target, digest, declared_uri=None, aliases=(), *, output_alias=False, title=None, exhibit_reference=None):
+        info = output_file(target)
+        if not info:
             return
-        relative = target.relative_to(outputs)
+        target, relative, actual_digest = info
         if len(relative.parts) < 2:
             return
         uris = {f"run://{ref['run_id']}/outputs/{relative.as_posix()}",
-                f"run://{ref['run_id']}/{relative.as_posix()}"}
+                f"run://{ref['run_id']}/{relative.as_posix()}", target.as_posix()}
         uris.update(aliases)
         # A declared alias may omit its retained stage/working directories.
         # Its exact path and digest still select the bytes, never the label.
@@ -151,21 +225,32 @@ def empirical_run_sources(project_dir: Path, document: dict, meta: dict, records
                     or output_alias and output_stages.get(parts[0]) == {relative.parts[0]})
                     and "\\" not in alias[2] and all(part not in ("", ".", "..") for part in parts)):
                 uris.add(declared_uri)
+            if output_alias and declared_uri.startswith("artifact://"):
+                uris.add(declared_uri)
         selected = uris & requested
-        if not selected or sha256_file(target) != digest:
+        if not selected or actual_digest != digest:
             return
         query = urlencode({"path": Path(*relative.parts[1:]).as_posix(), "sha256": digest})
+        url = f"/api/v1/projects/{quote(project_dir.name)}/runs/{quote(ref['run_id'])}/outputs/{quote(relative.parts[0])}/artifact?{query}"
         for uri in sorted(selected):
+            binding_identities.setdefault(uri, set()).add((digest, relative.parts[0]))
             previous = links.get(uri, {})
-            if uri in links and links[uri]["sha256"] != digest:
+            if uri in links and (links[uri]["sha256"] != digest
+                                 or relative_alias(uri) and previous.get("artifact_url") != url):
                 ambiguous.add(uri)
             links[uri] = {"uri": uri, "sha256": digest, "branch": ref["branch"], "producing_run_id": ref["run_id"],
                           "source_verified": True, "media_type": file_media(target),
-                          "artifact_url": f"/api/v1/projects/{quote(project_dir.name)}/runs/{quote(ref['run_id'])}/outputs/{quote(relative.parts[0])}/artifact?{query}"}
+                          "artifact_url": url}
+            if previous.get("sha256") == digest and previous.get("generation_ref"):
+                links[uri]["generation_ref"] = previous["generation_ref"]
             if isinstance(title, str) and title.strip():
                 links[uri]["title"] = title
             elif previous.get("sha256") == digest and previous.get("title"):
                 links[uri]["title"] = previous["title"]
+            if exhibit_reference is not None:
+                identity = json.dumps(exhibit_reference, sort_keys=True)
+                exhibit_aliases.setdefault(uri, {})[identity] = {
+                    **links[uri], "exhibit_ref": deepcopy(exhibit_reference)}
 
     for source, source_meta in records.values():
         if not _same_evaluation(meta, source_meta):
@@ -188,8 +273,12 @@ def empirical_run_sources(project_dir: Path, document: dict, meta: dict, records
                     aliases = ((f"run://{ref['run_id']}/{output_id}",
                                 f"run://{ref['run_id']}/{output_id}/{Path(name).as_posix()}")
                                if same_publication(source_meta) and output_stages.get(output_id) == {stage_id} else ())
+                    if same_publication(source_meta) and relative_alias(Path(name).as_posix()):
+                        aliases = (*aliases, Path(name).as_posix())
                     bind(target, source_ref["sha256"], aliases=aliases,
                          title=source.get("title") if isinstance(source, dict) else None)
+                    if same_publication(source_meta) and target.as_posix() in links:
+                        links[target.as_posix()]["generation_ref"] = deepcopy(source_ref)
             if same_publication(source_meta) and source_ref.get("family") == "exhibits" and isinstance(source, list):
                 # Collection relocates table/figure files, but seals the exact
                 # authored manifest before rewriting artifact_path. Join that
@@ -222,6 +311,7 @@ def empirical_run_sources(project_dir: Path, document: dict, meta: dict, records
                             continue
                         alias = f"run://{ref['run_id']}/{output_id}/{original}"
                         manifest_digests.setdefault(alias, set()).add(digest)
+                        manifest_digests.setdefault(original, set()).add(digest)
                         if (sum(isinstance(item, dict) and item.get("exhibit_id") == entry["exhibit_id"]
                                        for item in authored) != 1
                                 or len(matches) != 1 or matches[0].get("artifact_sha256") != digest):
@@ -231,8 +321,9 @@ def empirical_run_sources(project_dir: Path, document: dict, meta: dict, records
                                 or any(part in ("", ".", "..") for part in retained.split("/"))
                                 or (sealed_files.get(retained) or {}).get("sha256") != digest):
                             continue
-                        bind(stage.joinpath(*retained.split("/")), digest, alias, output_alias=True,
-                             title=matches[0].get("title"))
+                        bind(stage.joinpath(*retained.split("/")), digest, alias, aliases=(original,), output_alias=True,
+                             title=matches[0].get("title"),
+                             exhibit_reference={**source_ref, "entry_pointer": f"/{source.index(matches[0])}"})
         if not isinstance(source, (dict, list)):
             continue
         # Retained-output indexes and evidence collections can also declare
@@ -252,12 +343,77 @@ def empirical_run_sources(project_dir: Path, document: dict, meta: dict, records
                     bind(outputs.joinpath(*parts), digest)
             if not (pointer.get("path") or pointer.get("artifact_path")):
                 continue
+            if not isinstance(digest, str):
+                continue
+            path_alias = pointer.get("path") or pointer.get("artifact_path")
+            relative_requested = same_publication(source_meta) and relative_alias(path_alias) and path_alias in requested
+            if relative_requested:
+                manifest_digests.setdefault(path_alias, set()).add(digest)
+            if (not isinstance(uri, str) or uri not in requested) and digest not in requested_output_digests and not relative_requested:
+                continue
             try:
-                target = source_artifact_path(project_dir, source_ref, pointer)
-                bind(target, digest, pointer.get("uri"), output_alias=same_publication(source_meta),
+                key = (source_ref.get("run_id"), source_ref.get("stage_id"),
+                       str(pointer.get("path") or pointer.get("artifact_path")), digest)
+                if key not in resolved_pointers:
+                    try:
+                        resolved_pointers[key] = source_artifact_path(project_dir, source_ref, pointer)
+                    except (ArtifactError, OSError, ValueError):
+                        resolved_pointers[key] = None
+                target = resolved_pointers[key]
+                if target is None:
+                    continue
+                # An unqualified relative path belongs to its declared stage;
+                # the legacy cross-stage search must not supply a replacement.
+                relative_bound = (relative_requested and source_ref.get("stage_id")
+                                  and target.is_relative_to(outputs / _segment(source_ref["stage_id"])))
+                bind(target, digest, pointer.get("uri"), aliases=(path_alias,) if relative_bound else (), output_alias=same_publication(source_meta),
                      title=pointer.get("title") or pointer.get("label"))
             except (ArtifactError, OSError, ValueError):
                 continue
+    # A narrative can cite a completed computation output without promoting it
+    # into an exhibit. The host's accepted manifest supplies the exact digest;
+    # both its retained batch artifact and this protocol stage's copy must match.
+    protocol, protocol_meta = records.get("protocol", ({}, {}))
+    unresolved = {uri for uri in requested - links.keys() if relative_alias(uri)}
+    if (unresolved and isinstance(protocol, dict) and same_publication(protocol_meta)
+            and protocol.get("plan_revision_id") and protocol_meta["generation_ref"].get("stage_id")):
+        try:
+            stage = outputs / _segment(protocol_meta["generation_ref"]["stage_id"])
+            state = read_json(run_dir / "p4-execution" / "state.json") or {}
+            work_items = [*protocol.get("work_items", []),
+                          *(item for amendment in protocol.get("amendments", []) for item in amendment.get("added_work_items", []))]
+            work_ids = {item.get("work_item_id") for item in work_items if isinstance(item, dict)}
+            revisions = {protocol["plan_revision_id"], *(item.get("revision_id") for item in protocol.get("amendments", []))} - {None}
+            accepted = {}
+            for batch in state.get("ledger", []):
+                if (not isinstance(batch, dict) or batch.get("status") != "completed" or batch.get("exit_code") != 0
+                        or batch.get("plan_revision_id") not in revisions or batch.get("work_item_id") not in work_ids):
+                    continue
+                for item in batch.get("artifacts", []):
+                    uri = item.get("source_path") if isinstance(item, dict) else None
+                    digest = item.get("sha256") if isinstance(item, dict) else None
+                    if uri in unresolved and uri in batch.get("result_paths", []) and re.fullmatch(r"[a-f0-9]{64}", digest or ""):
+                        accepted.setdefault(uri, {}).setdefault(digest, []).append((batch, item))
+            for uri, digests in accepted.items():
+                manifest_digests.setdefault(uri, set()).update(digests)
+                if len(digests) != 1:
+                    continue
+                digest, declarations = next(iter(digests.items()))
+                for batch, item in declarations:
+                    artifact_root = run_dir.resolve() / "p4-execution" / "batches" / _segment(batch.get("attempt_id", "")) / "artifacts"
+                    retained = Path(item.get("path") or "").resolve()
+                    if (not artifact_root.is_relative_to(run_dir.resolve()) or not retained.is_relative_to(artifact_root)
+                            or retained != artifact_root.joinpath(*uri.split("/")).resolve()
+                            or not retained.is_file() or sha256_file(retained) != digest):
+                        continue
+                    candidates = {target for root in [stage, *sorted((stage / "working").glob("*"))]
+                                  if (target := (root / uri).resolve()).is_relative_to(stage)
+                                  and target.is_file() and sha256_file(target) == digest}
+                    if len(candidates) == 1:
+                        bind(next(iter(candidates)), digest, aliases=(uri,))
+                    break
+        except (ArtifactError, OSError, ValueError, KeyError):
+            pass
     # Upstream links are eligible only when their exact generation was frozen
     # into this evaluation. A later publication never supplies a substitute.
     from .research import source_ref
@@ -276,6 +432,47 @@ def empirical_run_sources(project_dir: Path, document: dict, meta: dict, records
         phase_dir = project_dir / "branches" / _segment(source["branch"]) / "phases" / _segment(source["phase"]).lower()
         read_generation(phase_dir, source["family"], source)
         return saved
+
+    # Absolute paths copied from the current run's frozen input manifest use
+    # the same exact-generation and digest checks as their run URI aliases.
+    input_candidates = {}
+    for source in basis.get("records", []):
+        if not isinstance(source, dict) or not source.get("snapshot_path"):
+            continue
+        uri = Path(source["snapshot_path"]).as_posix()
+        if uri in requested:
+            input_candidates.setdefault(uri, []).append(("record", source))
+    for item in basis.get("artifacts", []):
+        if not isinstance(item, dict) or not item.get("path"):
+            continue
+        uri = Path(item["path"]).as_posix()
+        if uri in requested:
+            input_candidates.setdefault(uri, []).append(("artifact", item))
+    for uri, candidates in input_candidates.items():
+        if len(candidates) != 1:
+            continue
+        kind, source = candidates[0]
+        try:
+            if kind == "record":
+                frozen_source(source)
+                reference = source_ref(source["branch"], source["phase"], source["family"], source)
+                links[uri] = {"uri": uri, "sha256": reference["sha256"], "branch": ref["branch"],
+                              "producing_run_id": source["run_id"], "source_verified": True,
+                              "generation_ref": reference}
+            else:
+                digest = source.get("content_sha256")
+                if not re.fullmatch(r"[a-f0-9]{64}", digest or ""):
+                    continue
+                path = frozen_artifact(project_dir, ref["run_id"], digest, source.get("artifact_id") or "")
+                if path.as_posix() != uri:
+                    continue
+                query = urlencode({"sha256": digest, "artifact_id": source.get("artifact_id") or ""})
+                links[uri] = {"uri": uri, "sha256": digest, "branch": ref["branch"],
+                              "producing_run_id": source.get("producing_run_id"), "source_verified": True,
+                              "source_kind": "retained_input", "media_type": file_media(path),
+                              "artifact_url": f"/api/v1/projects/{quote(project_dir.name)}/runs/{quote(ref['run_id'])}/inputs/artifact?{query}"}
+        except (ArtifactError, OSError, ValueError, KeyError):
+            continue
 
     # An upstream file alias needs its exact declaration in a verified
     # frozen record and matching bytes in this evaluation's input manifest.
@@ -369,8 +566,55 @@ def empirical_run_sources(project_dir: Path, document: dict, meta: dict, records
             uri, digest = pointer.get("uri"), pointer.get("sha256") or pointer.get("artifact_sha256")
             if isinstance(uri, str) and digest:
                 declared_digests.setdefault(uri, set()).add(digest)
+    # Collection retains both the authored table and its relocated exhibit.
+    # Identical copies in the producing stage are one exact source when the
+    # sealed authored manifest identifies one published exhibit. Conflicting
+    # digests, stages or exhibit identities remain unavailable.
+    for uri, candidates in exhibit_aliases.items():
+        if len(candidates) != 1:
+            continue
+        exact = next(iter(candidates.values()))
+        if binding_identities.get(uri) == {(exact["sha256"], exact["exhibit_ref"].get("stage_id"))}:
+            links[uri] = exact
+            ambiguous.discard(uri)
     return [link for uri, link in links.items() if uri not in ambiguous
             and (not declared_digests.get(uri) or declared_digests[uri] == {link["sha256"]})]
+
+
+def empirical_account_sources(project_dir: Path, document: dict, meta: dict) -> list[dict]:
+    """Use only the exact account's committed package for its inline sources."""
+    from .records import _segment, committed_packages
+    from .research import source_ref
+
+    ref = meta["generation_ref"]
+    if ref.get("phase") != "P4" or not ref.get("package_id"):
+        return []
+    try:
+        phase_dir = project_dir / "branches" / _segment(ref["branch"]) / "phases" / "p4"
+        package = next((item for item in committed_packages(phase_dir) if item.get("package_id") == ref["package_id"]), {})
+        original = package.get("records", {}).get(ref["family"])
+        if (not original or source_ref(ref["branch"], "P4", ref["family"], original) != ref
+                or package.get("run_id") != ref.get("run_id") or package.get("branch_id") != ref["branch"]
+                or package.get("phase") != "P4"):
+            return []
+        records = {}
+        for family, pointer in package["records"].items():
+            if pointer.get("package_id") != ref["package_id"] or pointer.get("run_id") != ref["run_id"]:
+                continue
+            try:
+                source = read_generation(phase_dir, family, pointer)
+            except ArtifactError:
+                continue
+            records[family] = (source, {"generation_ref": source_ref(ref["branch"], "P4", family, pointer)})
+        return empirical_run_sources(project_dir, document, meta, records)
+    except (ArtifactError, OSError, ValueError, KeyError):
+        return []
+
+
+def _citation_uris(document, text=""):
+    return {uri.split("#", 1)[0] for angled, plain in re.findall(
+        r"(?<!!)\[[^\]\n]+\]\((?:<([^>\n]+)>|([^\s)]+))\)", text + "\n" + json.dumps(document))
+        if (uri := angled or plain)}
 
 
 def scientific_document_sources(project_dir: Path, document: dict, meta: dict, text: str) -> list[dict]:
@@ -388,8 +632,7 @@ def scientific_document_sources(project_dir: Path, document: dict, meta: dict, t
     if (run.get("state") != "published" or run.get("branch_id") != ref.get("branch")
             or run.get("phase") != ref["phase"]):
         return []
-    requested = {source.split("#", 1)[0] for source in re.findall(
-        r"(?<!!)\[[^\]\n]+\]\(([^\s)]+)\)", text + "\n" + json.dumps(document))}
+    requested = _citation_uris(document, text)
     if not requested:
         return []
     basis = read_json(run_dir / "basis.json") or {}
@@ -404,7 +647,7 @@ def scientific_document_sources(project_dir: Path, document: dict, meta: dict, t
 
     # Repeated declarations of the same bytes are harmless. Conflicting aliases
     # remain ambiguous even if one of their declared files is now unavailable.
-    aliases = {}
+    aliases, alias_stages = {}, {}
     for pointer in walk_objects(document):
         path = pointer.get("path") or pointer.get("artifact_path")
         digest = pointer.get("sha256") or pointer.get("artifact_sha256")
@@ -413,6 +656,26 @@ def scientific_document_sources(project_dir: Path, document: dict, meta: dict, t
         authored = authored_pointer(pointer)
         for alias in {pointer.get("uri"), relative_path(path)} - {None}:
             aliases.setdefault(alias, {})[(path, digest)] = authored
+        # Absolute citations are aliases of already declared, verified bytes.
+        # Never use an authored absolute path to open a filesystem target.
+        try:
+            target = source_artifact_path(project_dir, ref, authored)
+            outputs = (run_dir / "outputs").resolve()
+            if target.is_relative_to(outputs):
+                output_parts = target.relative_to(outputs).parts
+                declared = re.fullmatch(r"run://([^/]+)/(.+)", pointer.get("uri") or "")
+                declared_parts = declared[2].removeprefix("outputs/").split("/") if declared else []
+                if (len(output_parts) > 1 and (not declared or declared[1] == run_id
+                        and (len(declared_parts) == 1 or declared_parts[0] == output_parts[0]))):
+                    alias_stages[(path, digest)] = output_parts[0]
+            absolute = target.as_posix()
+            aliases.setdefault(absolute, {})[(path, digest)] = authored
+            # Markdown can spell a Windows drive path with one leading slash.
+            # Add that spelling only after the declared source bytes resolve.
+            if re.match(r"[A-Za-z]:/", absolute):
+                aliases.setdefault("/" + absolute, {})[(path, digest)] = authored
+        except (ArtifactError, OSError, ValueError):
+            pass
 
     links = []
     for uri in sorted(requested):
@@ -452,7 +715,7 @@ def scientific_document_sources(project_dir: Path, document: dict, meta: dict, t
             except (ArtifactError, OSError, ValueError, KeyError):
                 continue
         else:
-            alias = uri if uri.startswith("artifact://") else relative_path(uri)
+            alias = uri if uri in aliases else relative_path(uri)
             if uri.startswith("run://"):
                 # Short and stage-form run URIs need an exact declared alias,
                 # not a guessed filename or another producing run's source.
@@ -462,6 +725,12 @@ def scientific_document_sources(project_dir: Path, document: dict, meta: dict, t
                     continue
                 alias = uri
             candidates = aliases.get(alias, {})
+            if (len(candidates) > 1 and relative_path(uri) and ref.get("stage_id")
+                    and all(key in alias_stages for key in candidates)):
+                # An unqualified relative citation belongs to its own authoring
+                # stage. Unknown or conflicting local declarations stay ambiguous.
+                candidates = {key: pointer for key, pointer in candidates.items()
+                              if alias_stages[key] == ref["stage_id"]}
             if len(candidates) != 1:
                 continue
             pointer = next(iter(candidates.values()))
@@ -530,11 +799,16 @@ def scientific_account_sources(project_dir: Path, document: dict, meta: dict, te
             continue
     # Sibling declarations belong to this package, never to today's current
     # theory or another publication from the same run.
-    requested = {source.split("#", 1)[0] for source in re.findall(
-        r"(?<!!)\[[^\]\n]+\]\(([^\s)]+)\)", text + "\n" + json.dumps(document))}
+    requested = _citation_uris(document, text)
+    # Proof controls also cite declared auxiliary artifacts without Markdown.
+    for statement in document.get("statements", []):
+        for pointer in (statement.get("justification") or {}).get("artifacts", []):
+            if isinstance(pointer, dict) and pointer.get("uri") and pointer.get("path") and pointer.get("sha256"):
+                requested.add(pointer["uri"])
     declarations = {"account": document, "publication_sources": [source for source, _ in sources],
                     "publication_files": publication_files}
-    links = scientific_document_sources(project_dir, declarations, meta, text)
+    links = scientific_document_sources(project_dir, declarations, meta,
+                                        text + "\n" + " ".join(f"[Source](<{uri}>)" for uri in requested))
     result = []
     for link in links:
         if link["uri"] not in requested:
@@ -546,12 +820,30 @@ def scientific_account_sources(project_dir: Path, document: dict, meta: dict, te
             same_record_bytes = record_reference["sha256"] == ref.get("sha256")
             result.append(link if same_record_bytes else {**link, "generation_ref": record_reference})
             continue
+        primary_match = False
         for source, reference in sources:
             primary = _primary_document_pointer(source)
             if (isinstance(primary, dict) and primary.get("sha256") == link.get("sha256")
                     and link.get("artifact_url") and _primary_document(project_dir, reference, source).get("primary_artifact_url") == link["artifact_url"]):
                 link = {**link, "generation_ref": reference}
+                primary_match = True
                 break
+        if not primary_match and link.get("artifact_url"):
+            owners = {}
+            for source, reference in sources:
+                if reference["family"] not in {"theory_record", "complete_theory", "theory_candidate", "analyst_audit"}:
+                    continue
+                for pointer in walk_objects(source):
+                    if not pointer.get("uri") or (pointer.get("sha256") or pointer.get("artifact_sha256")) != link.get("sha256"):
+                        continue
+                    action = artifact_link(project_dir, reference, authored_pointer(pointer))
+                    if (action.get("source_verified") and action.get("artifact_url") == link["artifact_url"]
+                            and action.get("media_type") in {"text/markdown", "text/plain"}
+                            and f"/outputs/{quote(reference.get('stage_id') or '')}/" in link["artifact_url"]):
+                        selector = {"uri": pointer["uri"], "sha256": link["sha256"]}
+                        owners[(reference["family"], reference["generation_id"], pointer["uri"])] = {**reference, "artifact_ref": selector}
+            if len(owners) == 1:
+                link = {**link, "generation_ref": next(iter(owners.values()))}
         result.append(link)
     return result
 
@@ -784,6 +1076,8 @@ def traceability_projection(project_dir: Path, statements: list, meta: dict, man
                 try:
                     resolve_report_source(source, basis)
                     exact = source_ref(source["branch"], source["phase"], source["family"], source)
+                    if source.get("pointer"):
+                        exact["entry_pointer"] = source["pointer"]
                     links.append({**link, "generation_ref": exact,
                                   "source_url": record_url(project_dir.name, exact)})
                 except (ArtifactError, ValueError, OSError):

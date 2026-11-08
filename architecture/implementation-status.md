@@ -6,7 +6,7 @@ It retains the revised research interface, targeted revision workflows,
 HTML report reader, and installation and onboarding fixes.
 
 This source tree provides the five researcher-directed phases described in the
-[architecture guide](README.md). The included workflow catalog is 1.30.2.
+[architecture guide](README.md). The included workflow catalog is 1.31.13.
 Existing projects retain their own catalog and scientific history.
 
 The communication revision uses field-specific writing guidance, neutral
@@ -59,6 +59,19 @@ lookups, row discussions, saved correction requests and report/export notation
 use those retained versions. Older project catalogs require explicit adoption.
 
 ## Verification and limits
+
+Catalog 1.31.7 refines local P2-P4 duties: distinguish objectives, fitted criteria,
+ranking strategies and additional guarantees; preserve the exact theory outcome;
+and author useful numerical displays with truthful reproduction instructions.
+Targeted discussions use the same scientific distinctions. P4 reviewers retain
+their evidence and pause authority without the Analyst's execution tutorial.
+The five presentation references and P1/P5 phase objectives are unchanged.
+
+The implementation is checked against a saved pre-edit checkout and frozen
+RL-LPM1 sources. Bounded paired authoring tests and browser fixtures are kept as
+local evidence. They do not run new experiments, replace published results or
+establish full-phase reliability. Existing project catalogs and results remain
+unchanged until an explicitly authorized future run adopts a newer catalog.
 
 Shared-notation contract, lifecycle, interaction and report-delivery checks have
 been exercised with deterministic fixtures. Fresh paired guidance excerpts use

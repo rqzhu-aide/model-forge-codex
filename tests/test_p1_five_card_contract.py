@@ -72,7 +72,7 @@ def test_frozen_p1_briefs_deliver_field_ownership_and_preserve_independent_roles
     directory = engine.run_dir(candidate.project_id, candidate.run_id)
     shutil.copytree(engine.project_dir(candidate.project_id) / "contracts", directory / "contracts")
     phase = read_json(directory / "contracts/contracts/phases/P1.json")
-    assert phase["contract_version"] == "3.9.1"
+    assert phase["contract_version"] == "3.9.7"
     assert [(stage.execution, len(stage.roles)) for stage in stages] == [("parallel", 3), ("serial", 1)]
     assert set(phase["role_stages"][0]["writes"]) == {
         "p1.lead_literature", "p1.theory_literature", "p1.empirical_literature",
@@ -121,12 +121,13 @@ def test_frozen_p1_briefs_deliver_field_ownership_and_preserve_independent_roles
                 assert "methodological synthesis across papers" in brief
                 assert "central mechanism or estimation strategy" in brief
                 assert "visible account must remain methodologically understandable without opening details" in brief
-                assert "Preserve an unresolved consequential target preference symbolically" in brief
+                assert "Preserve an unresolved consequential target or formulation choice symbolically" in brief
                 assert "do not silently narrow the target or pretend an identification assumption is established" in brief
                 assert "The Lead selects routine details determined by the stated goal and scientific judgment" in brief
                 inquiry = (directory / "contracts/references/research-presentation/user-inquiry.md").read_text(encoding="utf-8")
                 assert inquiry in brief
-                assert "Routine methodology, proofs, implementation, diagnostics and presentation belong to the team" in inquiry
+                assert "handle internal choices that preserve agreed requirements within the team" in inquiry
+                assert "no study fact is missing and the team recommends one" in inquiry
                 assert "one paragraph per brief field" not in brief
                 assert "Default common_assumptions to empty" in brief
                 assert "No additional P2-specific preparation is identified." in brief

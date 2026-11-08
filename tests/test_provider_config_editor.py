@@ -1,7 +1,6 @@
 """The provider file editor: one file, two surfaces, guarded by a freshness token.
 
-The editor endpoints deliberately return stored api_key values to the local
-browser; every other endpoint and artifact must stay free of key material.
+Stored credentials remain write-only, including while editing and probing.
 """
 import json
 import tomllib
@@ -19,13 +18,14 @@ from model_forge_codex.providers import (
     editor_view,
     load_provider_config,
     normalize_editor_document,
+    preview_provider_config,
     write_provider_config,
 )
 from model_forge_codex.service import create_app
 from model_forge_codex.storage import sha256_bytes
 
 SECRET = "PRIVATE_EDITOR_SECRET"
-BASE = "http://workbench.local"
+BASE = "http://localhost"
 HEADERS = {"Content-Type": "application/json", "Origin": BASE}
 
 
@@ -57,6 +57,14 @@ async def get_editor(client):
 
 async def put_document(client, token, doc):
     return await client.put("/api/v1/provider-config", content=json.dumps({"token": token, "document": doc}), headers=HEADERS)
+
+
+def public_document(doc, token):
+    result = json.loads(json.dumps(doc))
+    for table in [result.get("provider", {}), *result.get("members", {}).values()]:
+        if table.pop("api_key", None):
+            table["api_key_keep"] = token
+    return result
 
 
 async def test_editor_endpoints_require_json_content_type_and_same_origin(app):
@@ -91,7 +99,7 @@ async def test_put_roundtrip_rewrites_file_and_refreshes_summary(app, tmp_path):
         assert reloaded.settings_for("research_lead")["provider"] == "openai"
         refreshed = await get_editor(client)
         assert refreshed["token"] == body["token"] != initial["token"]
-        assert refreshed["document"] == document()
+        assert refreshed["document"] == public_document(document(), refreshed["token"])
         # A follow-up save with the refreshed token does not conflict.
         follow_up = document(key="PRIVATE_SECOND")
         follow_up["provider"]["model"] = "next-model"
@@ -99,12 +107,14 @@ async def test_put_roundtrip_rewrites_file_and_refreshes_summary(app, tmp_path):
         assert load_provider_config(tmp_path).settings["model"] == "next-model"
 
 
-async def test_editor_get_returns_stored_keys_but_other_surfaces_stay_secretless(app, tmp_path):
+async def test_editor_and_other_surfaces_never_return_stored_keys(app, tmp_path):
     async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as client:
         saved = await put_document(client, (await get_editor(client))["token"], document())
         assert saved.status_code == 200
         view = await get_editor(client)
-        assert view["document"]["provider"]["api_key"] == SECRET
+        assert view["document"]["provider"]["api_key_keep"] == view["token"]
+        assert SECRET not in json.dumps(view)
+        assert "api_key" not in view["document"]["provider"]
         options = await client.get("/api/v1/provider-options")
         assert options.status_code == 200 and SECRET not in options.text
         created = await client.post("/api/v1/projects", json={"name": "Editor leak check"})
@@ -216,7 +226,8 @@ def test_dump_roundtrip_preserves_escapes_unicode_and_member_tables(tmp_path):
     write_provider_config(tmp_path / "providers.toml", doc)
     config = load_provider_config(tmp_path)
     assert config.active and config.environment() == {FILE_KEY_ENV: doc["provider"]["api_key"]}
-    assert editor_view(tmp_path)["document"] == doc
+    view = editor_view(tmp_path)
+    assert view["document"] == public_document(doc, view["token"])
 
 
 def test_write_rejects_unknown_fields_and_non_string_values(tmp_path):
@@ -263,7 +274,7 @@ def test_members_only_file_governs_only_its_own_members(tmp_path):
     # Round-trips through the serializer and the editor view without a default.
     assert "provider" not in tomllib.loads(dump_provider_config({"members": members_only()["members"]}))
     view = editor_view(tmp_path)
-    assert view["document"] == {"provider": {}, "members": members_only()["members"]}
+    assert view["document"] == public_document(members_only(), view["token"])
 
 
 def test_member_override_without_default_is_an_error_naming_the_member(tmp_path):
@@ -388,3 +399,170 @@ def test_write_rechecks_bytes_immediately_before_replacement(tmp_path, monkeypat
     assert tomllib.loads(path.read_text(encoding="utf-8"))["provider"]["model"] == "external"
     assert [entry.name for entry in tmp_path.iterdir()] == ["providers.toml"]
     assert "PRIVATE_SECOND" not in path.read_text(encoding="utf-8")
+
+
+def test_editor_whitelists_fields_even_in_malformed_provider_files(tmp_path, monkeypatch):
+    monkeypatch.setenv("EDITOR_ENV_KEY", "PRIVATE_ENVIRONMENT_VALUE")
+    path = tmp_path / "providers.toml"
+    path.write_text(
+        '[provider]\ntype="custom"\nid="research"\nmodel="m"\nbase_url="https://models.example.test/v1"\n'
+        'api_key="PRIVATE_STORED_KEY"\napi_key_env="EDITOR_ENV_KEY"\n'
+        'PRIVATE_UNKNOWN_FIELD="PRIVATE_UNKNOWN_VALUE"\n'
+        '[members.PRIVATE_UNKNOWN_MEMBER]\napi_key="PRIVATE_MEMBER_KEY"\n'
+        '[members.theorist]\napi_key={nested="PRIVATE_NESTED_KEY"}\n', encoding="utf-8")
+    view = editor_view(tmp_path)
+    assert view["error"]
+    encoded = json.dumps(view)
+    for marker in ("PRIVATE_ENVIRONMENT_VALUE", "PRIVATE_STORED_KEY", "PRIVATE_UNKNOWN_FIELD", "PRIVATE_UNKNOWN_VALUE",
+                   "PRIVATE_UNKNOWN_MEMBER", "PRIVATE_MEMBER_KEY", "PRIVATE_NESTED_KEY"):
+        assert marker not in encoded
+    assert view["document"]["provider"]["api_key_env"] == "EDITOR_ENV_KEY"
+    assert view["document"]["members"] == {"theorist": {}}
+
+
+@pytest.mark.parametrize("endpoint", [
+    "https://PRIVATE_URL_SENTINEL@models.example.test/v1",
+    "https://user:PRIVATE_URL_SENTINEL@models.example.test/v1",
+    "https://models.example.test/v1?key=PRIVATE_URL_SENTINEL",
+    "https://models.example.test/v1#PRIVATE_URL_SENTINEL",
+    "https://models.example.test:PRIVATE_URL_SENTINEL/v1",
+    "https://models.example.test:999999/v1#PRIVATE_URL_SENTINEL",
+])
+async def test_editor_omits_credential_bearing_or_malformed_urls_and_env_names(app, tmp_path, endpoint):
+    path = tmp_path / "providers.toml"
+    path.write_text('[provider]\ntype="custom"\nid="research"\nmodel="m"\n'
+                    f'base_url="{endpoint}"\napi_key_env="PRIVATE_ENV_SENTINEL=value"\n', encoding="utf-8")
+    async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as client:
+        view = await get_editor(client)
+    assert view["error"]
+    assert "PRIVATE_URL_SENTINEL" not in json.dumps(view)
+    assert "PRIVATE_ENV_SENTINEL" not in json.dumps(view)
+    assert "base_url" not in view["document"]["provider"]
+    assert "api_key_env" not in view["document"]["provider"]
+
+
+@pytest.mark.parametrize("field", ["model", "id", "base_url", "api_key_env", "member_model"])
+@pytest.mark.parametrize("source", ["file", "environment"])
+async def test_known_keys_copied_into_public_fields_never_reach_editor_effective_settings_or_probes(app, tmp_path, monkeypatch, field, source):
+    doc = document("SYNTHETIC_COPIED_CREDENTIAL")
+    if source == "environment":
+        doc["provider"].pop("api_key")
+        doc["provider"]["api_key_env"] = "SYNTHETIC_KEY_ENV"
+        monkeypatch.setenv("SYNTHETIC_KEY_ENV", "SYNTHETIC_COPIED_CREDENTIAL")
+        doc["members"]["data_analyst"] = {**doc["provider"]}
+    if field == "member_model":
+        doc["members"]["theorist"]["model"] = "SYNTHETIC_COPIED_CREDENTIAL"
+    else:
+        doc["provider"][field] = ("https://models.example.test/SYNTHETIC_COPIED_CREDENTIAL/v1" if field == "base_url" else "SYNTHETIC_COPIED_CREDENTIAL")
+    # Hand-edited invalid files still need a safe repair/status surface.
+    (tmp_path / "providers.toml").write_text(dump_provider_config(doc), encoding="utf-8")
+    async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as client:
+        view = await get_editor(client)
+        assert view["error"]
+        assert "SYNTHETIC_COPIED_CREDENTIAL" not in json.dumps(view)
+        created = await client.post("/api/v1/projects", json={"name": "Synthetic copied-key check"})
+        project_id = created.json()["project_id"]
+        for response in (await client.get("/api/v1/provider-options"), await client.get(f"/api/v1/projects/{project_id}"),
+                         await client.post(f"/api/v1/projects/{project_id}/members/theorist/provider-probe", json={}, headers=HEADERS)):
+            assert response.status_code == 200, response.text
+            assert "SYNTHETIC_COPIED_CREDENTIAL" not in response.text
+
+
+def test_short_shim_placeholder_does_not_invalidate_incidental_public_substrings(tmp_path):
+    doc = document("x")
+    doc["provider"]["model"] = "example-model"
+    path = tmp_path / "providers.toml"
+    write_provider_config(path, doc)
+    view = editor_view(tmp_path)
+    assert view["error"] is None
+    assert view["document"]["provider"]["model"] == "example-model"
+    assert view["document"]["provider"]["base_url"] == doc["provider"]["base_url"]
+    write_provider_config(path, view["document"], expected_token=view["token"])
+    assert load_provider_config(tmp_path).environment() == {FILE_KEY_ENV: "x"}
+
+
+def test_keep_saved_keys_for_shared_and_member_connections_without_returning_them(tmp_path):
+    path = tmp_path / "providers.toml"
+    doc = document()
+    doc["members"]["data_analyst"] = {**doc["provider"], "api_key": "PRIVATE_MEMBER_KEY"}
+    write_provider_config(path, doc)
+    view = editor_view(tmp_path)
+    draft = view["document"]
+    draft["provider"]["model"] = "updated-shared-model"
+    draft["members"]["data_analyst"]["reasoning_effort"] = "medium"
+    preview = preview_provider_config(path, draft)
+    assert preview.environment("theorist") == {FILE_KEY_ENV: SECRET}
+    assert preview.environment("data_analyst") == {FILE_KEY_ENV: "PRIVATE_MEMBER_KEY"}
+    assert SECRET not in json.dumps(draft) and "PRIVATE_MEMBER_KEY" not in json.dumps(draft)
+    write_provider_config(path, draft, expected_token=view["token"])
+    saved = tomllib.loads(path.read_text(encoding="utf-8"))
+    assert saved["provider"]["api_key"] == SECRET
+    assert saved["members"]["data_analyst"]["api_key"] == "PRIVATE_MEMBER_KEY"
+    assert saved["provider"]["model"] == "updated-shared-model"
+    assert "api_key_keep" not in path.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("scope", ["shared", "member"])
+@pytest.mark.parametrize("changed", ["id", "base_url", "scope"])
+def test_keep_never_moves_a_key_to_another_endpoint_provider_or_scope(tmp_path, scope, changed):
+    path = tmp_path / "providers.toml"
+    doc = document() if scope == "shared" else members_only()
+    write_provider_config(path, doc)
+    view = editor_view(tmp_path)
+    draft = view["document"]
+    table = draft["provider"] if scope == "shared" else draft["members"]["research_lead"]
+    if changed == "scope":
+        draft["members"]["outside_reviewer"] = {**table}
+    else:
+        table[changed] = "another-provider" if changed == "id" else "https://another.example.test/v1"
+    before = path.read_bytes()
+    with pytest.raises(ProviderConfigError, match="existing connection"):
+        write_provider_config(path, draft, expected_token=view["token"])
+    with pytest.raises(ProviderConfigError, match="existing connection"):
+        preview_provider_config(path, draft)
+    assert path.read_bytes() == before
+
+
+async def test_reapplied_stale_keep_marker_cannot_retain_a_newly_changed_key(app, tmp_path):
+    path = tmp_path / "providers.toml"
+    write_provider_config(path, document())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as client:
+        old = await get_editor(client)
+        write_provider_config(path, document("PRIVATE_CHANGED_KEY"))
+        refreshed = await get_editor(client)
+        response = await put_document(client, refreshed["token"], old["document"])
+        assert response.status_code == 409
+        assert "choose the credential" in response.json()["detail"]
+        assert SECRET not in response.text and "PRIVATE_CHANGED_KEY" not in response.text
+        assert load_provider_config(tmp_path).environment() == {FILE_KEY_ENV: "PRIVATE_CHANGED_KEY"}
+
+
+@pytest.mark.parametrize("action", ["replace", "environment", "account", "remove_member", "remove_shared"])
+def test_explicit_credential_changes_remove_only_the_selected_stored_key(tmp_path, monkeypatch, action):
+    path = tmp_path / "providers.toml"
+    doc = document()
+    doc["members"]["data_analyst"] = {**doc["provider"], "api_key": "PRIVATE_UNCHANGED_MEMBER_KEY"}
+    write_provider_config(path, doc)
+    view = editor_view(tmp_path)
+    draft = view["document"]
+    if action == "remove_member":
+        draft["members"].pop("data_analyst")
+    elif action == "remove_shared":
+        draft["provider"] = {}
+        draft["members"].pop("theorist")
+    else:
+        draft["provider"].pop("api_key_keep")
+        if action == "replace":
+            draft["provider"]["api_key"] = "PRIVATE_REPLACEMENT_KEY"
+        elif action == "environment":
+            monkeypatch.setenv("EDITOR_ENV_KEY", "PRIVATE_ENVIRONMENT_VALUE")
+            draft["provider"]["api_key_env"] = "EDITOR_ENV_KEY"
+        elif action == "account":
+            draft["provider"] = {"type": "openai", "model": "account-model"}
+    write_provider_config(path, draft, expected_token=view["token"])
+    saved = path.read_text(encoding="utf-8")
+    assert (SECRET in saved) == (action == "remove_member")
+    assert ("PRIVATE_UNCHANGED_MEMBER_KEY" in saved) == (action != "remove_member")
+    assert "PRIVATE_ENVIRONMENT_VALUE" not in saved
+    public = json.dumps(editor_view(tmp_path))
+    assert all(key not in public for key in (SECRET, "PRIVATE_UNCHANGED_MEMBER_KEY", "PRIVATE_REPLACEMENT_KEY", "PRIVATE_ENVIRONMENT_VALUE"))

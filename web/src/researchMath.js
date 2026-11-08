@@ -104,6 +104,30 @@ function displayDelimiterFindings(text) {
   return findings;
 }
 
+function inlineDelimiterFindings(text) {
+  const findings = [];
+  for (const chunk of proseChunks(text)) {
+    const source = `${chunk.prefix ? "\0" : ""}${chunk.text}`;
+    const complete = [...source.matchAll(new RegExp(mathPattern, "g"))];
+    const breaks = [...source.matchAll(/\r?\n[ \t]*\r?\n/g)];
+    for (const marker of source.matchAll(/(?<![$\\])\$(?!\$)(?=[A-Za-z](?![A-Za-z0-9])|\\[A-Za-z]+)/g)) {
+      if (complete.some(token => marker.index >= token.index && marker.index < token.index + token[0].length)) continue;
+      const before = breaks.findLast(boundary => boundary.index < marker.index);
+      const after = breaks.find(boundary => boundary.index > marker.index);
+      const start = before ? before.index + before[0].length : 0;
+      const end = after?.index ?? source.length;
+      // A lone dollar can be currency or literal prose. Reject only a symbol
+      // opening beside explicit mathematics in the same prose paragraph.
+      const mathNearby = complete.some(token => token.index >= start && token.index < end
+        && (/\\[A-Za-z]|[_^=]/.test(mathBody(token[0]).latex)
+          || /^[ \t]*[A-Za-z][ \t]*$/.test(mathBody(token[0]).latex)));
+      if (mathNearby) findings.push({ code: "math.invalid_delimiter", offset: chunk.offset + marker.index - chunk.prefix,
+        message: "Inline equation opened with $ is unclosed; finish it with $." });
+    }
+  }
+  return findings;
+}
+
 const options = (display) => ({ throwOnError: true, displayMode: display, trust: false, strict: "ignore", maxExpand: 1000 });
 
 // Older summaries sometimes double-encode the prose/equation separator.
@@ -152,7 +176,7 @@ export function legacyMathCandidate(katex, latex) {
 }
 
 export function validateMathText(katex, text, raw = false, checkMathEscapes = false) {
-  const findings = raw ? [] : displayDelimiterFindings(text);
+  const findings = raw ? [] : [...displayDelimiterFindings(text), ...inlineDelimiterFindings(text)];
   for (const segment of mathSegments(text, raw)) {
     if (checkMathEscapes && /\r(?!\n)/.test(segment.latex)) {
       findings.push({ code: "math.corrupt_escape", offset: segment.offset,

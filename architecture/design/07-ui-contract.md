@@ -39,8 +39,17 @@ after reading restoration. Paused runs are checked project-wide, including a
 pause already present in pending decisions but not yet in the run list. The
 destination displays that run's requested input; P5 opens its recovery disclosure.
 Navigation never starts or resumes a run.
+An unanswered question uses a conversation cue and count. Only an actual
+`awaiting_user` run uses the paused warning and paused Next message. Question
+severity does not imply a runtime pause or make the question optional. At narrow
+widths every phase control keeps its Phase 1 through Phase 5 label alongside its
+state icon, with the full phase name retained in its accessible name.
 
 The consequential-decision interface keeps one disclosure row per question.
+Consequential modeling choices remain eligible with complete study facts and a
+Lead recommendation. The team checks affordable scientific questions first;
+different solver names alone do not justify an inquiry. Mathematical alternatives
+include their scientific meaning and decisive tradeoffs under the supplied setting.
 Expanded rows put the exact affected point,
 practical consequence and Lead recommendation before Context and sources. Newly
 authored choice options are radio controls with a short consequence; no answer is
@@ -76,8 +85,9 @@ publications retain their original instructions and provenance.
 
 P3 uses four primary cards:
 an authored overview, scientific detail, issues and editable decisions, and
-further work with saved instructions. P5 begins directly with the report reader,
-followed by Next revision. General problem and method decisions remain in earlier
+further work with saved instructions. P5 opens with Summary, the Lead's current
+conclusion beside report status, tools and supporting reading, then the report
+reader and Revise report. General problem and method decisions remain in earlier
 phases; section discussions handle report clarification. The overview and scientific detail share
 the blue team role; discussion and further-research shells use orange for
 researcher interaction, with blue team context and separate urgency cues. Progress is
@@ -113,6 +123,8 @@ page and restore both frame scroll axes during the current app session; only
 the necessary disclosure path reopens. Dialog traversal includes native
 summaries and frames, and close returns focus without scrolling. Field borders
 have a separate control token with at least 3:1 contrast in both themes.
+The viewport retains its scrollbar gutter while a dialog locks scrolling, so
+opening and closing a source does not reflow the underlying reading columns.
 Implementation and verification evidence is recorded in
 the September 26 revision (retained in the ignored local archive).
 An installation or npm launcher update must select and start the new release
@@ -134,7 +146,7 @@ and distinct current and historical P4 evaluation views retain their roles.
 Contextual questions retain their exact sources and named destination. Their
 editable response belongs with the phase that raised the issue; shared setting
 questions remain in P1. Scientific work for the team is distinguished from a
-question needing the researcher's preference. A researcher response does not
+consequential modeling choice or missing study fact. A researcher response does not
 resolve the scientific finding. Saved answers retain the response used by earlier
 work, and edits apply only to subsequent explicitly started work.
 
@@ -193,13 +205,44 @@ separate.
   accepted source records separately from grouped paper options.
 - **Phase 2 methods**: Four primary cards, in order: Proposed Methods,
   Select a Method to Explore, Decisions to Discuss, and Additional Runs and History.
-  Proposed Methods contains the brief cross-method Lead conclusion and its
-  publication citations. Internal proposal and audit hash links in this summary
+  The fourth name is an architecture grouping: its preparation card says
+  Instructions and run settings before work and Revise and rerun afterward.
+  Proposed Methods uses the same 60% account / 40% resources layout as the
+  selected-method card. The left column retains the complete cross-method Lead
+  overview and its publication citations. The right column explains and opens
+  Notation from that comparison, then Supporting reading with Full comparison
+  and applicable Reasons for excluding alternatives. It stacks below the
+  overview at narrow card widths.
+  The comparison window identifies its producing account and exact
+  source; choosing another method does not change this phase-wide comparison.
+  The current full comparison appears once, with only its source link retained in
+  history. Earlier comparisons remain readable there. Missing or identical
+  overview/full bodies keep the complete inline fallback without another button
+  for the same prose. Internal proposal and audit hash links in the overview
   appear as plain prose; exact records remain in details and history.
   Select a Method to Explore contains one native selector labeled **Choose a method**
   and one selected methodological account, including its defining mathematics
-  and decisive conditions. Assumptions and limitations, Computation and full
-  formulation, and Reviews and scientific sources are expandable sections.
+  and decisive conditions. Its body uses the shared 60% account / 40% resources
+  grid after the gap, stacking actions, account and supporting reading below an
+  820px content-container width. Paragraphs,
+  lists and structured equations use the available account column through a
+  shared account reading-measure override; other documents retain their own measure.
+  The right column holds existing stale-result notes and Phase 3/4 preparation
+  actions, the applicable Prepare work on this method control, an explained
+  notation-table link, then Supporting reading
+  and three reading buttons: Assumptions and limitations, Computation and
+  formulation, and Reviews and sources. Buttons show approximate prose length
+  and displayed-equation counts from the same rendered content, excluding source
+  destinations and internal metadata. No reading-time or page estimate is implied.
+  These documents open in wide centered windows with persistent titles,
+  method/version context and Close controls. Opening snapshots every contributing
+  record; polling cannot silently replace the prose, citations or displayed size.
+  Closing returns focus without moving the page. Same-session document offsets
+  and inner disclosures are scoped to project, method and contributing revisions.
+  Nested notation/source windows expose only their top dialog to keyboard and
+  assistive-technology navigation, then return to the prior document position.
+  Original formulation notation retains its own source; the account's notation
+  uses the exact Lead comparison or proposal/catalog snapshot as before.
   The complete proposer formulation remains accessible, including custom
   mathematical objects. Computational requirements, tuning and estimated costs
   have one home and are prospective, not measured results. Reviews retain
@@ -232,10 +275,33 @@ separate.
   original question/source identity for discussion, answer revisions and
   future frozen inputs; the phase tabs and Next use the same question set.
   The full question, consequence, scope, Discuss, Lead suggestions and one
-  Your instruction field appear when expanded. Save instruction replaces the
-  current instruction for that exact question; Edit instruction reopens it.
+  answer area appear when expanded. Save answer replaces the current answer
+  for that exact question; Edit your answer reopens it.
   Older edits remain in storage rather than appearing as extra instructions.
-  Shared understanding and earlier question versions remain expandable; each
+  Across phases, typed researcher choice and study-fact rows group their complete
+  brief, defining mathematics, practical consequences and information limits
+  under one Why this matters heading. Distinct authored passages and their exact
+  citation sections remain intact; only identical text is deduplicated. The
+  shared 60/40 split places the account left and discussion actions above
+  attribution, scope and supporting reading right. Narrow rows stack discussion
+  actions, account and supporting context in DOM order. The single response area
+  remains below at full width. Row supporting context uses a named group rather
+  than adding a complementary landmark for every question or team finding.
+  A recommendation bound to a valid authored option appears beside that option,
+  once, without changing option order or preselecting a response. Unranked and
+  legacy advice retains a separate readable fallback. Saved and linked read-only
+  rows retain the complete alternatives and bound recommendation in an Options
+  and recommendation disclosure beside the saved-answer area. Team tasks keep
+  their team-facing wording and do not acquire an answer form.
+  Read background and sources replaces only their supporting context disclosure.
+  It opens the remaining support, earlier context, checks, attribution and exact
+  citations; source-only content uses View scientific sources and a source count.
+  Legacy questions without a typed brief keep their context disclosures.
+  Related-phase questions and historical editable versions retain their existing
+  routing and exact answer owner.
+  The background window has no answer editor, and opening it neither selects an
+  option, obtains advice nor saves a response. Earlier saved input opens from
+  phase badges at the end of Decisions to Discuss. Earlier question versions remain expandable; each
   retained original question also has one editable current instruction.
   An explicitly carried-forward answer may be edited into a current-source
   instruction, which then takes precedence over the inherited answer in new
@@ -266,8 +332,25 @@ separate.
   Existing P3 assumption explanations and P5 report-section discussions keep their
   focused instructions. The normal phase catalog does not control these separate
   interactive briefs; a runtime update applies to newly prepared discussion turns.
-  Additional Runs and History owns modification options, proposed investigations,
-  team work, correction recovery, run history and previous method versions.
+  Additional Runs and History owns preparation, team work and correction
+  recovery. Run history and previous method versions follow the last card of
+  each phase as a phase-wide disclosure after one section ornament. The input
+  summary remains full width.
+  While its editor is expanded, preparation uses a conditional 60/40 split:
+  instructions, source selections, settings and launch controls stay left;
+  Supporting reading on the right opens applicable Suggested modifications,
+  Proposed investigations and Notes from Phase 1. The grid stacks editor first
+  below an 820px card-container width and reserves no empty document column.
+  Modification options retain the Lead's authorship, exact mathematical changes
+  and preferable regimes. Investigations retain their proposer and proposed-work
+  qualification. Phase 1 notes follow the actual shared preparation basis, not
+  merely the displayed method: inspecting an excluded or superseded proposal can
+  still leave shared instructions and the Phase 1 starting point active.
+  Reading a document does not adopt its suggestion, attach a source, save
+  instructions or start work. Team work and scientific review remains a live
+  actionable disclosure below preparation; its Prepare further work action keeps
+  the existing LaunchRun dialog. Specialist audits remain in Reviews and sources.
+  P2 run history remains phase-wide on trunk regardless of method selection.
   Before methods exist, Select a Method to Explore is omitted and the work form
   is initially open. Shared research setting remains in P1; the P2 summary does
   not repeat a setting card or a shortcut to P1.
@@ -301,14 +384,26 @@ separate.
   Summary contains no quantitative tables or figures. Implementation and Code shows
   a short fidelity assessment, material issues and a verified portable code download.
   Full correspondence, dependencies, checks and individual files remain disclosed.
-  Experiments and Results is the home for every numerical table and figure, with
-  topics Synthetic example, Performance, Computation, Tuning, Robustness and Actual
-  data when applicable. There is no data selector. Source origin remains labeled.
-  Synthetic example explains the generator and simulation design; Performance
-  separates prediction error, bias, empirical SD and MCSE; Computation presents
-  measured cost and recorded convergence; Tuning and Robustness keep parameter
-  investigations distinct from changed data-generating mechanisms. Missing studies
-  remain explicitly unassessed. Authored coverage and exact exhibit references
+  During a same-method rerun the summary identifies findings from the last
+  completed evaluation until the new publication loads.
+  Experiments and Results opens with the main comparisons. Up to two exhibits
+  have inline previews, with at most six data rows each and access to the full
+  exhibit. When the displayed rows share a design label such as the reward
+  contrast or method, the preview states it once in the table description.
+  Measured outcomes, denominators and uncertainties stay in their columns,
+  including equal values and undefined estimates. Other exhibits open from
+  named, sized controls under their topics.
+  Experimental setup describes the question, generator, observation process,
+  independent replication, comparators and measures. Sensitivity and robustness,
+  computational cost, tuning and actual-data applications follow where studied. There is no data
+  selector. Source origin remains labeled. Prediction error, bias, empirical
+  standard deviation and Monte Carlo standard error retain their distinct meanings;
+  parameter investigations remain distinct from changed data-generating mechanisms.
+  Each account places its principal finding before its verified exhibits and its
+  distinct qualifications and implications afterward. Complete protocol fields
+  stay in supporting reading instead of duplicating the authored setup. Missing
+  studies remain explicitly unassessed in compact scope notes; adverse findings
+  and material qualifications remain visible. Authored coverage and exact exhibit references
   determine topic placement. Earlier records may use exact exhibit IDs in authored
   coverage prose. Otherwise, the first explicitly citing question supplies the
   canonical display home; other questions retain links to it. Broad question/test
@@ -320,16 +415,22 @@ separate.
   Decisions retains the single editable instruction and separate discussion
   and suggestion actions. Saved evaluation directions use a collapsed, counted
   disclosure; an active unanswered pause remains expanded and actionable.
+  An inline inquiry link opens its uniquely identified current question. The
+  question's background reader links to the cited Analyst and Theorist findings
+  separately from the original request. Each numerical finding links to the
+  exhibits it cited in its own publication.
   Additional runs contains saved preparation, explicit
   local-file selection, scope, managed budget and history. One evaluated method
   is initially selected for reading without changing the project's active
   method. Deliberate choices and reading position survive polling. Earlier
   evaluations use their own summaries, evidence and availability labels.
-- **Report**: Technical report and reviews opens directly on the complete report,
-  with Supporting evidence, Reviews and Changes as secondary tabs. There is no
-  duplicate overview before the report. Source identities and report tools are
-  compact disclosures. Completion gaps and independent review status remain
-  visible and separate; review of an earlier draft does not transfer to a revision.
+- **Report**: Summary precedes the report reader with the Lead's current
+  conclusion, completion and independent review status, Read the report actions,
+  supporting reading and source identities in a compact disclosure. Technical
+  report and reviews then opens on the complete report with Supporting evidence,
+  Reviews and Changes as secondary tabs; the report tab repeats no Summary status
+  or tools. Completion gaps and independent review status remain visible and
+  separate; review of an earlier draft does not transfer to a revision.
   Each of the seven authored main section headings has an orange **Discuss**
   icon and label. It opens the existing fixed-title discussion window for that
   exact section and report version, with focus returned to the section on close.
@@ -342,9 +443,9 @@ separate.
   saving, and delayed responses cannot erase newer drafts. Comments do not revise
   scientific records, adopt shared study facts or start research work.
   Review comments, lead responses and researcher direction remain separate.
-  Next revision follows the report; Phase 5 has no general Discuss your problem
+  Revise report follows the report; Phase 5 has no general Discuss your problem
   card. Genuine execution pauses and correction controls remain reachable within
-  Next revision. Its shaded contents are clipped to the card's rounded outline,
+  Revise report. Its shaded contents are clipped to the card's rounded outline,
   preserving the border and title separator. The report uses concise statistical
   prose, defines mathematical quantities at first use and places detailed
   derivations, secondary tables and reproduction recipes in linked supporting
@@ -352,8 +453,9 @@ separate.
   relevant earlier phase; only indispensable editorial choices ask for new input.
   The outside reviewer still receives only its review
   packet; the lead explains an outside comment as an attributed interpretation.
-  Retained candidates and Historical manuscripts have separate tabs when present;
-  historical manuscripts retain their original type, scope and review target.
+  Retained candidates has a separate tab when present. Historical manuscripts are
+  supporting documents in Supporting evidence with their title and exact source
+  link; they have no dedicated reader, metadata table or preview.
 
 - **Run view**: live activity feed (heartbeat stream), per-stage status,
   usage/rate-limit telemetry, findings panel, correction authorization
@@ -563,7 +665,15 @@ Theory assumptions are neutral, solid and rounded. Claims show their proof
 status in text; only cited proofs use a dashed outline. Missing or unresolved
 support differs from contradiction or a failed probe. Selection adds an outer
 outline while preserving the scientific status stroke. The drawn legend uses
-the same shapes and labels.
+the same shapes and labels. An authored assumption `label` names its node,
+accessible name and inspector; historical unlabeled assumptions keep the
+identifier-derived fallback. For a selected claim with a statement assessment,
+the inspector explains that proof support describes the available argument,
+while the assessment also accounts for conditions and unresolved work; a complete
+proof does not show that the study meets its assumptions. When probes exist,
+a short note says a probe can test a stronger claim or relaxed assumptions and
+need not refute the assessed statement. These are explanatory copy only: raw
+statement status, probe outcome and reassessment presentation are unchanged.
 
 Keep mathematical hover/focus previews, pinned graph inspection, and readable
 focused neighborhoods. Expand experimental detail around a selected question;
@@ -575,9 +685,10 @@ a build alone is not visual or interaction verification.
 P4's three scientific cards are Summary, Implementation and Code, and Experiments
 and Results, followed by Decisions to Discuss and Additional Runs and History.
 They supersede the older side-by-side implementation and theory accounts.
-Within Experiments and Results, topic accounts and their explicitly mapped
-exhibits come first, with full question answers and complete numerical diagnostics
-in disclosures. Shared cases do not
+Within Experiments and Results, section links move focus to stable reading
+anchors. The Lead's accounts surround their explicitly mapped exhibits, with
+full question answers, independent reviews and complete numerical diagnostics
+available as supporting detail. Each exhibit has one primary home. Shared cases do not
 override conflicting test or metric associations. A follow-up carries the
 exact inspected question and protocol into the launch dialog and server
 request. Theory context compares linked claims and dependencies with the
@@ -625,7 +736,14 @@ UI revision verification (retained in the ignored local archive).
   summaries and exact definitions remain proposer-authored. Reconciliation
   records the lead's assessment without silently rewriting those definitions.
 - **P2 short authored content**: the lead comparison's `overview_markdown`
-  supplies the result overview. Each disposition's `method_summary_markdown`
+  explains how every candidate assessed in that run differs, including excluded
+  alternatives. It contrasts the central mechanisms and consequential differences
+  in targets, applicability, inferential support or proposed computational demands,
+  then connects a conditional recommendation to its decisive limitation. The
+  researcher should not need to assemble this comparison from separate procedure
+  descriptions. Earlier catalog entries are not silently treated as co-assessed.
+  The interface preserves saved wording; new instructions affect future runs
+  using the updated catalog. Each disposition's `method_summary_markdown`
   explains the procedure, algorithm and related equations in Method; its
   `rationale` supplies the separate evaluation of innovation and criticism in
   Review. Each targeted specialist assessment's `applicability_markdown`
@@ -635,11 +753,13 @@ UI revision verification (retained in the ignored local archive).
   These fields are authored in the same six records, with no display writer,
   duplicate summary artifact or numerical scoring requirement.
 - **P2 steering decisions**: during synthesis, the lead identifies unresolved
-  choices that materially require the researcher's preference or input and
+  modeling choices whose defensible alternatives materially change the formulation,
+  assumptions, scientific use or a practical tradeoff, even with complete facts, and
   records them as method-scoped `researcher_decision` attention items. Each
   states the relevant mathematics, alternatives and consequences. Existing
   questions and answers retain their identities; shared setting decisions stay
-  in P1. Scientific checks and repairs remain team tasks. The UI displays the
+  in P1. Scientific checks and unambiguous repairs remain team tasks; a consequential
+  choice of a different method uses upstream revision. The UI displays the
   authored decisions without inventing questions or inferring preferences.
 - **Nonblocking invitations**: a consequential request can be displayed while
   conditional research proceeds. The Lead briefly explains what the answer
@@ -681,10 +801,10 @@ UI revision verification (retained in the ignored local archive).
 - **P5 supporting evidence**: the claim-traceability reader opens the exact
   frozen upstream support, counterevidence, assumptions and source files.
   Unresolved links stay explicit. The report reader shows completion gaps,
-  exact model identity and review status. Historical manuscript readers retain
-  their intended audience, included sections and review scope. TeX source and a rendered
-  PDF are labeled distinctly; source text is not silently presented as rendered
-  manuscript prose.
+  exact model identity and review status. Historical manuscripts are plain
+  supporting documents: the saved text with its title and a link to the exact
+  original file. They have no dedicated reader, metadata table, TeX viewer or
+  PDF preview.
   Current report claim cards retain each authored qualification and exact report
   reference. A missing per-claim assessment remains absent; the projection must
   not invent a `not_assessed` outcome. Internal support-route classification
@@ -695,24 +815,14 @@ UI revision verification (retained in the ignored local archive).
   rendered mathematics, tables and figures. A fragment selects its authored
   section; nested relative links use that document's path and the same verified
   material map. Closing restores the invoking control and report position.
-- **Portable report**: every required source is resolved and digest-verified
-  before rendering. The renderer receives compact verified file descriptors
-  and embeds only assets actually used by a report link or image, checking
-  their bytes again when read. Unused large diagnostic sources are not copied
-  into its transient input. A deliberately external local-service link remains
-  external and requires an explicit portability explanation in the report.
-  Exported provenance records the exact generation, report digest, completion
-  and review status; review of an earlier version does not transfer to edited bytes.
-  Referenced Markdown support renders through the same scientific renderer in
-  collapsed appendix disclosures, with namespaced anchors. Declared document
-  identities prevent cycles and duplicate copies; unreferenced files remain unread.
+- **Portable report.** Verify retained source digests before preparing a sharing copy. Remove raw saved-answer records and local file locations from included materials. Record the original and shared digests separately. Preserve numerical results and scientific qualifications. Machine-readable tables open at a labeled table in the document and offer a named data download. Code and other supporting files also have named downloads. Referenced Markdown and proof statements use exact document anchors. The proof appendix has a separately downloadable HTML edition with its own mathematics and linked evidence. A reader can open the downloaded appendix in a folder by itself. Exported provenance identifies the generation, completion and review status of this edition.
 - **Scientific documents**: readable headings, ordered procedures, nested
   lists, tables, literal code and mathematical delimiters are retained. Exact
   source access remains available. Display normalization is narrow and does
   not rewrite the stored authored record. Source SVGs are sandboxed when opened
   directly or embedded so scientific figures cannot execute active content.
 - Current technical reports have no venue or fixed page-length requirement.
-  Older manuscript venue preferences remain historical metadata.
+  Older manuscript venue preferences stay in the records and are not displayed.
 - **Token controls**: optional per-member auto-compaction and token ceiling
   settings. Current ceiling handling can rotate after a turn; it is not a
   guaranteed mid-turn spending cap.
@@ -726,7 +836,7 @@ phase readers. Existing aliases retain the shared role meanings:
 
 | Purpose | Color |
 | --- | --- |
-| Team-authored phase summary, lead account, research setting, method, theory, evidence or manuscript | Blue |
+| Team-authored phase summary, lead account, research setting, method, theory, evidence or report | Blue |
 | Publication citations and their previews, including within system-role panels | Blue in both themes |
 | System navigation, settings, selectors and reading disclosures | Navy when selected; neutral stone otherwise |
 | Source-opening controls | System fills with blue reference labels |
@@ -767,16 +877,20 @@ forms, request a Lead assessment, or start work. Phase 5 shows **Revise report**
 with preparation status, retaining discussion at each report section rather than
 adding a general problem discussion.
 
-- **Your answers to my questions** counts current applicable saved answers, unanswered
-  questions and saved unknown responses separately. Exact source identity and
+- **Questions in this phase** counts current applicable saved answers, unanswered
+  questions and saved unknown responses separately, only for questions whose
+  answer is edited in this phase. Answers to earlier-phase questions stay with
+  their original owner and are not added to this count, so a zero here does not
+  mean earlier input was lost. Exact source identity and
   explicit answer applicability follow the original question projection.
   Scientific findings, team tasks, superseded questions and operational pause
   history are excluded. A local unsaved edit is an additional indicator on the
   same question, never another answer.
-- **Other information you gave me** counts separately saved notes and confirmed
+- **Your saved notes** counts separately saved notes and confirmed
   interpretations within the current model scope. Copied question or pause answers
   are excluded even when their original question is in another phase or history.
-  An empty row says **None added**, not an unanswered task.
+  An empty row says **None added**. The row label opens the note composer
+  when empty or the first saved note when populated.
 - **Please check my interpretation** appears only for a pending interpretation
   the researcher can confirm. Saving an answer never creates a second review task.
 - **Instructions for my next run** reports saved or unsaved instructions, selected files and
@@ -812,11 +926,25 @@ harness speaking to the researcher. Name a particular team member when attributi
 matters, such as **The Lead recommends**. Stock response choices use neutral text
 such as **Not sure yet**; authored and historical researcher text stays exact.
 
-The revision summary is headed **What I’ll use in the next run**. The input
-destination is **What you told me**. A genuine proposed interpretation is labelled
+In P1 to P4 the revision summary is headed **Review your input and run settings**;
+its hint says the question counts include only this phase's questions and that
+saved answers stay with their original questions. It does not claim to list the
+complete basis of the next run. P5 keeps **What I’ll use in the next run** with its
+editorial wording. The shared Decisions to Discuss card leads with the current
+phase's questions and pauses. The researcher's notes and earlier answers are indexed
+in **Your saved input** at the bottom, grouped by the phase that owns them.
+Project-wide notes with no recorded phase have a separate group. Opening a
+badge then its item reveals the original text and sources in place. Visiting
+the original question explicitly opens its owner. **Back to saved input**
+restores the original selection, open item and focus. A proposed interpretation is labelled
 **Please check my interpretation**, with **Confirm interpretation** as its action.
 P5 retains section comments and report revision settings, without adding a generic
 problem discussion or duplicate comment count.
+
+Evidence from the team and its interpretations retain their wording, scope and
+sources in a separate team section. Accepting a team's interpretation records the
+researcher's confirmation. Only the researcher's own answers and notes contribute
+to saved-input counts.
 
 A saved answer is edited at its original question or pause request. Its context
 copy is read-only, linked back to that owner and excluded from extra-input counts.
@@ -832,6 +960,15 @@ Failed attempts and retained publications count; focused discussions and
 assessments do not. The first P2 publication may select a method for reading,
 but it preserves the mounted shared preparation form and its draft. Only an
 explicit method choice changes preparation to that method's own draft and seed.
+  Open preparation documents are frozen snapshots owned by ProjectView, outside
+  the scope-keyed preparation form. A catalog update can change that form's basis
+  without closing the document or replacing its prose, citations or scroll state.
+  Its header and exact sources continue to identify the opened account. Navigating
+  to another project or phase clears it. All P2 static readers retain session
+  positions by project, document type and contributing scientific sources;
+  method-specific readers include the exact method identity, and question-support
+  keys exclude answer revisions. Closing returns focus to the original control
+  or a visible in-scope fallback without moving the underlying reading position.
 The shared preparation choice is retained through phase navigation, run-history
 return and reload. With one automatically displayed method, **Prepare work on
 this method** provides that explicit choice without requiring a different method
@@ -974,10 +1111,20 @@ Report tools expose the full offline HTML edition containing the report and its
 declared materials. The main report keeps its bibliography after the scientific
 account. Separately linked Markdown supporting documents, including the proof
 appendix, open as rendered HTML in their own in-app source dialogs, with exact
-document anchors and links. A material-specific HTML edition retains the full
-offline bundle and the existing optional print selection; it does not hide other
-screen content. Verified assets, exact report provenance and review status remain
-in the offline edition. Retained Markdown and LaTeX remain available as sources.
+document anchors and links. The appendix download includes the material needed
+to read it offline. The saved report shares fonts and evidence across supporting
+documents and builds an independent HTML file when the reader downloads one.
+Large text evidence files that compress well have a labeled gzip download with
+their original filename and a verifiable digest for the extracted bytes.
+The report opens with its title and scientific account. An explicitly numbered
+table caption names the table for readers and assistive technology. Keep the
+caption with its table in print and retain the scientific source links. Readers
+open notation, supporting documents and the evidence tables as needed.
+The initial print selection includes the scientific article and its references.
+Selecting the proof appendix prints the appendix alone. Glossary and raw evidence
+remain accessible in the offline edition. The private project retains the
+source documents. The shareable edition identifies its source generation and
+distinguishes projected scientific evidence from original files.
 The main report uses a compact reading budget without hard word or equation caps.
 HTML reading, mathematics, figures, citations and cross-document links are the
 acceptance surface; PDF export and pagination checks apply only if explicitly
@@ -1009,7 +1156,9 @@ The complete question appears once in its native disclosure heading when opened.
 Its defining context, consequences, alternatives and advice remain visible,
 including distinct answer consequences in older records. No word-count threshold
 hides these fields. Scientific importance, classifications, source identities and
-history remain in Context and sources. Authored mathematics, qualifications and
+history remain in supporting context: the background reader for current typed
+P2 questions, and Context and sources for the existing other owners. P2 scope and
+complete information limits stay inline. Authored mathematics, qualifications and
 citations stay intact; the renderer does not rewrite scientific prose.
 Numerical Summary sources collect exact field links without repeating them
 between paragraphs. The underlying implementation and evidence remain available.
@@ -1020,7 +1169,7 @@ dialogs use their own scroll gap. Search selection in the theory graph focuses
 the selected inspector, and closing it returns to the originating control;
 polling and restored selections do not move focus.
 
-P5 keeps its report-first layout. Indispensable P5 editorial questions have one
+P5 keeps Summary before the report. Indispensable P5 editorial questions have one
 conditional answer location within Revise report, before the run settings.
 The Next action and compact summary navigate to that same question. Exact model,
 source and answer-version filtering applies; an active run pause owns its answer
@@ -1031,6 +1180,9 @@ at their upstream owners. Ordinary report discussion stays section-based.
 
 An unanswered ordinary item is an Open question. Only an actual active run pause
 is described as paused, and it takes precedence in Next and phase navigation.
+Earlier open questions appear as a compact count linked to the phase that owns
+them. When they concern different methods, the researcher can choose the intended
+destination without reading all the method names in the project header.
 Scientific severity does not imply that the researcher must answer before work
 can continue. Missing legacy metadata does not imply optionality. Counts separate
 saved answers, saved unknown responses and unanswered questions without counting
@@ -1049,3 +1201,94 @@ Stable question, source, draft and reading-anchor keys survive copy and layout
 changes. Same-scope updates preserve focus, caret, open disclosures and reading
 offsets; user interaction cancels competing restoration. Unknown review status
 is shown as unconfirmed, never as a confirmed absence of review.
+
+### Compact supporting readers across phases
+
+P1 paper mathematics, evidence locations and submission history, plus concise
+landscape support, use compact reading toolbars. Older accounts retain their
+inline disclosures when that is their only scientific explanation. Citations
+inside a supporting reader open an exact paper assessment above it; explicit
+navigation to the paper workspace closes the supporting windows.
+
+P3 Arguments uses one selected claim shared with the graph and review context.
+Compact rows require an authoritative map and its exact complete structured
+theory. Whole-theory restrictions remain above the rows; registered assumptions
+remain with the opened claim. Complete theory documents use the existing source
+viewer. Missing or ambiguous complete sources retain the full inline fallback.
+
+P4 uses reading controls for the complete formulation, implementation details,
+files/checks, independent implementation assessment, diagnostics and recorded
+setup. Full interpretation remains owned by Experiments and Results. All
+canonical numerical exhibits and current unpublished plans stay in that card.
+Source resolution inside readers uses the producing evaluation's frozen branch,
+records, files and digests.
+
+P5 keeps the report and section discussion flow directly accessible. Claim text,
+scope, qualifications and scientific outcome stay together; source/identity
+controls collapse. Technical-report source links without authored per-link roles
+use neutral cited-source labels. Explicit counterevidence and disagreement are
+retained. Complete supporting documents open separately; Reviews and Changes keep
+their existing accounts. Retained material windows name the file and restore
+Markdown or HTML reading position after loading, with an explicit section link
+taking precedence.
+
+Scientific summary cards use ResearchCardLayout when supporting actions or
+reading are available. The account occupies the left three fifths and uses
+that column's available reading width. The right two fifths hold an optional
+content-sized actions row above Notation and Supporting reading. The account
+spans both right rows, so long prose does not push supporting controls downward.
+The reading panel has explicit padding, borders and background rather than
+inheriting application-sidebar styles.
+P1 applies it to Research Setting, Main Findings and the selected paper account;
+P3 to What is established about this model; P4 to Summary and Implementation
+and Code. P2 applies it to Proposed Methods, Select a Method to Explore and
+expanded run preparation; P5 applies it to Summary, whose actions open the report reader. The P1
+paper selector and framework map, P3 theory workbench, P4 result tables and
+figures, and P5 report body keep their full reading width. P3 summary actions
+navigate to the existing theory tabs rather than create a second theory reader.
+The P3 account is the Lead decision's `current_conclusion` (projected as
+`conclusion`), after its `headline`. Its adjacent sections are **What this
+analysis adds** (`fundamental_contribution`), **What remains uncertain**
+(`principal_uncertainty`), **Main risk or limitation**, **Unresolved
+differences**, **What changed** and **Next useful step**
+(`smallest_decisive_result`). The UI renders the authored fields without
+summarizing, trimming or deduplicating them; P5 keeps its own report headings.
+
+Decision and team-work rows also use the split for eligible brief/support pairs
+across phases; their answer forms remain full width below it. P2's expanded run
+preparation separates its editor from supporting documents; P5 editorial choices
+reuse the question rows. Each caller independently supplies actions and reading;
+missing slots reserve no empty semantic group, row or column. Question/team
+resources use a named group, while scientific-card reading uses an aside.
+Save and launch controls stay together with the preparation form.
+Shared columns stack actions, account and reading in DOM order below an 820 px
+content-container width. Reading-only cards, those without an action column such
+as the P1 selected paper, the P2 Proposed Methods comparison and P2, P3 and P4
+run preparation, stack account then reading. Controls
+remain mounted once across resizing. Nested rows may stack at a wider viewport
+because their usable content width is smaller. Essential
+conditions, uncertainty, disagreement and actual-data limitations stay with the
+main account; the renderer does not shorten or rewrite scientific prose.
+
+Document buttons describe available content: prose/equation estimates, retained
+locations, tables or files. Unknown size is omitted; zero prose never suppresses
+a useful table, file or source collection. A shared reader owner sits above keyed
+phase components, so publication updates cannot replace an open source snapshot.
+Closing restores its invoker or a visible card fallback. Explicit scope
+navigation closes the window; a newer version within the same selection does not.
+Document scroll and native disclosures restore together, including expanded
+diagnostic rows. These reading actions do not save answers or start research.
+
+This revision leaves current-question editors, P5 editorial questions, notes,
+recommendation ownership and pause flows unchanged.
+
+Source readers retain the parent document when another source is opened. Close
+and Escape return to that parent's reading position and invoking control; phase,
+branch or method navigation closes sources belonging to the previous selection.
+Report claim citations preserve their validated entry pointers. Links to report
+sections open the exact report version that authored the claim, including an
+older version, and focus the named section. Missing or ambiguous sections remain
+explicit rather than redirecting to another report. Framework citations use the
+paper assessment bound by their producing research basis. Delayed page-position
+restoration stops when the researcher scrolls, touches, clicks or uses the keyboard
+while preparation content is loading.

@@ -1,33 +1,28 @@
-import React, { useEffect, useId, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { api } from "../api";
 import {
   EDITOR_ROLES, ROLE_LABELS, REASONING_EFFORTS, EMPTY_CONNECTION,
-  editorFromDocument, documentFromEditor, maskKey, isShimConnection, blankDocument,
+  editorFromDocument, documentFromEditor, canKeepKey, resetCredential, reapplyEditorDraft, isShimConnection, blankDocument, EMPTY_MEMBER_EDITOR,
 } from "../providerEditor";
 import { editorProbeSignature } from "../providerProbe";
 import { ProviderProbe } from "./ProviderProbe";
 import { ActionButton } from "./Visuals";
 
-// A stored key is masked (•••••• + last characters) until the researcher
-// reveals it; the raw key never enters the DOM while masked.
+// Only a newly entered replacement can be revealed. Stored keys never arrive
+// in browser state or the DOM.
 export function SecretKeyField({ label = "API key", value, onChange, ariaLabel }) {
   const inputId = useId();
   const [revealed, setRevealed] = useState(false);
-  const [edited, setEdited] = useState(false);
-  const masked = Boolean(value) && !revealed && !edited;
   return <div className="field">
     <label htmlFor={inputId}>{label}</label>
     <div className="key-input-row">
-      <input id={inputId} type={revealed ? "text" : "password"} value={masked ? maskKey(value) : value} readOnly={masked}
+      <input id={inputId} type={revealed ? "text" : "password"} value={value}
         aria-label={ariaLabel || label} placeholder="Paste the provider key" autoComplete="off" spellCheck="false"
-        onFocus={() => { if (masked) setRevealed(true); }}
-        onChange={(e) => { setEdited(true); onChange(e.target.value); }} />
+        onChange={(e) => onChange(e.target.value)} />
       {value ? <button type="button" className="btn ghost" aria-pressed={revealed}
-        onClick={() => { setRevealed(!revealed); setEdited(false); }}>{revealed ? "Hide" : "Show"}</button> : null}
+        onClick={() => setRevealed(!revealed)}>{revealed ? "Hide" : "Show"}</button> : null}
     </div>
-    <div className="hint">{masked
-      ? "Stored key, masked except its last characters. Focus the field or choose Show to view or replace it."
-      : "The key is visible only in this browser. It is saved into the provider file, never into research artifacts or logs."}</div>
+    <div className="hint">This key is written to the provider file when you save settings. Saved keys are never sent back to this browser.</div>
   </div>;
 }
 
@@ -58,16 +53,18 @@ function ModelEffortFields({ value, onChange, prefix, inherit = false, shared, r
 export function ConnectionFields({ value, onChange, prefix, reasoningEfforts }) {
   const inputId = useId();
   const set = (key) => (e) => onChange({ ...value, [key]: e.target.value });
+  const setConnection = (key) => (e) => onChange({ ...resetCredential({ ...value, [key]: e.target.value }), credential_connection_changed: true });
+  const keepAvailable = canKeepKey(value);
   return <>
     <div className="tworow">
       <div className="field">
         <label htmlFor={`${inputId}-provider`}>Provider name / ID</label>
-        <input id={`${inputId}-provider`} aria-label={`${prefix} provider ID`} value={value.id} onChange={set("id")} placeholder="my-provider" />
+        <input id={`${inputId}-provider`} aria-label={`${prefix} provider ID`} value={value.id} onChange={setConnection("id")} placeholder="my-provider" />
         <div className="hint">A name you choose, using letters, numbers, hyphens, or underscores.</div>
       </div>
       <div className="field">
         <label htmlFor={`${inputId}-url`}>Base URL</label>
-        <input id={`${inputId}-url`} aria-label={`${prefix} base URL`} value={value.base_url} onChange={set("base_url")}
+        <input id={`${inputId}-url`} aria-label={`${prefix} base URL`} value={value.base_url} onChange={setConnection("base_url")}
           placeholder="https://api.example.com/v1" />
         <div className="hint">Responses-compatible endpoint, without embedded credentials or query parameters.</div>
       </div>
@@ -76,13 +73,23 @@ export function ConnectionFields({ value, onChange, prefix, reasoningEfforts }) 
     <div className="field">
       <label>Credentials</label>
       <div className="segs">
+        {value.api_key_keep && <button type="button" className={`seg ${value.credential === "keep" && keepAvailable ? "on" : ""}`}
+          aria-pressed={value.credential === "keep" && keepAvailable} disabled={!keepAvailable}
+          onClick={() => onChange({ ...value, credential: "keep", api_key: "", api_key_env: "" })}>Keep saved key</button>}
         <button type="button" className={`seg ${value.credential === "file" ? "on" : ""}`} aria-pressed={value.credential === "file"}
-          onClick={() => onChange({ ...value, credential: "file" })}>Enter API key</button>
+          onClick={() => onChange({ ...value, credential: "file", api_key_env: "" })}>{value.api_key_keep ? "Replace API key" : "Enter API key"}</button>
         <button type="button" className={`seg ${value.credential === "env" ? "on" : ""}`} aria-pressed={value.credential === "env"}
-          onClick={() => onChange({ ...value, credential: "env" })}>Environment variable</button>
+          onClick={() => onChange({ ...value, credential: "env", api_key: "" })}>Environment variable</button>
       </div>
     </div>
-    {value.credential === "env"
+    {value.credential_connection_changed && <p className="note warn">The provider or base URL changed. Enter a new key or choose its environment variable for this connection.</p>}
+    {!value.credential_connection_changed && value.api_key_keep && !keepAvailable && <p className="note warn">Enter a provider ID and valid base URL, then choose a new key or environment variable for this connection.</p>}
+    {value.credential_review_required && value.credential === "file" && !value.api_key && <p className="note warn">{value.api_key_keep
+      ? "Review the credential after refreshing. Choose Keep saved key again or enter a replacement before saving."
+      : "The saved key is no longer available for this connection. Enter a new key or choose an environment variable before saving."}</p>}
+    {value.credential === "keep" && keepAvailable
+      ? <p className="note">The saved key stays in the provider file for this connection. Its value is not shown or loaded into this editor.</p>
+      : value.credential === "env"
       ? <div className="field">
           <label htmlFor={`${inputId}-env`}>API key environment variable</label>
           <input id={`${inputId}-env`} aria-label={`${prefix} API key environment variable`} value={value.api_key_env} onChange={set("api_key_env")}
@@ -90,6 +97,7 @@ export function ConnectionFields({ value, onChange, prefix, reasoningEfforts }) 
           <div className="hint">Variable name only; the backend process reads the key from its environment.</div>
         </div>
       : <SecretKeyField value={value.api_key} onChange={(api_key) => onChange({ ...value, api_key })} ariaLabel={`${prefix} API key`} />}
+    {value.api_key_keep && <div className="hint">To remove the stored key, save an environment variable instead, switch to OpenAI account, or remove this connection.</div>}
     {isShimConnection(value) && <p className="note">This connection points at the local Responses shim. Which key
       the provider actually receives depends on how the shim was started: with <code>--auth env</code> (the default)
       the key here is only the shim's placeholder and the shim uses the real key from its own env file; with{" "}
@@ -100,7 +108,7 @@ export function ConnectionFields({ value, onChange, prefix, reasoningEfforts }) 
 export function MemberEditor({ role, value, defaultExists, shared, reasoningEfforts, onChange, probe = null }) {
   const label = ROLE_LABELS[role] || role;
   const choose = (mode) => onChange({
-    ...value, mode,
+    ...(mode === value.mode ? value : resetCredential(value)), mode,
     model: mode === "default" ? value.model : value.model || EMPTY_CONNECTION.model,
     reasoning_effort: mode === "default" ? value.reasoning_effort : value.reasoning_effort || EMPTY_CONNECTION.reasoning_effort,
   });
@@ -129,6 +137,8 @@ export function MemberEditor({ role, value, defaultExists, shared, reasoningEffo
     {value.mode === "custom" && <>
       <ConnectionFields value={value} onChange={onChange} prefix={label} reasoningEfforts={reasoningEfforts} />
       <div className="hint">A complete connection of its own: it never inherits a key or endpoint from anywhere else.</div>
+      <button type="button" className="btn ghost" onClick={() => onChange({ ...EMPTY_MEMBER_EDITOR, mode: defaultExists ? "default" : "ungoverned" })}>Remove custom connection</button>
+      <div className="hint">After saving, this member uses {defaultExists ? "the shared default" : "its per-project saved settings"}.</div>
     </>}
     {probe}
   </section>;
@@ -143,9 +153,9 @@ function SharedDefaultSection({ shared, onChange, reasoningEfforts }) {
         <label>Connection type</label>
         <div className="segs">
           <button type="button" className={`seg ${shared.type === "openai" ? "on" : ""}`} aria-pressed={shared.type === "openai"}
-            onClick={() => onChange({ ...shared, type: "openai" })}>OpenAI account</button>
+            onClick={() => onChange({ ...(shared.type === "openai" ? shared : resetCredential(shared)), type: "openai" })}>OpenAI account</button>
           <button type="button" className={`seg ${shared.type === "custom" ? "on" : ""}`} aria-pressed={shared.type === "custom"}
-            onClick={() => onChange({ ...shared, type: "custom" })}>Custom provider</button>
+            onClick={() => onChange({ ...(shared.type === "custom" ? shared : resetCredential(shared)), type: "custom" })}>Custom provider</button>
         </div>
       </div>
       {shared.type === "openai" && <>
@@ -251,12 +261,20 @@ export default function ProviderFileEditor({ onSaved, onClose, projectId = null,
   const [saveError, setSaveError] = useState(null);
   const [conflict, setConflict] = useState(false);
   const [saving, setSaving] = useState(false);
+  const saveInvoker = useRef(null);
   const [savedNotice, setSavedNotice] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   // A credential-containing draft lives only in this component's memory — never
   // in browser persistent storage. It survives a refresh so the researcher can
   // reapply unsaved edits onto the latest file; there is no automatic merge.
   const [draft, setDraft] = useState(null);
+
+  useEffect(() => {
+    if (saving) return;
+    const target = saveInvoker.current;
+    saveInvoker.current = null;
+    if (target?.isConnected && !target.disabled && document.activeElement === document.body) target.focus({ preventScroll: true });
+  }, [saving]);
 
   const load = async () => {
     setLoadError(null); setConflict(false); setConfirmingRemove(false);
@@ -274,8 +292,9 @@ export default function ProviderFileEditor({ onSaved, onClose, projectId = null,
     await load();
   };
 
-  const persist = async (document) => {
+  const persist = async (document, invoker) => {
     if (saving || !view) return;
+    saveInvoker.current = invoker;
     setSaving(true); setSaveError(null); setConflict(false);
     try {
       await api.saveProviderConfig(view.token, document);
@@ -292,7 +311,7 @@ export default function ProviderFileEditor({ onSaved, onClose, projectId = null,
   // Editing the latest view supersedes the stashed draft (no silent clobber on reapply).
   const change = (next) => { setEditor(next); setSavedNotice(false); setSaveError(null); setDraft(null); };
   const reapplyDraft = () => {
-    if (draft) { setEditor(draft); setSavedNotice(false); }
+    if (draft) { setEditor(reapplyEditorDraft(draft, editor)); setSavedNotice(false); }
     setDraft(null);
   };
 
@@ -317,8 +336,8 @@ export default function ProviderFileEditor({ onSaved, onClose, projectId = null,
       </div>
     </div></div>;
   }
-  return <ProviderFileEditorForm key={view.token} view={view} editor={editor} onEditorChange={change}
-    onSave={() => persist(documentFromEditor(editor))} onRemove={() => persist(blankDocument())}
+  return <ProviderFileEditorForm view={view} editor={editor} onEditorChange={change}
+    onSave={(event) => persist(documentFromEditor(editor), event.currentTarget)} onRemove={(event) => persist(blankDocument(), event.currentTarget)}
     onRefresh={refreshPreservingDraft} onClose={onClose} saving={saving} saveError={saveError} conflict={conflict}
     savedNotice={savedNotice} confirmingRemove={confirmingRemove} onToggleRemove={() => setConfirmingRemove(!confirmingRemove)}
     draftKept={Boolean(draft)} onReapplyDraft={reapplyDraft} onDiscardDraft={() => setDraft(null)} projectId={projectId}

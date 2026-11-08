@@ -19,7 +19,7 @@ async def api(workbench, monkeypatch):
     monkeypatch.delenv("MF_CODEX_READ_ONLY", raising=False)
     eng, project, branch = workbench
     app = create_app(data_root=eng.data_root, bridge=eng.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         yield client, app.state.engine, project, branch
 
 

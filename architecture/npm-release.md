@@ -1,10 +1,7 @@
 # Preparing an npm prerelease
 
-This guide prepares the Model Forge 0.9.4 prerelease artifact. It includes
-shared project notation, scientific presentation guidance, compact results,
-report appendix delivery improvements, and a worn silver frame. Preparation does not imply that
-the npm package or a GitHub release has been published.
-The application version is 0.9.4. The workflow catalog has its own version,
+This guide prepares the Model Forge 0.9.5 release candidate for local testing.
+The workflow catalog has its own version,
 pinned in `contracts/catalog-pin.json`.
 
 The package uses existing shared Python 3.11+ and Node.js 22+ installations.
@@ -26,7 +23,7 @@ From the repository root, using the shared runtimes:
 mkdir -p dist
 npm pack --pack-destination dist
 npm run test:npm
-"$MF_PYTHON" -B scripts/smoke_npm_release.py dist/rqzhu-aide-model-forge-codex-0.9.4.tgz
+"$MF_PYTHON" -B scripts/smoke_npm_release.py dist/rqzhu-aide-model-forge-codex-0.9.5.tgz
 ```
 
 `npm pack` runs `scripts/prepare_npm_package.mjs`. It verifies catalog hashes,
@@ -65,6 +62,13 @@ Browser opening, Ctrl+C, native sandbox use, and actual model research require
 their own checks. Record the operating systems and runtime versions actually
 tested instead of treating the package's version ranges as platform certification.
 
+To test on another computer, transfer the reviewed tarball, its SHA-256, and
+`scripts/verify_npm_candidate.py`. The verifier runs without a checkout after
+the shared Python and Node dependencies are installed. It checks the hash
+before running npm offline, opens a disposable research folder on a free port,
+checks the served UI and exact release, and stops that instance. See the
+[candidate test command](../docs/development.md#prepared-release-tarball).
+
 Integrity diagnostics distinguish downloaded source from the retained snapshot
 and identify the exact affected directory. Repair is manual: every instance
 sharing that release must stop before a targeted sibling quarantine and verified
@@ -83,7 +87,7 @@ After explicit publication authorization, an npm maintainer with access to the
 `@rqzhu-aide` scope can publish the exact reviewed tarball under `next`:
 
 ```sh
-npm publish ./dist/rqzhu-aide-model-forge-codex-0.9.4.tgz --access public --tag next
+npm publish ./dist/rqzhu-aide-model-forge-codex-0.9.5.tgz --access public --tag next
 ```
 
 The prerelease launch command then becomes:

@@ -402,7 +402,8 @@ def test_support_backlinks_use_exact_primary_aliases_without_copying_the_report(
     portable = export_technical_report(report, basis, generation_ref={"generation_id": "generation.report", "content_sha256": "c"*64},
                                       artifact_roots=roots, exported_at="2026-10-20T20:00:00Z").decode()
     assert portable.count('class="report-supplement"') == 1
-    assert portable.count('href="#problem"') == 3
+    supplement = portable.split('<section class="report-supplement"', 1)[1].split("</section>", 1)[0]
+    assert supplement.count('href="#problem"') == 3
     assert 'href="#report-support-1-model"' in portable
     assert 'id="report-support-1-model"' in portable
 
@@ -474,18 +475,19 @@ def test_portable_report_inlines_math_and_exact_metadata(report_case):
     assert 'src="http' not in result and "artifact://" not in result
     assert '"review_status": "not_independently_reviewed"' in result
     assert '"status": "complete"' in result and "generation.report" in result
-    banner = result.split("<aside>", 1)[1].split("</aside>", 1)[0]
-    assert "This version has not been independently reviewed." in banner.split("<details>", 1)[0]
-    assert "generation.report" not in banner.split("<details>", 1)[0]
-    assert "<details><summary>Source details</summary>" in banner
+    banner = result.split('<details class="report-publication">', 1)[1].split("</details>", 1)[0]
+    assert "Not independently reviewed" in banner.split("</summary>", 1)[0]
+    assert "generation.report" not in banner.split("</summary>", 1)[0]
+    assert '<dt>Report generation</dt><dd><code>generation.report</code></dd>' in banner
+    assert result.index("<h1") < result.index('<details class="report-publication">')
     packet = {"independent_review_completed": True, "target": {**ref, "report_artifact_sha256": report["report_artifact"]["sha256"]}}
     result = export_technical_report(report, basis, generation_ref=ref, artifact_roots=roots, exported_at="2026-10-11T20:00:00Z", review_packets=[packet]).decode()
     assert '"review_status": "independently_reviewed"' in result
-    assert "This version has been independently reviewed." in result
+    assert "Independently reviewed</summary>" in result
     ref["generation_id"] = "generation.revision"
     result = export_technical_report(report, basis, generation_ref=ref, artifact_roots=roots, exported_at="2026-10-11T20:00:00Z", review_packets=[packet]).decode()
     assert '"review_status": "not_independently_reviewed"' in result
-    assert "This version has not been independently reviewed." in result
+    assert "Not independently reviewed</summary>" in result
 
 
 def test_prose_numbers_are_checked_against_exact_scalar_source(report_case):

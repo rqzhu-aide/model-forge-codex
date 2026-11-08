@@ -7,7 +7,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { sharedPackage } from "../scripts/shared-deps.mjs";
 import {
-  editorFromDocument, documentFromEditor, maskKey, isShimConnection, blankDocument, EMPTY_MEMBER_EDITOR, EMPTY_CONNECTION,
+  editorFromDocument, documentFromEditor, canKeepKey, resetCredential, reapplyEditorDraft, isShimConnection, blankDocument, EMPTY_MEMBER_EDITOR, EMPTY_CONNECTION,
 } from "../src/providerEditor.js";
 
 test("new connections use Sol 6.1 xhigh while shared inheritance and saved effort remain intact", () => {
@@ -20,18 +20,18 @@ test("new connections use Sol 6.1 xhigh while shared inheritance and saved effor
 
 const KEY = "sk-fixture-1234";
 const DOCUMENT = {
-  provider: { type: "custom", id: "lab", base_url: "https://provider.example/v1", model: "lab-current", reasoning_effort: "high", api_key: KEY },
+  provider: { type: "custom", id: "lab", base_url: "https://provider.example/v1", model: "lab-current", reasoning_effort: "high", api_key_keep: "sha256:test" },
   members: {
     research_lead: { type: "openai", model: "gpt-5.6-sol", reasoning_effort: "medium" },
     theorist: { model: "theory-model", reasoning_effort: "low" },
   },
 };
 
-test("stored keys mask to their last characters, and short keys never leak", () => {
-  assert.equal(maskKey(KEY), "••••••1234");
-  assert.equal(maskKey("abc"), "••••••");
-  assert.equal(maskKey(""), "");
-  assert.equal(maskKey(null), "");
+test("saved keys are never loaded, even from a response from an older server", () => {
+  const editor = editorFromDocument({ provider: { ...DOCUMENT.provider, api_key: KEY }, members: {} });
+  assert.equal(editor.shared.api_key, "");
+  assert.equal(editor.shared.credential, "keep");
+  assert.doesNotMatch(JSON.stringify(editor), new RegExp(KEY));
 });
 
 test("shim connections are recognized by id or loopback shim port", () => {
@@ -43,7 +43,8 @@ test("shim connections are recognized by id or loopback shim port", () => {
 test("the editor document round-trips through editor state and back into the save payload", () => {
   const editor = editorFromDocument(DOCUMENT);
   assert.equal(editor.shared.id, "lab");
-  assert.equal(editor.shared.api_key, KEY);
+  assert.equal(editor.shared.api_key, "");
+  assert.equal(editor.shared.credential, "keep");
   assert.equal(editor.members.research_lead.mode, "openai");
   assert.equal(editor.members.theorist.mode, "default");
   assert.equal(editor.members.data_analyst.mode, "default");
@@ -98,15 +99,16 @@ const formProps = (overrides = {}) => ({
   onRefresh: noop, onClose: noop, onToggleRemove: noop, ...overrides,
 });
 
-test("the editor masks stored keys behind a reveal toggle and never renders the raw key", () => {
+test("the editor offers a keep choice without rendering a stored key or reveal control", () => {
   const html = render.form(formProps());
-  assert.match(html, /readonly=""[^>]*value="••••••1234"/);
-  assert.match(html, /type="password"/);
-  assert.match(html, /aria-pressed="false">Show</);
+  assert.match(html, /aria-pressed="true">Keep saved key</);
+  assert.match(html, /Its value is not shown or loaded into this editor/);
+  assert.doesNotMatch(html, />Show<|••••|readonly=""/);
   assert.doesNotMatch(html, new RegExp(KEY));
   const revealed = render.secret({ value: KEY, onChange: noop });
   assert.match(revealed, /aria-pressed="false">Show</);
-  assert.match(revealed, /Focus the field or choose Show/);
+  assert.match(revealed, /Saved keys are never sent back/);
+  assert.match(revealed, /type="password"/);
   const empty = render.secret({ value: "", onChange: noop });
   assert.match(empty, /type="password"/);
   assert.doesNotMatch(empty, /Show</);
@@ -194,14 +196,70 @@ test("configuration focuses the chosen member while keeping separate drafts and 
 
 test("custom provider fields expose credentials and model parameters together and accept nonreasoning models", () => {
   const editor = editorFromDocument({ provider: {}, members: { theorist: {
-    type: "custom", id: "research", base_url: "https://research.example/v1", api_key: KEY,
+    type: "custom", id: "research", base_url: "https://research.example/v1", api_key_keep: "sha256:test",
     model: "own-model", reasoning_effort: "none",
   } } });
   const html = render.form(formProps({ editor, selectedRole: "theorist", reasoningEfforts: ["none", "medium", "high"] }));
   assert.match(html, /aria-label="Theorist model"[^>]*value="own-model"/);
   assert.match(html, /aria-label="Theorist base URL"/);
-  assert.match(html, /aria-label="Theorist API key"/);
+  assert.match(html, /Keep saved key/);
   assert.match(html, /value="none" selected="">none<\/option>/);
-  assert.match(html, />Enter API key</);
+  assert.match(html, />Replace API key</);
   assert.doesNotMatch(html, new RegExp(KEY));
+});
+
+test("changing a connection clears a credential choice and never silently redirects a saved key", () => {
+  const editor = editorFromDocument(DOCUMENT);
+  assert.equal(canKeepKey(editor.shared), true);
+  const changed = resetCredential({ ...editor.shared, base_url: "https://different.example/v1" });
+  assert.equal(changed.credential, "file");
+  assert.equal(canKeepKey(changed), false);
+  assert.equal(documentFromEditor({ ...editor, shared: changed }).provider.api_key_keep, undefined);
+  assert.equal(documentFromEditor({ ...editor, shared: changed }).provider.api_key, undefined);
+  const html = render.form(formProps({ editor: { ...editor, shared: changed }, selectedRole: "shared" }));
+  assert.match(html, /disabled="">Keep saved key/);
+  assert.match(html, /Enter a provider ID and valid base URL/);
+  assert.match(html, /type="password"[^>]*value=""/);
+  const env = resetCredential({ ...editor.shared, credential: "env", api_key_env: "SAVED_ENV", id: "new-provider" });
+  assert.equal(env.api_key_env, "");
+  assert.equal(env.credential, "file");
+});
+
+test("replacement and environment actions never submit a keep marker together with a credential", () => {
+  const editor = editorFromDocument(DOCUMENT);
+  const replacement = documentFromEditor({ ...editor, shared: { ...editor.shared, credential: "file", api_key: KEY } });
+  assert.equal(replacement.provider.api_key, KEY);
+  assert.equal(replacement.provider.api_key_keep, undefined);
+  const environment = documentFromEditor({ ...editor, shared: { ...editor.shared, credential: "env", api_key_env: "PROVIDER_KEY" } });
+  assert.equal(environment.provider.api_key_env, "PROVIDER_KEY");
+  assert.equal(environment.provider.api_key_keep, undefined);
+  assert.equal(environment.provider.api_key, undefined);
+});
+
+test("reapplying after a conflict keeps typed replacements and requires reviewing changed saved keys", () => {
+  const old = editorFromDocument(DOCUMENT);
+  old.members.theorist.model = "my-unsaved-model";
+  const latest = editorFromDocument({ ...DOCUMENT, provider: { ...DOCUMENT.provider, api_key_keep: "sha256:new" } });
+  const reapplied = reapplyEditorDraft(old, latest);
+  assert.equal(reapplied.members.theorist.model, "my-unsaved-model");
+  assert.equal(reapplied.shared.credential, "file");
+  assert.equal(reapplied.shared.api_key, "");
+  assert.equal(reapplied.shared.api_key_keep, "sha256:new");
+  assert.equal(reapplied.shared.credential_review_required, true);
+  assert.equal(documentFromEditor(reapplied).provider.api_key_keep, undefined);
+  assert.equal(canKeepKey(reapplied.shared), true);
+  const html = render.form(formProps({ editor: reapplied, selectedRole: "shared" }));
+  assert.match(html, /Review the credential after refreshing/);
+  const replacement = reapplyEditorDraft({ ...old, shared: { ...old.shared, credential: "file", api_key: KEY } }, latest);
+  assert.equal(replacement.shared.api_key, KEY);
+  assert.equal(replacement.shared.credential, "file");
+});
+
+test("removing a member custom connection restores the appropriate scope and drops its credential", () => {
+  const noDefault = editorFromDocument({ provider: {}, members: { theorist: { ...DOCUMENT.provider } } });
+  const html = render.form(formProps({ editor: noDefault, selectedRole: "theorist" }));
+  assert.match(html, /Remove custom connection/);
+  assert.match(html, /After saving, this member uses its per-project saved settings/);
+  const inherited = render.form(formProps({ editor: { ...noDefault, shared: editorFromDocument(DOCUMENT).shared } }));
+  assert.match(inherited, /After saving, this member uses the shared default/);
 });

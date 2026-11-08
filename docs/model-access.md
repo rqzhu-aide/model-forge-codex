@@ -1,8 +1,8 @@
 # Model access and runtime setup
 
-Model Forge runs model work through its Codex bridge. You can connect an OpenAI account or configure a custom provider with an API key. Model availability and reasoning efforts depend on the chosen account or provider. Choose values you can access and test every team member's effective settings before research.
+The workbench runs model work through its Codex bridge. You can connect an OpenAI account or configure a custom provider with an API key. Model availability and reasoning efforts depend on the chosen account or provider. Choose values you can access and test every team member's effective settings before research.
 
-The [installation guide](installation.md) covers shared Python and Node.js setup and selecting the same `MF_PYTHON` for installation and launch. Do not create a project-local environment or download a private runtime for the app.
+The [installation guide](installation.md) covers running this reviewer snapshot with shared Python and Node.js installations, using the same selected Python for dependency installation and launch. Do not create a project-local environment or download a private runtime for the app.
 
 ## Select the shared Codex runtime
 
@@ -16,7 +16,7 @@ The selected executable handles sign-in, research turns, and managed experiments
 
 ## Native Windows setup
 
-Before using either an OpenAI account or a custom provider on native Windows, open Codex under the same Windows user and `CODEX_HOME` that will run Model Forge, and complete its one-time sandbox setup. The app checks readiness; it does not initialize or replace sandbox identities.
+Before using either an OpenAI account or a custom provider on native Windows, open Codex under the same Windows user and `CODEX_HOME` that will run the workbench, and complete its one-time sandbox setup. The app checks readiness; it does not initialize or replace sandbox identities.
 
 If `codex` is not on `PATH`, open the CLI supplied by your existing shared Python package from PowerShell:
 
@@ -25,13 +25,13 @@ $codexExecutable = & $env:MF_PYTHON -c "from codex_cli_bin import bundled_codex_
 & $codexExecutable
 ```
 
-When `MF_CODEX_BIN` is set, open that executable instead. Complete the setup offered by Codex, then return to Model Forge and test the team connections.
+When `MF_CODEX_BIN` is set, open that executable instead. Complete the setup offered by Codex, then return to the workbench and test the team connections.
 
-Managed **Phase 4 numerical experiments require elevated Windows sandbox mode and completed setup**. Model Forge checks the selected mode and readiness before preparing that numerical work; it does not change the mode, initialize identities or relax experiment access rules. An unelevated sandbox may report ready for other Codex operations but does not support the managed experiment contract. Earlier phases retain their own native-tool checks rather than a new global elevated-mode requirement. A setup or access-preparation error should be resolved as a runtime issue, not by replacing research data.
+Managed **Phase 4 numerical experiments require elevated Windows sandbox mode and completed setup**. The workbench checks the selected mode and readiness before preparing that numerical work; it does not change the mode, initialize identities or relax experiment access rules. An unelevated sandbox may report ready for other Codex operations but does not support the managed experiment contract. Earlier phases retain their own native-tool checks rather than a new global elevated-mode requirement. A setup or access-preparation error should be resolved as a runtime issue, not by replacing research data.
 
 Numerical experiments need a shared Python or R installation and the required scientific packages accessible inside the sandbox. A successful model connection alone does not check this. Set `MF_P4_PYTHON` or `MF_P4_RSCRIPT` before launch to select a particular shared experiment runtime. On Windows, experiment Python discovery prefers the existing shared Codex desktop Python, then falls back to the service interpreter. The desktop app is optional.
 
-These overrides are executable **paths**. Absolute paths are clearest; relative paths belong to the terminal that launches the packaged app, and `~/...` refers to the user's home. Do not pass arguments or a shell command. Leave `MF_P4_RSCRIPT` unset to discover `Rscript` on PATH.
+These overrides are executable **paths**. Absolute paths are clearest; relative paths belong to the terminal that launches the app, and `~/...` refers to the user's home. Do not pass arguments or a shell command. Leave `MF_P4_RSCRIPT` unset to discover `Rscript` on PATH.
 
 ## Connect an OpenAI account
 
@@ -44,7 +44,7 @@ Connection fills empty account-backed member connections and preserves existing 
 
 On Windows, sign-in uses the shared native runtime's file cache. If its existing sign-in cannot be confirmed, resolve that account in Codex before trying again. On macOS and Linux, device sign-in uses a separate workbench account cache. The connection uses file-backed credentials; it does not copy an OS keyring entry. Example previews display account status but do not permit sign-in or connection.
 
-The app may report that device-code login needs enabling in account security settings. Follow the sign-in message and your workspace's access rules. Model Forge does not grant account or model access.
+The app may report that device-code login needs enabling in account security settings. Follow the sign-in message and your workspace's access rules. The workbench does not grant account or model access.
 
 ## Configure an API key or another provider
 
@@ -59,9 +59,13 @@ The base URL must be an API base such as `https://api.example.com/v1`, rather th
 
 The provider editor saves a file shared across projects on this backend. Its location is shown in Team Settings. The default is `~/.model-forge-codex/providers.toml`, or `MF_CODEX_HOME/providers.toml` with a custom research folder. Set `MF_CODEX_PROVIDER_CONFIG` before launch to use a different file.
 
+Saved API keys are never returned to the browser. Choose **Keep saved key** to retain one while editing its model or reasoning effort, or **Replace API key** to enter a new one. Changing the provider ID or base URL clears the credential choice; select a source for that connection before saving. Environment settings show the variable name only, never its value.
+
+To remove a stored key, save an environment variable instead, switch the connection to **OpenAI account**, or remove its custom connection or shared default. A custom connection still requires one valid credential source. After refreshing a conflict and reapplying edits, review and select the saved key again if the file changed.
+
 ### Edit provider settings as TOML
 
-You can copy the repository's [providers.example.toml](https://github.com/rqzhu-aide/model-forge-codex/blob/main/config/providers.example.toml) to the displayed file location and edit it directly. Keep the populated file outside the repository.
+You can copy the repository's [providers.example.toml](../config/providers.example.toml) to the displayed file location and edit it directly. Keep the populated file outside the repository.
 
 Each member table with a `type` is a complete connection. It does not inherit another provider's endpoint or key:
 
@@ -110,7 +114,7 @@ Stored API keys are masked in the provider editor until revealed. They can be re
 
 ### Optional Responses shim
 
-The optional shim requires the [source installation](development.md#source-checkout) of Model Forge into the selected shared Python. The npm-only quickstart installs dependencies and bundled app files, so its separate terminal cannot import this Python module. After source installation, start the shim from any directory using that same executable.
+The optional shim is available after the reviewer's [source installation](installation.md#install-python-dependencies) into the selected shared Python. Start it from any directory using that same executable.
 
 ```text
 "$MF_PYTHON" -m model_forge_codex.shim --port 8780 --auth forward --base-url https://api.example.com/v4
@@ -118,7 +122,7 @@ The optional shim requires the [source installation](development.md#source-check
 
 In PowerShell, replace `"$MF_PYTHON"` with `& $env:MF_PYTHON`. Check the installation without contacting a provider using `-m model_forge_codex.shim --help` first.
 
-Set `shim` as the provider ID and `http://127.0.0.1:8780/v1` as its base URL. With `--auth forward`, the shim forwards each member's configured key. The repository's [shim design](https://github.com/rqzhu-aide/model-forge-codex/blob/main/architecture/decisions/ADR-008-responses-shim.md) describes its supported scope and the older `shim.env` arrangement. A shim does not establish compatibility with every provider.
+Set `shim` as the provider ID and `http://127.0.0.1:8780/v1` as its base URL. With `--auth forward`, the shim forwards each member's configured key. The repository's [shim design](../architecture/decisions/ADR-008-responses-shim.md) describes its supported scope and the older `shim.env` arrangement. A shim does not establish compatibility with every provider.
 
 ## Understand connection tests
 
