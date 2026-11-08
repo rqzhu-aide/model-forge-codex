@@ -9,7 +9,7 @@ import { parseArgs } from "node:util";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const help = `Model Forge: your local research workbench
 
-Usage: npx @rqzhu-aide/model-forge-codex@next web [options]
+Usage: npx @rqzhu-aide/model-forge-codex web [options]
 
 Commands:
   web       Start the workbench and open your browser. Keep this terminal open.

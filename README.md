@@ -3,8 +3,6 @@
 [![npm latest](https://img.shields.io/npm/v/%40rqzhu-aide%2Fmodel-forge-codex/latest?label=npm%20latest)](https://www.npmjs.com/package/@rqzhu-aide/model-forge-codex)
 [![npm next](https://img.shields.io/npm/v/%40rqzhu-aide%2Fmodel-forge-codex/next?label=npm%20next)](https://www.npmjs.com/package/@rqzhu-aide/model-forge-codex?activeTab=versions)
 
-The installation commands below follow the published **`next` prerelease channel**. The badges show the versions currently available on npm. To test the locally prepared **0.9.5 candidate**, use the [prepared tarball instructions](docs/development.md#prepared-release-tarball); `@next` does not select a local checkout or tarball.
-
 Model Forge is a local workbench for developing statistical and machine learning models and algorithms with an AI research team. Start from a problem, compare approaches, examine theory and numerical evidence, and build a **technical report** with mathematics, citations, and links to supporting work.
 
 **You direct the research.** The team invites your input on critical decisions affecting the scientific goal, model interpretation, statistical claims, data applicability, or meaningful resource tradeoffs. Each decision explains its consequences. Discuss the question, ask for the Lead's advice, and save an editable answer for future work. The Lead handles routine choices; you choose which phase to run next.
@@ -18,7 +16,7 @@ Model Forge is a local workbench for developing statistical and machine learning
 Use shared **Node.js 22+ with npm** and **Python 3.11+** installations. Complete the one-time setup for **[Windows](docs/installation.md#windows)**, **[macOS](docs/installation.md#macos)**, or **[Linux](docs/installation.md#linux)**. This installs the backend dependencies and sets `MF_PYTHON` to the shared Python used for launch. Then run in the same terminal:
 
 ```sh
-npx @rqzhu-aide/model-forge-codex@next web
+npx @rqzhu-aide/model-forge-codex web
 ```
 
 In a new terminal, set `MF_PYTHON` again or pass `--python PATH` to that same shared executable. The package includes the built interface. No project environment or frontend build is needed, and the Codex desktop app is optional.
@@ -38,13 +36,13 @@ Projects and settings are saved in **`~/.model-forge-codex`**, separately from a
 Finish or cancel active research before stopping. Use the same data folder and port when checking or stopping a custom instance:
 
 ```sh
-npx @rqzhu-aide/model-forge-codex@next status
-npx @rqzhu-aide/model-forge-codex@next stop
+npx @rqzhu-aide/model-forge-codex status
+npx @rqzhu-aide/model-forge-codex stop
 ```
 
-To stay on a specific release, replace `@next` with its published version number. Use `@latest` for the default npm release. Use the same version or channel for `web`, `status`, and `stop`. For setup errors and updates, see [installation and troubleshooting](docs/installation.md). The development guide also covers [source installation](docs/development.md#source-checkout) and [prepared tarballs](docs/development.md#prepared-release-tarball).
+These commands use the stable npm release. To stay on version 0.9.5, use `@rqzhu-aide/model-forge-codex@0.9.5` for all three commands. See [installation and troubleshooting](docs/installation.md) for setup help.
 
-Windows package launch and browser onboarding have been checked locally. Native clean-profile macOS/Linux verification remains pending. Model-generated scientific claims and results require researcher review.
+Windows package launch and browser onboarding were verified locally. A user reported a successful Linux installation of 0.9.5. Native macOS verification is pending. Model-generated scientific claims and results require researcher review.
 
 ## Five research phases
 

@@ -4,7 +4,7 @@ Use a shared Node.js 22+ installation with npm and a shared CPython 3.11+ instal
 
 The npm package contains the application, interface, fonts, mathematics renderer and HTML report exporter. It needs backend Python dependencies, but no frontend build packages. The Codex desktop app is optional. Keep runtimes and packages user-wide or machine-wide, outside research projects.
 
-The commands below launch npm's published `next` package. For the local **0.9.5 candidate**, complete the same runtime and Python dependency setup, then replace the final `npx` command with the [prepared tarball command](development.md#prepared-release-tarball).
+The commands below start the stable release from npm. Follow the steps for your operating system in the same terminal.
 
 ## Windows
 
@@ -15,7 +15,7 @@ $mfPython = (py -3 -c "import sys; print(sys.executable)").Trim()
 & $mfPython --version
 & $mfPython -m pip install --user "fastapi>=0.115" "uvicorn>=0.30" "jsonschema>=4.20" "httpx>=0.27" "openai-codex>=0.147,<0.148"
 $env:MF_PYTHON = $mfPython
-npx @rqzhu-aide/model-forge-codex@next web
+npx @rqzhu-aide/model-forge-codex web
 ```
 
 For an explicit executable, use `$mfPython = 'C:/path/to/shared/python.exe'`. Do not pass a command string such as `py -3` as `MF_PYTHON`. Complete the [Windows Codex setup](model-access.md#native-windows-setup) before research; managed Phase 4 requires supported elevated sandbox setup.
@@ -30,7 +30,7 @@ If you do not already have a suitable shared Python that permits user package in
 export MF_PYTHON="/Library/Frameworks/Python.framework/Versions/3.13/bin/python3"
 "$MF_PYTHON" --version
 "$MF_PYTHON" -m pip install --user "fastapi>=0.115" "uvicorn>=0.30" "jsonschema>=4.20" "httpx>=0.27" "openai-codex>=0.147,<0.148"
-npx @rqzhu-aide/model-forge-codex@next web
+npx @rqzhu-aide/model-forge-codex web
 ```
 
 Adjust `3.13` to the framework version you installed. This is a shared interpreter with user-wide dependencies. Do not apply this pip command to an externally managed Homebrew Python; use the selected framework interpreter instead.
@@ -57,7 +57,7 @@ Use the existing pyenv location if different. Install a supported CPython once, 
 export MF_PYTHON="$("$HOME/.pyenv/bin/pyenv" prefix 3.13)/bin/python3"
 "$MF_PYTHON" --version
 "$MF_PYTHON" -m pip install --user "fastapi>=0.115" "uvicorn>=0.30" "jsonschema>=4.20" "httpx>=0.27" "openai-codex>=0.147,<0.148"
-npx @rqzhu-aide/model-forge-codex@next web
+npx @rqzhu-aide/model-forge-codex web
 ```
 
 The pyenv version prefix resolves to a patch release. Its installed interpreter is shared across your projects; no `pyenv local`, virtual environment, or replacement of the system Python is needed. Do not use `--break-system-packages` or remove an external-management marker. See the [Python packaging specification](https://packaging.python.org/en/latest/specifications/externally-managed-environments/).
@@ -87,8 +87,8 @@ The default research folder is `~/.model-forge-codex`. It holds projects, local 
 Use `--data-root PATH` to choose another research folder and `--port NUMBER` for another instance. Use the same Python, data root and port for its `web`, `status` and `stop` commands. For example:
 
 ```sh
-npx @rqzhu-aide/model-forge-codex@next status --data-root "/path/to/research" --port 8767
-npx @rqzhu-aide/model-forge-codex@next stop --data-root "/path/to/research" --port 8767
+npx @rqzhu-aide/model-forge-codex status --data-root "/path/to/research" --port 8767
+npx @rqzhu-aide/model-forge-codex stop --data-root "/path/to/research" --port 8767
 ```
 
 Finish or cancel active research through the app before stopping. Keep the research folder when updating the application. Relaunch the desired package version with the same folder; the launcher can replace an idle older service and refuses to interrupt active research. Existing projects retain their recorded workflow catalog. Back up your research folder independently of the application cache.
@@ -108,4 +108,4 @@ The npm `stop` command runs from the downloaded package without preparing a reta
 
 ## Platform verification
 
-Windows package launch and browser onboarding are tested locally. Native clean-profile macOS/Linux installation and the full minimum-version matrix remain pending. OS recipes are checked against upstream documentation; they are not a claim that every distribution, architecture or sandbox configuration has been tested.
+Windows package launch and browser onboarding were verified locally. A user reported a successful Linux installation of 0.9.5. Native macOS installation and tests at the minimum supported runtime versions are pending.

@@ -13,7 +13,7 @@ git clone https://github.com/rqzhu-aide/model-forge-codex.git
 cd model-forge-codex
 ```
 
-This checks out the repository's default branch, which can differ from npm's published `next` package. To use a tagged release's source, add `--branch TAG` with an existing release tag to the clone command. Use the exact selected Python executable. In PowerShell:
+This checks out the repository's default branch, which can differ from the stable release on npm. To use a tagged release's source, add `--branch TAG` with an existing release tag to the clone command. Use the exact selected Python executable. In PowerShell:
 
 ```powershell
 & $env:MF_PYTHON -m pip install --user "setuptools>=68" wheel
@@ -53,7 +53,7 @@ Both launchers accept `--port NUMBER` and `--no-open`. The source launcher uses 
 
 ## Prepared release tarball
 
-To test the locally prepared **0.9.5 candidate**, copy `rqzhu-aide-model-forge-codex-0.9.5.tgz` to the test machine. Compare its SHA-256 with the value recorded when that artifact was prepared: use `sha256sum rqzhu-aide-model-forge-codex-0.9.5.tgz` on Linux, `shasum -a 256 rqzhu-aide-model-forge-codex-0.9.5.tgz` on macOS, or `Get-FileHash ./rqzhu-aide-model-forge-codex-0.9.5.tgz -Algorithm SHA256` in PowerShell.
+To test a local 0.9.5 release archive, copy `rqzhu-aide-model-forge-codex-0.9.5.tgz` to the test machine. Compare its SHA-256 with the value recorded when that artifact was prepared: use `sha256sum rqzhu-aide-model-forge-codex-0.9.5.tgz` on Linux, `shasum -a 256 rqzhu-aide-model-forge-codex-0.9.5.tgz` on macOS, or `Get-FileHash ./rqzhu-aide-model-forge-codex-0.9.5.tgz -Algorithm SHA256` in PowerShell.
 
 Complete [OS-specific setup](installation.md) in the same terminal, including the backend dependencies and `MF_PYTHON`. Replace its final `npx` command with this command, run from the folder containing the tarball:
 
@@ -68,7 +68,7 @@ npm exec --yes --package ./rqzhu-aide-model-forge-codex-0.9.5.tgz -- model-forge
 npm exec --yes --package ./rqzhu-aide-model-forge-codex-0.9.5.tgz -- model-forge-codex stop
 ```
 
-Keep the same `MF_PYTHON`, data folder and port for these commands. In PowerShell, use `npm.cmd` if script policy blocks `npm.ps1`. This [npm exec](https://docs.npmjs.com/cli/v11/commands/npm-exec/) command uses the local archive through npm's user-wide cache; it does not publish it. `npx @rqzhu-aide/model-forge-codex@next` selects a published registry package and may run a different version.
+Keep the same `MF_PYTHON`, data folder and port for these commands. In PowerShell, use `npm.cmd` if script policy blocks `npm.ps1`. This [npm exec](https://docs.npmjs.com/cli/v11/commands/npm-exec/) command uses the local archive through npm's user-wide cache; it does not publish it. `npx @rqzhu-aide/model-forge-codex` selects a published registry package and may run a different version.
 
 For a native installation smoke check without a checkout, copy the companion `scripts/verify_npm_candidate.py` beside the tarball. After shared Python setup, run:
 
