@@ -1,12 +1,27 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { goalExcerpt, sharedGoalExcerpt, waitingDecisions } from "../src/projectResume.js";
+import { goalExcerpt, sharedGoalExcerpt, p2DecisionContexts, p2DecisionSelection, waitingDecisions as waitingDestinations } from "../src/projectResume.js";
 import { catalogSelectionKey, proposalKey } from "../src/methodWorkspace.js";
 import { phaseQuestionAnchor } from "../src/phaseInputSummary.js";
 
 const ask = (attention_id, phase, branch = "trunk", extra = {}) => ({ attention_id, kind: "researcher_decision", phase, target_phase: phase, branch, disposition: "open", question: attention_id, ...extra });
 const methods = [{ method_id: "method.a", branch_id: "method.a", title: "Method A" }];
 const branches = [{ branch_id: "method.a" }];
+// Existing count/ownership cases keep their concise expectations; exact arrival
+// anchors are checked separately below for every phase.
+const waitingDecisions = input => waitingDestinations(input).map(({ anchors, ...group }) => group.phase === "P5" ? { ...group, anchors } : group);
+
+test("unanswered destinations retain exact row anchors while saved questions never become the arrival target", () => {
+  for (const phase of ["P1", "P2", "P3", "P4", "P5"]) {
+    const branch = ["P1", "P2"].includes(phase) ? "trunk" : "method.a";
+    const attention = [ask("saved-first", phase, branch), ask("unanswered-next", phase, branch)];
+    const answers = [{ attention_id: attention[0].attention_id, revision: 1, attention: attention[0], note: "Saved information." }];
+    const groups = waitingDestinations({ attention, answers, branches, methods });
+    assert.equal(groups.length, 1, phase);
+    assert.equal(groups[0].count, 1, phase);
+    assert.deepEqual(groups[0].anchors, [phaseQuestionAnchor(attention[1])], phase);
+  }
+});
 
 test("the resume question restates the goal's opening paragraph without its headings", () => {
   assert.equal(goalExcerpt("## Goal\nEstimate the effect of testing.\n\nSecond paragraph."), "Estimate the effect of testing.");
@@ -176,4 +191,43 @@ test("P2 current answers suppress only the matching source question", () => {
   const answer = { attention_id: issue.attention_id, revision: 1, attention: issue, origin: "researcher_reported" };
   assert.deepEqual(waitingDecisions({ attention: [issue], answers: [answer], methods }), []);
   assert.equal(waitingDecisions({ attention: [issue], answers: [{ ...answer, attention: { ...issue, generation_ref: reference("run.older") } }], methods })[0].count, 1);
+});
+
+test("method pages keep shared P2 questions with the current registered branch when a retained proposal key is unavailable", () => {
+  const methods = [catalog("a"), { ...catalog("b", 3), registered: true }];
+  const selections = p2DecisionContexts({ methods });
+  const stale = proposalKey({ proposal_id: "proposal.b-v2", generation_ref: { run_id: "run.earlier" } });
+  const attention = [ask("shared", "P2", "trunk", { scope: { kind: "project" } }),
+    exactAsk("current-b", methods[1].identity), exactAsk("a", methods[0].identity)];
+  for (const phase of ["P3", "P4", "P5"]) {
+    const selected = p2DecisionSelection({ selections, p2ProposalKey: stale, phase, branch: "method.b" });
+    assert.equal(selected.p2ProposalKey, catalogSelectionKey(methods[1]));
+    const groups = waitingDecisions({ attention, methods, p2ProposalKey: selected.p2ProposalKey });
+    assert.deepEqual(groups, [
+      { phase: "P2", branch: "method.b", count: 2, methodLabel: "Method B · Version 3", p2ProposalKey: catalogSelectionKey(methods[1]) },
+      { phase: "P2", branch: "method.a", count: 1, methodLabel: "Method A · Version 1", p2ProposalKey: catalogSelectionKey(methods[0]) },
+    ]);
+    assert.equal(groups.reduce((count, group) => count + group.count, 0), attention.length);
+  }
+});
+
+test("a valid explicit P2 selection keeps its exact destination on another method's page", () => {
+  const methods = [catalog("a"), { ...catalog("b", 3), registered: true }];
+  const old = { proposal_id: "proposal.b-v2", generation_ref: { run_id: "run.earlier" }, is_current_package: false,
+    method: { title: "Earlier B", identity: identity("b", 2) } };
+  const selections = p2DecisionContexts({ methods, proposals: [old] });
+  for (const phase of ["P2", "P3", "P4", "P5"]) {
+    for (const p2ProposalKey of [catalogSelectionKey(methods[0]), proposalKey(old)]) {
+      assert.equal(p2DecisionSelection({ selections, p2ProposalKey, phase, branch: "method.b" }).p2ProposalKey, p2ProposalKey);
+    }
+  }
+});
+
+test("P2 selection fallback remains first for shared pages or an unavailable registered branch", () => {
+  const methods = [catalog("a"), { ...catalog("b", 3), registered: true }, catalog("c")];
+  const selections = p2DecisionContexts({ methods });
+  for (const [phase, branch] of [["P1", "method.b"], ["P2", "method.b"], ["P3", "trunk"], ["P4", "method.missing"], ["P5", "method.c"]]) {
+    assert.equal(p2DecisionSelection({ selections, p2ProposalKey: "unavailable:proposal", phase, branch }), selections[0]);
+  }
+  assert.equal(p2DecisionSelection({ selections: [], phase: "P3", branch: "method.b" }), undefined);
 });

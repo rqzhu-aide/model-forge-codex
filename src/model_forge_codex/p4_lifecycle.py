@@ -10,7 +10,10 @@ from dataclasses import asdict
 
 from .domain import Finding, MemberRole, RunState, StageResult, TERMINAL_STATES
 from .project_brief import project_instructions
-from .researcher_language import RESEARCHER_LANGUAGE_GUIDANCE, has_researcher_language_guidance
+from .researcher_language import (
+    RESEARCHER_INPUT_POLICY, RESEARCHER_LANGUAGE_GUIDANCE,
+    has_researcher_input_policy, has_researcher_language_guidance,
+)
 from .storage import read_json, sha256_file, write_json_atomic
 
 
@@ -193,9 +196,17 @@ class P4LifecycleMixin:
             return ""
         researcher_language = ("" if has_researcher_language_guidance(getattr(stage, "objective", ""))
                                else RESEARCHER_LANGUAGE_GUIDANCE + "\n\n")
+        objective = getattr(stage, "objective", "")
+        # Keep a retained stage's policy rather than appending newer eligibility.
+        researcher_input = ("" if has_researcher_input_policy(objective)
+                            else RESEARCHER_INPUT_POLICY + "\n\n")
         from .p4_execution import P4Controller, _declared_sources_enabled
         progress = P4Controller.load_snapshot(self.run_dir(record.project_id, record.run_id)) or {}
         declared_sources = _declared_sources_enabled(self.run_dir(record.project_id, record.run_id))
+        contract = read_json(self._catalog(record).root / "contracts" / "phases" / "P4.json") or {}
+        # Retained catalogs keep their original delivery, including its wording.
+        analyst_instructions = (role is MemberRole.DATA_ANALYST
+                                or "research_account_focus_v1" not in contract.get("capabilities", []))
         runtime_instructions = (
             "Write Python or R scripts and submit one bounded batch through run_batch. Declare language (python or r), "
             "support_files as a list of relative helper/configuration paths, dependencies as Python import-module or R package names, "
@@ -241,55 +252,79 @@ class P4LifecycleMixin:
             "accepted=false means this request was rejected; earlier pending work may still exist. "
             "An unknown execution state is not a rejection: inspect the saved controller state before any retry. "
             "Correct only the named fields. Do not repeat an unchanged rejected request. "
-            "run_batch requires operation, a new batch_id, an exact declared work_item_id, script_path, "
+            + ("run_batch requires operation, a new batch_id, an exact declared work_item_id, script_path, "
             "args, timeout_seconds and result_paths. Execute only that work item's declared cases. "
             "Scripts must select that work item explicitly, rather than running the entire study on every invocation. "
             "In a detailed evaluation, keep the implementation/timing pilot and the subsequent scientific comparisons "
             "as separate work items so pilot results can inform the remaining schedule. "
             "Use the protocol's exact metric_id, case_id and replicate_id strings in every numerical row and diagnostic. "
-            "Each case has one comparator identity. Represent selected-method and baseline measurements as separate "
+            if analyst_instructions else
+            "Inspect the host-recorded executed source, declared work item and retained results for each attempt. "
+            "Check that numerical rows and diagnostics use the saved protocol's exact metric, case and replicate identities. ")
+            + "Each case has one comparator identity. Represent selected-method and baseline measurements as separate "
             "cases using the same metric definitions; never label a mixed-method row as only the baseline. "
             "For paired comparisons, report the uncertainty of the paired difference being interpreted, "
             "not only each method's marginal uncertainty. "
-            "For method-fit timing, generate the data before starting the timer; record data preparation, "
+            + ("For method-fit timing, generate the data before starting the timer; record data preparation, "
             "tuning and total experiment time separately. Label any broader timing boundary explicitly. "
-            "Provide an analysis script that regenerates tables and figures from the saved numerical rows "
-            "without running new experiments or changing those rows. Reviewers must compare quoted numbers "
+            if analyst_instructions else
+            "For method-fit timing, check that data generation precedes the timer and that data preparation, tuning "
+            "and total experiment time are recorded separately, with any broader timing boundary labeled. ")
+            + ("Provide an analysis script that regenerates tables and figures from the saved numerical rows "
+            "without running new experiments or changing those rows. " if analyst_instructions else
+            "Check that the declared analysis script regenerates displays from saved rows without new experiments. ")
+            + "Reviewers must compare quoted numbers "
             "with the final eligible rows and tables, and verify timing boundaries against the saved executed "
             "script. Expose any mismatch in the scientific account; do not silently rewrite recorded values. "
-            "An accepted run_batch, request_decision or complete request ends this turn. "
-            "Do not launch experiment processes through shell commands. "
-            + runtime_instructions + "Inspect its actual host-recorded result on the next turn. "
+            + ("An accepted run_batch, request_decision or complete request ends this turn. "
+               if analyst_instructions else "An accepted request_decision request ends this turn. ")
+            + "Do not launch experiment processes through shell commands. "
+            + (runtime_instructions + "Inspect its actual host-recorded result on the next turn. "
             "Declare result_paths in run_batch, including its numerical JSONL and figure/table outputs. "
             "The runner seals these files on success. Each observed metrics row must include batch_id, "
             "attempt_id and plan_revision_id from the script environment MODEL_FORGE_P4_BATCH_ID, "
             "MODEL_FORGE_P4_ATTEMPT_ID and MODEL_FORGE_P4_PLAN_REVISION_ID. Keep raw batch rows unchanged "
             "when assembling metrics_long.jsonl. Invalidated rows retain their values and carry eligibility "
             "invalidated with a reason; missing planned cases use status not_run. "
-            "Use shared installed runtimes/packages only, never local environments or installations. "
-            "Before the first batch, save protocol.json and call save_plan with protocol_path. "
-            "Record prospective amendments before changed work. Keep failed attempts and unfavorable results. "
-            "After each batch, explain the observed results, time and next action using checkpoint. "
-            'For a checkpoint, send `{"operation":"checkpoint","checkpoint":{"summary":"Observed results and next action",'
+            if analyst_instructions else
+            "Use the exact captured script and support files, sealed result paths and execution provenance. "
+            "Frozen researcher data stays outside member workspaces; do not copy raw data into published results or portable examples. "
+            "Check observed rows against their batch, attempt and plan revision. Invalidated rows retain their values "
+            "and reason; missing planned cases are not_run, not zero-valued observations. ")
+            + "Use shared installed runtimes/packages only, never local environments or installations. "
+            + ("Before the first batch, save protocol.json and call save_plan with protocol_path. "
+               "Record prospective amendments before changed work. "
+               if analyst_instructions else
+               "Interpret completed and remaining work against the saved plan, prospective amendments and host-recorded budget. ")
+            + "Keep failed attempts and unfavorable results. "
+            + ("After each batch, explain the observed results, time and next action using checkpoint. "
+               if analyst_instructions else
+               "Use checkpoint to record your scientific assessment, evidence and justified next action when needed. ")
+            + 'For a checkpoint, send `{"operation":"checkpoint","checkpoint":{"summary":"Observed results and next action",'
             '"evidence_refs":[{"path":"rows.jsonl","sha256":"<actual file SHA256>"}]}}`. '
             "Replace the example path and digest with the actual saved file path and SHA256. "
-            "The analyst calls complete only after all final analyst outputs pass validate_artifacts. "
-            + researcher_language
-            + "A pause uses request_decision with one concrete question, reason, options and evidence_refs. "
+            + ("The analyst calls complete only after all final analyst outputs pass validate_artifacts. "
+               if analyst_instructions else "")
+            + researcher_language + researcher_input
+            + "A pause uses request_decision with one concrete question, reason, evidence_refs and optional options. "
+            "For a study-fact request, use options=[] rather than invented factual answers. "
             "When mathematics distinguishes the choices, reason shows the affected problem or equation with enough formulation to understand the decision, "
             "defining symbols and any shared objective once. Each option's consequence gives its formulation or changed equation under that shared context, "
-            "followed by a concise practical effect; prose-only options do not explain a mathematical distinction. "
+            "followed by its scientific meaning in the supplied study and a concise practical effect; prose-only options do not explain a mathematical distinction. "
             "Plain study facts, budgets and choices without a mathematical distinction need no artificial equation. "
-            "Ask for an unresolved researcher preference or unavailable study fact only when its answer materially changes interpretation, "
-            "inferential validity, data applicability or an unavoidable resource compromise. "
-            "Do not manufacture alternatives for a study fact or ask the researcher to resolve a proof or implementation defect; "
-            "report the defect and, if progress is blocked, the consequential scope or continuation choice. "
-            "Nonblocking unknowns permit explicitly conditional work and need no pause. "
-            "Propose useful consequential invitations in the stage's existing owned outputs for Lead consolidation. "
+            "When a mathematical specification ambiguity or consequential approximation is eligible under this stage's inquiry instructions, present an actionable modeling, scope or continuation choice. "
+            "Explain the concrete alternatives and their effects on fidelity, guarantees, computation and intended applicability. "
+            "Design ordinary synthetic stress tests and fair benchmarks within the agreed scope; ask about a data-generating regime only when it changes intended applicability or scientific use. "
+            "Support a major computational compromise with available analysis or an affordable pilot; label an untested investigation as uncertain. "
+            "Do not manufacture alternatives for a study fact or ask the researcher to correct proof errors or coding errors with an unambiguous correction. "
+            "Report defects and offer actionable scientific alternatives when faithful evaluation cannot proceed. "
+            "Pause only when the next authorized action is unjustified without input; nonblocking choices permit justified conditional work. "
+            "For qualifying nonblocking proposals, the Theorist and Data Analyst use their existing handoff.unresolved_issues; "
+            "the Lead consolidates in its owned attention output at the designated stage. "
             "Missing final artifacts at a pause are expected. Theorist and lead can also request_decision "
             "on a severe issue; otherwise save and validate their normal owned outputs and end their turn. "
             "Reviewers must not call complete or run_batch; those operations are analyst-only. "
-            "Never rescue an ambiguous or defective mathematical method. A routine code correction must "
+            "Do not silently repair or reinterpret an ambiguous or defective mathematical method; a changed method requires upstream revision. A routine code correction must "
             "record a new script revision, invalidate affected attempts and recompute. "
             "If finish_requested is true, perform no further experiments. Complete a partial account from "
             "the available evidence for the remaining theorist and lead review. "

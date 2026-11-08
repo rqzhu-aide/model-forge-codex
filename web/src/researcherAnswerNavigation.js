@@ -1,26 +1,42 @@
 import { issueAnswerPhase, issueKey, issueSourceIdentity, issueSourceTarget } from "./phaseWorkflow.js";
 import { phaseQuestionAnchor } from "./phaseInputSummary.js";
 import { proposalKey } from "./methodWorkspace.js";
+import { contextScopeIdentity } from "./researcherDialogue.js";
+
+const ordered = value => value && typeof value === "object"
+  ? Array.isArray(value) ? value.map(ordered) : Object.fromEntries(Object.keys(value).sort().map(key => [key, ordered(value[key])]))
+  : value ?? null;
+const identityKey = value => JSON.stringify(ordered(value));
 
 // Route a linked question or saved copy using its recorded answer location, without guessing a model
 // from its title or replacing its source with the current question version.
 export function answerSourceNavigation({ projectId, source, question: linkedQuestion, questions = [], answers = [], proposals = [] }) {
   source ||= linkedQuestion && (issueSourceTarget(linkedQuestion) || { phase: linkedQuestion.phase, branch: linkedQuestion.branch || linkedQuestion.branch_id });
   if (!["P1", "P2", "P3", "P4", "P5"].includes(source?.phase) || !source.branch) return null;
-  const identity = JSON.stringify(issueSourceIdentity({ explanation_target: source }));
-  const answer = !linkedQuestion && answers.flatMap(current => [current, ...(current.history || [])].map(version => ({ ...version, attention_id: current.attention_id || current.issue_id })))
-    .find(version => JSON.stringify(issueSourceIdentity({ explanation_target: version.question_ref || version.attention?.explanation_target })) === identity);
-  const question = linkedQuestion || answer?.attention && { ...answer.attention,
+  const identity = identityKey(issueSourceIdentity({ explanation_target: source }));
+  const answer = answers.flatMap(current => [current, ...(current.history || [])].map(version => ({ ...version, attention_id: version.attention_id || current.attention_id || current.issue_id })))
+    .find(version => (!linkedQuestion || issueKey(linkedQuestion) === (version.attention_id || version.issue_id))
+      && identityKey(version.question_ref ? issueSourceIdentity({ explanation_target: version.question_ref }) : issueSourceIdentity(version.attention)) === identity);
+  const snapshot = linkedQuestion || answer?.attention && { ...answer.attention,
     attention_id: answer.attention.attention_id || answer.attention_id,
+    scope: answer.attention.scope || answer.scope,
     explanation_target: answer.attention.explanation_target || source };
-  const anchors = question ? [...new Set([...(answer?.attention ? [phaseQuestionAnchor(answer.attention)] : []), phaseQuestionAnchor(question)])] : [];
+  const exact = questions.find(item => (!snapshot || issueKey(item) === issueKey(snapshot)) && identityKey(issueSourceIdentity(item)) === identity
+    && (!snapshot?.scope || !item.scope || identityKey(contextScopeIdentity(snapshot.scope)) === identityKey(contextScopeIdentity(item.scope))));
+  const question = exact ? { ...snapshot, ...exact, target_phase: exact.target_phase || snapshot?.target_phase } : snapshot;
+  const anchors = question ? [...new Set([phaseQuestionAnchor(question), ...(snapshot ? [phaseQuestionAnchor(snapshot)] : [])])] : [];
   if (source.kind === "researcher_pause") anchors.push(`researcher-pause:${source.run_id}:${source.request_id}:${source.revision}`);
   if (source.kind === "p4_pause") anchors.push(`evaluation-pause:${source.run_id}:${source.request_id}:${source.revision}`);
   if (!anchors.length) return null;
   // Earlier answer versions render beside the current question. Its owner can
   // move, while the history anchor and scientific source above stay original.
-  const owner = !linkedQuestion && question && !["researcher_pause", "p4_pause"].includes(source.kind)
-    && questions.find(item => issueKey(item) === issueKey(question)) || question;
+  const currentOwner = question && !["researcher_pause", "p4_pause"].includes(source.kind)
+    && questions.find(item => issueKey(item) === issueKey(question)
+      && (!item.scope || !question.scope || identityKey(contextScopeIdentity(item.scope)) === identityKey(contextScopeIdentity(question.scope))));
+  // Compact owner rows can omit the answer phase retained in the recorded
+  // snapshot. An explicit current owner still takes precedence if it moved.
+  const owner = currentOwner ? { ...question, ...currentOwner,
+    target_phase: currentOwner.target_phase || question.target_phase } : question;
   const phase = owner ? issueAnswerPhase(owner) : source.phase;
   const branch = owner?.branch || owner?.branch_id || source.branch;
   const shared = ["P1", "P2"].includes(phase);
@@ -29,9 +45,13 @@ export function answerSourceNavigation({ projectId, source, question: linkedQues
   if (phase === "P2" && ownerSource.run_id) {
     const model = owner?.scope?.model_ref;
     const modelId = model?.identity?.stable_id || model?.stable_id || owner?.affected_record_ids?.[0];
+    const modelVersion = model?.identity?.version ?? model?.version;
+    const modelHash = model?.identity?.definition_sha256 || model?.definition_sha256;
     const proposal = proposals.find(item => item.generation_ref?.run_id === ownerSource.run_id
       && (!ownerSource.package_id || !item.generation_ref.package_id || item.generation_ref.package_id === ownerSource.package_id)
-      && (!modelId || item.method?.identity?.stable_id === modelId));
+      && (!modelId || item.method?.identity?.stable_id === modelId)
+      && (modelVersion == null || item.method?.identity?.version === modelVersion)
+      && (!modelHash || item.method?.identity?.definition_sha256 === modelHash));
     if (proposal) change.p2ProposalKey = proposalKey(proposal);
   }
   return { change, scope: `${projectId}:${shared ? "trunk" : branch}:${phase}`, anchors };

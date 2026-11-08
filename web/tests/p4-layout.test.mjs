@@ -12,7 +12,7 @@ const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.j
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-p4-layout-"));
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Workbench,{ProtocolSetup} from '${src}/components/EmpiricalWorkbench.jsx'; import Question,{EmpiricalDecisionSummary,EmpiricalQuestionSetup} from '${src}/components/EmpiricalQuestion.jsx'; import {SourceRef} from '${src}/components/Shared.jsx'; import {EmpiricalPlan} from '${src}/components/EmpiricalProgress.jsx'; import LaunchRun from '${src}/components/LaunchRun.jsx'; const draw = C => props => renderToStaticMarkup(React.createElement(C,props)); export const workbench = draw(Workbench); export const question = draw(Question); export const summary = draw(EmpiricalDecisionSummary); export const setup = draw(EmpiricalQuestionSetup); export const protocol = draw(ProtocolSetup); export const protocolTree = props => ProtocolSetup(props); export const sourceRef = SourceRef; export const plan = draw(EmpiricalPlan); export const launch = draw(LaunchRun);`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Workbench,{ProtocolSetup,ExperimentSetupDocument} from '${src}/components/EmpiricalWorkbench.jsx'; import Question,{EmpiricalDecisionSummary,EmpiricalQuestionSetup,EmpiricalInterpretationDocument} from '${src}/components/EmpiricalQuestion.jsx'; import {SourceRef} from '${src}/components/Shared.jsx'; import {EmpiricalPlan} from '${src}/components/EmpiricalProgress.jsx'; import LaunchRun from '${src}/components/LaunchRun.jsx'; const draw = C => props => renderToStaticMarkup(React.createElement(C,props)); export const workbench = draw(Workbench); export const interpretation = draw(EmpiricalInterpretationDocument); export const study = draw(ExperimentSetupDocument); export const question = draw(Question); export const summary = draw(EmpiricalDecisionSummary); export const setup = draw(EmpiricalQuestionSetup); export const protocol = draw(ProtocolSetup); export const protocolTree = props => ProtocolSetup(props); export const sourceRef = SourceRef; export const plan = draw(EmpiricalPlan); export const launch = draw(LaunchRun);`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const render = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
 const ref = { branch: "method.a", phase: "P4", family: "protocol", generation_id: "protocol.a", sha256: "a".repeat(64), run_id: "run.a", package_id: "package.a" };
 
@@ -65,17 +65,20 @@ test("recorded MCSE is neutral about observed or simulated data and never implie
   for (const source_type of ["observed_data", "simulation", undefined]) {
     const html = render.question({ question: { result: { outcome: "inconclusive", answer_markdown: "The recorded answer remains inconclusive." } }, protocol: { data_or_simulation_unit: { source_type } }, diagnostics: [{ generation_ref: ref, headline_numbers: [{ case_id: "case.one", metric: "metric.error", estimate: 0, mcse: 0.02, n_replicates: 12 }] }] });
     assert.match(html, /Monte Carlo standard error \(MCSE\)/); assert.match(html, /not uncertainty in the difference between methods/);
-    assert.match(html, /MCSE 0.02/); assert.match(html, /Usable repetitions/); assert.match(html, /12/);
+    assert.match(html, /Monte Carlo standard error 0.02/); assert.match(html, /Usable repetitions/); assert.match(html, /12/);
     assert.doesNotMatch(html, /MCSE describes simulation uncertainty|real-patient|clinical benefit/);
   }
 });
 
 test("a noncomparative numerical account has a neutral overview without adding cards or claiming comparative performance", () => {
-  const html = render.workbench({ branch: "method.a", protocols: [{ branch: "method.a", comparison_applicability: { required: false, reason: "The prescribed update was checked without a performance comparison." }, generation_ref: ref }], summaries: [{ branch: "method.a", generation_ref: { ...ref, family: "empirical_synthesis" }, decision_summary: { implementation_markdown: "Ran only the derivative check.", method_fidelity_markdown: "The derivative matched the frozen objective.", theory_relation: { status: "tested", explanation_markdown: "A numerical check examined the derivative, not a proof." }, conclusion_markdown: "No predictive performance comparison was performed.", limitations_markdown: "Independent accuracy remains unassessed." } }] });
-  assert.match(html, /Numerical findings and limitations/); assert.match(html, /No predictive performance comparison was performed/); assert.match(html, /Independent accuracy remains unassessed/); assert.match(html, /Comparison is not required/);
+  const record = { branch: "method.a", generation_ref: { ...ref, family: "empirical_synthesis" }, decision_summary: { implementation_markdown: "Ran only the derivative check.", method_fidelity_markdown: "The derivative matched the frozen objective.", theory_relation: { status: "tested", explanation_markdown: "A numerical check examined the derivative, not a proof." }, conclusion_markdown: "No predictive performance comparison was performed.", limitations_markdown: "Independent accuracy remains unassessed." } };
+  const protocol = { branch: "method.a", comparison_applicability: { required: false, reason: "The prescribed update was checked without a performance comparison." }, generation_ref: ref };
+  const html = render.workbench({ branch: "method.a", protocols: [protocol], summaries: [record] });
+  const supporting = render.interpretation({ record }) + render.study({ protocols: [protocol] });
+  assert.match(html, /Full interpretation/); assert.match(supporting, /Numerical findings and limitations/); assert.match(supporting, /No predictive performance comparison was performed/); assert.match(supporting, /Independent accuracy remains unassessed/); assert.match(supporting, /Comparison is not required/);
   assert.doesNotMatch(html, /Overall comparative performance/);
   assert.equal((html.match(/class="card /g) || []).length, 3);
-  assert.equal((html.match(/role="tablist"/g) || []).length, 1);
+  assert.equal((html.match(/aria-label="Numerical experiment sections"/g) || []).length, 1);
 });
 
 test("the current run plan stays distinct from published plan sources", () => {
@@ -83,15 +86,16 @@ test("the current run plan stays distinct from published plan sources", () => {
   const active = { plan: { work_items: [{ work_item_id: "new", title: "Current comparison" }] } };
   const html = render.workbench({ branch: "method.a", protocols: [published], progressData: active, progressState: "awaiting_user", onSource() {} });
   assert.equal((html.match(/class="empirical-current-plan"/g) || []).length, 1);
-  const current = html.slice(html.indexOf('class="empirical-current-plan"'), html.indexOf('class="research-details empirical-recorded-plans"'));
+  const current = html.slice(html.indexOf('class="empirical-current-plan"'));
   assert.match(current, /Current comparison/);
   assert.doesNotMatch(current, /Published comparison/);
-  assert.match(html, /<details class="research-details empirical-recorded-plans"><summary>[^<]+<\/summary>/);
-  assert.match(html, /Published comparison/);
+  assert.match(html, /Setup and recorded plans/);
+  assert.doesNotMatch(html, /Published comparison/);
+  assert.match(render.study({ protocols: [published] }), /Published comparison/);
   assert.match(html, /Published findings above retain their original evidence/);
   const historical = render.workbench({ branch: "method.a", protocols: [published] });
-  assert.equal((historical.match(/class="empirical-current-plan"/g) || []).length, 1);
-  assert.match(historical, /Published comparison/);
+  assert.equal((historical.match(/class="empirical-current-plan"/g) || []).length, 0);
+  assert.match(historical, /Setup and recorded plans/);
   assert.doesNotMatch(historical, /empirical-recorded-plans/);
 });
 
@@ -100,8 +104,8 @@ test("legacy summary retains its missing formulation and implementation while pr
   assert.match(html, /data-overview-complete="false"/);
   assert.match(html, /No mathematical formulation is available/);
   assert.match(html, /no separate authored account/);
-  assert.match(html, /does not state whether Phase 3 theory was available or tested/);
-  assert.match(html, /<details class="research-details empirical-full-interpretation"/);
+  assert.match(render.interpretation({ record: { decision_summary: { conclusion_markdown: "The estimator was faster in one setting." } } }), /does not state whether Phase 3 theory was available or tested/);
+  assert.match(html, /Full interpretation/);
 });
 
 test("experiment settings preserve exact authored values inside a keyboard accessible disclosure", () => {
@@ -113,6 +117,19 @@ test("experiment settings preserve exact authored values inside a keyboard acces
   assert.match(html, /<td>Not recorded<\/td>/);
   assert.ok(html.indexOf("Only the boundary is studied") < html.indexOf("<details"));
   assert.ok(html.indexOf("A nonzero error rejects this check") < html.indexOf("<details"));
+});
+
+test("compact plans show the research question while detailed plans retain the recorded intent", () => {
+  const progress = { plan: { research_question: "Does $p_C(\\pi;b) \\le \\alpha$ remain informative at smaller samples?", decision_context: { intent_markdown: "Recorded priority and context routing." }, work_items: [{ work_item_id: "comparison", title: "Compare sample sizes" }] } };
+  const before = structuredClone(progress);
+  const compact = render.plan({ progress, compact: true });
+  assert.match(compact, /remain informative at smaller samples/);
+  assert.match(compact, /class="katex"/);
+  assert.doesNotMatch(compact, /Recorded priority and context routing/);
+  assert.match(compact, /Compare sample sizes/);
+  assert.match(render.plan({ progress }), /Recorded priority and context routing/);
+  assert.match(render.plan({ progress: { plan: { decision_context: progress.plan.decision_context } }, compact: true }), /Recorded priority and context routing/);
+  assert.deepEqual(progress, before);
 });
 
 test("plan shortening keeps inferential consequences and reasons for skipped work visible", () => {

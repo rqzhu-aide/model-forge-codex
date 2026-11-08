@@ -5,7 +5,7 @@ models, and algorithms. A Research Lead, Theorist, Data Analyst, and Outside
 Reviewer produce structured research that the application presents as concise
 cards and a technical report. The researcher chooses which phase to run.
 
-The current source tree prepares application **0.9.3** with workflow catalog **1.30.2**;
+The current source tree prepares application **0.9.4** with workflow catalog **1.31.13**;
 already published packages are unchanged. Application releases,
 project workflow adoption, and scientific publications are separate versions.
 An existing project keeps its catalog and historical results until an explicit
@@ -46,9 +46,11 @@ The detailed design covers [principles](design/00-system-principles.md),
    and editable comments, and Next revision.
 
 The Lead decides routine methodological and implementation choices and records
-them concisely. Researcher questions require a material consequence and a missing
-study fact or preference. Multiple-choice questions explain the affected point,
-practical consequences, and recommendation. Nothing is preselected, unknown facts
+them concisely. Researcher questions invite consequential modeling choices even
+when study facts are complete, alternatives fit the original goal and the Lead
+recommends one. Missing study facts remain a separate request. Multiple-choice
+questions compare the mathematical change, scientific meaning, decisive tradeoffs
+and recommendation. Nothing is preselected, unknown facts
 remain unknown, and each item has one editable effective instruction.
 
 Member briefs put the reader's task and field-specific writing duties before

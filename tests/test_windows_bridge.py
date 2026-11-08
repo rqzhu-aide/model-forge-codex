@@ -28,6 +28,7 @@ async def test_bridge_uses_the_shared_cli_selected_for_account_and_experiment_to
 @pytest.mark.parametrize("status", ["ready", "updateRequired", "notConfigured"])
 async def test_windows_runtime_checks_readiness_without_initializing_sandbox(tmp_path, monkeypatch, status):
     import openai_codex
+    from openai_codex.generated.v2_all import WindowsSandboxReadinessResponse
     member, runtime = tmp_path / "member", tmp_path / "runtime"
     monkeypatch.setattr("model_forge_codex.bridge.runtime_settings", lambda home: (runtime, ("memories.use_memories=false",)))
     monkeypatch.setattr("model_forge_codex.accounts._cache", lambda home: (b"not exposed", "same-account"))
@@ -43,7 +44,7 @@ async def test_windows_runtime_checks_readiness_without_initializing_sandbox(tmp
 
         async def request(self, method, params, **kwargs):
             assert method == "windowsSandbox/readiness" and params is None
-            return SimpleNamespace(status=SimpleNamespace(value=status))
+            return WindowsSandboxReadinessResponse(status=status)
 
         async def close(self):
             self.closed = True
@@ -56,9 +57,47 @@ async def test_windows_runtime_checks_readiness_without_initializing_sandbox(tmp
         assert result.config.config_overrides == ("memories.use_memories=false", 'cli_auth_credentials_store="file"')
         assert len(bridge._clients) == 1 and not result.closed
     else:
-        with pytest.raises(BridgeUnavailable, match="no model work has been started"):
+        with pytest.raises(BridgeUnavailable, match="no model work has been started") as failure:
             await bridge._client(member, execution={"provider": "openai"})
+        expected_action = ("Update the existing Windows sandbox" if status == "updateRequired"
+                           else "Complete Windows sandbox setup")
+        assert expected_action in str(failure.value)
+        assert "The installed Windows sandbox is not ready." in str(failure.value)
+        assert "same installed Codex" in str(failure.value)
+        assert status not in str(failure.value)
         assert not bridge._clients and calls[0].closed
+
+
+@pytest.mark.parametrize("error", [TimeoutError("readiness request timed out"), RuntimeError("readiness request failed")])
+async def test_windows_runtime_readiness_transport_error_does_not_infer_setup_status(tmp_path, monkeypatch, error):
+    import openai_codex
+    member, runtime = tmp_path / "member", tmp_path / "runtime"
+    monkeypatch.setattr("model_forge_codex.bridge.runtime_settings", lambda home: (runtime, ()))
+    monkeypatch.setattr("model_forge_codex.accounts._cache", lambda home: (b"not exposed", "same-account"))
+    calls = []
+
+    class Client:
+        def __init__(self, config):
+            self._client, self.closed = self, False
+            calls.append(self)
+
+        async def _ensure_initialized(self):
+            pass
+
+        async def request(self, method, params, **kwargs):
+            assert method == "windowsSandbox/readiness" and params is None
+            raise error
+
+        async def close(self):
+            self.closed = True
+
+    monkeypatch.setattr(openai_codex, "AsyncCodex", Client)
+    bridge = SdkCodexBridge()
+    with pytest.raises(type(error)) as failure:
+        await bridge._client(member, execution={"provider": "openai"})
+    assert failure.value is error
+    assert "sandbox is not ready" not in str(failure.value)
+    assert not bridge._clients and calls[0].closed
 
 
 @pytest.mark.parametrize("long_home", [False, True])

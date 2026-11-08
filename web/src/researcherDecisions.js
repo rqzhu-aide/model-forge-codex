@@ -76,21 +76,38 @@ function distinctSections(sections, alreadyShown = []) {
   });
 }
 
-export function decisionBriefSections(item, { showOptions = true } = {}) {
-  const authoredBrief = ["choice", "study_fact"].includes(item.response_kind);
-  const context = authoredBrief ? item.context_markdown || item.summary_markdown : null;
+// Team work takes no answer, so its consequences are not framed as the researcher's.
+export function decisionBriefSections(item, { showOptions = true, recommendationInResponse = false } = {}) {
+  const teamWork = Boolean(item.kind) && item.kind !== "researcher_decision";
+  const hasAuthoredBrief = ["choice", "study_fact"].includes(item.response_kind);
+  const authoredBrief = !teamWork && hasAuthoredBrief;
+  const changes = teamWork ? "What this changes" : "What your answer changes";
+  const context = hasAuthoredBrief ? item.context_markdown || item.summary_markdown : null;
   const consequence = item.likely_consequence || item.consequence_markdown || item.why_it_matters || item.why_it_matters_markdown;
   const role = item.original_role || item.raised_by || item.requested_by || item.responsible_role;
   const recommendationLabel = authoredBrief ? role === "research_lead" ? "Lead recommendation" : "Team recommendation"
     : ({ research_lead: "Lead recommendation", outside_reviewer: "Reviewer recommendation", theorist: "Theorist recommendation", data_analyst: "Analyst recommendation" })[role] || "Author recommendation";
+  const boundRecommendation = recommendationInResponse && recommendedDecisionOption(item) ? item.recommendation : null;
   return distinctSections([
-    [context, item.response_kind === "study_fact" ? "Study context" : "What this choice changes", "context"],
-    [consequence, "Why your answer matters", "consequence"],
-    [item.expected_consequence, "What your answer changes", "answer-consequences"],
-    [item.answer_consequences_markdown, "What your answer changes", "answer-consequences-markdown"],
+    ...(authoredBrief ? [
+      [context, "Why this matters", "context"],
+      [consequence, "Why this matters", "consequence"],
+      [item.consequence_markdown, "Why this matters", "consequence-markdown"],
+      [item.why_it_matters, "Why this matters", "why"],
+      [item.why_it_matters_markdown, "Why this matters", "why-markdown"],
+      [item.expected_consequence, "Why this matters", "answer-consequences"],
+      [item.answer_consequences_markdown, "Why this matters", "answer-consequences-markdown"],
+      [item.information_limits || item.information_limits_markdown, "Why this matters", "limits"],
+      [item.information_limits_markdown, "Why this matters", "limits-markdown"],
+    ] : [
+      [context, item.response_kind === "study_fact" ? "Study context" : "What this choice changes", "context"],
+      [consequence, teamWork ? "Why it matters" : "Why your answer matters", "consequence"],
+      [item.expected_consequence, changes, "answer-consequences"],
+      [item.answer_consequences_markdown, changes, "answer-consequences-markdown"],
+    ]),
     [showOptions && !decisionOptions(item).length && item.response_kind !== "study_fact" ? legacyOptionText(item.options) : null, "Possible directions", "options"],
-    [item.response_kind !== "study_fact" ? item.recommendation : null, recommendationLabel, "recommendation"],
-  ], [item.question || item.title]);
+    [item.response_kind !== "study_fact" && !boundRecommendation ? item.recommendation : null, recommendationLabel, "recommendation"],
+  ], [item.question || item.title, boundRecommendation]);
 }
 
 export function decisionSupportSections(item, title = item.question || item.title) {

@@ -1,6 +1,8 @@
 # Phase 4: Numerical Eval
 
-Contract version: 3.6.2. Catalog: 1.30.2.
+Contract version: 3.6.12. Catalog: 1.31.13.
+
+Scientific accounts use standard statistical and machine-learning terminology for the source-defined target and quantities, preserving their definitions across summaries, comparisons, decisions and displays. The frozen [scientific-explanation reference](../references/research-presentation/scientific-explanation.md) governs this meaning; undefined measures stay unresolved rather than being renamed or calculated for presentation.
 
 ## 1. Purpose
 
@@ -71,7 +73,7 @@ For the `progressive_evaluation_v1` capability, the analyst's stage spans
 checkpointed turns and bounded managed batches. Save the initial protocol before
 computation, verify implementation with small checks, then execute one planned
 comparison at a time while monitoring outcomes and the authorized resource
-budget. A genuine unresolved researcher preference or unavailable study fact that
+budget. A consequential modeling choice or unavailable study fact that
 blocks justified progress requires a durable pause before further experiments or
 handoff. A severe scientific defect also stops further experiments: retain the
 evidence and ask only about a consequential scope or continuation choice, rather
@@ -103,6 +105,15 @@ These are the existing three stages, not additional agents or approval gates.
    installations. Report precise setup needs and use machine/user-wide tools only.
    Plan question-linked checks, example, performance criteria, actual-data use,
    fair comparators, scenarios, uncertainty, timing and resource/stopping rules.
+   Use existing research-question, test-design, relevance and metric fields to
+   plan the contrast/display: what varies, what stays fixed and why the supplied
+   generator or data can distinguish the claimed mechanism. If methods coincide
+   in that setting, use it as a check or narrow the conclusion; it does not
+   establish absence of benefit. Changed experiments follow prospective amendment
+   and budget rules. Separate the target from a surrogate score, certificate or
+   numerical reference. Calibration conditions must be able to reveal the
+   controlled failure; zero violations under never-return behavior or without
+   relevant unsafe possibilities do not establish broad calibration.
 2. **Deliver reusable code and an executable synthetic example.** Supply a model
    entrypoint taking data/configuration and returning estimates/predictions,
    diagnostics and failures. A thin package driver, adapter or standalone model
@@ -135,6 +146,19 @@ These are the existing three stages, not additional agents or approval gates.
    uses held-out loss/calibration/discrimination as appropriate. Predictive
    accuracy cannot replace intervention-effect error. Keep the P2 tuning rule
    fixed; out-of-rule variants are named ablations or upstream proposals.
+   For constrained or selective decisions, distinguish return/abstention,
+   relevant constraint behavior and objective quality. Name any conditional
+   returned subset; no-output quality is undefined, not zero, and no deployment
+   fallback is invented. Use saved differences on the same stated subset, its
+   count and uncertainty for a paired contrast. Marginal means from different
+   returned subsets imply neither that contrast nor unconditional superiority.
+   Failed or unresolved truth classifications cannot silently count as safe or
+   successful. Keep reference error separate from statistical uncertainty; a
+   reference enclosure crossing the threshold leaves classification unresolved.
+   An estimated reference retains its statistical uncertainty. Explain negative
+   or zero-return regimes using available diagnostics or applicable analysis, or
+   state that the cause is unknown. A zero alone does not prove impossibility;
+   an ideal analytical screen is not observed power or actual return.
    Map usable supplied data to mathematical variables/units and fit the same
    model interface, with preprocessing, missingness, splitting and observation
    restrictions documented. Report actual-data estimates or held-out prediction
@@ -144,13 +168,21 @@ These are the existing three stages, not additional agents or approval gates.
    dataset means `not_supplied`, not a fabricated actual-data case.
 5. **Complete answers, then independently audit.** The analyst completes all
    eight outputs, every exact test answer and its handoff before the theorist
-   begins. Each answer presents a finding and quantitative exhibit, conditions,
-   usable counts, uncertainty, decisive caveat and decision consequence. The
+   begins. Each answer starts with the finding and tested scope, adding measured,
+   applicable magnitude, units, counts and uncertainty. Comparison explains the
+   contrast; conditions/design, reliability, uncertainty, limitations and
+   implications add distinct information. Related tests may share a complete
+   exhibit while retaining one result per exact test. The
    analyst must not depend on later reviewer outputs. The theorist separately
    checks mathematical fidelity, source/code correspondence, design,
    denominators and interpretation, preserving disagreement and unassessed work.
+   It distinguishes fidelity, measured performance and goal-level usefulness,
+   checks compatible targets/subsets and independent truth/reference construction,
+   and checks guarantee premises or labeled assumption violations. Finite tests
+   or higher precision do not prove a universal exact execution guarantee.
 6. **Consolidate results and researcher decisions.** The lead starts with the
-   consequential supported finding and scope, then recaps the exact implemented
+   consequential supported finding and scope in `scientific_outcome.conclusion`;
+   `decision_summary.conclusion_markdown` adds the fuller interpretation. It then recaps the exact implemented
    method and what was developed/tested on synthetic and supplied actual data. Topical accounts
    compose existing analyst answers and verified exhibits without changing the
    results. `headline_exhibit_ids` gives preferred exhibit order within Experiments
@@ -165,10 +197,39 @@ These are the existing three stages, not additional agents or approval gates.
 
 Use the delivered frozen [tables-and-figures reference](../references/research-presentation/tables-and-figures.md)
 for concrete compact display patterns, common caption/precision/source rules and
-separate figure guidance. The Analyst generates supported flat `kind=table`
-artifacts from saved result rows through the authorized script and managed route,
-before handoff; a multi-section result JSON is supplementary material. Keep the
-scientific denominator and uncertainty distinctions below.
+separate figure guidance. The Analyst creates supported flat `kind=table`
+artifacts from saved result rows through the ordinary declared `run_batch` route
+before calling `complete`, without refitting merely for presentation. Plan display
+files in an authorized batch while experiment time remains and before
+`finish_requested`. If further computation is no longer authorized, retain
+existing displays and state the limitation; do not invent another batch or
+handoff stage. Choose the comparison and decide what changes from row to row
+before choosing columns. State fixed design descriptors once in the caption or
+labeled panel heading for the rows they govern; keep varying descriptors and
+multiple-contrast identifiers beside the affected rows. Genuine constant outcomes,
+including zeroes, remain results with the denominators, uncertainty and undefined
+cells needed to interpret them. `table_columns` changes
+labels and units only; omitting a label does not hide a source column. Keep the
+complete diagnostic table and exact case/metric mapping as supporting evidence;
+a multi-section result JSON is supplementary material. Inspect actual display
+headers, cells, caption and mappings before `complete`, while managed regeneration
+is available. Define the target, comparison direction, units, denominators,
+applicable uncertainty and tested scope in headers or captions. Keep the caption
+within 600 characters and put longer technical detail in `detail_md` without
+truncating a decisive qualifier. Preserve meaningful zeroes, matched membership,
+denominators and uncertainty conventions including interval sidedness. Label
+undefined and unavailable values with their recorded reason rather than leaving
+an unexplained blank; unresolved classifications remain distinct.
+Equal counts alone do not establish equal membership.
+
+The Lead checks this distinction between design and outcomes during synthesis and
+evidence selection. The Lead reads the required `p4.exhibits` manifest and uses the retained attachment
+paths/digests to open selected files, inspecting their headers, cells, captions and
+mappings. Native file reads work before publication; the published-only table
+preview is not this route. After Analyst completion the Lead selects among retained
+displays, reporting an unresolved presentation limitation if needed. There is no
+ordinary return to a completed Analyst for a cosmetic correction, and the Lead
+cannot create replacement numerical evidence or invent a repair route.
 
 For independent generated datasets, known-truth scalar estimation may report
 
@@ -231,9 +292,15 @@ and result summaries.
 `model_entrypoint`, `example_generator`, `example_runner`, `readme`, ordinary
 `invocation`, `support_files`, dependency versions/sources and `runtime_identity`.
 Each retained file is `{kind, artifact: <existing artifact pointer>}`. Metadata
-belongs outside the artifact pointer. An unavailable bundle has explicit null
-missing files and an honest reason in the existing five implementation-summary
-sections. Source availability does not prove execution or scientific validity.
+belongs outside the artifact pointer. Before completion the Analyst reconciles
+README filenames, commands, inputs and dependencies against the final declared
+source files. Running the standalone example, regenerating retained tables from
+saved rows and rerunning simulations have distinct requirements; name the inputs
+and files each needs, or its unavailability. An example does not recreate retained
+results when required saved rows are absent. An unavailable bundle has explicit
+null missing files and an honest reason in the existing five implementation-summary
+sections. An unexecuted command is not a checked command; source availability
+does not prove execution or scientific validity.
 
 The analyst's `actual_data_application` records final `analyzed`,
 `supplied_not_analyzed` or `not_supplied`, with source and exact question IDs and
@@ -583,16 +650,53 @@ team work, and unknown facts can remain explicit conditions.
 For predictive improvement, distinguish positive gain, a valid statistical claim
 of positive gain and gain exceeding a meaningful threshold. Unknown clinical
 importance does not waive inferential validity. Synthetic Monte Carlo intervals
-are not an actual-study significance procedure. The team establishes the target,
-inferential unit, tuning/selection effects, censoring identification and relevant
-multiplicity. All-attempted, completion and successful-fit performance retain
+are not an actual-study significance procedure. Within the agreed specification
+and established assumptions, the team handles scientific formulation of the
+stated target, inferential unit, tuning/selection effects, censoring identification
+and relevant multiplicity. Consequential alternatives that change these
+commitments remain eligible for researcher input.
+All-attempted, completion and successful-fit performance retain
 their distinct denominators and meanings.
 
 ## Scientific meaning for the intended reader
 
+Also inspect the numerical findings, applicability limits, computational burden and original goal for a consequential next choice the researcher owns, even when no member proposed it. In P4, this may concern a materially different evaluation or development priority exposed by the results. Explain what each direction would learn or change, its practical cost and uncertainty, and whether it needs upstream method revision. Missing analysis and routine diagnostics remain team work; a saved preference does not launch another run.
+
 Apply the [shared question-language guidance](researcher-question-language.md) within this phase's existing output ownership and interaction rules. It refines the existing question, context, option consequences and recommendation; it adds no artifact, questionnaire or question quota.
 
 In P4, connect a consequential input to the interpretation of a result, realistic data conditions, intended-use criterion or meaningful resource tradeoff. Implementation, fair comparisons and routine diagnostics remain team work; simulated conditions are not observed study facts.
+
+The Data Analyst raises concrete alternatives when an ambiguous mathematical
+specification, implementation approximation, data regime, intended-use criterion
+or accuracy/computation compromise materially changes the evaluation's meaning.
+Explain the mathematical difference, supplied-study meaning, fidelity and cost
+consequences without silently changing the selected method. Support infeasibility
+or major-compromise claims with available analysis or an affordable authorized
+pilot. If that requires substantial new work, offer the investigation with its
+uncertainty and cost. The Analyst designs ordinary synthetic stress tests and
+fair benchmarks; a regime warrants input when it changes intended applicability
+or scientific use, not merely because a simulation setting is unchosen.
+
+The Theorist checks changes to the target, exact constraint, assumptions or
+applicability of retained guarantees, stating the mathematical difference rather
+than treating numerical evidence as proof. Both specialists use existing
+fidelity findings and handoffs. The Analyst records nonblocking proposed modeling
+choices in the existing `handoff.unresolved_issues`, with their affected point,
+practical consequence and exact sources. The Lead consolidates an actionable continuation
+or model-revision decision, retaining guarantee and computational consequences
+when merging the same fork and keeping independently answerable choices separate.
+Check instructions, applicable answers, sources and affordable analysis before
+asking, including when every direction fits the original goal and the team
+recommends one. An unknown answer is not consent to an approximation; justified
+conditional work states its provisional team direction.
+
+A defective or ambiguous specification can require researcher direction when
+faithful evaluation cannot continue. Explain the defect, defensible alternatives
+and consequences through the existing `request_decision` route. A coding error
+with an unambiguous correction stays with the team. A changed target, objective,
+constraint or estimator uses upstream revision; an answer cannot silently alter
+the published method or start that work. Existing pause and budget authority is
+unchanged.
 
 ## Writing duties in existing outputs
 
@@ -630,11 +734,31 @@ visible at first use; `method_formulation_markdown` retains the fuller formulati
 The existing scientific outcome conclusion states the decisive observation and
 boundary. No glossary or recap is inferred for historical records.
 
+The primary account reads as a compact numerical experiments section. The
+Analyst supplies replication, fixed and varied settings, comparator information,
+measures and averaging subsets through the existing protocol and result fields,
+and produces compact displays from saved rows before Lead selection. The Lead
+introduces design and measures before results, then develops each comparison
+beside its exhibit and distinct interpretation. Coverage summaries own the
+design or principal result; limitation and implication fields continue after
+the exhibit. Summary selects the principal finding and decisive scope limit,
+including a tested failure or no-useful-output condition when it changes the
+practical assessment. The principal result account owns any source-backed
+explanation of a negative finding; limitations state evidence or claim boundaries.
+Each topic lists all interpreted exhibits in its existing `exhibit_ids`, including
+shared ones. The first declaring coverage entry owns the display; later entries
+show links. Put the intended primary entry first and keep placement out of prose.
+Per-test reviews retain every assessment and unique qualification without
+repeating the primary account. The Theorist identifies which claim each
+qualification affects and why. Pilots and finite code checks remain distinct
+from principal repeated-simulation results, and unassessed topics stay truthful.
+
 The Analyst owns calculations and numerical artifacts, Theorist owns the existing
 independent fidelity audit, and Lead selects whole existing exhibits and composes
 the account. The Lead may quote/round supported values, but cannot invent a
 denominator, interval or contrast or replace numerical artifacts. Each exhibit
-has one primary topic home; required review/implication fields remain complete
+has one primary display home and remains listed by every topic interpreting it;
+required review/implication fields remain complete
 without replaying the same answer. Preserve all exact per-test reviews, unique
 qualifications and attributed disagreement. These P4 rules leave P5's existing
 checked proof exposition and exact-value figure permissions intact.

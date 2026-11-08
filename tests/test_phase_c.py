@@ -23,7 +23,7 @@ async def client_and_run(engine, golden):
         project_id, phase="P4", mode="p4.comprehensive", branch_id="method.demo"
     )
     await settle(eng, record.run_id)
-    client = AsyncClient(transport=ASGITransport(app=app), base_url="http://t")
+    client = AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost")
     yield client, eng, project_id, record.run_id
     await client.aclose()
 
@@ -111,7 +111,7 @@ async def test_correction_preview(engine, golden):
         project_id, phase="P4", mode="p4.comprehensive", branch_id="method.demo"
     )
     await settle(eng, record.run_id)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         resp = await client.get(
             f"/api/v1/projects/{project_id}/runs/{record.run_id}/correction-preview"
         )

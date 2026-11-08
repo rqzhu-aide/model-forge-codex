@@ -16,7 +16,7 @@ async def test_api_question_request_keeps_exact_source_and_case_selection(workbe
     assert eng.load_run("project.test", original.run_id).state is RunState.PUBLISHED
     app = create_app(data_root=eng.data_root, bridge=eng.bridge)
     base = "/api/v1/projects/project.test"
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         view = (await client.get(base + f"/artifacts?branch={branch}")).json()
         question = view["questions"][0]
         target = question["followup_target"]

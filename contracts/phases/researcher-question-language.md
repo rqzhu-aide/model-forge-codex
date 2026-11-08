@@ -1,8 +1,8 @@
 # Researcher communication: scientific meaning and mathematical precision
 
 This guidance applies to existing scientific accounts, questions, explanations,
-advice and report discussions. It changes writing, not scientific authority, output ownership,
-answer storage or the threshold for asking a question. The executable objectives
+advice and report discussions. It describes how to present eligible inquiries without changing scientific authority, output ownership
+or answer storage. The user-inquiry reference defines consequential-choice eligibility. The executable objectives
 and runtime briefs contain the instructions; this document explains their use.
 
 ## Know the reader through the conversation
@@ -76,6 +76,23 @@ members propose in their owned outputs, the designated Lead consolidates, and
 P5 remains section/editorial work. This guidance creates no output quota, new
 writer, automatic follow-up or additional pause authority.
 
+The Lead also checks the current findings and limitations for a consequential
+next choice the researcher owns, even when no member proposed it. This includes
+a material scientific direction or resource tradeoff revealed by the result,
+within the phase's existing authority. Missing analysis and routine next tasks
+remain team work. Apply the same saved-answer and eligibility checks; do not
+invent alternatives or ask merely because a phase ended. In P5, only an
+indispensable report-specific editorial choice is eligible.
+
+The existing context and consequence fields form one connected "Why this matters"
+account: the exact choice or missing fact, its necessary mathematical and domain
+meaning, practical effect and decisive uncertainty, each stated once. Options
+explain their own distinguishing change and consequential tradeoff. A justified
+suggestion comes first with its stable option pointer and a short reason beside
+that option; no ranking is required when the goal and evidence do not support one.
+This division removes repeated rationale without removing scientific conditions
+or tightening the existing reading ceilings.
+
 Full scientific accounts and requested explanations have no inquiry word cap.
 For P4, the delivered scientific-explanation, claims-and-evidence, summary and
 tables-and-figures references govern the existing owned account and displays.
@@ -111,7 +128,7 @@ be linked to the same donors? This determines whether within-donor changes can b
 computed. Unknown is fine; conditional planning can continue." No artificial
 equation or multiple-choice recommendation is needed for this factual request.
 
-**RL: a consequential cost-protection preference.** Only when the preference is
+**RL: a consequential cost-protection choice.** When the risk criterion is
 unresolved, define the shared reward objective once and compare
 $\Pr_\pi(G_C>b)\le\alpha$ with $\mathbb E_\pi[G_C]\le B$.
 Explain that these constrain exceedance frequency and average cost respectively.
@@ -120,11 +137,13 @@ do not substitute toxicity for a cost whose meaning is unknown. Neither expressi
 alone bounds exceedance magnitude or establishes feasibility. A saved choice is
 not reopened to obtain a cleaner example.
 
-**Theory: an assumption's operational meaning.** If the retained policy uses past
-measurements in its decision information, ask whether those measurements are
-available before the action. Explain the relevant information-set condition and
-which applicability claim remains conditional. The researcher reports timing;
-the team determines what that timing means for the proof or implementation.
+**Theory: choosing the conditions under which to develop a model.** Present a
+material structural assumption mathematically, explain what it permits and what
+scientific cases it excludes, and compare a defensible alternative or an honestly
+uncertain investigation. The researcher can choose to develop under those
+conditions without certifying their truth or proof validity. A changed target,
+constraint or estimator requires upstream method revision. An unknown measurement
+time remains a separate study-fact request; it is not the only reason P3 can ask.
 
 **Report: communication without changing science.** Use the intended audience to
 choose how to introduce the retained target and interpret results. A section

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
@@ -33,6 +34,7 @@ from .problem_context import (supports_problem_context, load_problem_context,
     confirm_context_amendment, save_scoped_answer)
 from .probe import run_provider_probe
 from .providers import CONTROLLED_FIELDS, ProviderConfigConflict, ProviderConfigError, editor_view, load_provider_config, write_provider_config
+from .request_boundary import LocalRequestBoundary
 
 
 def default_data_root() -> Path:
@@ -325,6 +327,8 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
             return JSONResponse(status_code=403, content={"detail": "This viewer is read-only."})
         return await call_next(request)
 
+    app.add_middleware(LocalRequestBoundary)
+
     async def require_same_origin_json(request: Request, noun: str) -> None:
         # Cross-site pages must not read secrets or trigger mutations. The
         # local UI uses JSON and the same origin (also preserved by the dev
@@ -332,9 +336,6 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
         # cross-origin readers cannot pass.
         if request.headers.get("content-type", "").split(";", 1)[0].strip().lower() != "application/json":
             raise HTTPException(415, f"{noun} require application/json.")
-        origin = request.headers.get("origin")
-        if origin is not None and origin.rstrip("/") != str(request.base_url).rstrip("/"):
-            raise HTTPException(403, f"{noun} must come from this workspace origin.")
 
     async def account_mutation(request: Request) -> None:
         # Cross-site forms cannot initiate login or copy credentials.
@@ -675,9 +676,8 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
 
     @app.get("/api/v1/provider-config/editor")
     async def provider_config_editor(request: Request) -> dict:
-        """Editable view of the shared provider file. Unlike every other
-        endpoint this one returns stored api_key values (deliberate, single-
-        user localhost tool), so it sits behind the same-origin JSON guard."""
+        """Editable settings and saved-key markers, without credential values.
+        The same-origin guard protects this local configuration surface."""
         await require_same_origin_json(request, "Provider configuration")
         return editor_view(root)
 
@@ -811,6 +811,8 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
 
         doc = asdict(record)
         doc["state"] = record.state.value
+        from .report_delivery import project_run_terminal_reason
+        doc = project_run_terminal_reason(doc)
         doc["events"] = events[-50:]
         doc["events_skipped_bad_lines"] = skipped
         doc["p4_progress"] = engine.p4_progress(record)
@@ -928,9 +930,11 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
         "/api/v1/projects/{project_id}/branches/{branch_id}/phases/{phase}"
         "/records/{family}/{generation_id}"
     )
-    async def record_body(
+    def record_body(
         project_id: str, branch_id: str, phase: str, family: str, generation_id: str,
         view: str | None = None, download: bool = False, material_id: str | None = None,
+        artifact_uri: str | None = None, artifact_sha256: str | None = None,
+        entry_pointer: str | None = None,
     ):
         from . import browse
 
@@ -956,19 +960,20 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
                 run_dir = engine.run_dir(project_id, run_id)
                 basis = read_json(run_dir / "basis.json") or {}
                 artifact_roots = {family: run_dir / "outputs" / str(meta.get("stage_id") or "p5.assembly")}
+                filename = "technical-report.html"
                 if view == "attachment":
-                    import mimetypes
-                    from .technical_reports import report_context_basis, report_required_artifacts, resolve_report_artifact
+                    from .technical_reports import report_context_basis, report_required_artifacts
                     report_basis = report_context_basis(basis, doc)
                     materials = report_required_artifacts(doc, report_basis)
                     selected = [item for item in materials if material_id and item.get("artifact_id") == material_id]
                     if len(selected) != 1:
                         raise HTTPException(400, "Choose one declared HTML report material to download")
-                    target = resolve_report_artifact(selected[0], report_basis, roots=artifact_roots.values())
-                    if (selected[0].get("media_type") or mimetypes.guess_type(target.name)[0]) != "text/html":
+                    if selected[0].get("media_type") != "text/html":
                         raise HTTPException(400, "Choose one declared HTML report material to download")
-                    filename = str(selected[0].get("authored_path") or selected[0].get("path") or target.name).replace("\\", "/").split("/")[-1]
-                    return research_file_response(target, download=True, filename=filename)
+                    material_path = selected[0].get("authored_path") or selected[0].get("path") or ""
+                    basename = Path(material_path.replace("\\", "/")).stem
+                    stem = re.sub(r"[^a-zA-Z0-9._-]+", "-", basename).strip(".-") or "supporting-document"
+                    filename = stem[:120] + ".shareable.html"
                 review_packets = completed_report_review_packets(engine.project_dir(project_id))
                 # A served view can use a generation-bound attachment. A saved
                 # standalone file must keep its embedded sources and work offline.
@@ -979,15 +984,22 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
                         "generation_id": generation_id, "content_sha256": sha256_file(source)},
                     artifact_roots=artifact_roots,
                     exported_at=datetime.now(timezone.utc).isoformat(), review_packets=review_packets,
-                    print_material_id=material_id,
-                    html_download_base_url=record_url + "?view=attachment" if not download else None)
+                    print_material_id=material_id if view != "attachment" else None,
+                    standalone_material_id=material_id if view == "attachment" else None,
+                    html_download_base_url=record_url + "?view=attachment" if not download and view != "attachment" else None)
                 return Response(payload, media_type="text/html", headers={
-                    "Content-Disposition": ('attachment' if download else 'inline') + ('; filename="report-appendix.html"' if material_id else '; filename="technical-report.html"'),
+                    "Content-Disposition": ('attachment' if download or view == "attachment" else 'inline') + f'; filename="{filename}"',
                     "X-Content-Type-Options": "nosniff",
                     "Content-Security-Policy": "sandbox allow-downloads; default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'"})
             elif view == "document":
                 from .research import scientific_document_view
-                doc = scientific_document_view(engine.project_dir(project_id), branch_id, phase, family, generation_id)
+                artifact_ref = None
+                if artifact_uri is not None or artifact_sha256 is not None:
+                    if not artifact_uri or not re.fullmatch(r"[a-f0-9]{64}", artifact_sha256 or ""):
+                        raise ValueError("Choose an exact declared source URI and digest")
+                    artifact_ref = {"uri": artifact_uri, "sha256": artifact_sha256}
+                doc = scientific_document_view(engine.project_dir(project_id), branch_id, phase, family, generation_id,
+                                               artifact_ref=artifact_ref, entry_pointer=entry_pointer)
             elif view is None:
                 doc = browse.get_record(
                     engine.project_dir(project_id), branch_id, phase, family, generation_id
@@ -1360,7 +1372,8 @@ def create_app(data_root: Path | None = None, bridge: CodexBridge | None = None,
         @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
         @app.api_route("/index.html", methods=["GET", "HEAD"], include_in_schema=False)
         async def frontend_index():
-            return FileResponse(index, headers={"Cache-Control": "no-cache"})
+            return FileResponse(index, headers={"Cache-Control": "no-cache",
+                "Content-Security-Policy": "frame-ancestors 'self'", "X-Frame-Options": "SAMEORIGIN"})
 
         if assets.is_dir():
             app.mount("/assets", StaticFiles(directory=assets), name="frontend-assets")

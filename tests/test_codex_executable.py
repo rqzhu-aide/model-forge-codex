@@ -71,7 +71,7 @@ async def test_invalid_cli_keeps_service_available_with_safe_account_diagnostic(
     monkeypatch.setenv("CODEX_HOME", str(tmp_path / "empty-shared-home"))
     app = create_app(tmp_path / "data", FakeCodexBridge())
     async with app.router.lifespan_context(app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://workbench.local") as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
             status = await client.get("/api/v1/account")
             login = await client.post("/api/v1/account/login", json={})
     assert status.status_code == 200 and status.json()["state"] == "unavailable"

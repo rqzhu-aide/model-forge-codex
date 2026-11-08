@@ -47,6 +47,7 @@ def table_preview(path: Path, exhibit: dict, *, offset: int = 0) -> dict:
     source = path.read_text(encoding="utf-8-sig")
     media = exhibit.get("media_type")
     metadata = []
+    caption = None
     if media == "text/csv":
         values = list(csv.reader(io.StringIO(source)))
         if not values:
@@ -64,6 +65,9 @@ def table_preview(path: Path, exhibit: dict, *, offset: int = 0) -> dict:
             columns = document.get("columns", [])
             metadata = [column for column in columns if isinstance(column, dict)]
             keys = [column.get("key") if isinstance(column, dict) else column for column in columns]
+            caption = document.get("caption")
+            if caption is not None and not isinstance(caption, str):
+                raise ValueError("The table caption must be text.")
         else:
             raise ValueError("JSON table must contain named columns and rows or an array of row objects.")
     elif media == "text/markdown":
@@ -84,9 +88,9 @@ def table_preview(path: Path, exhibit: dict, *, offset: int = 0) -> dict:
     if (not keys or len(keys) > MAX_COLUMNS or any(not isinstance(key, str) or not key.strip() for key in keys)
             or len(set(keys)) != len(keys)):
         raise ValueError("The table must have unique named columns within the inline width limit.")
-    # Only spacing and initial case are presentation defaults. In particular,
-    # do not infer units or expand a scientific abbreviation from its name.
-    columns = [{"key": key, "label": key.replace("_", " ")[:1].upper() + key.replace("_", " ")[1:]} for key in keys]
+    # Scientific symbols and authored headers retain their exact spelling.
+    # Readable replacements come from explicit column metadata below.
+    columns = [{"key": key, "label": key} for key in keys]
     for declared in (metadata, exhibit.get("table_columns", [])):
         if not isinstance(declared, list) or any(not isinstance(column, dict) for column in declared):
             raise ValueError("Table column labels are malformed.")
@@ -111,5 +115,6 @@ def table_preview(path: Path, exhibit: dict, *, offset: int = 0) -> dict:
         if offset <= position < offset + MAX_PREVIEW_ROWS:
             rows.append(rendered)
     return {"columns": columns, "rows": rows, "total_rows": len(raw_rows),
+            **({"caption": caption} if caption is not None else {}),
             "truncated": offset + len(rows) < len(raw_rows),
             "row_offset": offset, "page_size": MAX_PREVIEW_ROWS}

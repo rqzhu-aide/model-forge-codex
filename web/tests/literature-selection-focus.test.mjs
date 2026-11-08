@@ -14,7 +14,7 @@ const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.j
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-literature-focus-"));
 const bundle = path.join(directory, "test.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; export {default as Literature, LiteratureHistory, MainFindings, SelectedPaper} from '${src}/components/LiteratureWorkspace.jsx'; export const dispatcher=React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; export {default as Literature, LiteratureHistory, MainFindings, SelectedPaper} from '${src}/components/LiteratureWorkspace.jsx'; export {default as Framework} from '${src}/components/FrameworkLandscape.jsx'; export const dispatcher=React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const ui = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
 
 const nodes = tree => Array.isArray(tree) ? tree.flatMap(nodes) : tree?.props ? [tree, ...nodes(tree.props.children)] : [];
@@ -28,6 +28,7 @@ const action = (view, label) => find(view.tree, node => [node.props.children].fl
 function mount(Component, initialProps, environment) {
   const slots = []; let cursor = 0; let pending; let dirty = true; let props = initialProps; let tree;
   const hooks = {
+    useContext(context) { return context._currentValue; },
     useState(initial) {
       const index = cursor++; slots[index] ||= { value: typeof initial === "function" ? initial() : initial };
       return [slots[index].value, update => {
@@ -89,7 +90,7 @@ function environment({ approach = false } = {}) {
     getBoundingClientRect() { const top = this.y - window.scrollY; return { top, bottom: top + this.height, height: this.height }; }
     focus(options) { focuses.push({ element: this, options }); }
   }
-  globalThis.window = { scrollY: 800, innerHeight: 700, scrollTo(options) { scrolls.push(options); this.scrollY = options.top; } };
+  globalThis.window = { scrollY: 800, innerHeight: 700, addEventListener() {}, removeEventListener() {}, scrollTo(options) { scrolls.push(options); this.scrollY = options.top; } };
   globalThis.getComputedStyle = element => ({ visibility: "visible", display: "block", top: `${element.stickyTop}px` });
   globalThis.MutationObserver = class { observe() {} disconnect() {} };
   globalThis.requestAnimationFrame = callback => { const id = ++sequence; frames.set(id, callback); return id; };
@@ -169,6 +170,25 @@ test("explicit citations keep the exact cited card while Back retains citation f
     action(view, "Back to the cited account").props.onClick(); view.settle(); f.flush();
     assert.equal(window.scrollY, 800);
     assert.deepEqual(f.focuses.at(-1), { element: f.origin, options: { preventScroll: true } });
+    const count = f.focuses.length; view.update({ basis: structuredClone(basis) }); view.settle(); f.flush();
+    assert.equal(f.focuses.length, count);
+  } finally { view.unmount(); f.cleanup(); }
+});
+
+test("framework citations use their producing account's exact assessment and return to their original occurrence", () => {
+  const f = environment(); const basis = { ...frameworkBasis, citations: [citation] };
+  const view = mount(ui.Literature, { ...props, basis, reading: { tab: "frameworks", frameworkId: "framework.expected" } }, f);
+  try {
+    const framework = find(view.tree, node => node.type === ui.Framework);
+    assert.equal(framework.props.basis, basis);
+    assert.equal(framework.props.selectedId, "framework.expected");
+    framework.props.onOpenCitation(citation, invocation(basis)); view.settle();
+    assert.equal(paper(view).props.initialSelection.exactCard, oldCard, "A newer library assessment cannot replace the originally cited entry.");
+    assert.equal(f.selected.getBoundingClientRect().top, 211);
+    action(view, "Back to the cited account").props.onClick(); view.settle(); f.flush();
+    assert.equal(window.scrollY, 800);
+    assert.deepEqual(f.focuses.at(-1), { element: f.origin, options: { preventScroll: true } });
+    assert.equal(find(view.tree, node => node.type === ui.Framework).props.selectedId, "framework.expected");
     const count = f.focuses.length; view.update({ basis: structuredClone(basis) }); view.settle(); f.flush();
     assert.equal(f.focuses.length, count);
   } finally { view.unmount(); f.cleanup(); }

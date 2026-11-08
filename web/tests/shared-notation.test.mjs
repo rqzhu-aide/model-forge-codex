@@ -15,9 +15,9 @@ const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.j
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-notation-"));
 const bundle = path.join(directory, "test.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; export {NotationLookup,NotationContent,NotationDialog,NotationCorrection,NotationSource} from '${src}/components/SharedNotation.jsx'; export {TechnicalReportDocument,ReportMaterialLink} from '${src}/components/TechnicalReportReading.jsx'; export {default as EmpiricalWorkbench} from '${src}/components/EmpiricalWorkbench.jsx'; export {default as ResearcherDialogue} from '${src}/components/ResearcherDialogue.jsx'; export {default as MethodProposals} from '${src}/components/MethodProposals.jsx'; export {Dialog,ResearchDocument} from '${src}/components/Shared.jsx'; export const render=(Component,props)=>renderToStaticMarkup(React.createElement(Component,props)); export const dispatcher=React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; export {NotationLookup,NotationContent,NotationDialog,NotationCorrection,NotationSource} from '${src}/components/SharedNotation.jsx'; export {TechnicalReportDocument,ReportMaterialLink} from '${src}/components/TechnicalReportReading.jsx'; export {default as EmpiricalWorkbench} from '${src}/components/EmpiricalWorkbench.jsx'; export {default as ResearcherDialogue} from '${src}/components/ResearcherDialogue.jsx'; export {default as MethodProposals,methodReadingDocuments} from '${src}/components/MethodProposals.jsx'; export {Dialog,ResearchDocument} from '${src}/components/Shared.jsx'; export const render=(Component,props)=>renderToStaticMarkup(React.createElement(Component,props)); export const dispatcher=React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const ui = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
-const nodes = (tree) => Array.isArray(tree) ? tree.flatMap(nodes) : tree && typeof tree === "object" && tree.props ? [tree, ...nodes(tree.props.children)] : [];
+const nodes = (tree) => Array.isArray(tree) ? tree.flatMap(nodes) : tree && typeof tree === "object" && tree.props ? [tree, ...nodes(tree.type?.name === "ResearchCardLayout" ? tree.type(tree.props) : tree.props.children)] : [];
 const find = (tree, predicate) => nodes(tree).find(predicate);
 const noop = () => {};
 const json = (data, status = 200) => ({ ok: status < 400, status, json: async () => data });
@@ -69,13 +69,23 @@ test("the selected P2 accounts pass their exact method scope while comparison no
   const explore = direct.type(direct.props).props.children;
   const fixture = mount(explore.type, explore.props); await fixture.settle();
   const lookups = nodes(fixture.tree).filter(node => node.type === ui.NotationLookup);
-  assert.equal(lookups.length, 2);
+  assert.equal(lookups.length, 1, "Only the main account's notation appears on the phase page.");
   assert.ok(lookups.every(node => node.props.methodScope === methodIdentity));
   assert.equal(lookups[0].props.record, comparison, "Concise Lead account keeps the immutable catalog source.");
+  assert.equal(lookups[0].props.label, "View notation table");
+  const documents = ui.methodReadingDocuments({ selected: proposal, method: proposal.method,
+    reviewed: { comparison, disposition: comparison.method_dispositions[0] }, proposals: [proposal] }, noop);
+  const computation = documents.find(document => document.name === "computation");
+  const originalLookups = nodes(computation.body).filter(node => node.type === ui.NotationLookup);
+  assert.equal(originalLookups.length, 1, "The full formulation retains its own contextual notation lookup inside its reading window.");
+  assert.equal(originalLookups[0].props.record, proposal, "Original formulation uses its original proposal snapshot, not the Lead comparison.");
+  assert.equal(originalLookups[0].props.methodScope, methodIdentity);
   const overview = find(fixture.tree, node => node.type?.name === "MethodComparison");
-  const overviewLookup = find(overview.type(overview.props), node => node.type === ui.NotationLookup);
+  const overviewFixture = mount(overview.type, overview.props); await overviewFixture.settle();
+  const overviewLookup = find(overviewFixture.tree, node => node.type === ui.NotationLookup);
   assert.equal(overviewLookup.props.methodScope, undefined);
-  assert.equal(overviewLookup.props.label, "Notation for all methods");
+  assert.equal(overviewLookup.props.label, "Shared notation");
+  overviewFixture.unmount();
   fixture.unmount();
 });
 
@@ -268,7 +278,7 @@ test("adoption outcomes are tied to the exact correction revision and all applic
 });
 
 test("saved correction mirrors count once and respect source phase and method scope", () => {
-  const item = { item_id: "context.notation.owner", revision: 1, status: "confirmed", scope: { kind: "project" }, topic: "notation_correction", statement: "Retain the bandwidth scale.", source_refs: [notationEntryTarget(snapshots.P4, snapshots.P4.entries.at(-1), refs.P4)] };
+  const item = { item_id: "context.notation.owner", revision: 1, status: "confirmed", origin: "researcher_reported", scope: { kind: "project" }, topic: "notation_correction", statement: "Retain the bandwidth scale.", source_refs: [notationEntryTarget(snapshots.P4, snapshots.P4.entries.at(-1), refs.P4)] };
   const input = { projectId: "fixture", branch: refs.P4.branch, phase: "P4", problemContext: { items: [item] }, modelRef: methodIdentity };
   assert.equal(phaseInputSummary(input).understanding.saved, 1);
   assert.equal(phaseInputSummary({ ...input, phase: "P2" }).understanding.saved, 0);
@@ -283,8 +293,8 @@ test("saved correction mirrors count once and respect source phase and method sc
 });
 
 test("a newer P1 source without the original entry excludes its correction from the next run count and mirrors", () => {
-  const correction = { item_id: "context.notation.study", revision: 1, status: "confirmed", scope: { kind: "project" }, topic: "notation_correction", statement: "Keep the original donor averaging unit.", source_refs: [{ ...notationEntryTarget(snapshots.P1, snapshots.P1.entries[2], refs.P1), notation_scope: { kind: "study" } }] };
-  const ordinary = { item_id: "context.ordinary", revision: 1, status: "confirmed", scope: { kind: "project" }, statement: "The donor labels will arrive later." };
+  const correction = { item_id: "context.notation.study", revision: 1, status: "confirmed", origin: "researcher_reported", scope: { kind: "project" }, topic: "notation_correction", statement: "Keep the original donor averaging unit.", source_refs: [{ ...notationEntryTarget(snapshots.P1, snapshots.P1.entries[2], refs.P1), notation_scope: { kind: "study" } }] };
+  const ordinary = { item_id: "context.ordinary", revision: 1, status: "confirmed", origin: "researcher_reported", scope: { kind: "project" }, statement: "The donor labels will arrive later." };
   const input = { projectId: "fixture", branch: "trunk", phase: "P2", problemContext: { items: [correction, ordinary] }, admittedRecords: [{ ...refs.P1, content_sha256: refs.P1.sha256 }] };
   assert.equal(phaseInputSummary(input).understanding.saved, 2);
   for (const field of ["phase", "branch", "family", "generation_id", "content_sha256"]) {
@@ -300,7 +310,7 @@ test("a newer P1 source without the original entry excludes its correction from 
 });
 
 test("an admitted inherited entry carries its note without granting a later phase source upstream admission", () => {
-  const correction = { item_id: "context.notation.inherited", revision: 1, status: "confirmed", scope: { kind: "project" }, topic: "notation_correction", statement: "Keep the donor target explicit.", source_refs: [{ ...notationEntryTarget(snapshots.P1, snapshots.P1.entries[2], refs.P1), notation_scope: { kind: "study" } }] };
+  const correction = { item_id: "context.notation.inherited", revision: 1, status: "confirmed", origin: "researcher_reported", scope: { kind: "project" }, topic: "notation_correction", statement: "Keep the donor target explicit.", source_refs: [{ ...notationEntryTarget(snapshots.P1, snapshots.P1.entries[2], refs.P1), notation_scope: { kind: "study" } }] };
   const input = { projectId: "fixture", phase: "P2", branch: "trunk", problemContext: { items: [correction] }, admittedRecords: [changedStudy.generation_ref], admittedNotation: { entries: [{ entry_id: "target", status: "retired" }] } };
   assert.equal(phaseInputSummary(input).understanding.saved, 1);
   assert.equal(phaseInputSummary({ ...input, admittedNotation: { entries: [{ entry_id: "different", quantity_key: "target" }] } }).understanding.saved, 0);

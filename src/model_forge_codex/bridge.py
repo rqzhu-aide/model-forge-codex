@@ -426,9 +426,14 @@ class SdkCodexBridge:
                 readiness = await client._client.request(
                     "windowsSandbox/readiness", None, response_model=WindowsSandboxReadinessResponse
                 )
-                if readiness.status.value != "ready":
+                status = readiness.status.value
+                if status != "ready":
+                    action = {
+                        "updateRequired": "Update the existing Windows sandbox in the same installed Codex",
+                        "notConfigured": "Complete Windows sandbox setup in the same installed Codex",
+                    }.get(status, "Check the Windows sandbox status in the same installed Codex")
                     raise BridgeUnavailable(
-                        "The installed Windows sandbox is not ready. Complete its setup in Codex "
+                        f"The installed Windows sandbox is not ready. {action} "
                         "before starting research; no model work has been started."
                     )
             except BaseException:

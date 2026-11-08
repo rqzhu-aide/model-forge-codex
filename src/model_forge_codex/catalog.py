@@ -10,6 +10,8 @@ from __future__ import annotations
 import json
 import hashlib
 from copy import deepcopy
+from contextlib import contextmanager
+from functools import wraps
 from pathlib import Path
 from typing import Any
 
@@ -58,15 +60,46 @@ class CatalogError(ValueError):
     pass
 
 
+def _catalog_read(method):
+    @wraps(method)
+    def read(self, *args, **kwargs):
+        with self._access():
+            return method(self, *args, **kwargs)
+    return read
+
+
 class Catalog:
-    def __init__(self, root: Path) -> None:
-        self.root = root
+    def __init__(self, root: Path, *, _project_access: bool = True) -> None:
+        self.root = Path(root)
+        self._project_dir = (self.root.parent if _project_access and self.root.name == "contracts"
+                             and (self.root.parent / "project.json").is_file() else None)
+        self._pin = None
+        with self._access():
+            self._load()
+
+    @contextmanager
+    def _access(self):
+        if self._project_dir is None:
+            yield
+            return
+        from .instance_lock import catalog_access
+        from .migration import recover_catalog_upgrade
+        from .storage import read_json
+        with catalog_access(self._project_dir):
+            recover_catalog_upgrade(self._project_dir)
+            if self._pin is not None and read_json(self.root / "catalog-pin.json") != self._pin:
+                raise CatalogError("The project workflow changed; reload its catalog before reading it.")
+            yield
+
+    def _load(self):
+        root = self.root
         try:
             pin = json.loads((root / "catalog-pin.json").read_text(encoding="utf-8"))
             self.version: str = pin["catalog_version"]
             self.manifest_sha256: str = pin["catalog_manifest_sha256"]
             if not isinstance(self.version, str) or not isinstance(self.manifest_sha256, str):
                 raise ValueError("The catalog pin must declare its version and manifest digest")
+            self._pin = pin
             registry = Registry().with_resources(
                 [
                     (uri, Resource.from_contents(doc))
@@ -101,6 +134,7 @@ class Catalog:
             return False
 
     @property
+    @_catalog_read
     def snapshot_sha256(self) -> str:
         """Digest the actual pinned catalog files, independent of timestamps."""
         digest = hashlib.sha256()
@@ -112,6 +146,7 @@ class Catalog:
             digest.update(hashlib.sha256(path.read_bytes()).digest())
         return digest.hexdigest()
 
+    @_catalog_read
     def verify_manifest(self) -> list[Finding]:
         """Check the declared catalog bytes without changing a project pin."""
         manifest_path = self.root / "MANIFEST.sha256"
@@ -140,6 +175,7 @@ class Catalog:
             findings.append(Finding("catalog.file_inventory", "Catalog files differ from the manifest inventory.", "catalog", ""))
         return findings
 
+    @_catalog_read
     def output_definitions(self, phase: str | None = None) -> dict[str, dict]:
         """Return full output IDs with schema, ownership and delivery metadata.
 
@@ -175,6 +211,7 @@ class Catalog:
         prefix = phase.lower() + "." if phase else ""
         return deepcopy({k: v for k, v in self._definitions.items() if k.startswith(prefix)})
 
+    @_catalog_read
     def schema_for_output(self, contract_output_id: str) -> str | None:
         if not self.scientific_validation_enabled and contract_output_id != "p3.assessment":
             return OUTPUT_SCHEMA_BINDINGS.get(contract_output_id.split(".", 1)[-1])
@@ -182,6 +219,7 @@ class Catalog:
         uri = definition.get("schema_uri")
         return str(uri).rsplit("/", 1)[-1] if uri else None
 
+    @_catalog_read
     def output_schema(self, contract_output_id: str) -> dict | None:
         """Schema for the complete JSON document (or one JSONL row)."""
         name = self.schema_for_output(contract_output_id)
@@ -195,11 +233,13 @@ class Catalog:
             return {"type": "array", "items": {"$ref": schema.get("$id", name)}}
         return schema
 
+    @_catalog_read
     def schema_doc(self, schema_name: str) -> dict:
         return json.loads(
             (self.root / "schemas" / schema_name).read_text(encoding="utf-8")
         )
 
+    @_catalog_read
     def artifact_contracts(self) -> dict[str, dict]:
         """family -> {artifact_type, audience, delivery} across all phase
         contracts (contracts v1.2.0+, SPEC/D12)."""
@@ -214,6 +254,7 @@ class Catalog:
                     out[fam] = meta
         return out
 
+    @_catalog_read
     def validate_output(self, contract_output_id: str, document: Any) -> list[Finding]:
         schema_name = self.schema_for_output(contract_output_id)
         if schema_name is None:

@@ -73,7 +73,7 @@ async def test_method_answers_are_inline_editable_and_only_enter_their_branch(di
             assert {item["attention_id"] for item in questions} == {"question.shared", "question." + role, "task.both"}
 
     app = create_app(engine.data_root, engine.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         for role in ("shared", "theory", "empirical"):
             result = await client.post(f"/api/v1/projects/{PID}/attention/question.{role}/resolve",
                                        json={"note": "ANSWER_" + role.upper()})

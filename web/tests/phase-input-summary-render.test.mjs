@@ -32,13 +32,30 @@ const summary = (context, extra = {}) => render.summary({ context, phase: contex
 test("the compact summary has navigable labels and honest counts without response or launch controls", () => {
   const open = question("open"), saved = question("saved"), unknown = question("unknown");
   const html = summary({ projectId: "project.render", phase: "P4", branch: "method.a", modelRef, issues: [open, saved, unknown], answers: [answer(saved), answer(unknown, { origin: "unknown" })] });
-  for (const label of ["Your answers to my questions", "Other information you gave me", "Instructions for my next run"]) assert.match(html, new RegExp(`<button[^>]*>${label}`));
+  for (const label of ["Questions in this phase", "Your saved notes", "Instructions for my next run"]) assert.match(html, new RegExp(`<button[^>]*>${label}`));
+  assert.match(html, /<h3>Review your input and run settings<\/h3>/);
+  assert.match(html, /The question counts include only this phase’s questions\./);
   for (const label of ["answer saved", "unanswered question", "saved · still unknown"]) assert.match(html, new RegExp(`<b>1</b> ${label}</button>`));
   for (const text of ["Instructions saved", "Inputs available", "You do not need to enter saved answers again"]) assert.ok(html.includes(text), text);
   assert.doesNotMatch(html, /<form\b|<textarea\b|<input\b|type="submit"|Start research|Save instruction/);
   const zero = summary({ projectId: "empty", phase: "P1", branch: "trunk" });
   assert.match(zero, /<b>0<\/b> unanswered questions<\/span>/);
   assert.doesNotMatch(zero, /<b>0<\/b> unanswered questions<\/button>/);
+});
+
+test("P3 with no local questions shows a zero local count while earlier answers stay with their own phase", () => {
+  const upstream = question("upstream", "P2", "method.a");
+  const context = { projectId: "project.render", phase: "P3", branch: "method.a", modelRef, issues: [upstream], answers: [answer(upstream)] };
+  const projected = phaseInputSummary(context);
+  assert.equal(projected.questions.total, 0);
+  assert.equal(projected.questions.answered, 0);
+  const html = summary(context);
+  assert.match(html, /<button[^>]*>Questions in this phase/);
+  assert.match(html, /<b>0<\/b> answers saved<\/span>/);
+  assert.doesNotMatch(html, /<b>0<\/b> answers saved<\/button>/);
+  assert.doesNotMatch(html, /<b>1<\/b> answers? saved/);
+  assert.match(html, /The question counts include only this phase’s questions\./);
+  assert.doesNotMatch(html, /Your answers to my questions|I’ll use your saved input/);
 });
 
 test("every counted current question has one exact destination in the existing editors across P1 to P4", () => {
@@ -62,8 +79,8 @@ test("every counted current question has one exact destination in the existing e
   }
 });
 
-test("study understanding links share the original saved-context and pending-interpretation destinations", () => {
-  const problemContext = { revision: 3, items: [1, 2, 3].map(number => ({ item_id: `context.${number}`, revision: 2, status: "confirmed", statement: `Account ${number}.`, scope: { kind: "project" } })), proposals: [{ amendment_id: "proposal.current", status: "pending", reason: "Confirm the collection account.", item: { statement: "A prospective collection.", scope: { kind: "project" } } }] };
+test("saved note and pending interpretation shortcuts each have one exact destination", () => {
+  const problemContext = { revision: 3, items: [1, 2, 3].map(number => ({ item_id: `context.${number}`, revision: 2, status: "confirmed", origin: "researcher_reported", statement: `Account ${number}.`, scope: { kind: "project" } })), proposals: [{ amendment_id: "proposal.current", status: "pending", reason: "Confirm the collection account.", item: { statement: "A prospective collection.", scope: { kind: "project" } } }] };
   const context = { projectId: "project.render", phase: "P1", branch: "trunk", problemContext };
   const projected = phaseInputSummary(context);
   const html = render.dialogue(context);
@@ -94,11 +111,11 @@ test("one question answer has one editor and no extra-input count across phases"
     const context = { projectId: "single", phase, branch: "trunk", issues: [item], answers: [saved], problemContext: { revision: 2, items: [copy], proposals: [], dialogue_target: { context_revision: 2, brief_revision: 1 } } };
     const card = summary(context), dialogue = render.dialogue(context);
     assert.match(card, /<b>1<\/b> answer saved<\/button>/);
-    assert.match(card, /Other information you gave me/); assert.match(card, /None added/);
+    assert.match(card, /Your saved notes/); assert.match(card, /None added/);
     assert.doesNotMatch(card, /Please check my interpretation|Study understanding|<b>1<\/b> saved/);
     assert.equal((dialogue.match(/Edit your answer/g) || []).length, 1, phase);
     assert.doesNotMatch(dialogue, /Edit your note|Edit understanding/);
-    assert.match(dialogue, /Review your answer/); assert.match(dialogue, /View the saved copy of your answer/);
+    assert.doesNotMatch(dialogue, /Your saved input|View the saved copy of your answer/);
     assert.match(dialogue, /A saved account\./);
   }
 });
@@ -110,7 +127,9 @@ test("P5 adds editorial input counts only when a report choice exists, without a
   assert.match(summary({ projectId: "evaluation.render", phase: "P4", branch: "method.a" }), /aria-label="Revise and rerun"/);
   assert.match(html, /Instructions for my next run/); assert.match(html, /Your section comments stay with the report/);
   assert.match(html, /Editorial choices for this report/); assert.match(html, /<b>1<\/b> unanswered question<\/button>/);
-  assert.doesNotMatch(html, /Your answers to my questions|Other information you gave me|Discuss your problem|<form\b|<textarea\b/);
+  assert.doesNotMatch(html, /Questions in this phase|Your saved notes|Discuss your problem|<form\b|<textarea\b/);
+  assert.match(html, /<h3>What I’ll use in the next run<\/h3>/);
+  assert.match(html, /I’ll use your saved input when you start the next run\./);
   const empty = summary({ projectId: "report.empty", phase: "P5", branch: "method.a" });
   assert.doesNotMatch(empty, /Editorial choices for this report|rerun-questions|unanswered question/);
 });
@@ -127,7 +146,7 @@ test("P5 editorial rows keep saved answers in their one editor and a replaced ex
   assert.equal((html.match(/class="issue-instruction-editor contribution-surface"/g) || []).length, 2);
   assert.match(html, /<h3>Editorial choices for this report<\/h3>/);
   assert.match(html, /<h4 class="issue-row-title"><span>Question editorial-open\?<\/span><\/h4>/);
-  assert.match(html, /<h5>Study context<\/h5>/);
+  assert.match(html, /<h5>Why this matters<\/h5>/);
   assert.match(html, /Still unknown\. This response does not settle the question/);
   assert.doesNotMatch(html, /Decisions to discuss|Other information you gave me/);
   assert.equal(render.editorial({ context: { ...context, issues: [], attention: [], answers: [] } }), "");

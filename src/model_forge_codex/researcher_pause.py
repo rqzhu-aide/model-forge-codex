@@ -12,7 +12,10 @@ from pathlib import Path
 
 from .phase_interactions import digest
 from .problem_context import effective_account, scope_applies, validate_scope
-from .researcher_language import RESEARCHER_LANGUAGE_GUIDANCE, has_researcher_language_guidance
+from .researcher_language import (
+    RESEARCHER_INPUT_POLICY, RESEARCHER_LANGUAGE_GUIDANCE,
+    has_researcher_input_policy, has_researcher_language_guidance,
+)
 from .storage import read_json, write_json_atomic
 
 
@@ -60,30 +63,26 @@ def pause_brief(record, stage, role):
                 "Choices without a mathematical distinction need no artificial equation. Retain partial work before stopping. "
                 "Otherwise continue justified conditional or interim reporting. A saved response does not launch work; "
                 "an explicit continuation supplies its exact revision and only context items accepted from that response.\n")
-    return ("## Consequential researcher input\n\n" + language
-            + "Ask only when an unresolved researcher preference or unavailable study fact materially changes the target or interpretation, "
-            "validity of the intended claim, data applicability or a meaningful resource compromise. "
-            "Different mathematical alternatives alone are not a researcher decision; scientific justification and routine choices belong to the team. "
-            "When input is consequential and useful now, the Lead consolidates and invites it through the existing owned attention output at its designated stage even if conditional work can proceed; "
-            "members propose it in their existing owned outputs for consolidation. "
-            "Explain the proposed conditional direction, plausible alternatives and what the answer would change, keeping any proposed default provisional until adopted. "
-            "An intended use, claim to support first or reference standard for judging success can warrant this nonblocking invitation. "
-            "Do not omit such an invitation merely because it is not a blocker. "
-            "If that missing input makes the next authorized action unjustified, write "
+    objective = _value(stage, "objective", "")
+    # An older frozen policy remains authoritative until catalog adoption.
+    policy = ("" if has_researcher_input_policy(objective)
+              else RESEARCHER_INPUT_POLICY + "\n\n")
+    return ("## Consequential researcher input\n\n" + language + policy
+            + "For qualifying nonblocking proposals, the Theorist and Data Analyst use their existing handoff.unresolved_issues; "
+            "the Lead consolidates in its owned attention output at the designated stage. "
+            "If the next authorized action is unjustified without researcher input, write "
             "researcher-question.json in your workspace with question, reason, blocking=true, "
             "scope ({kind: project}, or {kind: model, branch, model_ref} naming the exact model), "
             "source_refs, and optional options and conditional_scope. Explain the concrete decision needed. "
             "When mathematics distinguishes the choices, reason shows the affected problem or equation with enough formulation to understand the decision, "
             "defining symbols and any shared objective once. Each option's consequence gives its formulation or changed equation under that shared context, "
-            "followed by a concise practical effect; prose-only options do not explain a mathematical distinction. "
+            "followed by its scientific meaning in the supplied study and a concise practical effect; prose-only options do not explain a mathematical distinction. "
             "Plain study facts, budgets and choices without a mathematical distinction need no artificial equation. "
             "Stop this turn after retaining your partial work. Do not publish conditional work as established. "
             "Set scope_change=true if resolving the question requires a changed model, scientific target, "
             "or computation scope outside this authorized run; that prepares new work. "
-            "Otherwise continue justified work with explicit conditions. Attention may be empty; do not manufacture a question. "
-            "There is no question quota. Reuse exact applicable saved answers; do not repeat answered questions unless their premise materially changes. "
-            "Retain unknown facts with their applicability limits. Defer questions without a useful current consequence, and do not repeatedly request unavailable facts. "
-            "Unknown and no-data responses remain legitimate; a researcher cannot certify assumptions by preference. "
+            "Otherwise continue justified work under explicit provisional conditions. Attention may be empty; do not manufacture a question. "
+            "Retain unknown facts with their applicability limits. "
             "A saved response does not launch work. An explicit continuation supplies its exact revision "
             "and only context items accepted from that response.\n")
 

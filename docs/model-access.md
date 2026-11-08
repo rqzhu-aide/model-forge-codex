@@ -59,6 +59,10 @@ The base URL must be an API base such as `https://api.example.com/v1`, rather th
 
 The provider editor saves a file shared across projects on this backend. Its location is shown in Team Settings. The default is `~/.model-forge-codex/providers.toml`, or `MF_CODEX_HOME/providers.toml` with a custom research folder. Set `MF_CODEX_PROVIDER_CONFIG` before launch to use a different file.
 
+Saved API keys are never returned to the browser. Choose **Keep saved key** to retain one while editing its model or reasoning effort, or **Replace API key** to enter a new one. Changing the provider ID or base URL clears the credential choice; select a source for that connection before saving. Environment settings show the variable name only, never its value.
+
+To remove a stored key, save an environment variable instead, switch the connection to **OpenAI account**, or remove its custom connection or shared default. A custom connection still requires one valid credential source. After refreshing a conflict and reapplying edits, review and select the saved key again if the file changed.
+
 ### Edit provider settings as TOML
 
 You can copy the repository's [providers.example.toml](https://github.com/rqzhu-aide/model-forge-codex/blob/main/config/providers.example.toml) to the displayed file location and edit it directly. Keep the populated file outside the repository.

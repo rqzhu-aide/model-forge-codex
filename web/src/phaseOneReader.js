@@ -1,14 +1,6 @@
 import { hasExactRef } from "./research.js";
 
 export const GOAL_POINTER = "/research_setting/research_goal_markdown";
-export function hasConciseP1Account(record) {
-  const version = record?.catalog_pin?.catalog_version;
-  const match = typeof version === "string" && /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
-  if (!match || !/^[a-f0-9]{64}$/i.test(record.catalog_pin.catalog_manifest_sha256 || "")) return false;
-  const [, major, minor] = match.map(Number);
-  return major > 1 || major === 1 && minor >= 23;
-}
-
 export function goalSource(basis) {
   if (!basis?.research_setting?.research_goal_markdown || !hasExactRef(basis.generation_ref)) return null;
   return { ...basis.generation_ref, kind: "research_goal", entry_pointer: GOAL_POINTER };

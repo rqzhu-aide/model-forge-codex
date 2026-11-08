@@ -132,8 +132,8 @@ export default function App() {
       <div id="sidebar-workspace" className="sidebar-workspace">
         <div className="side-label">Workspace</div>
         <button className={`side-item ${view.name === "team" ? "active" : ""}`} aria-current={view.name === "team" ? "page" : undefined} disabled={!projectId} title={!projectId ? "Open a project to configure its team" : undefined} onClick={() => { changeView({ name: "team" }); closeNavigation(); }}><SidebarIcon name="team" /><span>Team Settings</span></button>
-        <div className="theme-control"><span id="appearance-label" className="theme-label">Appearance</span><div className="theme-options" role="group" aria-labelledby="appearance-label"><button className="theme-option" aria-label="Light theme" aria-pressed={theme === "light"} onClick={() => setTheme("light")}><SidebarIcon name="sun" />Light</button><button className="theme-option" aria-label="Dark theme" aria-pressed={theme === "dark"} onClick={() => setTheme("dark")}><SidebarIcon name="moon" />Dark</button></div></div>
         <button className="side-item" onClick={() => { setAccountOpen(true); closeNavigation(); }}><SidebarIcon name="account" /><span>OpenAI Account</span></button>
+        <div className="theme-control"><span id="appearance-label" className="theme-label">Appearance</span><div className="theme-options" role="group" aria-labelledby="appearance-label"><button className="theme-option" aria-label="Light theme" aria-pressed={theme === "light"} onClick={() => setTheme("light")}><SidebarIcon name="sun" />Light</button><button className="theme-option" aria-label="Dark theme" aria-pressed={theme === "dark"} onClick={() => setTheme("dark")}><SidebarIcon name="moon" />Dark</button></div></div>
         <ul className="role-legend" aria-label="Card markers"><li data-role="team">Team findings</li><li data-role="system">System and records</li><li data-role="you">Your input</li></ul>
       </div>
     </aside>

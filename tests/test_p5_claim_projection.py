@@ -10,7 +10,7 @@ from model_forge_codex.storage import sha256_bytes, write_json_atomic
 @pytest.fixture
 def report_claim(tmp_path):
     snapshot = tmp_path / "source.json"
-    snapshot.write_bytes(b'{"statements": [{"text": "A conditional assignment argument."}]}')
+    snapshot.write_bytes(b'{"statements": [{"text": "A conditional assignment argument."}, {"text": "A separate scope condition."}]}')
     source = {"phase": "P3", "branch": "method.srpes", "family": "theory_record",
               "generation_id": "generation.theory.frozen", "content_sha256": sha256_bytes(snapshot.read_bytes()),
               "pointer": "/statements/0"}
@@ -46,6 +46,7 @@ def test_current_report_claim_keeps_qualification_route_and_exact_sources_withou
     assert link["family"] == "theory_record"
     assert link["generation_ref"]["generation_id"] == "generation.theory.frozen"
     assert link["generation_ref"]["sha256"] == authored["source_refs"][0]["content_sha256"]
+    assert link["generation_ref"]["entry_pointer"] == "/statements/0"
     assert link["source_url"].endswith("/records/theory_record/generation.theory.frozen")
     assert report_claim[1:4] == before
 
@@ -57,16 +58,43 @@ def test_actual_authored_report_outcomes_are_preserved(report_claim, state):
     assert project_claim(report_claim)["claims"][0]["scientific_outcome"] == authored
 
 
-@pytest.mark.parametrize("failure", ["changed_bytes", "wrong_generation", "invalid_pointer"])
+def test_two_claim_sources_keep_distinct_entries_in_the_same_frozen_generation(report_claim):
+    claim = report_claim[1]["claims"][0]
+    claim["source_refs"].append({**claim["source_refs"][0], "pointer": "/statements/1"})
+    before = deepcopy(claim)
+    links = project_claim(report_claim)["claims"][0]["evidence_links"]
+    assert [link["generation_ref"]["entry_pointer"] for link in links] == ["/statements/0", "/statements/1"]
+    assert len({link["source_url"] for link in links}) == 1
+    assert len({link["generation_ref"]["generation_id"] for link in links}) == 1
+    assert claim == before
+
+
+@pytest.mark.parametrize("pointer", [None, ""])
+def test_whole_record_claim_reference_does_not_invent_an_entry_pointer(report_claim, pointer):
+    source = report_claim[1]["claims"][0]["source_refs"][0]
+    if pointer is None:
+        source.pop("pointer")
+    else:
+        source["pointer"] = pointer
+    link = project_claim(report_claim)["claims"][0]["evidence_links"][0]
+    assert "entry_pointer" not in link["generation_ref"]
+    assert "source_error" not in link
+
+
+@pytest.mark.parametrize("failure", ["changed_bytes", "missing_snapshot", "wrong_generation", "invalid_pointer", "malformed_pointer"])
 def test_unavailable_report_source_keeps_declared_pointer_and_error_without_exact_open_action(report_claim, failure):
     claim = report_claim[1]["claims"][0]
     source = claim["source_refs"][0]
     if failure == "changed_bytes":
         report_claim[4].write_text("{}")
+    elif failure == "missing_snapshot":
+        report_claim[4].unlink()
     elif failure == "wrong_generation":
         source["generation_id"] = "generation.theory.new"
-    else:
+    elif failure == "invalid_pointer":
         source["pointer"] = "/statements/99"
+    else:
+        source["pointer"] = "/statements/0/bad~2escape"
     link = project_claim(report_claim)["claims"][0]["evidence_links"][0]
     assert link["identifier"] == source["pointer"]
     assert link["family"] == "theory_record"

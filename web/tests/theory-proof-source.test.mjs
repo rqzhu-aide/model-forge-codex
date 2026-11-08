@@ -53,6 +53,20 @@ test("proof mapping requires exact verified URI, hash, URL and one unambiguous g
   }
 });
 
+test("auxiliary proof keeps the owning generation, exact selector and authored P6 destination", () => {
+  const proof = { ...artifact, locator: "P6" };
+  const reference = { ...candidate, artifact_ref: { uri: artifact.uri, sha256: artifact.sha256 } };
+  const mapped = { ...source, generation_ref: reference };
+  assert.deepEqual(ui.theoryProofSource(proof, [mapped]), { ...reference, source_locator: "P6" });
+  for (const artifact_ref of [{ ...reference.artifact_ref, uri: "artifact://other" }, { ...reference.artifact_ref, sha256: "c".repeat(64) }]) {
+    assert.equal(ui.theoryProofSource(proof, [{ ...mapped, generation_ref: { ...reference, artifact_ref } }]), null);
+  }
+  const opened = [];
+  const tree = ui.TheoryJustification({ justification: { ...justification, artifacts: [proof] }, proofSources: [mapped], onSource: value => opened.push(value) });
+  ui.SourceRef(nodes(tree).find(node => node.type === ui.SourceRef).props).props.onClick();
+  assert.deepEqual(opened, [{ ...reference, source_locator: "P6" }]);
+});
+
 test("absent historical mapping and nontext artifacts retain direct exact downloads without a current-source fallback", () => {
   const current = { ...source, uri: "run://run.current/p3.theory_candidate/proof.md", artifact_url: "/api/current/proof.md", generation_ref: { ...candidate, generation_id: "generation.current" } };
   const historical = ui.justification({ justification, proofSources: [current], onSource() {} });

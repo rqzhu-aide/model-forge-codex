@@ -45,18 +45,18 @@ test("a saved-copy link targets the exact active or historical evaluation answer
     globalThis.cancelAnimationFrame = () => {};
     for (const source of [target, earlier.explanation_target]) {
       const updates = [];
-      ui.dispatcher.current = { useState: value => [typeof value === "function" ? value() : value, next => updates.push(next)], useRef: value => ({ current: value }), useEffect() {} };
+      ui.dispatcher.current = { useState: value => [typeof value === "function" ? value() : value, next => updates.push(next)], useRef: value => ({ current: value }), useEffect() {}, useCallback: callback => callback };
       const owner = { kind: "researcher_answer", attention_id: source.request_id, answer_revision: 1, question_ref: source };
       const item = { item_id: "context.answer.navigation", revision: 1, status: "confirmed", scope: { kind: "project" }, statement: "The saved answer.", answer_refs: [owner] };
       const tree = ui.Dialogue({ projectId: "project.pause", phase: "P4", branch: "method.a", problemContext: { items: [item], proposals: [] }, onNavigate: () => assert.fail("A mounted owner should be visited within the current reading scope.") });
-      const content = nodes(tree).find(node => node.props.intro)?.props.intro;
-      const link = nodes(content).find(node => node.props.onReviewAnswer);
-      assert.ok(link, "The saved copy exposes its owner navigation handler.");
+      const footer = nodes(tree).find(node => node.props.footer)?.props.footer;
+      const copy = footer.props.groups.flatMap(group => group.items).find(entry => entry.contextItem?.item_id === item.item_id);
+      assert.deepEqual(copy?.source, source, "The saved-input item retains the exact original pause source.");
       const destination = { tagName: "SECTION", parentElement: null, closest: () => null, getAttribute: key => key === "data-reading-anchor" ? anchor(source) : null, removeAttribute() {} };
       const origin = { closest: selector => selector === "[data-reader-ready]" ? root : null, getAttribute: () => null };
       const root = { querySelectorAll: selector => selector === "[data-reading-anchor]" ? [destination] : [], contains: element => element === origin };
       destination.parentElement = root;
-      link.props.onReviewAnswer(owner, origin);
+      footer.props.onReviewAnswer(copy.owner, origin);
       const visit = updates.find(value => value?.target);
       assert.equal(visit?.target, destination, "The individual pause is used instead of the saved-decision group.");
       visit.dispose();
@@ -69,7 +69,7 @@ test("a saved-copy link targets the exact active or historical evaluation answer
 
 test("unfiltered context owners keep copies, proposals and old drafts out of independent note editors", () => {
   const owner = { kind: "researcher_answer", attention_id: target.request_id, answer_revision: 1, question_ref: target };
-  const copy = { item_id: "custom.answer-copy", revision: 1, status: "confirmed", scope: { kind: "project" }, statement: "An answer saved through another proposal or pause." };
+  const copy = { item_id: "custom.answer-copy", revision: 1, status: "confirmed", origin: "researcher_reported", scope: { kind: "project" }, statement: "An answer saved through another proposal or pause." };
   const interpretation = { ...copy, item_id: "context.interpretation", statement: "A separately confirmed interpretation.", answer_refs: [owner] };
   const contextAnswers = [{ attention_id: owner.attention_id, revision: 1, question_ref: target, context_ref: { item_id: copy.item_id, revision: copy.revision } }];
   const pendingCopy = { amendment_id: "proposal.answer-copy", status: "pending", item: { ...copy, revision: 2 } };
@@ -91,7 +91,8 @@ test("unfiltered context owners keep copies, proposals and old drafts out of ind
     assert.match(html, /Your unsent draft is retained below/);
     assert.match(html, /A retained unsent answer draft/);
     assert.doesNotMatch(html, /Edit your saved note/);
-    assert.equal((html.match(/>Review your answer</g) || []).length, 3, "Saved, proposed and drafted copies link to the owner without their own editors.");
+    assert.equal((html.match(/>Review your answer</g) || []).length, 2, "The pending copy and retained draft link to their owner.");
+    assert.doesNotMatch(html, /Phase unverified|Review at original question/, "An answer outside the selected proposal does not become a saved-input badge.");
   } finally { ui.saveConversationDraft(draftKey, null); }
 });
 
@@ -161,7 +162,7 @@ test("an active pause precedes ordinary questions in the Next line, visible phas
     const paused = nodes(makeTree("awaiting_user"));
     const next = paused.find(node => node.props.className === "project-next");
     assert.match(text(next), /Work is paused in Phase 3/);
-    assert.match(text(next), /Unanswered questions: 1 in Phase 3/);
+    assert.match(text(next), /1 unanswered question in Phase 3/);
     assert.doesNotMatch(text(next), /Also waiting|needs your response/);
     const step = paused.find(node => node.props["data-phase-state"] === "waiting" && node.props["aria-current"] === "page");
     assert.match(step.props["aria-label"], /Work is paused, 1 unanswered question/);

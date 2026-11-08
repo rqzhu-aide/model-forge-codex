@@ -3,7 +3,7 @@ import { isVisibleElement } from "./dialogFocus.js";
 const object = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const text = (value) => typeof value === "string" ? value : "";
 const number = (value) => Number.isFinite(value) ? value : 0;
-const tabs = { P1: ["setting", "frameworks", "papers", "coverage"], P2: ["method", "assumptions", "computation", "review"], P3: ["claims", "assumptions", "arguments", "review"], P4: ["setup", "comparisons", "computation", "tuning", "sensitivity"], P5: ["manuscript", "evidence", "reviews", "changes"] };
+const tabs = { P1: ["setting", "frameworks", "papers", "coverage"], P2: ["method", "assumptions", "computation", "review"], P3: ["claims", "assumptions", "arguments", "review"], P4: ["setup", "comparisons", "computation", "tuning", "sensitivity"], P5: ["report", "evidence", "reviews", "changes", "candidates"] };
 
 export function readerScope(phase, branch = "trunk") {
   return ["P1", "P2"].includes(phase) ? phase : `${phase}:${branch}`;
@@ -139,12 +139,19 @@ export function restoreOpenDisclosures(root, disclosures = []) {
 
 export function restoreReadingPosition(root, position, focus = false, onRestored) {
   let cancelled = false; let frame;
+  const events = ["wheel", "touchstart", "pointerdown", "keydown"];
+  const dispose = () => {
+    cancelled = true; observer.disconnect(); cancelAnimationFrame(frame);
+    for (const event of events) window.removeEventListener(event, dispose, true);
+  };
   restoreOpenDisclosures(root, position?.disclosures);
   const restore = () => {
+    if (cancelled) return;
     if (root.querySelector('[data-reading-pending="true"]')) return;
     observer.disconnect();
     frame = requestAnimationFrame(() => {
       if (cancelled) return;
+      dispose();
       const target = position?.anchor && [...root.querySelectorAll(`[${position.anchor.kind}]`)].filter((element) => element.getAttribute(position.anchor.kind) === position.anchor.value && isVisibleElement(element))[position.anchor.index || 0];
       window.scrollTo({ top: target ? window.scrollY + target.getBoundingClientRect().top - position.offset : position?.y || 0, behavior: "instant" });
       if (focus && target) target.focus({ preventScroll: true });
@@ -153,6 +160,7 @@ export function restoreReadingPosition(root, position, focus = false, onRestored
   };
   const observer = new MutationObserver(restore);
   observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-reading-pending"] });
+  for (const event of events) window.addEventListener(event, dispose, { capture: true, passive: true });
   restore();
-  return () => { cancelled = true; observer.disconnect(); cancelAnimationFrame(frame); };
+  return dispose;
 }

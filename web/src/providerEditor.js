@@ -15,7 +15,7 @@ export const REASONING_EFFORTS = ["none", "minimal", "low", "medium", "high", "x
 
 export const EMPTY_CONNECTION = {
   type: "custom", id: "", base_url: "", model: "gpt-6.1-sol", reasoning_effort: "xhigh",
-  credential: "file", api_key: "", api_key_env: "",
+  credential: "file", api_key: "", api_key_env: "", api_key_keep: "", saved_key_identity: null,
 };
 // mode: "default" (shared default, optional model/effort override) |
 //       "openai" (member table with type "openai") |
@@ -24,18 +24,30 @@ export const EMPTY_CONNECTION = {
 // Blank model/effort in "default" mode means "inherit the shared default".
 export const EMPTY_MEMBER_EDITOR = {
   mode: "ungoverned", model: "", reasoning_effort: "", id: "", base_url: "",
-  credential: "file", api_key: "", api_key_env: "",
+  credential: "file", api_key: "", api_key_env: "", api_key_keep: "", saved_key_identity: null,
 };
 
 const text = (value) => String(value ?? "");
 
-// Stored keys are masked by default, keeping the last characters visible so
-// the researcher can recognize which key is on file.
-export const maskKey = (value) => {
-  const key = text(value);
-  if (!key) return "";
-  return "••••••" + (key.length > 4 ? key.slice(-4) : "");
-};
+// A saved key can be retained only for this same connection. Its value and
+// suffix never reach the editor; the marker refers to the loaded file snapshot.
+export const canKeepKey = (connection) => Boolean(connection?.api_key_keep && connection.saved_key_identity?.id && connection.saved_key_identity?.base_url
+  && ["id", "base_url"].every((field) => text(connection[field]).trim() === connection.saved_key_identity[field]));
+
+export const resetCredential = (connection) => ({ ...connection, credential: "file", api_key: "", api_key_env: "" });
+
+// Reapplying typed edits never opts into a newly changed saved key. Offer the
+// latest keep choice, but require the researcher to select it again.
+export function reapplyEditorDraft(draft, latest) {
+  const reapply = (value, current) => {
+    if (!value) return value;
+    const changedKey = value.credential === "keep" && value.api_key_keep !== (current?.api_key_keep || "");
+    return { ...value, api_key_keep: current?.api_key_keep || "", saved_key_identity: current?.saved_key_identity || null,
+      ...(changedKey ? { credential: "file", api_key: "", credential_review_required: true } : {}) };
+  };
+  return { shared: reapply(draft.shared, latest.shared),
+    members: Object.fromEntries(EDITOR_ROLES.map((role) => [role, reapply(draft.members[role], latest.members[role])])) };
+}
 
 // The local Responses shim has two auth modes: with --auth env (the default)
 // the real provider key lives in the shim's own env file and the key stored
@@ -53,9 +65,11 @@ function connectionFromTable(table = {}) {
     base_url: text(table.base_url),
     model: text(table.model),
     reasoning_effort: text(table.reasoning_effort) || "xhigh",
-    credential: text(table.api_key_env) ? "env" : "file",
-    api_key: text(table.api_key),
+    credential: text(table.api_key_env) ? "env" : text(table.api_key_keep) ? "keep" : "file",
+    api_key: "",
     api_key_env: text(table.api_key_env),
+    api_key_keep: text(table.api_key_keep),
+    saved_key_identity: table.api_key_keep ? { id: text(table.id).trim(), base_url: text(table.base_url).trim() } : null,
   };
 }
 
@@ -89,7 +103,8 @@ function connectionToTable(connection) {
   if (connection.type === "custom") {
     table.id = connection.id;
     table.base_url = connection.base_url;
-    if (connection.credential === "env") table.api_key_env = connection.api_key_env;
+    if (connection.credential === "keep" && canKeepKey(connection)) table.api_key_keep = connection.api_key_keep;
+    else if (connection.credential === "env") table.api_key_env = connection.api_key_env;
     else table.api_key = connection.api_key;
   }
   return cleaned(table);

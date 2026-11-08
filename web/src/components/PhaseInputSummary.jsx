@@ -51,10 +51,10 @@ export default function PhaseInputSummary({ context, phase, scope, preparation, 
       <div className="card-heading"><h2>{title}</h2>{status}</div>
       <div className="body">
         {showSummary && <>
-        <h3>What I’ll use in the next run</h3>
+        <h3>{phase === "P5" ? "What I’ll use in the next run" : "Review your input and run settings"}</h3>
         {(phase !== "P5" || questions.total > 0) &&
           <div className="input-summary-row" data-reading-anchor="rerun-questions">
-            <button className="input-summary-label" type="button" data-ui-role="research" onClick={event => visit(event.currentTarget, phase === "P5" ? questions.items[0]?.anchor : "phase-decisions")}>{phase === "P5" ? "Editorial choices for this report" : "Your answers to my questions"}<ActionIcon name="details" /></button>
+            <button className="input-summary-label" type="button" data-ui-role="research" onClick={event => visit(event.currentTarget, phase === "P5" ? questions.items[0]?.anchor : "phase-decisions")}>{phase === "P5" ? "Editorial choices for this report" : "Questions in this phase"}<ActionIcon name="details" /></button>
             <div className="input-summary-statuses">
               <Count count={questions.answered} label={questions.answered === 1 ? "answer saved" : "answers saved"} state="saved" onClick={event => visit(event.currentTarget, first("answered"))} />
               <Count count={questions.unanswered} label={questions.unanswered === 1 ? "unanswered question" : "unanswered questions"} state="pending" onClick={event => visit(event.currentTarget, first("unanswered"))} />
@@ -64,7 +64,7 @@ export default function PhaseInputSummary({ context, phase, scope, preparation, 
           </div>}
         {phase !== "P5" && <>
           <div className="input-summary-row" data-reading-anchor="rerun-understanding">
-            <button className="input-summary-label" type="button" data-ui-role="research" onClick={event => visit(event.currentTarget, "researcher-dialogue")}>Other information you gave me<ActionIcon name="details" /></button>
+            <button className="input-summary-label" type="button" data-ui-role="research" onClick={event => visit(event.currentTarget, understanding.items[0]?.anchor || "researcher-dialogue")}>Your saved notes<ActionIcon name="details" /></button>
             <div className="input-summary-statuses">
               {understanding.saved ? <Count count={understanding.saved} label="saved" state="saved" onClick={event => visit(event.currentTarget, understanding.items[0]?.anchor)} /> : <span className="input-summary-count empty">None added</span>}
             </div>
@@ -79,7 +79,7 @@ export default function PhaseInputSummary({ context, phase, scope, preparation, 
           <div className="input-summary-statuses"><span>{instructionState}</span><span>{inputState}</span>{phase === "P4" && <span>{preparation.inputCount} files selected{preparation.inputsChanged ? " · unsaved" : ""}</span>}</div>
         </div>
         {context?.activePause && <ActionButton action="details" uiRole="research" onClick={event => visit(event.currentTarget, phase === "P5" ? "further-work" : "phase-decisions")}>Review the current pause</ActionButton>}
-        <p className="note input-summary-hint">{phase === "P5" ? "Your section comments stay with the report." : "You do not need to enter saved answers again."} I’ll use your saved input when you start the next run. Review the instructions and settings first.</p>
+        <p className="note input-summary-hint">{phase === "P5" ? "Your section comments stay with the report. I’ll use your saved input when you start the next run. Review the instructions and settings first." : "The question counts include only this phase’s questions. You do not need to enter saved answers again; they stay with their original questions. Review the instructions and settings before the next run."}</p>
         {notice && <p className="note" role="status">{notice}</p>}
         </>}
         {editorialQuestions}

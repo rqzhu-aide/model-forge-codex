@@ -136,7 +136,7 @@ def test_inherited_definition_keeps_correction_without_admitting_later_phase_or_
 async def test_api_binds_lookup_and_correction_to_exact_historical_account(notation_case):
     project, ref, _, target = notation_case
     app = create_app(project.parent.parent)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         url = "/api/v1/projects/project.test/notation"
         response = await client.get(url, params={"source": json.dumps(target)})
         assert response.status_code == 200, response.text
@@ -238,7 +238,7 @@ def test_offline_html_retains_distinct_report_and_proof_notation(report_case):
     rendered = export_technical_report(report, basis, generation_ref={}, artifact_roots=roots, exported_at="").decode()
     assert 'id="report-notation"' in rendered and "kernel bandwidth" in rendered and "stated moment" in rendered
     assert "Report: main" in rendered and "Report: proof-1" in rendered and "<math" in rendered
-    assert '<a id="notation.0"></a>' in rendered and '<a id="notation.1"></a>' in rendered
+    assert 'id="notation.0" tabindex="-1"' in rendered and 'id="notation.1" tabindex="-1"' in rendered
     assert '&lt;a id="notation.' not in rendered
     assert '"snapshot_sha256"' in rendered and '"entries"' in rendered
 

@@ -250,6 +250,43 @@ def test_table_scalar_arrays_preserve_exact_values_as_json_text(tmp_path):
     assert path.read_text(encoding="utf-8") == content
 
 
+@pytest.mark.parametrize("media,source", [
+    ("text/csv", "p_C,J_R,μg\n0.05,0.4,2\n"),
+    ("application/json", '{"columns":["p_C","J_R","μg"],"rows":[[0.05,0.4,2]]}'),
+    ("text/markdown", "| p_C | J_R | μg |\n| --- | --- | --- |\n| 0.05 | 0.4 | 2 |\n"),
+])
+def test_table_preview_preserves_scientific_header_spelling(tmp_path, media, source):
+    path = tmp_path / "table"
+    path.write_text(source, encoding="utf-8")
+    preview = table_preview(path, {"media_type": media})
+    assert preview["columns"] == [{"key": key, "label": key} for key in ["p_C", "J_R", "μg"]]
+
+
+def test_table_preview_retains_authored_math_units_and_caption_on_every_page(tmp_path):
+    path = tmp_path / "table.json"
+    caption = r"Mean policy value $J_R(\hat\pi)$ across datasets with a selected policy."
+    path.write_text(json.dumps({
+        "columns": [{"key": "J_R", "label": "$J_R$", "unit": "reward units"}, "p_C"],
+        "caption": caption,
+        "rows": [[0.4, 0.05]] * 201,
+    }), encoding="utf-8")
+    exhibit = {"media_type": "application/json", "table_columns": [{"key": "p_C", "label": "p_C"}]}
+    for offset in (0, 200):
+        preview = table_preview(path, exhibit, offset=offset)
+        assert preview["caption"] == caption
+        assert preview["columns"] == [
+            {"key": "J_R", "label": "$J_R$", "unit": "reward units"},
+            {"key": "p_C", "label": "p_C"},
+        ]
+
+
+def test_table_preview_rejects_nontext_caption(tmp_path):
+    path = tmp_path / "table.json"
+    path.write_text(json.dumps({"columns": ["p_C"], "rows": [[0.05]], "caption": {"text": "risk"}}), encoding="utf-8")
+    with pytest.raises(ValueError, match="caption must be text"):
+        table_preview(path, {"media_type": "application/json"})
+
+
 @pytest.mark.parametrize("value", [[[1, 2]], {"nested": 1}, list(range(65)), ["x" * 4097]])
 def test_unrenderable_table_is_reported_before_new_publication(tmp_path, value):
     catalog = Catalog(REPO / "contracts")

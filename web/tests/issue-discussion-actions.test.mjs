@@ -78,7 +78,7 @@ async function withMocks(action) {
   Object.assign(ui.api, {
     startRun: async (...args) => { starts.push(args); return { run_id: "run.suggestion", assessment_id: "conversation.suggestion", assessment_purpose: "issue_suggestions", state: "requested", responsible_role: "research_lead" }; },
     assessmentMessage: async (...args) => { messages.push(args); return { run_id: "run.followup", assessment_id: args[1], assessment_purpose: "issue_suggestions", state: "requested" }; },
-    resolveAttention: async (...args) => { saves.push(args); return { answer: { note: args[2], revision: 3 } }; },
+    resolveAttention: async (...args) => { saves.push(args); return { answer: { attention_id: args[1], question_ref: args[3].expected_source, note: args[2], revision: 3 } }; },
   });
   try { await action({ starts, messages, saves }); }
   finally { Object.assign(ui.api, originalApi); if (previousStorage === undefined) delete globalThis.sessionStorage; else globalThis.sessionStorage = previousStorage; }

@@ -49,7 +49,7 @@ async def test_only_requested_built_frontend_is_served(tmp_path):
         path.write_text("PRIVATE_SENTINEL", encoding="utf-8")
 
     api_only = create_app(tmp_path / "data", bridge=FakeCodexBridge())
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=api_only), base_url="http://local") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=api_only), base_url="http://localhost") as client:
         assert (await client.get("/")).status_code == 404
 
     app = create_app(tmp_path / "data", bridge=FakeCodexBridge(), frontend_dir=frontend)
@@ -58,7 +58,7 @@ async def test_only_requested_built_frontend_is_served(tmp_path):
     async def late_api_route():
         return {"late_route": True}
 
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://local") as client:
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://localhost") as client:
         response = await client.get("/")
         assert response.status_code == 200 and response.text == "<html>Built interface</html>"
         assert response.headers["cache-control"] == "no-cache"

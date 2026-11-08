@@ -20,6 +20,8 @@ test("the distributed math checker runs independently of source files and shared
       { text: String.raw`The value x=\unknownMacro{Y} is prose.`, raw: "named-definition" },
       { text: "$\n\\unknownAssociationMacro{x}\n$", raw: false },
       { text: "$\n\\begin{aligned}x&=1\\\\y&=2\\end{aligned}\n$", raw: false },
+      { text: "Use $x$ with $Y unfinished.", raw: false },
+      { text: "Use $x$ with prices $5 and $10.", raw: false },
     ];
     const input = JSON.stringify(items);
     const source = spawnSync(process.execPath, [fileURLToPath(new URL("../scripts/validate-math.mjs", import.meta.url))],
@@ -37,6 +39,9 @@ test("the distributed math checker runs independently of source files and shared
     assert.deepEqual(reports[5], []);
     assert.equal(reports[6][0].code, "math.invalid_latex");
     assert.deepEqual(reports[7], []);
+    assert.equal(reports[8][0].code, "math.invalid_delimiter");
+    assert.equal(reports[8][0].offset, items[8].text.indexOf("$Y"));
+    assert.deepEqual(reports[9], []);
     assert.match(await fs.readFile(path.join(directory, "KATEX-LICENSE.txt"), "utf8"), /Permission is hereby granted/);
     assert.match(await fs.readFile(path.join(directory, "REACT-LICENSE.txt"), "utf8"), /Permission is hereby granted/);
     assert.match(await fs.readFile(path.join(directory, "REACT-DOM-LICENSE.txt"), "utf8"), /Permission is hereby granted/);

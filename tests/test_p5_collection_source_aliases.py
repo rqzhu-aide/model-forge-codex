@@ -2,7 +2,9 @@
 import json
 import hashlib
 import os
+import base64
 from copy import deepcopy
+import re
 
 import pytest
 
@@ -82,7 +84,8 @@ async def test_actual_member_collection_preserves_owned_snapshot_and_single_alia
     assert seal['outputs']['technical_report_candidate.json']['sha256'] == sha256_file(collected / 'technical_report_candidate.json')
     html = export_technical_report(candidate, basis, generation_ref={'generation_id': 'generation.fixture', 'content_sha256': 'c' * 64},
                                   artifact_roots={'p5.technical_report_candidate': collected}, exported_at='2026-10-13T12:00:00Z').decode('utf-8')
-    assert '<a href="data:application/json;base64,' in html and '>Claim trace</a>' in html
+    link = re.search(r'<a href="data:application/json;base64,([^"]+)" download="([^"]+)">Claim trace \(download \2\)</a>', html)
+    assert link and json.loads(base64.b64decode(link[1], validate=True)) == json.loads(trace_bytes)
     assert len(engine.bridge.turns) == 1
 
 

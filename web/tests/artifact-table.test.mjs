@@ -12,7 +12,7 @@ const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.j
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-artifact-table-"));
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Table, {artifactTablePage} from '${src}/components/ArtifactTable.jsx'; export {artifactTablePage}; export const render = table => renderToStaticMarkup(React.createElement(Table, {table}));`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Table, {artifactTablePage} from '${src}/components/ArtifactTable.jsx'; export {artifactTablePage}; export const render = table => renderToStaticMarkup(React.createElement(Table, {table}));`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const { artifactTablePage, render } = require(bundle);
 fs.unlinkSync(bundle); fs.rmdirSync(directory);
 
@@ -68,6 +68,25 @@ test("CSV decimals are readable without changing identifiers, missing values or 
   assert.match(html, /title="Recorded value: 1.0000000000000001">1<\/td>/);
   assert.match(html, />Not recorded<\/td>/);
   assert.match(html, /original table retains full precision/);
+  assert.deepEqual(table, before);
+});
+
+test("authored headers, units, captions and cells retain scientific notation and undefined denominators", () => {
+  const table = {
+    caption: "Quality is undefined when no output is returned; this is a synthetic comparison.",
+    columns: [{ key: "J_R", label: "J_R" }, { key: "q", label: "$J_R(\\pi)$", unit: "$\\mathrm{mg}$" }, { key: "returned", label: "Returned / attempted" }, { key: "condition" }],
+    rows: [{ J_R: "RL-LPM1", q: "Undefined (no output)", returned: "0 / 60", condition: "$\\alpha=0.05$; <script>unsafe</script>" }],
+  };
+  const before = structuredClone(table); const html = render(table);
+  assert.match(html, /<th scope="col">J_R<\/th>/);
+  assert.doesNotMatch(html, />J R<|>RL LPM1<|<script>/);
+  assert.match(html, /<th scope="col"><span class="math-inline">/);
+  assert.match(html, /application\/x-tex">J_R\(\\pi\)/);
+  assert.match(html, /application\/x-tex">\\mathrm\{mg\}/);
+  assert.match(html, /<caption>Quality is undefined when no output is returned; this is a synthetic comparison\.<\/caption>/);
+  assert.match(html, /<td>Undefined \(no output\)<\/td><td>0 \/ 60<\/td>/);
+  assert.match(html, /application\/x-tex">\\alpha=0\.05/);
+  assert.match(html, /&lt;script&gt;unsafe&lt;\/script&gt;/);
   assert.deepEqual(table, before);
 });
 

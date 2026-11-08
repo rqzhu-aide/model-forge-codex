@@ -2,6 +2,7 @@
 import json
 import shutil
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
@@ -10,7 +11,9 @@ from model_forge_codex.problem_context import project_context_target, save_conte
 from model_forge_codex.records import current_records
 from model_forge_codex.researcher_language import (
     PREVIOUS_RESEARCHER_LANGUAGE_GUIDANCE,
+    RESEARCHER_INPUT_POLICY,
     RESEARCHER_LANGUAGE_GUIDANCE,
+    has_researcher_input_policy,
     has_researcher_language_guidance,
 )
 from model_forge_codex.researcher_pause import pause_brief
@@ -61,6 +64,15 @@ async def test_generated_discussion_delivers_language_without_changing_its_scope
     assert requested_question in brief and study_context in brief
     assert "Do not change the theory, proofs, method, implementation, or existing scientific files" in brief
     assert "Cite item_id and revision in context_dependencies" not in brief
+    guide = (engine.run_dir(run.project_id, run.run_id)
+             / "contracts/references/research-presentation/user-inquiry.md").read_text(encoding="utf-8").strip()
+    receives_inquiry = purpose in {"issue_explanation", "issue_suggestions", "model_dialogue", "project_context"}
+    assert brief.count(guide) == int(receives_inquiry)
+    if receives_inquiry:
+        assert "Use the frozen user-inquiry reference for any consequential follow-up within this discussion's authority" in brief
+        assert "Adopting an assumption does not verify it" in brief
+        assert "changing the method requires upstream revision" in brief
+        assert "Ask a new follow-up only for unresolved preferences or unavailable facts" not in brief
     if purpose == "report_section":
         assert "Use the exact section text and frozen supporting sources" in brief
         assert "Do not save comments, propose context amendments, resolve issues, change the report or launch further work" in brief
@@ -109,9 +121,14 @@ def test_generated_serial_brief_keeps_language_and_question_ownership(workbench,
         assert "Do not reopen problem, collection, method or study-design questions from P1-P4" in brief
         assert "Do not choose between conflicting statistical definitions" in brief
         assert "an unresolved consequential preference remains eligible for a useful nonblocking invitation" not in brief
+        assert RESEARCHER_INPUT_POLICY not in brief
+        assert "For qualifying nonblocking proposals" not in brief
     else:
-        assert "Different mathematical alternatives alone are not a researcher decision" in brief
-        assert "If that missing input makes the next authorized action unjustified" in brief
+        assert brief.count(RESEARCHER_INPUT_POLICY) == 1
+        assert "Theorist and Data Analyst use their existing handoff.unresolved_issues" in brief
+        assert "the Lead consolidates in its owned attention output at the designated stage" in brief
+        assert "If the next authorized action is unjustified without researcher input" in brief
+        assert "Ask only when an unresolved researcher preference or unavailable study fact" not in brief
     assert read_json(directory / "basis.json") == basis
     assert engine.bridge.turns == [] and engine._tasks == {}
 
@@ -132,11 +149,18 @@ def test_generated_p4_brief_keeps_controller_pause_and_team_responsibility(workb
 
     assert RESEARCHER_LANGUAGE_GUIDANCE in brief
     assert brief.count(RESEARCHER_LANGUAGE_GUIDANCE) == 1
+    assert brief.count(RESEARCHER_INPUT_POLICY) == 1
     assert "A pause uses request_decision" in brief
-    assert "Do not manufacture alternatives for a study fact or ask the researcher to resolve a proof or implementation defect" in brief
-    assert "Nonblocking unknowns permit explicitly conditional work and need no pause" in brief
-    assert "Propose useful consequential invitations in the stage's existing owned outputs for Lead consolidation" in brief
-    assert "options and evidence_refs" in brief
+    assert "When a mathematical specification ambiguity or consequential approximation is eligible under this stage's inquiry instructions" in brief
+    assert "Do not manufacture alternatives for a study fact or ask the researcher to correct proof errors or coding errors with an unambiguous correction" in brief
+    assert "Pause only when the next authorized action is unjustified without input" in brief
+    assert "nonblocking choices permit justified conditional work" in brief
+    assert "a changed method requires upstream revision" in brief
+    assert "Researcher answers below are immutable authorization for this continuation, not permission to change the frozen method" in brief
+    assert "Theorist and Data Analyst use their existing handoff.unresolved_issues" in brief
+    assert "the Lead consolidates in its owned attention output at the designated stage" in brief
+    assert "evidence_refs and optional options" in brief
+    assert "For a study-fact request, use options=[] rather than invented factual answers" in brief
     assert "Theorist and lead can also request_decision" in brief
     assert read_json(directory / "basis.json") == basis
     assert engine.bridge.turns == [] and engine._tasks == {}
@@ -168,6 +192,9 @@ def test_pause_guidance_also_reaches_older_stage_objectives(workbench, phase, mo
     assert mechanism in brief
     if phase == "P5":
         assert "indispensable editorial choice" in brief
+        assert RESEARCHER_INPUT_POLICY not in brief
+    else:
+        assert brief.count(RESEARCHER_INPUT_POLICY) == 1
     assert read_json(directory / "basis.json") == basis
     assert engine.bridge.turns == [] and engine._tasks == {}
 
@@ -209,6 +236,7 @@ def test_actual_fallback_keeps_retained_objective_and_one_canonical_block(workbe
     assert retained in brief and stage.objective == retained
     expected = guidance or RESEARCHER_LANGUAGE_GUIDANCE
     assert brief.count(expected) == 1
+    assert brief.count(RESEARCHER_INPUT_POLICY) == (0 if phase == "P5" else 1)
     other = (RESEARCHER_LANGUAGE_GUIDANCE if guidance == PREVIOUS_RESEARCHER_LANGUAGE_GUIDANCE
              else PREVIOUS_RESEARCHER_LANGUAGE_GUIDANCE)
     assert other not in brief
@@ -221,6 +249,51 @@ def test_guidance_recognition_requires_the_complete_canonical_block():
         assert has_researcher_language_guidance("retained before\n" + block + "\nafter")
         assert not has_researcher_language_guidance(block[:-1])
     assert not has_researcher_language_guidance("For reader-facing text: explain the context.")
+
+
+def test_inquiry_policy_recognition_preserves_inline_and_sectioned_retained_policies():
+    # Exact inline policy from P3's theorist objective at public commit 71a907b.
+    retained_inline = (Path(__file__).with_name("fixtures") / "researcher-input-policy-1.28.1.txt").read_text(encoding="utf-8").strip()
+    for policy in (RESEARCHER_INPUT_POLICY, retained_inline, "Consequential researcher input policy:\nRetained policy"):
+        assert has_researcher_input_policy("before\n" + policy + "\nafter")
+    assert not has_researcher_input_policy(RESEARCHER_INPUT_POLICY[:-1])
+    assert not has_researcher_input_policy("Preserve the scope of this researcher's input.")
+
+
+@pytest.mark.parametrize("phase,mode", [
+    ("P1", "p1.literature_update"), ("P2", "p2.full_catalog"),
+    ("P3", "p3.theory_establishment"), ("P4", "p4.preliminary"),
+])
+@pytest.mark.parametrize("retained_format", ["section", "inline-1.28.1"])
+def test_retained_inquiry_policy_does_not_gain_conflicting_runtime_eligibility(workbench, phase, mode, retained_format):
+    from runpy import run_path
+    engine, project, method_branch = workbench
+    retained_policy = (Path(__file__).with_name("fixtures") / "researcher-input-policy-1.28.1.txt").read_text(encoding="utf-8").strip()
+    if retained_format == "section":
+        retained_policy = "Consequential researcher input policy:\n" + retained_policy
+    retained_guide = "# Retained inquiry instructions\n\n" + retained_policy
+    # Establish the retained catalog before freezing the run's source digest.
+    (project / "contracts/references/research-presentation/user-inquiry.md").write_text(retained_guide, encoding="utf-8")
+    run_path(str(project / "contracts/refresh_manifest.py"))["refresh"](project / "contracts")
+    branch = "trunk" if phase in {"P1", "P2"} else method_branch
+    candidate = record(engine, branch, "run.retained.policy." + phase, phase, mode)
+    directory = engine.run_dir(candidate.project_id, candidate.run_id)
+    shutil.copytree(project / "contracts", directory / "contracts")
+    write_json_atomic(directory / "basis.json", engine.compute_basis(candidate.project_id, phase, branch, mode))
+    frozen = (directory / "basis.json").read_bytes()
+    stage = next(stage for stage in engine.stage_plan(candidate.project_id, phase, mode)
+                 if stage.execution == "serial" and stage.roles == (MemberRole.RESEARCH_LEAD,))
+    stage = replace(stage, objective=RESEARCHER_LANGUAGE_GUIDANCE + "\n\n" + retained_policy)
+
+    brief = engine._render_brief(candidate, stage, MemberRole.RESEARCH_LEAD,
+        engine.member_workspace(candidate, stage.stage_id, MemberRole.RESEARCH_LEAD))
+
+    assert brief.count(retained_guide) == 1
+    assert stage.objective in brief
+    assert RESEARCHER_INPUT_POLICY not in brief
+    assert "even when all study facts are supplied" not in brief
+    assert (directory / "basis.json").read_bytes() == frozen
+    assert engine.bridge.turns == [] and engine._tasks == {}
 
 
 @pytest.mark.parametrize("phase,mode", [
@@ -242,6 +315,7 @@ def test_every_generated_stage_delivers_owned_duties_once_and_keeps_frozen_basis
         prepare_review_packet(directory, basis=packet_basis(directory / "packet-fixture"),
             instructions="Review this exact retained submission.", run_id=candidate.run_id)
     frozen = (directory / "basis.json").read_bytes()
+    inquiry = (directory / "contracts/references/research-presentation/user-inquiry.md").read_text(encoding="utf-8").strip()
 
     for stage in engine.stage_plan(candidate.project_id, phase, mode):
         for role in stage.roles:
@@ -265,7 +339,31 @@ def test_every_generated_stage_delivers_owned_duties_once_and_keeps_frozen_basis
                 assert "do not turn that recommendation into an instruction to start or imply authorization for another run" in owned_duties
             if phase != "P5":
                 assert stage.objective.count("Consequential researcher input policy:") == 1
-                assert "Use the supplied frozen user-inquiry reference within this stage's existing output and pause authority" in stage.objective
+                assert brief.count(RESEARCHER_INPUT_POLICY) == 1
+                assert brief.count(inquiry) == 1
+                assert "Ask only when an unresolved researcher preference or unavailable study fact" not in brief
+                assert "Different mathematical alternatives alone are not a researcher decision" not in brief
+                assert "Ask for an unresolved researcher preference or unavailable study fact only" not in brief
+                duties = {
+                    "p1.discovery": "Identify literature-supported formulation choices before substantial development commits to one",
+                    "p1.lead_synthesis": "preserving theoretical and computational consequences",
+                    "p2.independent_proposals": "For your single candidate, make consequential modeling commitments explicit",
+                    "p2.supplied_method_proposals": "For your single candidate, make consequential modeling commitments explicit",
+                    "p2.cross_review": "Identify consequential commitments concealed by the proposal wording",
+                    "p2.supplied_method_reviews": "Identify consequential commitments concealed by the proposal wording",
+                    "p2.lead_reconciliation": "do not create a fourth candidate during reconciliation",
+                    "p2.supplied_method_reconciliation": "do not create a fourth candidate during reconciliation",
+                    "p3.theorist": "Raise material assumption or theorem-scope choices",
+                    "p3.analyst": "Distinguish adoption for development from empirical plausibility and mathematical proof",
+                    "p3.lead": "A changed target, objective, constraint or estimator requires existing upstream revision",
+                    "p4.analyst": "Support infeasibility or major compromise claims",
+                    "p4.theorist": "Distinguish numerical evidence from proof",
+                    "p4.lead": "guarantee or applicability consequence and the fidelity or computational consequence",
+                }
+                assert duties[stage.stage_id] in brief
+            else:
+                assert RESEARCHER_INPUT_POLICY not in brief
+                assert brief.count(inquiry) == int(role is MemberRole.RESEARCH_LEAD)
             if stage.execution == "parallel":
                 assert pause_brief(candidate, stage, role) == ""
     assert (directory / "basis.json").read_bytes() == frozen

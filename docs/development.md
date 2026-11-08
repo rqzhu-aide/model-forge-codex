@@ -13,7 +13,7 @@ git clone https://github.com/rqzhu-aide/model-forge-codex.git
 cd model-forge-codex
 ```
 
-This checks out the development branch. To use the original 0.9.0 release source instead, add `--branch v0.9.0` to the clone command. Use the exact selected Python executable. In PowerShell:
+This checks out the repository's default branch, which can differ from npm's published `next` package. To use a tagged release's source, add `--branch TAG` with an existing release tag to the clone command. Use the exact selected Python executable. In PowerShell:
 
 ```powershell
 & $env:MF_PYTHON -m pip install --user "setuptools>=68" wheel
@@ -53,13 +53,32 @@ Both launchers accept `--port NUMBER` and `--no-open`. The source launcher uses 
 
 ## Prepared release tarball
 
-Download `rqzhu-aide-model-forge-codex-0.9.0.tgz` and `SHA256SUMS.txt` from the [GitHub prerelease](https://github.com/rqzhu-aide/model-forge-codex/releases/tag/v0.9.0), verify the tarball checksum, then run from the download folder:
+To test the locally prepared **0.9.5 candidate**, copy `rqzhu-aide-model-forge-codex-0.9.5.tgz` to the test machine. Compare its SHA-256 with the value recorded when that artifact was prepared: use `sha256sum rqzhu-aide-model-forge-codex-0.9.5.tgz` on Linux, `shasum -a 256 rqzhu-aide-model-forge-codex-0.9.5.tgz` on macOS, or `Get-FileHash ./rqzhu-aide-model-forge-codex-0.9.5.tgz -Algorithm SHA256` in PowerShell.
+
+Complete [OS-specific setup](installation.md) in the same terminal, including the backend dependencies and `MF_PYTHON`. Replace its final `npx` command with this command, run from the folder containing the tarball:
 
 ```text
-npm exec --yes --package ./rqzhu-aide-model-forge-codex-0.9.0.tgz -- model-forge-codex web
+npm exec --yes --package ./rqzhu-aide-model-forge-codex-0.9.5.tgz -- model-forge-codex web
 ```
 
-First complete [shared Python setup](installation.md) in this terminal, including `MF_PYTHON`. The tarball includes the built interface and mathematics tools. It needs no frontend build packages. Application snapshots live in `~/.model-forge-codex-app/releases`, separately from research and settings. They contain application code, not private runtime installations. Starting the same release reuses its running service. Switching releases stops an idle earlier service; active research must finish or be cancelled first. [Recovery instructions](installation.md#recover-a-damaged-application-release) distinguish a damaged download from a damaged retained snapshot.
+Use that same local package for lifecycle commands:
+
+```text
+npm exec --yes --package ./rqzhu-aide-model-forge-codex-0.9.5.tgz -- model-forge-codex status
+npm exec --yes --package ./rqzhu-aide-model-forge-codex-0.9.5.tgz -- model-forge-codex stop
+```
+
+Keep the same `MF_PYTHON`, data folder and port for these commands. In PowerShell, use `npm.cmd` if script policy blocks `npm.ps1`. This [npm exec](https://docs.npmjs.com/cli/v11/commands/npm-exec/) command uses the local archive through npm's user-wide cache; it does not publish it. `npx @rqzhu-aide/model-forge-codex@next` selects a published registry package and may run a different version.
+
+For a native installation smoke check without a checkout, copy the companion `scripts/verify_npm_candidate.py` beside the tarball. After shared Python setup, run:
+
+```sh
+"$MF_PYTHON" -B verify_npm_candidate.py ./rqzhu-aide-model-forge-codex-0.9.5.tgz --sha256 REVIEWED_SHA256
+```
+
+Replace `REVIEWED_SHA256` with the recorded artifact hash. The helper checks the archive and uses disposable research data to check launch, the running release identity, served interface assets, shutdown and settings preservation. It records the native OS and runtime versions in a JSON receipt and makes no model requests. In PowerShell, replace `"$MF_PYTHON"` with `& $env:MF_PYTHON`. Browser interaction, account connection and scientific work still need separate checks.
+
+The tarball includes the built interface and mathematics tools. It needs no frontend build packages. Application snapshots live in `~/.model-forge-codex-app/releases`, separately from research and settings. They contain application code, not private runtime installations. Starting the same release reuses its running service. Switching releases stops an idle earlier service; active research must finish or be cancelled first. [Recovery instructions](installation.md#recover-a-damaged-application-release) distinguish a damaged download from a damaged retained snapshot.
 
 ## Shared developer packages
 
@@ -96,6 +115,8 @@ node web/scripts/vite.mjs dev
 ```
 
 Open [http://127.0.0.1:5173](http://127.0.0.1:5173). Vite proxies the API to `127.0.0.1:8766`; `MF_WEB_PORT` and `MF_API_URL` override those defaults. Its development cache stays in the system temporary directory. The [repository frontend guide](https://github.com/rqzhu-aide/model-forge-codex/blob/main/web/README.md) explains shared package resolution.
+
+Send browser API calls to relative `/api` URLs on the workspace origin. The development proxy preserves the browser's host and port. Browser requests that change workspace state use `Content-Type: application/json`, including actions with an empty body.
 
 Use a separate research folder for development. Set `MF_CODEX_HOME` before starting the backend, and keep the folder outside the repository. To exercise the harness without model calls, also set `MF_CODEX_FAKE_BRIDGE=1`. Simulated results do not establish scientific behavior. Remove that variable before real model evaluation.
 

@@ -68,6 +68,35 @@ test("explicit standalone-dollar blocks reject unclosed and mismatched display d
   }
 });
 
+test("math-heavy prose returns an orphan inline symbol to its author", () => {
+  const text = String.raw`First lower partial moments $L_1(c;Y)=\mathbb E[(c-Y)_+]$, where $(u)_+=\max(u,0)$ and $c$ is a reference in the scalar outcome $Y without fixing an estimator. A reward lower bound is not required.s units, should be investigated without fixing an estimator. A reward lower bound is not required.`;
+  const findings = validateMathText(katex, text);
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0].code, "math.invalid_delimiter");
+  assert.equal(findings[0].offset, text.indexOf("$Y without"));
+  assert.match(findings[0].message, /Inline equation.*unclosed/);
+  for (const opening of ["$Y", String.raw`$\theta`]) {
+    const invalid = `Use $x$ with ${opening} unfinished.`;
+    assert.equal(validateMathText(katex, invalid)[0].offset, invalid.indexOf(opening));
+    assert.deepEqual(validateMathText(katex, `${invalid.replace(" unfinished.", "$")}.`), []);
+  }
+});
+
+test("orphan inline checking preserves currency, opaque content and ambiguous prose", () => {
+  for (const text of [
+    "Use $x$ with a price $5 and a budget $10.", "Use $x$ with a price $5.",
+    "Use $x$.\n\nBudget $B is unspecified.", "Use $x$.\r\n \r\nBudget $B is unspecified.",
+    "The outcome is $Y without other mathematical context.", "Use $x$ with $USD pending.",
+    String.raw`Use $x$ and literal \$Y.`, "Use $x$ and `$Y` as code.",
+    "Use $x$.\n```tex\n$Y\n```", "Use $x$.\n~~~tex\n$Y\n~~~",
+    "Use $x$ and https://example.org/$Y", String.raw`Use \(x\) and \[Y\].`,
+    String.raw`Use $x$ and $Y$.`, String.raw`Use $x$ and $$Y$$.`, "$\nx=1\n$",
+    "Use $x$.\n```tex\n$Y", "Use $x$.\n~~~tex\n$Y",
+  ]) assert.deepEqual(validateMathText(katex, text), [], text);
+  const invalid = "`opaque` Use $x$ with $Y unfinished.";
+  assert.equal(validateMathText(katex, invalid)[0].offset, invalid.indexOf("$Y"));
+});
+
 test("the UI and checker distinguish display equations, inline symbols, code and URLs", () => {
   const text = [String.raw`Use $\tau$ with $$\Pr(H>B)\le1-\tau$$ and \[G=\sum_t\gamma^tR_t\].`,
     String.raw`Keep \(B\) inline and code \`$\notACommand$\` literal.`,

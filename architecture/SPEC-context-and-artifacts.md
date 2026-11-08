@@ -45,6 +45,25 @@ below only for projects that explicitly adopt the revised catalog. The
 
 ## Researcher-facing delivery across phases
 
+### Bounded delivery and role instructions, catalog 1.31.7
+
+The `research_account_focus_v1` capability selects the focused targeted-discussion
+instructions and role-specific P4 control instructions. Frozen catalogs without
+this capability retain their prior text. Existing projects do not adopt it
+automatically. P1 and P5 phase objectives remain unchanged.
+
+The P4 Analyst receives the batch-authoring instructions. Theorist and Lead
+receive the scientific evidence, exact plan, execution provenance and current
+budget/control state, including checkpoint and severe-issue decision authority,
+without the Analyst's submission tutorial. No new execution permission or
+return-to-completed-Analyst route is introduced.
+
+The existing source-delivery rules remain unchanged. The reviewed real briefs did
+not demonstrate an additional exact duplicate requiring new deduplication code.
+Complete selected-method definitions, owned output schemas, exact answers,
+notation and recipient-specific source access remain available. No semantic
+compression or stripping of embedded text across scientific documents is added.
+
 ### Shared notation and neutral references, catalog 1.30.0
 
 `research_presentation_v2` delivers the five existing neutral authoring references

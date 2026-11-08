@@ -36,8 +36,37 @@ test("compact setting keeps notation on demand and interpreted goal before cited
   const settingLabel = html.match(/<section class="card research-setting"[^>]*aria-labelledby="([^"]+)"/)?.[1];
   assert.ok(settingLabel);
   assert.ok(html.includes(`<h2 id="${settingLabel}">Research Setting</h2>`), "The card keeps its accessible heading after removing the repeated project title.");
+  const setting = html.slice(0, html.indexOf("Main Findings"));
+  const [beforeResources, settingResources] = setting.split("<aside ");
+  const [settingActions, settingAccount] = beforeResources.split('<div class="research-card-account">');
+  assert.match(settingAccount, /Study description|Study goal/);
+  for (const label of ["Project instructions", "Correct or discuss goal"]) {
+    assert.equal(setting.split(label).length - 1, 1, `${label} has one owner`);
+    assert.ok(settingActions.includes(label), `${label} precedes the study account in the actions group`);
+  }
+  assert.match(settingActions, /research-card-actions" role="group" aria-label="Research setting actions"/);
+  assert.match(settingResources, /aria-label="Research setting supporting reading"/);
+  assert.match(settingResources, /<h3>Notation<\/h3>/);
+  assert.equal((settingResources.match(/>Notation<\/button>/g) || []).length, 1);
+  assert.match(settingResources, /<h3>Supporting reading<\/h3>[\s\S]*?Research basis source/);
+  assert.doesNotMatch(settingResources, /Project instructions|Correct or discuss goal/);
   assert.doesNotMatch(html, /Meaning in your problem or data|Mathematical role/); assert.doesNotMatch(html, /katex-error|role="tablist"|#cite:source/);
   assert.equal(JSON.stringify(basis), before);
+});
+
+test("research setting without notation keeps project controls and the research basis source without an empty reading area", () => {
+  const input = { ...basis, research_setting: { ...basis.research_setting, component_interpretations: [] } };
+  const html = render.phase({ project: { research_instructions: "Research brief" }, basis: input, onGoal() {} });
+  const setting = html.slice(0, html.indexOf("Main Findings"));
+  assert.match(setting, /research-card-layout has-rail has-actions/);
+  assert.match(setting, /Project instructions|Correct or discuss goal/);
+  assert.match(setting, /<aside class="research-card-resources" aria-label="Research setting supporting reading">[\s\S]*?<h3>Supporting reading<\/h3>[\s\S]*?Research basis source/);
+  assert.doesNotMatch(setting, /<h3>Notation|>Notation<\/button>/);
+  assert.ok(setting.indexOf("research-card-actions") < setting.indexOf("research-card-account"));
+  const unsourced = render.phase({ project: { research_instructions: "Research brief" }, basis: { ...input, generation_ref: undefined }, onGoal() {} });
+  const bare = unsourced.slice(0, unsourced.indexOf("Main Findings"));
+  assert.match(bare, /research-card-layout has-rail has-actions/);
+  assert.doesNotMatch(bare, /research-card-resources|<aside/);
 });
 
 test("compact approaches retain exact accounts, visible source qualifications and stable basis-scoped anchors", () => {
@@ -94,7 +123,7 @@ const correctionBasis = () => ({ ...structuredClone(basis),
 const correction = (current, changes = {}) => ({ item_id: "goal.clarification", revision: 2, status: "confirmed", topic: "research_goal", origin: "researcher_reported", scope: { kind: "project" },
   statement: "Maximize reward subject to separate cost risk $p_C(\\pi;b)\\le\\alpha$.", source_refs: [goalSource(current)], ...changes });
 
-test("the exact saved goal clarification leads while the published goal and formulation remain on demand", () => {
+test("the exact saved goal clarification leads while the Lead's interpretation and formulation stay visible and labelled", () => {
   const current = correctionBasis(); const item = correction(current);
   const props = { project: { research_instructions: "Original brief." }, basis: current, problemContext: { items: [item] }, onGoal: () => {} };
   const before = JSON.stringify(props);
@@ -102,15 +131,36 @@ test("the exact saved goal clarification leads while the published goal and form
   assert.match(visible, /Study goal.*Your clarification/);
   assert.match(visible, /Maximize reward subject to separate cost risk/);
   assert.match(visible, /class="katex/);
-  assert.doesNotMatch(visible, /Develop a model and technical report|Y_i=f|Study description/);
-  assert.match(html, /<details class="research-details" data-reading-anchor="earlier-goal"><summary>Earlier Lead interpretation<\/summary>/);
-  assert.match(html, /<details class="research-details" data-reading-anchor="earlier-setting"><summary>Earlier study formulation<\/summary>/);
-  assert.match(html, /Develop a model and technical report/);
+  assert.match(visible, /<h4>Lead&#x27;s published interpretation<\/h4>/);
+  assert.match(visible, /Develop a model and technical report/);
+  assert.match(visible, /<h3>Study description<\/h3>/);
+  assert.match(visible, /The study description and Lead&#x27;s interpretation are from the published Phase 1 results\./);
+  assert.doesNotMatch(html, /earlier-goal|earlier-setting|Earlier Lead interpretation|Earlier study formulation/);
   assert.equal((html.match(/Correct or discuss goal/g) || []).length, 1);
   assert.doesNotMatch(html, /Your correction is saved|<textarea|data-reading-anchor="problem-context:/);
-  assert.ok(html.indexOf("Maximize reward") < html.indexOf("Earlier Lead interpretation"));
-  assert.ok(html.indexOf("Maximize reward") < html.indexOf("Earlier study formulation"));
+  assert.ok(html.indexOf("Maximize reward") < html.indexOf("Lead&#x27;s published interpretation"));
+  assert.ok(html.indexOf("Lead&#x27;s published interpretation") < html.indexOf("Develop a model and technical report"));
+  assert.ok(html.indexOf("Develop a model and technical report") < html.indexOf("Study description"));
   assert.equal(JSON.stringify(props), before, "Display does not rewrite the goal, its correction or the original study.");
+});
+
+test("a saved goal clarification does not imply adoption by an idle or already active Phase 1 run", () => {
+  const current = correctionBasis();
+  const props = { project: {}, basis: current, problemContext: { revision: 2, items: [correction(current)] } };
+  const before = JSON.stringify(props);
+  const idle = render.phase({ ...props, activeRunCount: 0 });
+  // This clarification may have been saved after the active run froze its inputs.
+  const active = render.phase({ ...props, activeRunCount: 1 });
+  for (const html of [idle, active]) {
+    const visible = outsideClosedDetails(html);
+    assert.match(visible, /Study goal.*Your clarification/);
+    assert.match(visible, /Maximize reward subject to separate cost risk/);
+    assert.match(visible, /<h4>Lead&#x27;s published interpretation<\/h4>/);
+    assert.match(visible, /The study description and Lead&#x27;s interpretation are from the published Phase 1 results\./);
+    assert.doesNotMatch(visible, /being updated by the current run|pending the next run|run in progress updates|updated from your clarification|Phase 1 runs again/);
+  }
+  assert.equal(active, idle, "An active-run count does not establish whether a saved clarification was adopted.");
+  assert.equal(JSON.stringify(props), before);
 });
 
 test("multiple exact clarifications remain separate and unknown content is not resolved by presentation", () => {
@@ -202,7 +252,7 @@ test("current catalog examples preserve authored mathematics with compact approa
     assertAuthoredMath(paper.explanation_markdown, outsideClosedDetails(paperHtml), `paper ${paper.entry_id}`);
     assert.doesNotMatch(paperHtml, /katex-error/);
     const earlier = outsideClosedDetails(render.paper({ source: { ...paper.source, cards: [{ ...card, catalog_pin: { ...examples.pin, catalog_version: "1.22.0" } }] } }));
-    for (const { latex } of mathSegments(paper.explanation_markdown).filter((segment) => segment.display)) assert.ok(!earlier.includes(render.math({ latex, display: true })), "earlier paper retains its disclosure policy");
+    assertAuthoredMath(paper.explanation_markdown, earlier, `earlier-pinned paper ${paper.entry_id}`);
   }
   assert.doesNotMatch(phaseHtml, /katex-error/);
   assert.equal(JSON.stringify(examples), before, "rendering leaves the original examples unchanged");

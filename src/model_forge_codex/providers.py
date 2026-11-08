@@ -2,8 +2,8 @@
 
 The file is the single source of truth: the Team Settings editor validates
 and rewrites it atomically, and hand edits are honored on the next read.
-Stored api_key values leave the backend only through the guarded editor
-endpoint; they are never written to research artifacts, run records, or logs.
+Stored api_key values remain in the backend; the editor can keep, replace,
+or remove them without reading them. They never enter research artifacts or logs.
 """
 from __future__ import annotations
 
@@ -69,6 +69,60 @@ def _effort(value):
     return value
 
 
+def _base_url(value):
+    url = _text(value, "Custom providers require a base_url.")
+    parsed = urlsplit(url)
+    if (parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username is not None
+            or parsed.password is not None or parsed.query or parsed.fragment or any(c.isspace() for c in url)):
+        raise ProviderConfigError("Provider base_url must be an HTTP(S) endpoint without embedded credentials, query parameters or fragments.")
+    parsed.port
+    return url
+
+
+def _credential_tables(document: dict) -> list[dict]:
+    tables = [document.get("provider")]
+    members = document.get("members")
+    if isinstance(members, dict):
+        tables.extend(members.values())
+    return [table for table in tables if isinstance(table, dict)]
+
+
+def _known_credential_values(document: dict) -> tuple[str, ...]:
+    """Only configured key values, including malformed credential containers.
+    No scan of unrelated environment variables or plausible-looking strings."""
+    def strings(value):
+        if isinstance(value, str):
+            return [value.strip()] if value.strip() else []
+        if isinstance(value, dict):
+            return [item for child in value.values() for item in strings(child)]
+        if isinstance(value, list):
+            return [item for child in value for item in strings(child)]
+        return []
+
+    values = []
+    for table in _credential_tables(document):
+        values.extend(strings(table.get("api_key")))
+        env_name = table.get("api_key_env")
+        if isinstance(env_name, str) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", env_name.strip()):
+            values.extend(strings(os.environ.get(env_name.strip())))
+    return tuple(set(values))
+
+
+def _contains_credential(value: str, secrets: tuple[str, ...]) -> bool:
+    # Exact copied values are always private. Containment additionally catches
+    # keys pasted into URL paths or model strings. Short shim placeholders
+    # (for example "x") must not invalidate ordinary incidental substrings.
+    return any(value.strip() == secret or len(secret) >= 8 and secret in value for secret in secrets)
+
+
+def _check_public_credentials(document: dict) -> None:
+    secrets = _known_credential_values(document)
+    for table in _credential_tables(document):
+        for key, value in table.items():
+            if key in set(EDITOR_KEY_ORDER) - {"api_key"} and isinstance(value, str) and _contains_credential(value, secrets):
+                raise ProviderConfigError("Provider connection fields contain an API key value. Keep credentials only in the API key field or the host environment.")
+
+
 def _connection(provider: dict):
     """Parse a complete connection; never borrow another connection's fields."""
     kind = provider.get("type")
@@ -87,12 +141,7 @@ def _connection(provider: dict):
     identifier = _text(provider.get("id"), "Custom providers require a nonblank id.")
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", identifier) or identifier == "openai":
         raise ProviderConfigError("Custom provider id must use letters, digits, underscores or hyphens and must not be 'openai'.")
-    url = _text(provider.get("base_url"), "Custom providers require a base_url.")
-    parsed = urlsplit(url)
-    if (parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username is not None
-            or parsed.password is not None or parsed.query or parsed.fragment or any(c.isspace() for c in url)):
-        raise ProviderConfigError("Provider base_url must be an HTTP(S) endpoint without embedded credentials, query parameters or fragments.")
-    parsed.port
+    url = _base_url(provider.get("base_url"))
     if ("api_key" in provider) == ("api_key_env" in provider):
         raise ProviderConfigError("Custom providers require exactly one of api_key or api_key_env.")
     if "api_key" in provider:
@@ -195,6 +244,7 @@ def _apply_document(result: ProviderConfig, document: dict) -> None:
     reasoning_effort merges with the default, so it requires one."""
     if set(document) - {"provider", "members"}:
         raise ProviderConfigError("Provider configuration contains unsupported top-level fields.")
+    _check_public_credentials(document)
     provider = document.get("provider")
     if provider is not None:
         if not isinstance(provider, dict):
@@ -280,26 +330,39 @@ def preview_provider_config(path: Path, document: dict) -> ProviderConfig:
     """Validate an unsaved editor document as if it were the file on disk.
     Nothing is written; the result resolves members against the draft, so a
     connection probe tests exactly what a turn would use after saving."""
-    return _provider_config_from_document(path, normalize_editor_document(document))
+    normalized = normalize_editor_document(document)
+    return _provider_config_from_document(path, _resolve_editor_credentials(path, normalized))
 
 
-def _editor_table(table: dict) -> dict:
-    """One raw table for the editor. Scalar values are coerced to strings;
-    nested TOML values are dropped (the load error already reports the file)."""
+def _editor_table(table: dict, token: str, secrets: tuple[str, ...]) -> dict:
+    """Editable public fields only, even for malformed or unsupported TOML.
+    The keep marker identifies the saved snapshot, never any part of its key."""
     result = {}
     for key, value in table.items():
+        if key not in set(EDITOR_KEY_ORDER) - {"api_key"}:
+            continue
+        if key == "base_url":
+            try:
+                value = _base_url(value)
+            except (ProviderConfigError, ValueError, TypeError):
+                continue
+        if key == "api_key_env" and (not isinstance(value, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value.strip())):
+            continue
         if isinstance(value, str):
             result[str(key)] = value
         elif isinstance(value, bool):
             result[str(key)] = "true" if value else "false"
         elif isinstance(value, (int, float)):
             result[str(key)] = str(value)
+        if key in result and _contains_credential(result[key], secrets):
+            del result[key]
+    if isinstance(table.get("api_key"), str) and table["api_key"].strip():
+        result["api_key_keep"] = token
     return result
 
 
 def editor_view(data_root: Path) -> dict:
-    """Secrets-bearing editor view of the provider file. Serve only behind the
-    same-origin JSON guard: the document includes stored api_key values.
+    """Write-only credential editor view of the provider file.
 
     The document, freshness token, and validation state all derive from one
     byte snapshot: a hand edit mid-read cannot pair an old document with a
@@ -315,17 +378,19 @@ def editor_view(data_root: Path) -> dict:
         return {"path": str(path), "exists": error is not None, "error": error,
                 "token": "missing", "document": None if error else {"provider": {}, "members": {}}}
     config, document = _parse_snapshot(path, raw)
+    token = "sha256:" + sha256_bytes(raw)
     if isinstance(document, dict):
         members = document.get("members")
+        secrets = _known_credential_values(document)
         editor_document = {
-            "provider": _editor_table(document["provider"]) if isinstance(document.get("provider"), dict) else {},
-            "members": {str(role): _editor_table(table) for role, table in members.items()
-                        if isinstance(table, dict)} if isinstance(members, dict) else {},
+            "provider": _editor_table(document["provider"], token, secrets) if isinstance(document.get("provider"), dict) else {},
+            "members": {str(role): _editor_table(table, token, secrets) for role, table in members.items()
+                        if role in {member.value for member in MemberRole} and isinstance(table, dict)} if isinstance(members, dict) else {},
         }
     else:
         editor_document = None
     return {"path": str(path), "exists": True, "error": config.error,
-            "token": "sha256:" + sha256_bytes(raw), "document": editor_document}
+            "token": token, "document": editor_document}
 
 
 def normalize_editor_document(document: dict) -> dict:
@@ -343,7 +408,7 @@ def normalize_editor_document(document: dict) -> dict:
         result = {}
         for key, value in table.items():
             if not isinstance(value, str):
-                raise ProviderConfigError(f"The {label} field {key!r} must be a string.")
+                raise ProviderConfigError("Provider editor fields must be strings.")
             if value.strip():
                 result[str(key)] = value.strip()
         return result
@@ -354,6 +419,42 @@ def normalize_editor_document(document: dict) -> dict:
     if cleaned_provider:
         normalized["provider"] = cleaned_provider
     return normalized
+
+
+def _resolve_editor_credentials(path: Path, document: dict, expected_token: str | None = None) -> dict:
+    """Materialize keep choices from the same saved scope and endpoint only.
+    A marker from an older view stays stale even when its draft is reapplied
+    after refreshing. Newly entered keys and environment names need no read."""
+    tables = [("provider", document.get("provider", {}))]
+    tables += [(role, table) for role, table in document["members"].items()]
+    if not any("api_key_keep" in table for _, table in tables):
+        return document
+    try:
+        raw = path.read_bytes()
+        saved = tomllib.loads(raw.decode("utf-8"))
+    except (OSError, ValueError, TypeError):
+        raise ProviderConfigConflict(_CONFLICT_MESSAGE) from None
+    token = "sha256:" + sha256_bytes(raw)
+    if expected_token is not None and expected_token != token:
+        raise ProviderConfigConflict(_CONFLICT_MESSAGE)
+    for scope, table in tables:
+        if "api_key_keep" not in table:
+            continue
+        marker = table.pop("api_key_keep")
+        if marker != token:
+            raise ProviderConfigConflict("The saved API key changed or needs to be reviewed again. Refresh the editor, then choose the credential for this connection.")
+        saved_members = saved.get("members", {})
+        original = saved.get("provider", {}) if scope == "provider" else saved_members.get(scope, {}) if isinstance(saved_members, dict) else {}
+        if (not isinstance(original, dict) or not isinstance(original.get("api_key"), str)
+                or not original["api_key"].strip()
+                or table.get("type") != "custom"
+                or any(table.get(field) != (original.get(field).strip() if isinstance(original.get(field), str) else None)
+                       for field in ("type", "id", "base_url"))):
+            raise ProviderConfigError("A saved API key can only be kept for its existing connection. Enter a replacement key or choose an environment variable after changing the provider or base URL.")
+        if "api_key" in table or "api_key_env" in table:
+            raise ProviderConfigError("Choose only one credential action: keep the saved key, enter a replacement, or use an environment variable.")
+        table["api_key"] = original["api_key"]
+    return document
 
 
 def _toml_basic(value: str) -> str:
@@ -419,20 +520,21 @@ def write_provider_config(path: Path, document: dict, expected_token: str | None
     nor the token, so an external write racing the final filesystem operation
     cannot be excluded; ordinary intervening edits are detected and rejected."""
     normalized = normalize_editor_document(document)
-    removal = not normalized.get("provider") and not normalized["members"]
-    payload = b""
-    if not removal:
-        probe = ProviderConfig(path)
-        try:
-            _apply_document(probe, normalized)
-        except ProviderConfigError:
-            raise
-        except (ValueError, TypeError):
-            raise ProviderConfigError("Provider configuration contains an invalid value. Check the provider endpoint and field types.") from None
-        payload = dump_provider_config(normalized).encode("utf-8")
     with _WRITE_LOCK:
         if expected_token is not None and expected_token != provider_config_token(path):
             raise ProviderConfigConflict(_CONFLICT_MESSAGE)
+        normalized = _resolve_editor_credentials(path, normalized, expected_token)
+        removal = not normalized.get("provider") and not normalized["members"]
+        payload = b""
+        if not removal:
+            probe = ProviderConfig(path)
+            try:
+                _apply_document(probe, normalized)
+            except ProviderConfigError:
+                raise
+            except (ValueError, TypeError):
+                raise ProviderConfigError("Provider configuration contains an invalid value. Check the provider endpoint and field types.") from None
+            payload = dump_provider_config(normalized).encode("utf-8")
         if removal:
             path.unlink(missing_ok=True)
             return "missing"

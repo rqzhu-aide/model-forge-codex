@@ -141,7 +141,7 @@ def test_actual_p4_producer_briefs_route_conditional_questions_to_existing_owned
             assert "Consolidate nonblocking researcher questions" in brief
         else:
             assert "p4.attention_items" not in stage.writes
-            assert "existing handoff unresolved_issues" in brief
+            assert "handoff.unresolved_issues" in brief
             assert "unknown facts can otherwise remain explicit conditions" in brief
     assert (directory / "basis.json").read_bytes() == basis_before
     assert engine.bridge.turns == []

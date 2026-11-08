@@ -191,6 +191,12 @@
         "assumption_id": {
           "$ref": "common-definitions.schema.json#/$defs/stableId"
         },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Optional short scientific name for navigation, such as 'Common outcome law' or 'Known logging and coverage'. Name the mathematical content, not the internal identifier or an overstated guarantee. The label does not replace or change the exact text, scope or status."
+        },
         "text": {
           "type": "string",
           "minLength": 1,
@@ -273,7 +279,7 @@
             "minLength": 1
           },
           "uniqueItems": true,
-          "description": "All universal, existential, probabilistic, and uniformity quantifiers. Use an empty array only when genuinely not applicable."
+          "description": "All universal, existential, probabilistic and uniformity quantifiers, preserving the exact threshold event, conditioning and probability space. Distinguish a confidence statement over the training-data draw, a new-unit risk and conditional-on-selection claims when applicable; do not infer that the procedure returns an output for every dataset. Use an empty array only when genuinely not applicable."
         },
         "regime": {
           "type": "string",
@@ -406,7 +412,7 @@
           ]
         },
         "summary": {
-          "description": "Explain what the argument establishes, its central reasoning, conditions and remaining gap, with references to the complete proof or other justification. A sketch or cited claim is not a complete checked proof.",
+          "description": "Start with what the argument establishes, refutes or leaves unresolved for the exact assigned claim and which clauses it addresses, then its central reasoning, decisive premises and meaning. Keep a useful stronger result separate. Preserve exact statements, quantifiers, assumptions and assessment status; a valid restricted result, an invalid argument and an unresolved proof are distinct. Link the complete justification; a sketch or cited claim is not a complete checked proof.",
           "type": "string",
           "minLength": 1
         },

@@ -9,6 +9,7 @@ import { sharedPackage } from "../scripts/shared-deps.mjs";
 import { catalogSelectionKey, proposalKey } from "../src/methodWorkspace.js";
 import { issueCardEntries, issueDisplayState } from "../src/phaseUiState.js";
 import { phaseQuestionAnchor } from "../src/phaseInputSummary.js";
+import { navigationDom } from "./fixtures/saved-input-navigation-dom.mjs";
 
 const require = createRequire(import.meta.url);
 const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.js"));
@@ -53,6 +54,7 @@ function hookHarness({ layout = false } = {}) {
       slots[index] = dependencies;
     },
     useId() { const index = cursor++; return slots[index] ||= `fixture-${index}`; },
+    useContext(context) { return context._currentValue; },
   };
   return {
     render(props, component = ui.ProjectView) {
@@ -70,10 +72,10 @@ const methodA = { method_id: "method.a", branch_id: "method.a", title: "Navigati
 const methodB = { method_id: "method.b", branch_id: "method.b", title: "Selected model B", identity: { stable_id: "method.b", version: 3, definition_sha256: "b".repeat(64) } };
 const target = { kind: "phase_issue", branch: "trunk", phase: "P2", family: "theory_review", generation_id: "review.b", sha256: "c".repeat(64), run_id: "run.b", package_id: "package.b", object_id: "finding.b", entry_pointer: "/assessments/0/findings/0", label: "Support for model B" };
 
-async function projectFixture(branch, action, { corrections = [], runs = [], branches = [], phase = "P2", attention = [], answers = [], artifacts = {}, problemContext, readiness = {}, awaiting = runs.filter(run => run.state === "awaiting_user"), p2ProposalKey, layout = false } = {}) {
+async function projectFixture(branch, action, { corrections = [], runs = [], branches = [], phase = "P2", attention = [], answers = [], artifacts = {}, methods = [methodA, methodB], problemContext, readiness = {}, awaiting = runs.filter(run => run.state === "awaiting_user"), p2ProposalKey, layout = false } = {}) {
   const originals = { api: { ...ui.api }, window: globalThis.window, document: globalThis.document,
     requestAnimationFrame: globalThis.requestAnimationFrame, cancelAnimationFrame: globalThis.cancelAnimationFrame, MutationObserver: globalThis.MutationObserver, setTimeout: globalThis.setTimeout };
-  const harness = hookHarness({ layout }); const elements = new Map(); let starts = 0;
+  const harness = hookHarness({ layout }); const elements = new Map(); const afterClose = []; let starts = 0;
   globalThis.window = { addEventListener() {}, removeEventListener() {}, matchMedia: () => ({ matches: true }) };
   globalThis.document = { hidden: false, addEventListener() {}, removeEventListener() {}, getElementById: id => elements.get(id) };
   Object.assign(ui.api, {
@@ -81,7 +83,7 @@ async function projectFixture(branch, action, { corrections = [], runs = [], bra
     branches: async () => ({ branches }), listRuns: async () => ({ runs }), run: async (_projectId, runId) => runs.find(run => run.run_id === runId),
     artifacts: async () => artifacts, decisionsPending: async () => ({ attention, researcher_answers: answers, runs_needing_correction: corrections, runs_awaiting_direction: awaiting }),
     readiness: async () => readiness, records: async () => ({ records: [] }),
-    assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [methodA, methodB], diagnostics: [] }),
+    assessments: async () => ({ assessments: [] }), methods: async () => ({ methods, diagnostics: [] }),
     startRun: async () => { starts++; throw new Error("This inspection must not start research."); },
   });
   const navigations = [];
@@ -89,9 +91,9 @@ async function projectFixture(branch, action, { corrections = [], runs = [], bra
   const render = () => harness.render(props);
   try {
     render(); await harness.load();
-    await action({ render, elements, navigations, props, load: harness.load, settleLayout: harness.settleLayout, starts: () => starts });
+    await action({ render, elements, navigations, props, load: harness.load, settleLayout: harness.settleLayout, starts: () => starts, afterClose: callback => afterClose.push(callback) });
   } finally {
-    harness.close(); Object.assign(ui.api, originals.api);
+    harness.close(); afterClose.forEach(callback => callback()); Object.assign(ui.api, originals.api);
     if (originals.window === undefined) delete globalThis.window; else globalThis.window = originals.window;
     if (originals.document === undefined) delete globalThis.document; else globalThis.document = originals.document;
     for (const name of ["requestAnimationFrame", "cancelAnimationFrame", "MutationObserver", "setTimeout"]) {
@@ -150,7 +152,62 @@ test("P2 decisions and moved team findings discuss the selected model with its e
 });
 
 const responseCount = (card) => issueCardEntries(card.props).entries.filter(issue => issueDisplayState(issue).state === "response").length;
-const nextButton = (tree) => findClass(tree, "project-next").props.children.at(-1);
+const nextButton = (tree) => findClass(tree, "project-next").props.children.at(-1) || findClass(tree, "project-setting-link project-question-link");
+
+function questionLinks(tree) {
+  if (Array.isArray(tree)) return tree.flatMap(questionLinks);
+  if (!tree || typeof tree !== "object") return [];
+  return tree.props?.className === "project-setting-link project-question-link" ? [tree] : questionLinks(tree.props?.children);
+}
+test("unanswered questions and an actual pause have different navigation cues without losing phase labels", async () => {
+  const question = { attention_id: "question.navigation", kind: "researcher_decision", phase: "P1", branch: "trunk", disposition: "open",
+    severity: "blocking", question: "Which population should this estimate describe?", scope: { kind: "project" } };
+  for (const paused of [false, true]) await projectFixture("trunk", async ({ render, starts }) => {
+    const tree = render(); const next = findClass(tree, "project-next");
+    assert.equal(next.props["data-next"], paused ? "decision" : "questions");
+    const nextHtml = ui.renderToStaticMarkup(next);
+    assert.match(nextHtml, paused ? /Work is paused in Phase 1/ : /1 unanswered question/);
+    assert.match(nextHtml, paused ? /data-icon="pause"/ : /data-icon="ask"/);
+    const navigation = ui.renderToStaticMarkup(findClass(tree, "phase-stepper"));
+    for (let number = 1; number <= 5; number++) assert.match(navigation, new RegExp(`class="phase-short-name" aria-hidden="true">Phase ${number}<`));
+    assert.match(navigation, /aria-label="Phase 1 - Define and Explore:.*1 unanswered question/);
+    if (paused) assert.match(navigation, /class="phase-step waiting current"/);
+    else {
+      assert.match(navigation, /data-icon="ask"/);
+      assert.doesNotMatch(navigation, /Work is paused|>Paused<|M6 2\.7/);
+    }
+    assert.equal(starts(), 0);
+  }, { phase: "P1", attention: [question], runs: paused ? [{ run_id: "run.navigation", phase: "P1", branch_id: "trunk", state: "awaiting_user" }] : [] });
+});
+
+test("theory shortcuts select the requested view and focus its selected tab without a second scroll", async () => {
+  await projectFixture("method.a", async ({ render, props, starts }) => {
+    const previousStyle = globalThis.getComputedStyle;
+    const requests = [], focusCalls = []; let frame;
+    props.onReadingChange = value => requests.push(value);
+    const tree = render(), root = { querySelectorAll: () => [panel], querySelector: () => ({ offsetHeight: 40 }) };
+    const tab = { hasAttribute: () => true, focus: value => focusCalls.push(value) };
+    const panel = { parentElement: root, tagName: "SECTION", isConnected: true, dataset: {},
+      getAttribute: () => "theory-reading", closest: () => null, getBoundingClientRect: () => ({ top: 56 }),
+      querySelector: selector => selector === '[role="tab"][aria-selected="true"]' ? tab : null,
+      addEventListener() {} };
+    try {
+      globalThis.getComputedStyle = () => ({ display: "block", visibility: "visible" });
+      globalThis.requestAnimationFrame = callback => { frame = callback; return 1; };
+      globalThis.setTimeout = () => 1;
+      Object.assign(globalThis.window, { scrollY: 300, scrollTo: () => assert.fail("An already aligned reader should not scroll."), innerHeight: 800 });
+      tree.ref.current = root;
+      const walk = node => Array.isArray(node) ? node.map(walk).find(Boolean) : !node?.props ? null
+        : node.props.onReadTheory ? node : walk(node.props.children);
+      walk(tree).props.onReadTheory("arguments");
+      assert.deepEqual(requests, [{ tab: "arguments" }]); frame();
+      assert.deepEqual(focusCalls, [{ preventScroll: true }]);
+      assert.equal(panel.dataset.arrival, "true"); assert.equal(starts(), 0);
+    } finally {
+      if (previousStyle === undefined) delete globalThis.getComputedStyle; else globalThis.getComputedStyle = previousStyle;
+    }
+  }, { phase: "P3" });
+});
 // These wrappers have no hooks. Keep the actual ExploreMethod hooks mounted
 // while ProjectView changes the selected model through its public props.
 function exploreElement(reader) {
@@ -237,6 +294,66 @@ test("Next finds project-wide paused work and routes to that method even within 
   }
 });
 
+test("earlier P2 questions share a compact phase summary while retaining every exact model destination", async () => {
+  const attention = [methodA, methodB].map(method => ({ attention_id: `question.${method.method_id}`, kind: "researcher_decision", phase: "P2", branch: "trunk", disposition: "open", question: "Which target applies?", generation_ref: { phase: "P2", branch: "trunk", family: "attention_items", generation_id: "attention.exact", sha256: "f".repeat(64), run_id: "run.exact", package_id: "package.exact" }, scope: { kind: "model", branch: "trunk", model_ref: method.identity } }));
+  await projectFixture("method.a", async ({ render, navigations, starts }) => {
+    const tree = render(), summary = findClass(tree, "project-question-destinations");
+    assert.ok(summary, "Different model destinations use a native keyboard-accessible disclosure.");
+    assert.equal(summary.type, "details");
+    assert.equal(summary.props.open, undefined, "Long model names stay collapsed initially.");
+    assert.equal(summary.props.children[0].type, "summary");
+    assert.equal(summary.props.children[0].props.children, "2 earlier questions in Phase 2");
+    const links = questionLinks(summary);
+    assert.equal(links.length, 2);
+    links.forEach(link => { assert.equal(link.type, "button"); assert.equal(link.props.type, "button"); link.props.onClick(); });
+    assert.deepEqual(navigations, [methodA, methodB].map(method => ({ phase: "P2", p2ProposalKey: catalogSelectionKey(method) })));
+    assert.equal(starts(), 0);
+  }, { phase: "P4", attention });
+  await projectFixture("method.a", async ({ render, navigations }) => {
+    const link = questionLinks(render())[0];
+    assert.equal(link.props["aria-label"] || link.props.children, "1 earlier question in Phase 2");
+    link.props.onClick();
+    assert.deepEqual(navigations, [{ phase: "P2", p2ProposalKey: catalogSelectionKey(methodB) }]);
+  }, { phase: "P4", attention: [attention[1]] });
+});
+
+test("a compact phase summary preserves questions on multiple branches and exact report anchors", async () => {
+  for (const questionPhase of ["P3", "P4", "P5"]) {
+    const attention = [methodA, methodB].map(method => ({ attention_id: `question.${questionPhase}.${method.method_id}`, kind: "researcher_decision", phase: questionPhase, target_phase: questionPhase, branch: method.branch_id, disposition: "open", question: "Which target applies?" }));
+    await projectFixture("trunk", async ({ render, navigations }) => {
+      const tree = render(), summary = findClass(tree, "project-question-destinations");
+      assert.equal(summary.props.children[0].props.children, `2 unanswered questions in Phase ${questionPhase.slice(1)}`);
+      questionLinks(summary).forEach(link => link.props.onClick());
+      assert.deepEqual(navigations, [methodA, methodB].map(method => ({ phase: questionPhase, branch: method.branch_id })));
+    }, { phase: "P1", attention, branches: [methodA, methodB].map(method => ({ branch_id: method.branch_id })) });
+  }
+});
+
+test("earlier question links work from each later phase and leave current questions and recovery primary", async () => {
+  const earlier = { attention_id: "earlier", kind: "researcher_decision", phase: "P1", branch: "trunk", disposition: "open", question: "Which population applies?" };
+  for (const phase of ["P2", "P3", "P4", "P5"]) {
+    await projectFixture("method.a", async ({ render, navigations }) => {
+      const link = questionLinks(render())[0];
+      assert.equal(link.props.children, "1 earlier question in Phase 1");
+      link.props.onClick();
+      assert.deepEqual(navigations, [{ phase: "P1" }]);
+    }, { phase, attention: [earlier] });
+  }
+  const current = { ...earlier, attention_id: "current", phase: "P3", branch: "method.a" };
+  await projectFixture("method.a", async ({ render, navigations }) => {
+    const tree = render();
+    assert.match(ui.renderToStaticMarkup(findClass(tree, "project-next")), /1 unanswered question.*in this phase/);
+    assert.equal(nextButton(tree).props.children, "Go to the questions");
+    assert.equal(questionLinks(tree)[0].props.children, "1 earlier question in Phase 1");
+    assert.deepEqual(navigations, []);
+  }, { phase: "P3", attention: [earlier, current], branches: [{ branch_id: methodA.branch_id }] });
+  await projectFixture("method.a", async ({ render }) => {
+    const tree = render();
+    assert.equal(nextButton(tree).props.children, "Review what stopped");
+    assert.equal(questionLinks(tree)[0].props.children, "1 earlier question in Phase 1");
+  }, { phase: "P3", attention: [earlier], corrections: [{ run_id: "failed.current", phase: "P3", branch_id: "method.a", state: "failed" }] });
+});
+
 test("Next uses the default P2 selection and counts shared questions in its current exact card", async () => {
   const attention = [{ attention_id: "shared", kind: "researcher_decision", phase: "P2", branch: "trunk", disposition: "open", question: "Which shared objective?" },
     { attention_id: "model-a", kind: "researcher_decision", phase: "P2", branch: "trunk", disposition: "open", question: "Which A target?", affected_record_ids: ["method.a"] },
@@ -249,10 +366,11 @@ test("Next uses the default P2 selection and counts shared questions in its curr
   }, { attention, p2ProposalKey });
 });
 
-test("a same-phase P2 Next arrival focuses the new card after its selection layout settles", async () => {
+test("a same-phase P2 Next arrival skips a saved first question and focuses the unanswered summary after selection settles", async () => {
   const attention = [{ attention_id: "question.b", kind: "researcher_decision", phase: "P2", branch: "trunk", disposition: "open", question: "Which B target?", affected_record_ids: ["method.b"] }];
+  const savedFirst = { ...attention[0], attention_id: "question.saved-first" };
   await projectFixture("method.a", async ({ render, props, navigations, settleLayout }) => {
-    const frames = []; const effects = []; const child = hookHarness({ layout: true }); let selectedId;
+    const frames = []; const effects = []; const child = hookHarness({ layout: true }); const previousStyle = globalThis.getComputedStyle; let selectedId;
     try {
       globalThis.requestAnimationFrame = callback => { frames.push(callback); return frames.length; };
       globalThis.cancelAnimationFrame = () => {};
@@ -261,9 +379,12 @@ test("a same-phase P2 Next arrival focuses the new card after its selection layo
       let explore = exploreElement(find(tree, ui.Methods));
       child.render(explore.props, explore.type); child.settleLayout();
       selectedId = find(child.render(explore.props, explore.type), ui.Dialogue).props.methodId;
-      const target = { isConnected: true, dataset: {}, hasAttribute: () => true, getBoundingClientRect: () => ({ top: 16 }),
-        focus: () => effects.push(["focus", selectedId]), addEventListener() {} };
-      const root = { querySelector: selector => selector === "#phase-issues" ? target : null }; target.parentElement = root;
+      const summary = { tagName: "SUMMARY", focus(options) { assert.deepEqual(options, { preventScroll: true }); effects.push(["focus", selectedId]); } };
+      const target = { tagName: "DETAILS", open: false, isConnected: true, dataset: {}, closest: () => null, getAttribute: () => phaseQuestionAnchor(attention[0]), getBoundingClientRect: () => ({ top: 16 }),
+        querySelector: selector => selector === ":scope > summary" ? summary : null, addEventListener() {} };
+      const saved = { ...target, getAttribute: () => phaseQuestionAnchor(savedFirst), querySelector: () => { throw new Error("The saved question must never receive arrival focus."); } };
+      const root = { querySelectorAll: () => [saved, target], querySelector: () => null }; target.parentElement = root; saved.parentElement = root;
+      globalThis.getComputedStyle = () => ({ display: "block", visibility: "visible" });
       tree.ref.current = root; window.scrollY = 0;
       nextButton(tree).props.onClick();
       props.context = { ...props.context, ...navigations[0] };
@@ -274,9 +395,11 @@ test("a same-phase P2 Next arrival focuses the new card after its selection layo
       selectedId = find(child.render(explore.props, explore.type), ui.Dialogue).props.methodId;
       frames.splice(0).forEach(callback => callback());
       assert.deepEqual(effects, [["focus", "method.b"]]);
+      assert.equal(target.open, true);
+      assert.equal(saved.open, false);
       assert.equal(target.dataset.arrival, "true");
-    } finally { child.close(); }
-  }, { attention, p2ProposalKey: catalogSelectionKey(methodA), layout: true });
+    } finally { child.close(); if (previousStyle === undefined) delete globalThis.getComputedStyle; else globalThis.getComputedStyle = previousStyle; }
+  }, { attention: [savedFirst, ...attention], answers: [{ attention_id: savedFirst.attention_id, revision: 1, attention: savedFirst, note: "Saved first answer." }], p2ProposalKey: catalogSelectionKey(methodA), layout: true });
 });
 
 test("a cross-method pause arrival waits for reader restoration and opens P5 recovery before focus", async () => {
@@ -376,7 +499,7 @@ test("P5 editorial choices appear once in Revise report before settings and Next
       assert.doesNotMatch(html, /Decisions to discuss|Other information you gave me|editorial\.old/);
       assert.match(ui.renderToStaticMarkup(findClass(tree, "project-next")), /1 unanswered question.*in this phase/);
       const effects = [];
-      const target = { tagName: "DETAILS", open: false, isConnected: true, dataset: {}, closest: () => null, hasAttribute: () => true, getAttribute: key => key === "data-reading-anchor" ? phaseQuestionAnchor(editorial) : null, getBoundingClientRect: () => ({ top: 16 }), focus: () => effects.push("focus"), addEventListener() {} };
+      const target = { tagName: "DETAILS", open: false, isConnected: true, dataset: {}, closest: () => null, hasAttribute: () => true, getAttribute: key => key === "data-reading-anchor" ? phaseQuestionAnchor(editorial) : null, getBoundingClientRect: () => ({ top: 16 }), querySelector: () => ({ tagName: "SUMMARY", focus: () => effects.push("focus") }), addEventListener() {} };
       const root = { querySelectorAll: () => [target], querySelector: () => null }; target.parentElement = root; tree.ref.current = root;
       globalThis.getComputedStyle = () => ({ display: "block", visibility: "visible" });
       globalThis.setTimeout = () => 0; window.scrollY = 0;
@@ -426,15 +549,18 @@ test("P5 activity opens Next revision for retained execution recovery and an act
 
 test("P2 Run this Method prepares the exact selected branch without starting work or replacing the reader", async () => {
   for (const phase of ["P3", "P4"]) await projectFixture("method.a", async ({ render, navigations, starts }) => {
-    const activations = [];
+    const activations = []; const preparations = [];
     ui.api.activateMethod = async (...args) => { activations.push(args); return { branch_id: "branch.selected.b" }; };
+    ui.api.phasePreparation = async (...args) => { preparations.push(args); return { instructions: `Saved ${phase} directions.`, input_ids: [] }; };
     await find(render(), ui.Methods).props.onContinue(methodB, phase, { prepareRun: true });
     const dialog = find(render(), ui.LaunchRun);
     assert.ok(dialog);
     assert.equal(dialog.props.request.branch, "branch.selected.b");
     assert.equal(dialog.props.request.phase, phase);
+    assert.equal(dialog.props.request.instructions, `Saved ${phase} directions.`);
     assert.equal(dialog.props.request.methodLabel, "Selected model B \u00b7 Version 3");
     assert.deepEqual(activations, [["project.integration", "method.b", methodB.identity]]);
+    assert.deepEqual(preparations, [["project.integration", "method.b", phase]]);
     assert.deepEqual(navigations, []);
     assert.equal(starts(), 0);
     dialog.props.onClose();
@@ -471,4 +597,169 @@ test("one preparation card follows scientific history in its exact phase and met
       assert.equal(starts(), 0);
     }, { ...scenario, phase });
   }
+});
+
+test("P2 supporting documents follow the exact read method while Phase 1 notes follow the actual preparation basis", async () => {
+  const basis = { branch: "trunk", phase: "P1", generation_ref: { phase: "P1", branch: "trunk", family: "research_basis", generation_id: "basis.exact", sha256: "c".repeat(64) },
+    phase2_preparation: { text: "Compare the literature's unresolved alternatives.", supplied_method: { title: "A shared literature idea", specification_markdown: "Retain the original shared starting point." } } };
+  const proposal = { proposal_id: "proposal.b", method: methodB, role: "theorist", generation_ref: { phase: "P2", family: "theory_proposal", generation_id: "proposal.exact", sha256: "a".repeat(64) }, proposed_evaluation_markdown: "Check calibration under the original assumptions." };
+  const reviewed = { comparison: { generation_ref: { phase: "P2", family: "catalog_assessment", generation_id: "comparison.exact", sha256: "b".repeat(64) }, modification_options: [] } };
+  await projectFixture("trunk", async ({ render, starts }) => {
+    const reader = find(render(), ui.Methods);
+    const input = { selected: proposal, method: methodB, reviewed };
+    const original = JSON.stringify(input);
+    for (const scenario of [
+      { catalogMethod: methodB, sharedPreparation: true, shared: true },
+      { catalogMethod: methodB, sharedPreparation: false, shared: false },
+      { catalogMethod: null, sharedPreparation: false, shared: true },
+    ]) {
+      const card = reader.props.furtherWork({ method: methodB, methodId: methodB.method_id, methodBranch: methodB.branch_id, proposal, ...scenario, preparationDocumentInput: input });
+      assert.equal(card.props.hasSupportingDocuments, true);
+      assert.equal(card.props.supportingDocuments.props.input.selected, proposal);
+      assert.equal(card.props.supportingDocuments.props.input.reviewed, reviewed);
+      assert.deepEqual(card.props.supportingDocuments.props.input.phaseOne, scenario.shared ? { preparation: basis.phase2_preparation, generation_ref: basis.generation_ref } : null);
+      assert.equal(card.props.methodId, scenario.shared ? undefined : methodB.method_id);
+      assert.equal(card.props.branch, scenario.shared ? "trunk" : methodB.branch_id);
+      assert.equal(card.props.supportingDocuments.key, "project.integration");
+      assert.doesNotMatch(ui.renderToStaticMarkup(card.props.children), /proposed steps|literature&#x27;s unresolved|Modification options and proposed next work/);
+    }
+    assert.equal(JSON.stringify(input), original);
+    assert.equal(starts(), 0);
+  }, { artifacts: { research_bases: [basis] } });
+});
+
+test("P2 preparation reading survives publication changing the keyed editor from method to shared preparation", async () => {
+  const proposal = { branch: "trunk", phase: "P2", proposal_id: "proposal.b", method: methodB, role: "theorist", generation_ref: { phase: "P2", family: "theory_proposal", generation_id: "proposal.exact", sha256: "a".repeat(64) }, proposed_evaluation_markdown: "Preserve this proposed investigation through catalog replacement." };
+  const artifacts = { method_proposals: [proposal] };
+  await projectFixture("trunk", async ({ render, load, props, starts }) => {
+    const selected = { method: methodB, methodId: methodB.method_id, methodBranch: methodB.branch_id, proposal, catalogMethod: methodB, sharedPreparation: false,
+      preparationDocumentInput: { selected: proposal, method: methodB, reviewed: null } };
+    let tree = render(), card = find(tree, ui.Methods).props.furtherWork(selected);
+    const methodKey = ui.FurtherWork(card.props).key;
+    const documents = hookHarness(), rail = card.props.supportingDocuments;
+    const contents = documents.render(rail.props, rail.type);
+    const button = findClass(contents, "p2-reading-links").props.children[0];
+    assert.equal(button.props.title, "Proposed investigations");
+    button.props.onClick({ currentTarget: { isConnected: false } });
+    const window = tree => {
+      const walk = node => Array.isArray(node) ? node.map(walk).find(Boolean) : !node?.props ? null : node.type?.name === "ReadingHost" && node.props.snapshot ? node : walk(node.props.children);
+      return walk(tree);
+    };
+    tree = render(); const original = window(tree).props.snapshot;
+    assert.match(ui.renderToStaticMarkup(original.body), /through catalog replacement/);
+    proposal.proposed_evaluation_markdown = "Replacement work from a newer publication.";
+    ui.api.methods = async () => ({ methods: [] });
+    find(tree, ui.Methods).props.onResolved(); render(); await load();
+    tree = render(); card = find(tree, ui.Methods).props.furtherWork({ ...selected, catalogMethod: null });
+    assert.notEqual(ui.FurtherWork(card.props).key, methodKey, "The real preparation owner moves from a method draft to shared instructions.");
+    assert.equal(window(tree).props.snapshot, original, "The frozen document owner is outside the remounted preparation editor.");
+    assert.match(ui.renderToStaticMarkup(window(tree).props.snapshot.body), /through catalog replacement/);
+    assert.doesNotMatch(ui.renderToStaticMarkup(window(tree).props.snapshot.body), /Replacement work/);
+    assert.ok(!find(card, window(tree).type), "The reading window is not owned by the keyed preparation card.");
+    props.context = { phase: "P1", branch: "trunk" }; render(); await load();
+    assert.ok(!window(render()));
+    props.context = { phase: "P2", branch: "trunk" }; render(); await load();
+    assert.ok(!window(render()), "Returning to the phase does not revive the old source window.");
+    assert.equal(starts(), 0);
+  }, { artifacts });
+});
+
+test("P2 first publication preserves an open preparation reader while an explicit method choice closes it", async () => {
+  const basis = { branch: "trunk", phase: "P1", generation_ref: { branch: "trunk", phase: "P1", family: "research_basis", generation_id: "basis.before-models", sha256: "f".repeat(64) },
+    phase2_preparation: { text: "Read the original literature preparation through first publication." } };
+  const artifacts = { research_bases: [basis], method_proposals: [] };
+  const readerSnapshot = tree => {
+    const walk = node => Array.isArray(node) ? node.map(walk).find(Boolean) : !node?.props ? null
+      : node.type?.name === "ReadingHost" ? node.props.snapshot : walk(node.props.children);
+    return walk(tree);
+  };
+  await projectFixture("trunk", async ({ render, load, starts }) => {
+    const explore = hookHarness({ layout: true }), documents = hookHarness();
+    try {
+      let element = exploreElement(find(render(), ui.Methods));
+      let contents = explore.render(element.props, element.type); explore.settleLayout(); await explore.load();
+      const card = find(contents, ui.FurtherWork), rail = card.props.supportingDocuments;
+      const documentList = documents.render(rail.props, rail.type);
+      const button = findClass(documentList, "p2-reading-links").props.children[0];
+      assert.equal(button.props.title, "Notes from Phase 1");
+      button.props.onClick({ currentTarget: { isConnected: false } });
+      const original = readerSnapshot(render()); assert.ok(original);
+      artifacts.method_proposals = [methodB, methodA].map((method, index) => ({ branch: "trunk", phase: "P2", proposal_id: `proposal.first.${index}`, role: "theorist",
+        generation_ref: { branch: "trunk", phase: "P2", family: "theory_proposal", generation_id: `proposal.first.${index}`, run_id: "run.first", sha256: "a".repeat(64) }, method }));
+      ui.api.methods = async () => ({ methods: [methodA, methodB], diagnostics: [] });
+      find(render(), ui.Methods).props.onResolved(); render(); await load();
+      element = exploreElement(find(render(), ui.Methods));
+      explore.render(element.props, element.type); explore.settleLayout(); await explore.load();
+      contents = explore.render(element.props, element.type);
+      assert.equal(readerSnapshot(render()), original, "Automatic selection synchronization must retain the open exact document.");
+      const findPicker = node => Array.isArray(node) ? node.map(findPicker).find(Boolean) : !node?.props ? null
+        : node.type?.name === "MethodPicker" ? node : findPicker(node.props.children);
+      const picker = findPicker(contents);
+      const different = picker.props.proposals.find(proposal => proposalKey(proposal) !== picker.props.value);
+      picker.props.onSelect(proposalKey(different));
+      assert.equal(readerSnapshot(render()), null, "A deliberate model change closes the previous supporting reader.");
+      assert.equal(starts(), 0);
+    } finally { explore.close(); documents.close(); }
+  }, { artifacts, methods: [] });
+});
+
+test("an explicit saved-answer visit crosses phases and returns to the same method, open item and keyboard control", async () => {
+  const source = { ...target, phase: "P2", object_id: "question.earlier", family: "attention_items" };
+  const question = { attention_id: "question.earlier", phase: "P2", target_phase: "P1", branch: "trunk", kind: "researcher_decision", disposition: "open", question: "Which population is intended?", explanation_target: source, scope: { kind: "project" } };
+  const answer = { attention_id: question.attention_id, revision: 2, note: "This remains unknown.", origin: "unknown", question_ref: source, attention: question };
+  const findText = (node, text) => Array.isArray(node) ? node.map(child => findText(child, text)).find(Boolean)
+    : !node?.props ? null : node.props.children === text ? node : findText(node.props.children, text);
+  await projectFixture("method.b", async ({ render, props, navigations, load, settleLayout, starts, afterClose }) => {
+    const dom = navigationDom();
+    afterClose(() => dom.cleanup());
+      props.context = { ...props.context, p2ProposalKey: "run.origin:proposal.origin", p2SharedPreparation: true };
+      props.reading = { tab: "comparisons", dataView: "synthetic" };
+      const tree = render(); tree.ref.current = dom.root;
+      const original = dom.saved(); settleLayout(); dom.flush(); window.scrollY = 800;
+      const dialogue = find(tree, ui.Dialogue);
+      assert.equal(dialogue.props.onNavigate("P2", source, undefined, { origin: original.origin, savedInput: true }), true);
+      assert.deepEqual(navigations.at(-1), { phase: "P1" }, "The question's answer owner, rather than its publishing phase, is selected.");
+      props.context = { ...props.context, ...navigations.at(-1) }; render(); await load();
+      dom.root.children = [];
+      const editor = dom.root.append(new dom.Element("details", { "data-reading-anchor": phaseQuestionAnchor(question) }, 1200));
+      const destination = render(); destination.ref.current = dom.root; settleLayout(); dom.flush();
+      assert.equal(editor.open, true); assert.equal(dom.focused.at(-1).element, editor);
+      const back = findText(render(), "Back to saved input"); assert.ok(back);
+      back.props.onClick();
+      assert.equal(navigations.at(-1).phase, "P4"); assert.equal(navigations.at(-1).branch, "method.b");
+      assert.equal(navigations.at(-1).p2ProposalKey, "run.origin:proposal.origin");
+      assert.equal(navigations.at(-1).p2SharedPreparation, true);
+      assert.equal(navigations.at(-1).readers["P4:method.b"].dataView, "synthetic");
+      props.context = { ...props.context, ...navigations.at(-1) }; render(); await load();
+      const returned = dom.saved(); returned.badge.open = false; returned.item.open = false;
+      dom.scrolls.length = 0; dom.focused.length = 0;
+      const restored = render(); restored.ref.current = dom.root; settleLayout(); dom.flush();
+      assert.ok(returned.badge.open && returned.item.open);
+      assert.deepEqual(dom.scrolls, [{ top: 800, behavior: "instant" }]);
+      assert.deepEqual(dom.focused, [{ element: returned.origin, options: { preventScroll: true } }]);
+      assert.equal(findText(render(), "Back to saved input"), undefined);
+      find(render(), ui.Dialogue).props.onSaved(); render(); await load(); settleLayout(); dom.flush();
+      assert.equal(dom.focused.length, 1, "A refresh never replays the completed navigation.");
+      assert.equal(starts(), 0);
+  }, { phase: "P4", answers: [answer], artifacts: { issues: [question], load_errors: [] }, layout: true });
+});
+
+test("decision summaries distinguish unselected method scopes, complete data and a failed refresh", async () => {
+  for (const phase of ["P3", "P4"]) await projectFixture("trunk", async ({ render }) => {
+    const card = find(render(), ui.Dialogue);
+    assert.equal(card.props.decisionScope, "unselected-method");
+    assert.equal(card.props.decisionDataState, "unavailable");
+  }, { phase, artifacts: { issues: [], load_errors: [] } });
+  await projectFixture("trunk", async ({ render, load }) => {
+    const reader = find(render(), ui.Methods);
+    assert.equal(reader.props.issues().props.decisionScope, "shared-overview");
+    const selected = { method: methodB, methodId: methodB.method_id, methodBranch: methodB.branch_id, catalogMethod: methodB };
+    assert.equal(reader.props.issues(selected).props.decisionScope, "selected");
+    assert.equal(reader.props.issues(selected).props.decisionDataState, "ready");
+    ui.api.decisionsPending = async () => { throw new Error("Decision refresh failed."); };
+    reader.props.onResolved(); render(); await load();
+    const retained = find(render(), ui.Methods).props.issues(selected);
+    assert.equal(retained.props.decisionDataState, "refresh-failed");
+    assert.equal(retained.props.decisionScope, "selected");
+  }, { artifacts: { issues: [], load_errors: [] } });
 });

@@ -98,11 +98,14 @@ export function requestSourceReferences(item) {
     ...item.generation_ref,
     ...(item.generation_ref.entry_pointer == null && item.entry_pointer ? { entry_pointer: item.entry_pointer } : {}),
   };
+  const scientific = (Array.isArray(item.scientific_source_refs) ? item.scientific_source_refs : [])
+    .filter(source => source?.reference && source.label);
   return [
+    ...scientific,
     ...(primary ? [{ label: "Original request", reference: primary }] : []),
     ...(Array.isArray(item.related_source_refs) ? item.related_source_refs : []).filter(Boolean)
       .map((reference, index) => ({ label: `Related scientific source ${index + 1}`, reference })),
-  ];
+  ].filter((source, index, sources) => sources.findIndex(other => JSON.stringify(orderedTarget(other.reference)) === JSON.stringify(orderedTarget(source.reference))) === index);
 }
 
 export function earlierSettingQuestions(questions, currentRequests) {

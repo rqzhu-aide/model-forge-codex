@@ -3,7 +3,7 @@
 [![npm latest](https://img.shields.io/npm/v/%40rqzhu-aide%2Fmodel-forge-codex/latest?label=npm%20latest)](https://www.npmjs.com/package/@rqzhu-aide/model-forge-codex)
 [![npm next](https://img.shields.io/npm/v/%40rqzhu-aide%2Fmodel-forge-codex/next?label=npm%20next)](https://www.npmjs.com/package/@rqzhu-aide/model-forge-codex?activeTab=versions)
 
-The installation commands below follow the **`next` prerelease channel**. The badges show the versions currently available on npm.
+The installation commands below follow the published **`next` prerelease channel**. The badges show the versions currently available on npm. To test the locally prepared **0.9.5 candidate**, use the [prepared tarball instructions](docs/development.md#prepared-release-tarball); `@next` does not select a local checkout or tarball.
 
 Model Forge is a local workbench for developing statistical and machine learning models and algorithms with an AI research team. Start from a problem, compare approaches, examine theory and numerical evidence, and build a **technical report** with mathematics, citations, and links to supporting work.
 
@@ -42,7 +42,7 @@ npx @rqzhu-aide/model-forge-codex@next status
 npx @rqzhu-aide/model-forge-codex@next stop
 ```
 
-Use `@0.9.4` to pin this version or `@latest` for the default npm release. Use the same version or channel for `web`, `status`, and `stop`. For setup errors and updates, see [installation and troubleshooting](docs/installation.md). The development guide also covers [source installation](docs/development.md#source-checkout) and [GitHub tarballs](docs/development.md#prepared-release-tarball).
+To stay on a specific release, replace `@next` with its published version number. Use `@latest` for the default npm release. Use the same version or channel for `web`, `status`, and `stop`. For setup errors and updates, see [installation and troubleshooting](docs/installation.md). The development guide also covers [source installation](docs/development.md#source-checkout) and [prepared tarballs](docs/development.md#prepared-release-tarball).
 
 Windows package launch and browser onboarding have been checked locally. Native clean-profile macOS/Linux verification remains pending. Model-generated scientific claims and results require researcher review.
 

@@ -4,6 +4,8 @@ Use a shared Node.js 22+ installation with npm and a shared CPython 3.11+ instal
 
 The npm package contains the application, interface, fonts, mathematics renderer and HTML report exporter. It needs backend Python dependencies, but no frontend build packages. The Codex desktop app is optional. Keep runtimes and packages user-wide or machine-wide, outside research projects.
 
+The commands below launch npm's published `next` package. For the local **0.9.5 candidate**, complete the same runtime and Python dependency setup, then replace the final `npx` command with the [prepared tarball command](development.md#prepared-release-tarball).
+
 ## Windows
 
 Install shared Python from [Python.org](https://www.python.org/downloads/windows/) if needed. Open PowerShell and select the intended Python. This example captures the executable chosen by the Python launcher; if you have several installations, replace the first line with the absolute path to the one you intend to use.
@@ -39,7 +41,7 @@ Reuse an existing shared Python that permits user packages, or install a normal 
 
 ```sh
 sudo apt update
-sudo apt install make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl git libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+sudo apt install make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl git libncurses-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
 ```
 
 If pyenv is not already installed, install it once in the standard shared user location:
@@ -90,6 +92,8 @@ npx @rqzhu-aide/model-forge-codex@next stop --data-root "/path/to/research" --po
 ```
 
 Finish or cancel active research through the app before stopping. Keep the research folder when updating the application. Relaunch the desired package version with the same folder; the launcher can replace an idle older service and refuses to interrupt active research. Existing projects retain their recorded workflow catalog. Back up your research folder independently of the application cache.
+
+If Model Forge closes while you update a project's workflow, restart it and open the project. If the previous workflow version is displayed, you can retry the update. If the new version is displayed, you can continue working. Your earlier runs and saved answers keep their original records.
 
 ## Recover a damaged application release
 

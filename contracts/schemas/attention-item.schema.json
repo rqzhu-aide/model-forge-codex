@@ -51,7 +51,7 @@
     "likely_consequence": {
       "type": "string",
       "minLength": 1,
-      "description": "What the answer changes in target, intended claim, applicability or resources, without repeating option accounts. New context plus this field has at most 45 prose words under the supplied user-inquiry reference; preserve decisive conditions. Scientific importance does not establish a pause."
+      "description": "Completes the connected Why this matters account begun in context_markdown: what the answer changes in target, intended claim, applicability or resources, with the decisive uncertainty stated once. Do not restart the explanation or repeat context, option accounts or optional supporting fields. New context plus this field has at most 45 prose words under the supplied user-inquiry reference; preserve decisive conditions. Scientific importance does not establish a pause."
     },
     "affected_record_ids": {
       "type": "array",
@@ -121,7 +121,7 @@
         "researcher_decision",
         "research_task"
       ],
-      "description": "The author distinguishes consequential unresolved researcher preferences or unavailable study facts from scientific justification, proof, implementation and evaluation work owned by the team."
+      "description": "Distinguish consequential modeling choices and unavailable study facts from scientific work owned by the team. A modeling choice can change formulation, assumptions, model or information set, applicability, guarantee or a material practical tradeoff even when all alternatives fit the original goal and the team recommends one. Ordinary proof steps and unambiguous coding repairs remain team work; researcher adoption of an assumption does not verify it."
     },
     "target_phase": {
       "enum": [
@@ -137,7 +137,7 @@
       "type": "string",
       "minLength": 1,
       "pattern": "\\S",
-      "description": "The affected target, component or missing fact, with essential local symbols and scientific meaning. Follow the supplied user-inquiry reference; newly authored context plus likely_consequence has at most 45 prose words. Preserve essential definitions and decisive conditions before source history, repeated context or UI-supplied optionality labels; link additional mechanism detail. Authors name what can proceed or which authorized action needs input; the UI derives optional or waiting state from run/request state."
+      "description": "Begins one connected Why this matters account with the exact scientific choice or missing fact and its necessary mathematical and domain meaning, defining essential local symbols once. likely_consequence completes its practical effect and decisive uncertainty without repetition; no separate supporting account is needed. Follow the supplied user-inquiry reference; newly authored context plus likely_consequence has at most 45 prose words. Preserve essential definitions and decisive conditions before source history, repeated context or UI-supplied optionality labels; link additional mechanism detail. Authors name what can proceed or which authorized action needs input; the UI derives optional or waiting state from run/request state."
     },
     "scope": {
       "type": "object",
@@ -286,14 +286,14 @@
         "data",
         "resources"
       ],
-      "description": "Highest material consequence, authored by the Lead. These are ordered priorities, not a questionnaire or urgency levels. Required for new researcher_decision items under consequential_researcher_decisions_v1; absent historical values stay absent."
+      "description": "Highest material consequence, authored by the Lead: interpretation includes target, formulation and constraint; inference includes assumptions and guarantee scope; data includes observations, information sets and applicability; resources includes consequential accuracy or fidelity versus computation tradeoffs. These are priorities, not a questionnaire or urgency levels. Required for new researcher_decision items under consequential_researcher_decisions_v1; absent historical values stay absent."
     },
     "response_kind": {
       "enum": [
         "choice",
         "study_fact"
       ],
-      "description": "A choice asks for a consequential unresolved preference; study_fact requests unavailable information. Researcher reports remain unverified until supported. Required for new researcher_decision items under consequential_researcher_decisions_v1."
+      "description": "A choice invites consequential modeling direction or an eligible phase-specific preference, even with complete study facts and a Lead recommendation; study_fact requests unavailable information without guessed options. Researcher adoption does not establish assumption truth or proof validity. Follow the supplied user-inquiry reference and the phase's output authority, including P5 editorial-only direct questions. Required for new researcher_decision items under consequential_researcher_decisions_v1."
     },
     "options": {
       "type": "array",
@@ -321,7 +321,7 @@
               "consequence": {
                 "type": "string",
                 "minLength": 1,
-                "description": "This option's changed formulation when mathematical, followed by its scientific meaning and material practical benefit/cost. Define shared notation once in context_markdown. New label plus consequence has at most 30 prose words under the user-inquiry reference; compact formulas are additional but their prose explanations count. No artificial equation is needed for a nonmathematical choice."
+                "description": "What distinguishes this option: its changed formulation when mathematical, scientific meaning and consequential practical benefit/cost. Explain its own tradeoff without repeating the shared Why this matters account; define shared notation once in context_markdown. New label plus consequence has at most 30 prose words under the user-inquiry reference; compact formulas are additional but their prose explanations count. No artificial equation is needed for a nonmathematical choice."
               }
             },
             "additionalProperties": true
@@ -332,7 +332,7 @@
     "recommendation": {
       "type": "string",
       "minLength": 1,
-      "description": "Every choice supplies a short Lead reason for a justified suggestion, or why no ranking is justified, within 20 prose words for new inquiries. Follow the supplied user-inquiry reference. Omit for study_fact; never treat advice as preselection or a researcher answer. The optional recommended_option_id binds a justified suggestion to an exact authored option."
+      "description": "Every choice supplies a short Lead reason for a suggestion justified by the stated goal and evidence, displayed beside that exact option, or why no ranking is justified, within 20 prose words for new inquiries. Give the reason once without repeating the common account or option consequence. Follow the supplied user-inquiry reference. Omit for study_fact; never treat advice as preselection or a researcher answer. The optional recommended_option_id binds a justified suggestion to an exact authored option."
     },
     "recommended_option_id": {
       "type": "string",

@@ -323,6 +323,10 @@ def open_attention_items(project_dir: Path, resolved: dict, *, include_closed: b
             related = source_indexes[origin_key]
         item["related_source_refs"] = [dict(related[identifier]) for identifier in dict.fromkeys(identifiers)
                                        if identifier in related]
+        from .attention_sources import attention_source_references
+        sources = attention_source_references(project_dir, item)
+        if sources:
+            item["scientific_source_refs"] = sources
         result.append(item)
     severity = {"blocking": 0, "reassessment_required": 1, "major": 2, "minor": 3}
     legacy_order = sorted(result, key=lambda item: (severity.get(item.get("severity"), 4),

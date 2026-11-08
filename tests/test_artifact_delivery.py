@@ -277,21 +277,49 @@ async def test_portable_report_allows_explicit_downloads_without_relaxing_other_
     assert exports[1]["html_download_base_url"] is None
 
 
-async def test_hosted_report_material_download_uses_only_its_exact_committed_html(api):
+def shareable_report_source(project, run_id, report, supplements):
+    from test_technical_reports import IDENTITY, CONTENT_SECTIONS
+    write_json_atomic(project / "runs" / run_id / "basis.json", {"method": {"identity": IDENTITY},
+        "problem_context": {"revision": 1, "sha256": "b" * 64, "items": []}, "records": [], "artifacts": []})
+    return {"title": "Synthetic report", "method_identity": IDENTITY,
+        "problem_context_ref": {"revision": 1, "sha256": "b" * 64},
+        "section_anchors": {key: key for key in CONTENT_SECTIONS}, "sections_present": list(CONTENT_SECTIONS),
+        "report_artifact": report, "supplementary_artifacts": supplements}
+
+
+def report_download_markdown():
+    from model_forge_codex.technical_reports import CONTENT_SECTIONS
+    return "\n\n".join(f'<a id="{key}"></a>\n## {key}\n\nBounded synthetic findings.' for key in CONTENT_SECTIONS).encode()
+
+
+def source_report_renderer(monkeypatch):
+    from pathlib import Path
+    from model_forge_codex import technical_reports
+    original_run = technical_reports.subprocess.run
+    monkeypatch.setattr(technical_reports.subprocess, "run", lambda command, **kwargs: original_run(
+        [command[0], str(Path(__file__).resolve().parents[1] / "web/scripts/export-report.mjs")], **kwargs))
+
+
+async def test_hosted_report_material_download_derives_only_its_exact_committed_html(api, monkeypatch):
+    source_report_renderer(monkeypatch)
     client, _, project, branch = api
-    report, _ = saved_file(project, branch, "run.download-report", "report.md", b"# Exact report", "P5", "p5.assembly")
+    report, _ = saved_file(project, branch, "run.download-report", "report.md", report_download_markdown(), "P5", "p5.assembly")
     content = b'<!doctype html><title>Original proof</title><p id="proof">Exact retained bytes.</p>\r\n'
     appendix, path = saved_file(project, branch, "run.download-report", "sealed-proof.html", content, "P5", "p5.assembly")
     appendix["media_type"] = "text/html"
-    package = publish(project, branch, "P5", {"technical_report": {"report_artifact": report,
-        "supplementary_artifacts": [appendix],
-        "artifact_authored_paths": {appendix["artifact_id"]: "proofs/appendix.html"}}}, "run.download-report")
+    markdown, _ = saved_file(project, branch, "run.download-report", "sealed-proof.md", b'<a id="proof"></a>\n## Proof\n\nA bounded argument. $x^2$.', "P5", "p5.assembly")
+    markdown["media_type"] = "text/markdown"
+    document = shareable_report_source(project, "run.download-report", report, [appendix, markdown])
+    document["artifact_authored_paths"] = {appendix["artifact_id"]: "proofs/appendix.html", markdown["artifact_id"]: "proofs/appendix.md"}
+    package = publish(project, branch, "P5", {"technical_report": document}, "run.download-report")
     generation = package["records"]["technical_report"]["generation_id"]
     url = f"/api/v1/projects/project.test/branches/{branch}/phases/P5/records/technical_report/{generation}?view=attachment"
     response = await client.get(url, params={"view": "attachment", "material_id": appendix["artifact_id"]})
-    assert response.status_code == 200 and response.content == content, response.text
-    assert response.headers["content-disposition"] == 'attachment; filename="appendix.html"'
-    assert response.headers["content-type"] == "application/octet-stream"
+    assert response.status_code == 200 and response.content != content, response.text
+    assert "A bounded argument" in response.text and 'class="katex"' in response.text
+    assert 'href="proofs/' not in response.text and path.read_bytes() == content
+    assert response.headers["content-disposition"] == 'attachment; filename="appendix.shareable.html"'
+    assert response.headers["content-type"].startswith("text/html")
     assert response.headers["x-content-type-options"] == "nosniff"
     for selector in (None, "../sealed-proof.html", str(path), report["artifact_id"], "unknown"):
         response = await client.get(url, params={"view": "attachment", **({"material_id": selector} if selector is not None else {})})
@@ -300,28 +328,35 @@ async def test_hosted_report_material_download_uses_only_its_exact_committed_htm
     later = publish(project, branch, "P5", {"technical_report": {"report_artifact": report}}, "run.download-report")
     later_url = url.replace(generation, later["records"]["technical_report"]["generation_id"])
     assert (await client.get(later_url, params={"view": "attachment", "material_id": appendix["artifact_id"]})).status_code == 400
-    assert (await client.get(url, params={"view": "attachment", "material_id": appendix["artifact_id"]})).content == content
+    assert "A bounded argument" in (await client.get(url, params={"view": "attachment", "material_id": appendix["artifact_id"]})).text
     path.write_bytes(b"changed proof")
     assert (await client.get(url, params={"view": "attachment", "material_id": appendix["artifact_id"]})).status_code == 400
     path.unlink()
     assert (await client.get(url, params={"view": "attachment", "material_id": appendix["artifact_id"]})).status_code == 400
 
 
-async def test_hosted_report_material_download_resolves_retained_inputs_and_rejects_ambiguous_ids(api):
+async def test_hosted_report_material_download_resolves_retained_inputs_and_rejects_ambiguous_ids(api, monkeypatch):
+    source_report_renderer(monkeypatch)
     client, _, project, branch = api
-    report, _ = saved_file(project, branch, "run.reused-report", "report.md", b"# Exact report", "P5", "p5.assembly_lead")
+    report, _ = saved_file(project, branch, "run.reused-report", "report.md", report_download_markdown(), "P5", "p5.assembly")
     content = b"<!doctype html><title>Frozen proof</title>"
     frozen = project / "runs/run.reused-report/inputs/proof.html"
     frozen.parent.mkdir(parents=True)
     frozen.write_bytes(content)
     appendix = {"artifact_id": "artifact.frozen-proof", "path": "appendix.html", "sha256": sha256_bytes(content), "media_type": "text/html"}
-    write_json_atomic(project / "runs/run.reused-report/basis.json", {"artifacts": [{"artifact_id": appendix["artifact_id"],
-        "path": str(frozen), "original_path": "appendix.html", "content_sha256": appendix["sha256"]}]})
-    package = publish(project, branch, "P5", {"technical_report": {"report_artifact": report,
-        "supplementary_artifacts": [appendix]}}, "run.reused-report")
+    markdown, _ = saved_file(project, branch, "run.reused-report", "appendix.md", b'## Frozen proof\n\nA retained bounded argument.', "P5", "p5.assembly")
+    markdown["media_type"] = "text/markdown"
+    document = shareable_report_source(project, "run.reused-report", report, [appendix, markdown])
+    basis_path = project / "runs/run.reused-report/basis.json"
+    from model_forge_codex.storage import read_json
+    basis = read_json(basis_path)
+    basis["artifacts"] = [{"artifact_id": appendix["artifact_id"], "path": str(frozen), "original_path": "appendix.html", "content_sha256": appendix["sha256"]}]
+    write_json_atomic(basis_path, basis)
+    package = publish(project, branch, "P5", {"technical_report": document}, "run.reused-report")
     generation = package["records"]["technical_report"]["generation_id"]
     url = f"/api/v1/projects/project.test/branches/{branch}/phases/P5/records/technical_report/{generation}?view=attachment"
-    assert (await client.get(url, params={"view": "attachment", "material_id": appendix["artifact_id"]})).content == content
+    response = await client.get(url, params={"view": "attachment", "material_id": appendix["artifact_id"]})
+    assert response.status_code == 200 and "A retained bounded argument" in response.text
     duplicate = {**appendix, "sha256": "d" * 64, "path": "other.html"}
     ambiguous = publish(project, branch, "P5", {"technical_report": {"report_artifact": report,
         "supplementary_artifacts": [appendix, duplicate]}}, "run.reused-report")
@@ -339,7 +374,7 @@ async def test_verified_table_pages_keep_labels_units_and_all_values(api):
     write_json_atomic(path.parent / "exhibits.json", [exhibit])
     publish(project, branch, "P4", {"exhibits": [exhibit]}, "run.table")
     table = artifacts_view(project, branch)["exhibits"][0]["table"]
-    assert table["columns"][0]["label"] == "Sample size"
+    assert table["columns"][0]["label"] == "sample_size"
     assert table["columns"][1] == {"key": "error_value", "label": "Absolute error", "unit": "mg"}
     response = await client.get(table["next_page_url"])
     second = response.json()

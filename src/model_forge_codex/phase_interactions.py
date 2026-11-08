@@ -147,7 +147,17 @@ def published_issues(project_dir, branch=None):
                     continue
                 meta = {"project_id": project_dir.name, "phase": phase_dir.name.upper(), "branch": branch_dir.name,
                         "family": family, "generation_ref": source_ref(branch_dir.name, phase_dir.name.upper(), family, pointer)}
-                result.extend(_method_scope(project_dir, item) for item in issue_projection(document, meta))
+                entries = list(issue_projection(document, meta))
+                if phase_dir.name == "p5" and family == "citation_integrity_report":
+                    from .report_delivery import report_delivery_state
+                    delivery = report_delivery_state(project_dir, meta["generation_ref"])
+                    passed = set((delivery or {}).get("passed_delivery_issue_ids") or [])
+                    for item in entries:
+                        if item.get("object_id") in passed:
+                            item["delivery_state"] = delivery
+                            item["recorded_title"] = item["title"]
+                            item["title"] = "Export check passed"
+                result.extend(_method_scope(project_dir, item) for item in entries)
     # Attention is cumulative, including unresolved questions from older runs.
     try:
         attention_items = open_attention_items(project_dir, {})
@@ -481,6 +491,11 @@ def answers_with_usage(project_dir):
         answers = sorted(retained_researcher_answers(project_dir), key=lambda row: (row["attention_id"], -row.get("revision", 0)))
     stored = read_json(Path(project_dir) / "researcher" / "attention_resolutions.json") or {}
     for answer in answers:
+        from .attention_sources import attention_source_references
+        question = answer.get("attention") or {}
+        sources = attention_source_references(project_dir, question)
+        if sources:
+            answer["attention"] = {**question, "scientific_source_refs": sources}
         # Keep ownership visible after a later edit stops saving context.
         # These links belong only to the UI projection, not routed research
         # inputs, and retain no earlier answer text or question content.

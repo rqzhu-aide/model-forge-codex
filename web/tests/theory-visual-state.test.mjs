@@ -109,3 +109,33 @@ test("relaxed-assumption counterexamples retain the authored result and establis
   assert.match(nodeMarkup(html, "Contradicted statement"), /data-tone="fail"/);
   assert.equal(JSON.stringify(props), before);
 });
+
+test("inspector copy separates proof support, statement assessment and probe scope without changing status", () => {
+  const props = { ...fixture, selected: "statement.probed", glossaries: [{ branch, phase: "P3", glossary: { "statement.probed": { status: "conditional" }, "statement.adverse": { status: "contradicted" } } }] };
+  const before = JSON.stringify(props);
+  const html = render.theory(props);
+  assert.match(html, /Statement assessment: <span class="pill[^"]*">Conditional/);
+  assert.match(html, /Proof support describes the available argument\. The statement assessment also accounts for its conditions and unresolved work\. A complete proof does not by itself show that your study meets its assumptions\./);
+  assert.match(html, /A probe can test a stronger claim or relaxed assumptions\./);
+  assert.match(html, /a failed probe need not refute the statement as assessed above/);
+  // The authored outcome stays visible; the probe does not become a contradicted claim.
+  assert.match(html, /<span class="pill fail">Fails as stated<\/span>/);
+  assert.doesNotMatch(nodeMarkup(html, "Failed probe statement"), /Contradicted|data-tone="fail"/);
+  assert.equal(JSON.stringify(props), before);
+  // Without recorded probes the scope note is absent and the existing caution remains.
+  const unprobed = render.theory({ ...fixture, selected: "statement.cited" });
+  assert.doesNotMatch(unprobed, /A probe can test a stronger claim/);
+  assert.match(unprobed, /No targeted probes are recorded\. This is not evidence that the step has been verified\./);
+});
+
+test("an authored assumption label names the graph node, accessible name and inspector", () => {
+  const html = render.theory({ ...fixture, selected: "assumption.independent" });
+  const node = nodeMarkup(html, "Independent observations");
+  assert.match(node, /data-kind="assumption"/);
+  assert.match(node, />Independent observations<\/text>/);
+  assert.match(html, /aria-label="Inspect Independent observations"/);
+  assert.match(html, /<h3>Independent observations<\/h3>/);
+  assert.doesNotMatch(html, /Proof support describes the available argument/);
+  const unlabeled = render.theory({ ...fixture, claimMaps: [{ ...fixture.claimMaps[0], assumptions: [{ assumption_id: "assumption.independent" }] }] });
+  assert.ok(nodeMarkup(unlabeled, "Independent"), "Historical unlabeled assumptions keep the identifier-derived fallback.");
+});

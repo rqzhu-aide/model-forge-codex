@@ -243,7 +243,7 @@ async def test_setting_amendment_is_saved_and_frozen_for_next_run(direct_engine,
     monkeypatch.delenv("MF_CODEX_READ_ONLY", raising=False)
     app = create_app(engine.data_root, engine.bridge)
     text = r"Require $\mathbb E_\pi[(H-B)_+]\leq\varepsilon$."
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         context = (await client.get(f"/api/v1/projects/{PID}/problem-context")).json()
         brief = context["brief"]
         target = {"kind": "project_brief", "project_id": PID, "revision": brief["revision"],
@@ -400,7 +400,7 @@ async def test_researcher_answer_keeps_question_and_enters_frozen_inputs(direct_
     }, run_id="run.question", phase="P1", branch_id="trunk")
     monkeypatch.delenv("MF_CODEX_READ_ONLY", raising=False)
     app = create_app(engine.data_root, engine.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         response = await client.post(f"/api/v1/projects/{PID}/attention/question.discount/resolve", json={"note": "Use discount factor 0.95."})
         assert response.status_code == 200
     script(engine, "P1", "p1.literature_update", p1_documents())

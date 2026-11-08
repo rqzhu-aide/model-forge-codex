@@ -50,8 +50,15 @@ export const api = {
     req(`/projects/${pid}/branches/${branch}/phases/${phase}/records`, options),
   recordBody: (pid, branch, phase, family, gen) =>
     req(`/projects/${pid}/branches/${branch}/phases/${phase}/records/${family}/${gen}`),
-  recordDocument: (pid, reference) =>
-    req(`/projects/${pid}/branches/${reference.branch}/phases/${reference.phase}/records/${reference.family}/${reference.generation_id}?view=document`),
+  recordDocument: (pid, reference) => {
+    const query = new URLSearchParams({ view: "document" });
+    if (reference.entry_pointer) query.set("entry_pointer", reference.entry_pointer);
+    if (reference.artifact_ref) {
+      query.set("artifact_uri", reference.artifact_ref.uri);
+      query.set("artifact_sha256", reference.artifact_ref.sha256);
+    }
+    return req(`/projects/${pid}/branches/${reference.branch}/phases/${reference.phase}/records/${reference.family}/${reference.generation_id}?${query}`);
+  },
   listRuns: (pid, options) => req(`/projects/${pid}/runs`, options),
   journal: (pid) => req(`/projects/${pid}/journal`),
   updateMember: (pid, role, body) =>

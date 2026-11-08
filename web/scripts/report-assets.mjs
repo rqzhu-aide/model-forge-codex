@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
+import { gzipSync } from "node:zlib";
+import { retainedDownloadName } from "./report-portable-materials.mjs";
 
 // Python resolves and verifies every declared source before this handoff. The
 // renderer accesses this map only when it actually renders an image or link.
@@ -19,10 +21,10 @@ export function reportAssetInput(input, readFile = fs.readFileSync) {
     return file;
   };
   const readRetained = (key, file) => {
-    const identity = JSON.stringify([file.path, file.media_type]);
+    const identity = JSON.stringify([file.path, file.media_type, file.content_base64]);
     let retained = cache.get(identity);
     if (!retained) {
-      const bytes = readFile(file.path);
+      const bytes = file.content_base64 === undefined ? readFile(file.path) : Buffer.from(file.content_base64, "base64");
       const digest = createHash("sha256").update(bytes).digest("hex");
       if (digest !== file.sha256) throw new Error(`The report asset ${key} changed after source verification`);
       retained = { digest, bytes, uri: `data:${file.media_type};base64,${bytes.toString("base64")}` };
@@ -48,6 +50,39 @@ export function reportAssetInput(input, readFile = fs.readFileSync) {
         markdown: readRetained(key, file).bytes.toString("utf8") };
     },
   });
+  const downloadForAsset = key => {
+    const file = retainedFile(key);
+    if (!file) return undefined;
+    const retained = readRetained(key, file);
+    const filename = retainedDownloadName(file, key);
+    if (!input.shareable_export || file.download_url || retained.bytes.length < 128 * 1024
+        || !/^(?:text\/|application\/(?:json|x-ndjson|jsonl)(?:$|;))/i.test(file.media_type)) {
+      return { url: file.download_url || retained.uri, filename };
+    }
+    if (!retained.gzip) retained.gzip = gzipSync(retained.bytes, { level: 9 });
+    if (retained.gzip.length > retained.bytes.length / 2) return { url: retained.uri, filename };
+    const delivery = { encoding: "gzip", media_type: "application/gzip", filename: filename + ".gz",
+      sha256: createHash("sha256").update(retained.gzip).digest("hex"),
+      decoded_filename: filename, decoded_sha256: retained.digest };
+    return { url: `data:application/gzip;base64,${retained.gzip.toString("base64")}`, filename: delivery.filename,
+      delivery, source_sha256: file.source_sha256 || file.sha256 };
+  };
+  // A shareable HTML edition is rendered from its declared Markdown companion.
+  // The authored HTML remains an immutable private source, including its footer.
+  const documentForHtml = (key) => {
+    const file = retainedFile(key);
+    if (!file || file.media_type !== "text/html") return undefined;
+    const authored = file.authored_path || key;
+    const markdownPath = authored.replace(/\.html?$/i, ".md");
+    const matches = Object.entries(files).filter(([alias, value]) =>
+      value.media_type === "text/markdown" && (value.authored_path || alias) === markdownPath);
+    const identities = new Set(matches.map(([, value]) => value.path));
+    if (identities.size !== 1) return undefined;
+    const [alias, markdownFile] = matches[0];
+    const document = documents[alias];
+    return { ...document, source_sha256: markdownFile.source_sha256 || markdownFile.sha256,
+      aliases: Object.entries(files).filter(([, value]) => value.path === file.path || value.path === markdownFile.path).map(([name]) => name) };
+  };
   let print_document;
   if (input.print_material_id !== undefined && input.print_material_id !== null) {
     const selected = input.print_material_id;
@@ -65,5 +100,11 @@ export function reportAssetInput(input, readFile = fs.readFileSync) {
     if (!document || document.media_type !== "text/markdown") throw new Error("The selected print material is not a retained Markdown document");
     print_document = document;
   }
-  return { ...input, assets, documents, print_document };
+  const primaryPaths = new Set(input.primary_paths || []);
+  if (input.shareable_export) {
+    for (const [key, file] of Object.entries(files)) {
+      if (file.media_type === "text/html" && documentForHtml(key)?.aliases.some(alias => primaryPaths.has(alias))) primaryPaths.add(key);
+    }
+  }
+  return { ...input, primary_paths: [...primaryPaths], assets, documents, print_document, documentForHtml, downloadForAsset };
 }

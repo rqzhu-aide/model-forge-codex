@@ -19,7 +19,7 @@ async def brief_api(engine, monkeypatch):
     monkeypatch.delenv("MF_CODEX_READ_ONLY", raising=False)
     source, bridge, project_id = engine
     app = create_app(data_root=source.data_root, bridge=bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         yield client, app.state.engine, project_id
 
 
@@ -27,7 +27,7 @@ async def brief_api(engine, monkeypatch):
 async def test_create_project_persists_optional_research_instructions(tmp_path, monkeypatch, instructions):
     monkeypatch.delenv("MF_CODEX_READ_ONLY", raising=False)
     app = create_app(data_root=tmp_path / "data", bridge=FakeCodexBridge())
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         body = {"name": "Entangled Langevin"}
         if instructions is not None:
             body["research_instructions"] = instructions

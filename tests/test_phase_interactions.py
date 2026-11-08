@@ -368,6 +368,54 @@ async def test_scientific_issue_response_requires_matching_exact_entry_when_supp
     assert (await client.post(url, json={"note": "Keep scope narrow", "expected_source": issue["explanation_target"]})).status_code == 200
 
 
+async def test_answer_conflicts_use_exact_source_history_and_authoritative_returned_revision(api):
+    """Two editors must not borrow the revision of a carried answer or successor."""
+    client, _, project, _ = api
+    question = {"attention_id": "attention.concurrent", "kind": "researcher_decision", "raised_by": "research_lead",
+                "question": "Which population should the analysis describe?", "scope": {"kind": "project"},
+                "response_kind": "study_fact", "affected_record_ids": [], "disposition": "open"}
+    publish(project, "trunk", "P1", {"attention_items": [question]}, "run.concurrent.original")
+    original = next(item for item in published_issues(project) if item["issue_id"] == question["attention_id"])
+    url = "/api/v1/projects/project.test/attention/attention.concurrent/resolve"
+    first = await client.post(url, json={"note": "Original population.", "expected_source": original["explanation_target"], "expected_revision": 0})
+    assert first.status_code == 200, first.text
+    first_answer = first.json()["answer"]
+    assert first_answer["revision"] == 1
+    stale_first = await client.post(url, json={"note": "Concurrent first answer.", "expected_source": original["explanation_target"], "expected_revision": 0})
+    assert stale_first.status_code == 409 and "saved response changed" in stale_first.text
+
+    carried = {**question, "question": "Does this population also apply to the new design?",
+               "answer_applicability_refs": [{"attention_id": question["attention_id"], "answer_revision": 1,
+                                              "question_ref": first_answer["question_ref"], "reason": "The author explicitly carries the population forward."}]}
+    publish(project, "trunk", "P1", {"attention_items": [carried]}, "run.concurrent.successor")
+    destination = next(item for item in published_issues(project) if item["issue_id"] == question["attention_id"])
+    assert destination["researcher_answer"]["revision"] == 1
+    saved = await client.post(url, json={"note": "New design population is still unknown.", "origin": "unknown",
+                                         "expected_source": destination["explanation_target"], "expected_revision": 0})
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["answer"]["revision"] == 2
+    before = (project / "researcher" / "attention_resolutions.json").read_bytes()
+    concurrent_destination = await client.post(url, json={"note": "Older destination draft.", "expected_source": destination["explanation_target"], "expected_revision": 0})
+    assert concurrent_destination.status_code == 409
+    assert (project / "researcher" / "attention_resolutions.json").read_bytes() == before
+
+    # Editing the saved original remains possible after a successor is saved.
+    original_edit = await client.post(url, json={"note": "Clarified original population.", "expected_source": original["explanation_target"], "expected_revision": 1})
+    assert original_edit.status_code == 200, original_edit.text
+    assert original_edit.json()["answer"]["revision"] == 3
+    # Destination's latest answer is now in history. Its base is 2, although the
+    # stable-ID counter is 3, and the returned revision is 4 rather than base + 1.
+    reviewed_edit = await client.post(url, json={"note": "Reviewed destination population.", "expected_source": destination["explanation_target"], "expected_revision": 2})
+    assert reviewed_edit.status_code == 200, reviewed_edit.text
+    assert reviewed_edit.json()["answer"]["revision"] == 4
+    assert reviewed_edit.json()["answer"]["question_ref"] == saved.json()["answer"]["question_ref"]
+    second_conflict = await client.post(url, json={"note": "Draft based on the reviewed answer.", "expected_source": destination["explanation_target"], "expected_revision": 2})
+    assert second_conflict.status_code == 409 and "saved response changed" in second_conflict.text
+    pending = (await client.get("/api/v1/projects/project.test/decisions-pending")).json()["researcher_answers"]
+    assert {(answer["revision"], answer["note"]) for answer in pending if answer["attention_id"] == question["attention_id"]} == {
+        (3, "Clarified original population."), (4, "Reviewed destination population.")}
+
+
 async def test_team_research_task_is_carried_into_explicit_further_work_without_answer(workbench, monkeypatch):
     engine, project, branch = workbench
     task = {"attention_id": "attention.proof", "kind": "research_task", "raised_by": "theorist", "target_phase": "P3",

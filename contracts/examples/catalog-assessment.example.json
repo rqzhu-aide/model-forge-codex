@@ -1,7 +1,7 @@
 {
   "schema_version": "1.3.0",
   "title": "Comparison of the three method proposals",
-  "comparison_markdown": "The overlap-stabilized score keeps the orthogonal estimating equation and bounds the weights; the doubly robust series proposal replaces the nuisance fits with series estimators; the penalized inverse-propensity sieve proposal stabilizes the weights through a penalized sieve propensity model. All three target the same estimand with distinct assumptions and open obligations recorded in their proposals and audits.",
+  "comparison_markdown": "The overlap-stabilized score modifies the residual correction in the cross-fitted augmented score; the doubly robust series proposal replaces the nuisance fits with series estimators; the penalized inverse-propensity sieve proposal changes propensity estimation through a penalized sieve model. The candidates are intended to address the stated effect target, but the weighted equation's population target and orthogonality remain unresolved and this standalone example does not supply the other two exact equations. Distinct assumptions and open obligations remain recorded in their proposals and audits.",
   "method_dispositions": [
     {
       "proposal_id": "proposal.overlap_stabilized_score",
@@ -22,7 +22,7 @@
       "rationale": "Penalized propensity estimation offers a concrete way to investigate the stability of inverse-propensity weights. The penalty is the candidate's stated design choice in proposal.penalized_ipw_sieve; whether it is innovative relative to prior work remains unestablished in this standalone comparison. The central criticism is that a penalty on model coefficients does not, without an argument, establish the required control of the resulting weight tails. Retain for checking that relationship and then testing weight diagnostics, bias and coverage in the relevant overlap regimes."
     }
   ],
-  "overview_markdown": "Investigate the bounded-score candidate when weight instability is the priority, while checking its population target before causal or inference claims. Series and penalized sieve choices offer different nuisance-model tradeoffs; their order and tail control remain unresolved. The next scientific check is whether the weighted equation estimates the intended effect.",
+  "overview_markdown": "The three candidates change different parts of estimation, and this example establishes no overall advantage. If score-weight stabilization is the goal, the overlap-stabilized orthogonal score offers an explicit bounded-weight correction to investigate, but its population target must be resolved before causal or inference claims. The doubly robust series candidate changes nuisance approximation, with series-order error unresolved; the penalized inverse-propensity sieve candidate changes propensity estimation, but coefficient penalization does not establish weight-tail control.\n\nThese alternatives differ in their defining calculation and inferential obligations, rather than offering interchangeable routes to an established common target. Conditional exchangeability and finite score second moment remain assumptions for the bounded-score account. The standalone example lacks the other candidates' exact equations and tuning specifications and supplies no comparative computational evidence. Check the exact formulations, weighted target, series-order effect and tail-control argument before claiming validity or performance differences.",
   "modification_options": [
     {
       "option_id": "mod.proposal.overlap_stabilized_score.data_driven_clip",

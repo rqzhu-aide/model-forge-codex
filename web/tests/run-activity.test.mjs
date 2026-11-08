@@ -32,7 +32,7 @@ test("preparation and lifecycle summaries do not expose internal filenames or se
   assert.match(publicActivity(html), /Prepared the task instructions|Applied the member&#x27;s model|Started work on the requested task/);
   assert.match(publicActivity(html), /Data Analyst|Research Lead|Research team/);
   assert.doesNotMatch(publicActivity(html), /data_analyst|research_lead|p1\.discovery|14,359/);
-  assert.match(html, /p1\.discovery\.research_lead\.md/);
+  assert.doesNotMatch(html, /p1\.discovery\.research_lead\.md/, "The collapsed technical log is formatted on demand.");
   assert.match(html, /<details class="research-details" data-technical-activity="true"><summary>Technical activity log/);
 });
 
@@ -85,7 +85,7 @@ test("raw records remain unchanged and collapsed even for unrecognized activity"
   const html = render.activity({ run, events, connection: "live" });
   assert.equal(JSON.stringify(events), before);
   assert.doesNotMatch(publicActivity(html), /PRIVATE_COMMAND|PRIVATE_FILE|PRIVATE_VALUE|new\.internal_event/);
-  assert.match(html, /PRIVATE_COMMAND|PRIVATE_FILE\.json|PRIVATE_VALUE/);
+  assert.doesNotMatch(html, /PRIVATE_COMMAND|PRIVATE_FILE\.json|PRIVATE_VALUE/);
   assert.doesNotMatch(html, /data-technical-activity="true"[^>]*\bopen/);
 });
 
@@ -94,5 +94,5 @@ test("recent activity limits do not discard earlier technical records", () => {
   const html = render.activity({ run, events, connection: "live" });
   assert.equal((publicActivity(html).match(/class="row"/g) || []).length, 60);
   assert.match(html, /Show all 65 events/);
-  assert.match(html, /completed: command 0/);
+  assert.doesNotMatch(html, /completed: command 0/, "Complete technical history is available when its disclosure is opened.");
 });

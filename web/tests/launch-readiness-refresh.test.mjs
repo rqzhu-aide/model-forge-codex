@@ -16,7 +16,7 @@ const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.j
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-launch-refresh-"));
 const bundle = path.join(directory, "test.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; export {default as App} from '${src}/App.jsx'; export {default as LaunchRun} from '${src}/components/LaunchRun.jsx'; export {default as ProjectView} from '${src}/components/ProjectView.jsx'; export {default as FurtherWorkCard} from '${src}/components/FurtherWorkCard.jsx'; export {default as MethodProposals} from '${src}/components/MethodProposals.jsx'; export {api} from '${src}/api.js'; export const dispatcher=React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; export {default as App} from '${src}/App.jsx'; export {default as LaunchRun} from '${src}/components/LaunchRun.jsx'; export {default as ProjectView} from '${src}/components/ProjectView.jsx'; export {default as FurtherWorkCard} from '${src}/components/FurtherWorkCard.jsx'; export {default as MethodProposals} from '${src}/components/MethodProposals.jsx'; export {api} from '${src}/api.js'; export {readConversationDraft, saveConversationDraft} from '${src}/assumptionConversations.js'; export const dispatcher=React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const ui = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
 const noop = () => {};
 
@@ -66,7 +66,7 @@ function mount(Component, initialProps) {
 
 function nodes(tree) {
   if (Array.isArray(tree)) return tree.flatMap(nodes);
-  return tree && typeof tree === "object" && tree.props ? [tree, ...nodes(tree.props.children)] : [];
+  return tree && typeof tree === "object" && tree.props ? [tree, ...nodes(tree.type?.name === "ResearchCardLayout" ? tree.type(tree.props) : tree.props.children)] : [];
 }
 const find = (tree, predicate) => nodes(tree).find(predicate);
 const form = (fixture) => find(fixture.tree, (node) => node.type === "form");
@@ -325,6 +325,122 @@ test("ProjectView sends catalog and changed readiness through both mounted launc
   if (previousDocument === undefined) delete globalThis.document; else globalThis.document = previousDocument;
 });
 
+test("P2 run shortcuts carry the target editor's saved or unsaved preparation into the launch payload", async () => {
+  const names = ["window", "document", "setInterval", "clearInterval"];
+  const previous = Object.fromEntries(names.map(name => [name, globalThis[name]]));
+  const method = { method_id: "method.prepared", branch_id: "branch.earlier", title: "Prepared method", identity: { stable_id: "method.prepared", version: 2, definition_sha256: "a".repeat(64) } };
+  const activatedBranch = "branch.activated";
+  const cases = [
+    { name: "saved-theory", phase: "P3" },
+    { name: "draft-theory", phase: "P3", draft: { text: "Use my unsaved theory directions." } },
+    { name: "cleared-theory", phase: "P3", draft: { text: "" }, whileLoading: true },
+    { name: "saved-evaluation", phase: "P4" },
+    { name: "draft-evaluation", phase: "P4", draft: { text: "Use my unsaved evaluation directions.", inputIds: ["input.draft"] } },
+    { name: "cleared-evaluation", phase: "P4", draft: { text: "", inputIds: [] } },
+    { name: "legacy-evaluation-inputs", phase: "P4", noSavedInputs: true },
+  ];
+  try {
+    globalThis.window = { addEventListener: noop, removeEventListener: noop };
+    globalThis.document = { hidden: false, addEventListener: noop, removeEventListener: noop };
+    globalThis.setInterval = () => 1; globalThis.clearInterval = noop;
+    for (const example of cases) {
+      const projectId = `project.shortcut.${example.name}`;
+      const draftKey = furtherWorkKey(projectId, method.method_id, example.phase);
+      const legacyKey = `p4-inputs:${JSON.stringify([projectId, activatedBranch])}`;
+      const otherKeys = [furtherWorkKey(projectId, "trunk", example.phase), furtherWorkKey(projectId, method.method_id, "P2")];
+      const saved = { instructions: `Saved ${example.phase} directions.`, ...(example.noSavedInputs ? {} : { input_ids: ["input.saved"] }) };
+      const draft = { theoryPreparation: { target: { object_id: "stale-component" }, preparedDirections: "Stale component directions." }, ...example.draft };
+      const exactSources = JSON.stringify({ saved, draft, method });
+      const pending = defer(); const loads = []; const activations = []; const starts = []; const navigations = [];
+      ui.saveConversationDraft(draftKey, example.whileLoading ? { text: "An older edit." } : draft);
+      ui.saveConversationDraft(legacyKey, { inputIds: ["input.legacy"] });
+      otherKeys.forEach(key => ui.saveConversationDraft(key, { text: "Unrelated phase or method instructions.", inputIds: ["input.unrelated"] }));
+      try {
+        await withApi({
+          project: async () => ({ project: {} }), branches: async () => ({ branches: [] }), listRuns: async () => ({ runs: [] }),
+          artifacts: async () => ({}), decisionsPending: async () => ({}), records: async () => ({ records: [] }), assessments: async () => ({ assessments: [] }),
+          methods: async () => ({ methods: [method] }),
+          activateMethod: async (...args) => { activations.push(args); return { branch_id: activatedBranch }; },
+          phasePreparation: async (...args) => { loads.push(args); return example.whileLoading ? pending.promise : saved; },
+          savePhasePreparation: async () => { throw new Error("Preparation must not save or change the original instructions."); },
+          readiness: async (_, __, phase) => ({ modes: [{ mode: phase === "P2" ? "p2.full_catalog" : phase === "P3" ? "p3.theory_establishment" : "p4.preliminary", ready: true, local_inputs: true, basis: { sha256: "prepared-basis" } }] }),
+          startRun: async (_, payload) => { starts.push(payload); return { run_id: `run.${example.name}`, phase: example.phase, branch_id: activatedBranch, state: "requested" }; },
+        }, async () => {
+          const project = mount(ui.ProjectView, { projectId, context: { phase: "P2", branch: "trunk" }, onContextChange: change => navigations.push(change) });
+          let launch;
+          try {
+            await project.settle();
+            const preparation = find(project.tree, node => node.type === ui.MethodProposals).props.onContinue(method, example.phase, { prepareRun: true });
+            if (example.whileLoading) {
+              await project.settle();
+              assert.equal(find(project.tree, node => node.type === ui.LaunchRun), undefined, "No runnable blank modal opens before preparation loads.");
+              ui.saveConversationDraft(draftKey, draft); pending.resolve(saved);
+            }
+            await preparation; await project.settle();
+            assert.deepEqual(loads, [[projectId, method.method_id, example.phase]], "Preparation shares the editor's method key even when activation uses another branch.");
+            assert.deepEqual(activations, [[projectId, method.method_id, method.identity]], "Activation retains the exact selected model version.");
+            const modal = find(project.tree, node => node.type === ui.LaunchRun);
+            assert.equal(modal.props.request.branch, activatedBranch);
+            assert.equal(modal.props.request.target, undefined, "A whole-method shortcut does not import a retained component target.");
+            assert.equal(modal.props.request.preparedDirections, undefined);
+            assert.equal(starts.length, 0); assert.deepEqual(navigations, []);
+            launch = mount(ui.LaunchRun, modal.props); await launch.settle();
+            const expectedInstructions = example.draft?.text ?? saved.instructions;
+            assert.equal(find(launch.tree, node => node.type === "textarea").props.value, expectedInstructions, example.name);
+            await form(launch).props.onSubmit(event); await launch.settle(); await project.settle();
+            assert.equal(starts.length, 1, "Only explicit form submission starts work.");
+            assert.equal(starts[0].instructions, expectedInstructions || undefined, example.name);
+            assert.equal(starts[0].branch_id, activatedBranch);
+            if (example.phase === "P4") assert.deepEqual(starts[0].input_ids, example.draft?.inputIds ?? saved.input_ids ?? ["input.legacy"], example.name);
+            assert.equal(JSON.stringify({ saved, draft, method }), exactSources, "Loading and launching preserve the source records and draft.");
+          } finally { launch?.unmount(); project.unmount(); }
+        });
+      } finally { [draftKey, legacyKey, ...otherKeys].forEach(key => ui.saveConversationDraft(key, null)); }
+    }
+  } finally { for (const name of names) { if (previous[name] === undefined) delete globalThis[name]; else globalThis[name] = previous[name]; } }
+});
+
+test("P2 shortcut preparation failures and late responses keep the researcher in the selected view", async () => {
+  const names = ["window", "document", "setInterval", "clearInterval"];
+  const previous = Object.fromEntries(names.map(name => [name, globalThis[name]]));
+  const method = { method_id: "method.preparation-failure", identity: { stable_id: "method.preparation-failure", version: 2 } };
+  try {
+    globalThis.window = { addEventListener: noop, removeEventListener: noop };
+    globalThis.document = { hidden: false, addEventListener: noop, removeEventListener: noop };
+    globalThis.setInterval = () => 1; globalThis.clearInterval = noop;
+    for (const outcome of ["failure", "selection-changed", "selection-returned"]) {
+      const pending = defer(); const navigations = []; let starts = 0;
+      await withApi({
+        project: async () => ({ project: {} }), branches: async () => ({ branches: [] }), listRuns: async () => ({ runs: [] }), artifacts: async () => ({}),
+        decisionsPending: async () => ({}), readiness: async () => ({}), records: async () => ({ records: [] }), assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [method] }),
+        activateMethod: async () => ({ branch_id: method.method_id }), phasePreparation: async () => pending.promise,
+        startRun: async () => { starts++; throw new Error("Preparation must not start work."); },
+      }, async () => {
+        const project = mount(ui.ProjectView, { projectId: "project.failed-preparation", context: { phase: "P2", branch: "trunk", p2ProposalKey: "chosen-proposal" }, onContextChange: change => navigations.push(change) });
+        try {
+          await project.settle();
+          const preparation = find(project.tree, node => node.type === ui.MethodProposals).props.onContinue(method, "P3", { prepareRun: true });
+          await project.settle();
+          assert.equal(find(project.tree, node => node.type === ui.LaunchRun), undefined);
+          if (outcome !== "failure") {
+            project.update({ context: { phase: "P2", branch: "trunk", p2ProposalKey: "another-proposal" } }); await project.settle();
+            if (outcome === "selection-returned") {
+              project.update({ context: { phase: "P2", branch: "trunk", p2ProposalKey: "chosen-proposal" } }); await project.settle();
+            }
+            pending.resolve({ instructions: "Late directions for the abandoned selection." });
+          } else pending.reject(new Error("Preparation service unavailable."));
+          await preparation; await project.settle();
+          assert.equal(find(project.tree, node => node.type === ui.LaunchRun), undefined);
+          assert.equal(starts, 0); assert.deepEqual(navigations, []);
+          const alert = find(project.tree, node => node.props.role === "alert");
+          if (outcome !== "failure") assert.equal(alert, undefined, "A late response cannot open or alter a selected model's form, including after returning to the original selection.");
+          else assert.match(alert.props.children[0], /Saved instructions could not be loaded: Preparation service unavailable/);
+        } finally { project.unmount(); }
+      });
+    }
+  } finally { for (const name of names) { if (previous[name] === undefined) delete globalThis[name]; else globalThis[name] = previous[name]; } }
+});
+
 test("cross-phase P2 modals poll their exact target through provider retry completion and restore the view scope", async () => {
   const names = ["window", "document", "setInterval", "clearInterval"];
   const previous = Object.fromEntries(names.map((name) => [name, globalThis[name]]));
@@ -340,7 +456,7 @@ test("cross-phase P2 modals poll their exact target through provider retry compl
       const targetReadiness = () => phase === "P3"
         ? { modes: [{ mode: "p3.theory_revision", ready: published, reasons: published ? [] : ["A complete current theory package is required for this action"], basis: { sha256: published ? "target-published" : "target-before" } }] }
         : { modes: ["p4.preliminary", "p4.comprehensive"].map((mode) => readiness(mode, published ? "target-published" : "target-before", true).modes[0]) };
-      await withApi({ project: async () => ({ project: { name: "Cross-phase fixture" }, catalog: { version: "1.19.0" } }), branches: async () => ({ branches: [] }), listRuns: async () => ({ runs: [{ run_id: "run.provider-retry", phase, branch_id: method.branch_id, mode: phase === "P3" ? "p3.theory_establishment" : "p4.preliminary", state: runState }] }), artifacts: async () => ({}), decisionsPending: async () => ({}), readiness: async (_, branch, targetPhase, mode) => { checks.push({ branch, phase: targetPhase, mode }); return { ...(targetPhase === "P2" ? readiness("p2.full_catalog", "unchanged-p2-basis") : targetReadiness()), basis: { records: [targetPhase === "P2" ? viewSource : { ...viewSource, phase: targetPhase, branch: method.branch_id, generation_id: "generation.target" }], notation: { document: targetPhase === "P2" ? viewNotation : { entries: [{ entry_id: "notation.target-only" }] } } } }; }, records: async () => ({ records: [] }), assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [method] }), activateMethod: async () => ({ branch_id: method.branch_id }), startRun: async (_, payload) => { starts.push(payload); return { run_id: "run.next", phase, branch_id: method.branch_id, state: "requested" }; } }, async () => {
+      await withApi({ project: async () => ({ project: { name: "Cross-phase fixture" }, catalog: { version: "1.19.0" } }), branches: async () => ({ branches: [] }), listRuns: async () => ({ runs: [{ run_id: "run.provider-retry", phase, branch_id: method.branch_id, mode: phase === "P3" ? "p3.theory_establishment" : "p4.preliminary", state: runState }] }), artifacts: async () => ({}), decisionsPending: async () => ({}), readiness: async (_, branch, targetPhase, mode) => { checks.push({ branch, phase: targetPhase, mode }); return { ...(targetPhase === "P2" ? readiness("p2.full_catalog", "unchanged-p2-basis") : targetReadiness()), basis: { records: [targetPhase === "P2" ? viewSource : { ...viewSource, phase: targetPhase, branch: method.branch_id, generation_id: "generation.target" }], notation: { document: targetPhase === "P2" ? viewNotation : { entries: [{ entry_id: "notation.target-only" }] } } } }; }, records: async () => ({ records: [] }), assessments: async () => ({ assessments: [] }), methods: async () => ({ methods: [method] }), activateMethod: async () => ({ branch_id: method.branch_id }), phasePreparation: async () => ({ instructions: "Saved target-phase instructions.", input_ids: [] }), startRun: async (_, payload) => { starts.push(payload); return { run_id: "run.next", phase, branch_id: method.branch_id, state: "requested" }; } }, async () => {
         const project = mount(ui.ProjectView, { projectId: "project.cross-phase", context: { phase: "P2", branch: "trunk" }, onContextChange: noop, onOpenRun: noop });
         let launch;
         try {
@@ -356,6 +472,7 @@ test("cross-phase P2 modals poll their exact target through provider retry compl
           assert.deepEqual(activeReader.props.furtherWork().props.summaryContext.admittedNotation, viewNotation);
           let modal = find(project.tree, (node) => node.type === ui.LaunchRun); const exactRequest = modal.props.request;
           launch = mount(ui.LaunchRun, modal.props); await launch.settle();
+          assert.equal(find(launch.tree, (node) => node.type === "textarea").props.value, "Saved target-phase instructions.");
           find(launch.tree, (node) => node.type === "textarea").props.onChange({ target: { value: "Keep my cross-phase draft." } });
           if (phase === "P4") {
             find(launch.tree, (node) => node.props.value === "p4.comprehensive").props.onChange();
@@ -399,7 +516,7 @@ function readingReturn(further, launch) {
   let nextFrame = 0; let observer; let restored = 0;
   const pending = () => [further.tree, launch()?.tree].flatMap(nodes).some((node) => node.props["data-reading-pending"] === "true");
   const documentTop = () => 1084.9 + (launch() ? 362 : 0) + (launch() && form(launch()).props["data-reading-pending"] !== "true" ? 45 : 0);
-  globalThis.window = { scrollY: 590, innerHeight: 704, scrollTo: ({ top }) => { scrolls.push(top); globalThis.window.scrollY = top; } };
+  globalThis.window = { scrollY: 590, innerHeight: 704, addEventListener() {}, removeEventListener() {}, scrollTo: ({ top }) => { scrolls.push(top); globalThis.window.scrollY = top; } };
   globalThis.document = { body: {}, documentElement: {}, addEventListener: (_, callback) => listeners.add(callback), removeEventListener: (_, callback) => listeners.delete(callback) };
   globalThis.getComputedStyle = () => ({ visibility: "visible", display: "block" });
   globalThis.MutationObserver = class {
@@ -527,7 +644,7 @@ test("selected P2 model passes its exact source and scoped edit to the ordinary 
 test("FurtherWork carries typed questions and tasks from the exact published trunk candidate", async () => {
   const identity = { stable_id: "method.trunk-work", version: 1, definition_sha256: "a".repeat(64) };
   const source = { branch: "trunk", phase: "P2", family: "attention_items", generation_id: "attention.trunk-work", sha256: "b".repeat(64), run_id: "run.trunk-work", package_id: "package.trunk-work" };
-  const record = (kind, index, title) => ({ issue_id: `issue.trunk-work.${index}`, kind, title, phase: "P2", branch: "trunk", generation_ref: { ...source, entry_pointer: `/${index}` }, scope: { kind: "model", branch: "trunk", model_ref: identity }, explanation_target: { ...source, kind: "phase_issue", object_id: `attention.trunk-work.${index}`, entry_pointer: `/${index}` } });
+  const record = (kind, index, title) => ({ attention_id: `attention.trunk-work.${index}`, kind, title, phase: "P2", branch: "trunk", generation_ref: { ...source, entry_pointer: `/${index}` }, scope: { kind: "model", branch: "trunk", model_ref: identity }, explanation_target: { ...source, kind: "phase_issue", object_id: `attention.trunk-work.${index}`, entry_pointer: `/${index}` } });
   const question = record("researcher_decision", 0, "Is this clinical history recorded?");
   const task = record("research_task", 1, "Investigate the support check.");
   const wrongModel = { ...record("researcher_decision", 2, "Another model must remain hidden"), scope: { ...question.scope, model_ref: { ...identity, stable_id: "method.other" } } };
@@ -539,6 +656,8 @@ test("FurtherWork carries typed questions and tasks from the exact published tru
       await further.settle();
       const choices = nodes(further.tree).filter((node) => node.type === "label" && Array.isArray(node.props.children) && node.props.children[0]?.props?.type === "checkbox");
       assert.equal(choices.length, 2);
+      assert.ok(choices.every(choice => choice.key != null), "Current attention items without legacy issue_id still have mounted list identities.");
+      assert.equal(new Set(choices.map(choice => choice.key)).size, choices.length);
       assert.ok(choices[0].props.children.includes("Researcher question: ")); assert.ok(choices[1].props.children.includes("Team task: "));
       assert.ok(choices[0].props.children.includes(question.title)); assert.ok(choices[1].props.children.includes(task.title));
       const before = JSON.stringify(task); choices[1].props.children[0].props.onChange({ target: { checked: true } }); await further.settle();
@@ -767,14 +886,14 @@ test("a published model update preserves the initially resolved selection and it
       further = mount(firstCard.type, firstCard.props); await further.settle();
       const draft = "Keep the primitive-input support correction exact. ".repeat(50);
       find(further.tree, (node) => node.type === ui.LaunchRun).props.onInstructionsChange(draft); await further.settle();
-      find(reader.tree, (node) => node.type.name === "MethodReaderDisclosure" && node.props.name === "assumptions").props.onToggle(true); await reader.settle();
+      find(reader.tree, (node) => node.props.className === "p2-reading-button" && node.key === "assumptions").props.onClick({ currentTarget: null }); await reader.settle();
       const published = { ...props, methods: [catalog(correction), catalog(original)], proposals: [correction, { ...original, is_current_package: false }], comparisons: [latestComparison, { ...oldComparison, is_current_package: false }] };
       const next = methodExplorer(published);
       assert.equal(next.element.props.comparison, latestComparison, "The latest comparison still updates independently.");
       reader.update(next.element.props); await reader.settle();
       assert.equal(selection.proposal.proposal_id, original.proposal_id);
       assert.equal(find(reader.tree, (node) => node.type.name === "MethodPicker").props.value, remembered);
-      assert.equal(find(reader.tree, (node) => node.type.name === "MethodReaderDisclosure" && node.props.name === "assumptions").props.open, true);
+      assert.equal(find(reader.tree, (node) => node.type.name === "MethodReadingWindow").props.snapshot.methodTitle, "Original QLC");
       const retainedCard = find(reader.tree, (node) => node.type.name === "FurtherWork");
       assert.equal(retainedCard.key, firstCard.key, "Publication retains the mounted native disclosure rather than remounting Further work.");
       further.update(retainedCard.props); await further.settle();
@@ -810,27 +929,41 @@ test("selection persistence ignores transient empty data but resolves a genuinel
   } finally { reader.unmount(); }
 });
 
-test("P2 native disclosure state and drafts remain independent across explicit exact-model selections", async () => {
-  const proposals = ["a", "b"].map((name) => ({ proposal_id: `proposal.${name}`, role: "theorist", generation_ref: { run_id: `run.${name}` }, method: { title: `Method ${name}`, identity: { stable_id: `method.${name}`, version: 1, definition_sha256: name.repeat(64) }, summary: `Original ${name} account.` } }));
-  const readings = []; const contexts = []; const element = methodExplorer({ proposals, onReadingChange: patch => readings.push(patch), furtherWork: context => { contexts.push(context); return null; } }).element;
+test("P2 reading windows freeze exact sources while polling and selections preserve response drafts", async () => {
+  const proposals = ["a", "b"].map((name) => ({ proposal_id: `proposal.${name}`, role: "theorist", generation_ref: { run_id: `run.${name}`, generation_id: `generation.${name}` }, method: { title: `Method ${name}`, identity: { stable_id: `method.${name}`, version: 1, definition_sha256: name.repeat(64) }, assumptions: [`Original ${name} qualification.`] } }));
+  const contexts = []; const element = methodExplorer({ projectId: "project.reading", proposals, furtherWork: context => { contexts.push(context); return null; } }).element;
   const reader = mount(element.type, element.props);
-  const disclosure = name => find(reader.tree, node => node.type.name === "MethodReaderDisclosure" && node.props.name === name);
-  const picker = () => find(reader.tree, node => node.type.name === "MethodPicker");
+  const documentButton = name => find(reader.tree, node => node.props.className === "p2-reading-button" && node.key === name);
+  const window = () => find(reader.tree, node => node.type.name === "MethodReadingWindow");
   try {
     await reader.settle();
     const draftStore = contexts.at(-1).draftStore; draftStore.set("exact-question-a", "An unsent scientific response.");
-    disclosure("assumptions").props.onToggle(true); await reader.settle();
-    picker().props.onSelect("run.b:proposal.b"); await reader.settle();
-    assert.equal(disclosure("assumptions").props.open, false);
-    disclosure("review").props.onToggle(true); await reader.settle();
-    picker().props.onSelect("run.a:proposal.a"); await reader.settle();
-    assert.equal(disclosure("assumptions").props.open, true); assert.equal(disclosure("review").props.open, false);
-    assert.strictEqual(contexts.at(-1).draftStore, draftStore); assert.equal(draftStore.get("exact-question-a"), "An unsent scientific response.");
-    const saved = readings.at(-1).modelDisclosures;
-    assert.deepEqual(saved["run.a:proposal.a"], { assumptions: true }); assert.deepEqual(saved["run.b:proposal.b"], { review: true });
-    const returned = mount(element.type, { ...element.props, initialPick: "run.b:proposal.b", reading: { modelDisclosures: saved } });
-    try { await returned.settle(); assert.equal(find(returned.tree, node => node.type.name === "MethodReaderDisclosure" && node.props.name === "review").props.open, true); }
-    finally { returned.unmount(); }
+    documentButton("assumptions").props.onClick({ currentTarget: null }); await reader.settle();
+    const frozen = window().props.snapshot;
+    const originalText = JSON.stringify(frozen.body);
+    const updated = structuredClone(proposals);
+    updated[0].method.assumptions = ["A newly published qualification."];
+    updated[0].generation_ref.generation_id = "generation.new";
+    reader.update({ proposals: updated }); await reader.settle();
+    assert.strictEqual(window().props.snapshot, frozen, "Polling retains the already opened content, size and source pointers.");
+    assert.equal(JSON.stringify(window().props.snapshot.body), originalText);
+    reader.update({ proposals: [] }); await reader.settle();
+    assert.strictEqual(window().props.snapshot, frozen, "Transient empty data must not close and reopen the reading window.");
+    reader.update({ proposals: updated, initialPick: "run.b:proposal.b" }); await reader.settle();
+    assert.strictEqual(window().props.snapshot, frozen, "External selection changes do not rewrite an open document.");
+    window().props.onClose(); await reader.settle();
+    assert.equal(window(), undefined);
+    documentButton("assumptions").props.onClick({ currentTarget: null }); await reader.settle();
+    assert.equal(window().props.snapshot.methodTitle, "Method b");
+    assert.notEqual(window().props.snapshot.key, frozen.key);
+    assert.strictEqual(contexts.at(-1).draftStore, draftStore);
+    assert.equal(draftStore.get("exact-question-a"), "An unsent scientific response.");
+    window().props.onClose(); await reader.settle();
+    reader.update({ initialPick: "run.a:proposal.a" }); await reader.settle();
+    documentButton("assumptions").props.onClick({ currentTarget: null }); await reader.settle();
+    assert.notEqual(window().props.snapshot.key, frozen.key, "A different contributing publication starts its own reading position.");
+    assert.match(JSON.stringify(window().props.snapshot.body), /newly published qualification/);
+    assert.doesNotMatch(JSON.stringify(window().props.snapshot.body), /Original a qualification/);
   } finally { reader.unmount(); }
 });
 

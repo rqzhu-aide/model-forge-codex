@@ -44,7 +44,7 @@ def test_default_and_exact_appendix_scopes_preserve_report_and_sources(scoped_re
     assert 'class="report-body"' in default and 'class="report-references"' in default
     assert 'class="report-provenance"' in default
     assert '@page{size:letter;margin:1in}' in default
-    assert '#report-support-1-print:checked~.report-primary{display:none!important}' in appendix
+    assert ':has(#report-support-1-print:checked) .report-primary{display:none!important}' in appendix
     assert scoped_report[0] == before
 
 

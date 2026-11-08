@@ -74,7 +74,8 @@
     },
     "research_question": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "State the scientific question and how the measured quantity answers it. Distinguish the true target from a surrogate score, conservative certificate or numerical reference. Plan useful comparisons within the authorized scope and budget; code agreement alone does not establish usefulness."
     },
     "scope": {
       "type": "string",
@@ -433,7 +434,8 @@
         },
         "design": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Plan the informative comparison: what varies, what stays fixed, compatible targets, independent unit, comparator information and any conditional subset. Explain why the supplied generator or data can distinguish the claimed mechanism. If methods coincide in this setting, use it as a check or narrow the claim; a changed experiment follows prospective amendment and budget rules. For calibration, explain whether the design can reveal the controlled failure; never-return behavior or no relevant unsafe possibilities cannot establish broad calibration. For each planned table, identify its row comparison and fixed design descriptors for its caption or panel heading; keep varying descriptors local. Constant observed outcomes, denominators, uncertainty and undefined cells are results, not fixed design metadata."
         },
         "falsification_rule": {
           "type": "string",
@@ -461,7 +463,8 @@
         "relevance_markdown": {
           "type": "string",
           "minLength": 1,
-          "pattern": "\\S"
+          "pattern": "\\S",
+          "description": "Explain what this exact test can establish for the research goal, the needed contrast and a compact display of its evidence. Related tests may share an exhibit while retaining complete exact case/metric mappings. Choose the row comparison before the columns, placing shared design descriptors once in a caption or panel heading and keeping varying descriptors beside the affected rows."
         }
       }
     },
@@ -817,11 +820,13 @@
         },
         "name": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "The full statistical or machine-learning name of the actual measured quantity supported by definition. Keep its identity consistent in result prose, table headings and figure labels; do not infer a standard metric from an undefined score."
         },
         "definition": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Define the measured quantity, target or reference, units and scientific meaning. For selective/constrained outputs, distinguish return, constraint behavior and objective quality when relevant; no-output quality is undefined, not zero, with no invented fallback. Do not invent unavailable metrics."
         },
         "direction": {
           "type": "string",
@@ -834,11 +839,13 @@
         },
         "aggregation": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Name the population, independent unit, attempted/usable/returned denominator and any conditional subset. A paired selective-output contrast uses saved differences on the same stated subset and its count; marginal means on different returned subsets do not supply that contrast."
         },
         "uncertainty_method": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "State the uncertainty convention, including interval type, sidedness, confidence level and denominator where applicable, separately from numerical reference error. An enclosure crossing a threshold leaves classification unresolved; an estimated reference retains its statistical uncertainty. Failed computations, unknown classifications and unavailable uncertainty cannot silently become safe or successful observations or zero uncertainty."
         },
         "summary": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -850,6 +857,14 @@
             "uncertainty"
           ],
           "properties": {
+            "population": {
+              "enum": [
+                "completed",
+                "attempted"
+              ],
+              "default": "completed",
+              "description": "Choose the metric's denominator. Omit or use completed for the existing summary of finite values on completed rows, including conditional metrics whose other rows are null. Use attempted for eligible completed and failed attempts, excluding not_run and invalidated rows. Record an outcome only when known: a failure can have a known no-issuance indicator, but it does not imply zero risk, reward or coverage. For attempted summaries every included attempt must have a finite recorded value; otherwise the estimate and standard uncertainty remain unavailable. n_replicates then counts all included attempts. Custom bounds with unknown outcomes need their own stated construction."
+            },
             "aggregation": {
               "enum": [
                 "mean",
@@ -890,7 +905,8 @@
                 }
               }
             }
-          }
+          },
+          "description": "Explain this measure's scientific meaning for the target in connected prose, preserving definition and aggregation. A proposed measure is not an observed result."
         }
       }
     },

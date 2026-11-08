@@ -1,5 +1,8 @@
 """Single aliases for new reports; malformed original submissions stay reviewable."""
+import base64
+import json
 from pathlib import Path
+import re
 
 import pytest
 
@@ -59,6 +62,6 @@ def test_single_material_alias_resolves_in_portable_report_without_source_change
     before = {path: path.read_bytes() for path in (primary, artifact)}
     html = export_technical_report(report, basis, generation_ref={'generation_id': 'generation.report', 'content_sha256': 'c' * 64},
                                   artifact_roots=roots, exported_at='2026-10-13T12:00:00Z').decode('utf-8')
-    assert '<a href="data:application/json;base64,' in html
-    assert '>Paired data</a>' in html
+    link = re.search(r'<a href="data:application/json;base64,([^"]+)" download="([^"]+)">Paired data \(download \2\)</a>', html)
+    assert link and json.loads(base64.b64decode(link[1], validate=True)) == read_json(artifact)
     assert all(path.read_bytes() == data for path, data in before.items())

@@ -7,6 +7,7 @@ import IssuesCard from "../../src/components/IssuesCard";
 import AssumptionConversations from "../../src/components/AssumptionConversations";
 import { Dialog, ResearchDocument } from "../../src/components/Shared";
 import { ActionButton } from "../../src/components/Visuals";
+import ArtifactTable from "../../src/components/ArtifactTable";
 
 // Simulated browser fixture only. No research service, model, or account is used.
 const parameters = new URLSearchParams(location.search);
@@ -17,6 +18,21 @@ const reference = { branch, phase: "P4", family: "empirical_synthesis", generati
 const protocolRef = { ...reference, family: "protocol", generation_id: "protocol.simulated", sha256: "b".repeat(64) };
 const analystRef = { ...reference, family: "analyst_synthesis", generation_id: "analyst.simulated", sha256: "c".repeat(64) };
 const exhibitRef = { ...reference, family: "exhibits", generation_id: "exhibits.simulated", sha256: "d".repeat(64) };
+const notationTable = {
+  caption: "Synthetic rendering fixture: p_C is a recorded probability; quality is undefined when no output is returned. Counts retain returned / attempted denominators. The values test display only.",
+  columns: [
+    { key: "method", label: "Method" }, { key: "p_C", label: "p_C" },
+    { key: "risk", label: String.raw`Recorded $R_{\alpha}(\pi)$`, unit: String.raw`$\mathrm{mg}$` },
+    { key: "returned", label: "Returned / attempted" }, { key: "condition", label: String.raw`Synthetic condition $\alpha$` },
+    { key: "unicode", label: "μg / °C; Δ = 0.01" }, { key: "legacy", label: "Legacy scalar value" }, { key: "structured", label: "Structured source cell" },
+  ],
+  rows: Array.from({ length: 32 }, (_, index) => ({
+    method: index % 2 ? "Comparator-A" : "RL-LPM1", p_C: index === 0 ? 0 : 0.05,
+    risk: index === 0 ? "Undefined (no output)" : 0.04133735, returned: index === 0 ? "0 / 60" : "18 / 60",
+    condition: String.raw`$\alpha=0.05$; synthetic setting ${index + 1}`, unicode: "μg, β, 中文",
+    legacy: [null, false, 0, "Not applicable", "Undefined (no output)"][index % 5], structured: { p_C: 0.05, label: "$literal_in_JSON$" },
+  })),
+};
 const tableId = "table.comparison";
 const protocolUri = `run://${reference.run_id}/protocol.json`;
 const summary = {
@@ -140,6 +156,7 @@ function Preview() {
     <p>All findings, values, questions and sources on this page are simulated for browser verification. Answers remain in memory; no model, account or research service is used.</p>
     {interactiveDiscussion && <p className="note">Interactive simulated discussion uses the actual conversation component with scripted API replies. Close an unsent discussion, change the answer choice, and reopen it to inspect the retained question and current response context.</p>}
     <div className="btnrow"><ActionButton action="details" onClick={() => setDark(!dark)}>Switch to {dark ? "light" : "dark"} theme</ActionButton><ActionButton action="refresh" onClick={() => setRefreshes((count) => count + 1)}>Simulate refresh</ActionButton><label className="check-label"><input type="checkbox" checked={autoRefresh} onChange={(event) => setAutoRefresh(event.target.checked)} />Auto refresh simulated view every 3 seconds</label><span className="note" role="status">{refreshes} simulated refreshes</span></div>
+    <section className="card" id="notation-table-preview" data-card-role="research"><h2>Scientific table rendering fixture</h2><div className="body"><p>Use Tab to focus the table, arrow keys to scroll, and Next rows to inspect all 32 synthetic rows. Simulate refresh to check that the same page and scroll position remain visible.</p><ArtifactTable table={structuredClone(notationTable)} title="Synthetic scientific notation and legacy cells" /></div></section>
     <EmpiricalWorkbench branch={branch} summaries={[{ ...displayedSummary }]} questions={questions} protocols={[protocol]} exhibits={exhibits} implementations={implementations} initialTab="comparisons" onSource={showSource}
       issues={<IssuesCard title="Decisions to Discuss" projectId={projectId} phase="P4" branch={branch} issues={[issue]} answers={answers} questionsOnly onSaved={() => setAnswers([...savedAnswers])} onExplain={showDiscussion} onSource={showSource} />}
       furtherWork={<section className="card p4-further-work" data-card-role="action"><h2>Revise and Rerun</h2><div className="body"><p>This fixture previews the effective answer without starting research. A saved response appears only at its owning question above.</p><p>{answers.length ? "One simulated answer is saved for future work." : "No simulated answer has been saved."}</p><details className="research-details"><summary>Simulated save evidence</summary><pre className="record">{JSON.stringify(saves, null, 2)}</pre></details></div></section>} />

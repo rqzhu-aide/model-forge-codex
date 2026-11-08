@@ -12,11 +12,19 @@ export function coverageTab(dimension) {
   return ({ setup: "setup", synthetic_example: "setup", "synthetic example": "setup", implementation: "setup", implementation_fidelity: "setup", "implementation and portability": "setup", fidelity: "setup", performance: "comparisons", accuracy: "comparisons", uncertainty: "comparisons", "accuracy+uncertainty": "comparisons", "accuracy + uncertainty": "comparisons", computation: "computation", cost: "computation", tuning: "tuning", robustness: "sensitivity", sensitivity: "sensitivity", actual_data: "actual_data", "actual-data application": "actual_data", "actual data application": "actual_data" })[String(dimension || "").trim().toLowerCase()] || null;
 }
 const questionId = (question) => question.id || question.question_id || question.test_id;
-export function coverageForTab(coverage = [], tab, questions = []) {
-  return coverage.filter((entry) => {
-    const topic = coverageTab(entry.dimension);
-    return topic ? topic === tab : ids(entry.question_ids).some((id) => questions.some((question) => questionId(question) === id && evidenceTab(question) === tab));
-  });
+function coverageTopics(entry, questions = [], summary) {
+  const topic = coverageTab(entry.dimension);
+  if (topic) return [topic];
+  return unique(ids(entry.question_ids).flatMap((id) => {
+    const question = questions.find((question) => questionId(question) === id && (!summary || sameEvaluation(summary, question)));
+    return question ? [evidenceTab(question)] : [];
+  }));
+}
+// A freeform account can support several topics, but its unchanged prose and
+// source pointer have one primary home, in its authored question order.
+export const coverageHomeTab = (entry, questions = [], summary) => coverageTopics(entry, questions, summary)[0] || null;
+export function coverageForTab(coverage = [], tab, questions = [], summary) {
+  return coverage.filter((entry) => coverageTopics(entry, questions, summary).includes(tab));
 }
 export function questionTopics(question, coverage = []) {
   const topics = coverage.filter((entry) => ids(entry.question_ids).includes(questionId(question))).map((entry) => coverageTab(entry.dimension)).filter((topic) => topic && topic !== "actual_data");
@@ -25,6 +33,13 @@ export function questionTopics(question, coverage = []) {
 export function questionHomeTab(question, coverage = []) {
   const topics = questionTopics(question, coverage);
   return topics.includes(evidenceTab(question)) ? evidenceTab(question) : topics[0];
+}
+// Section presence follows recorded assessment and evidence, never prose. Empty
+// topics share a compact scope section; failed and inconclusive findings remain
+// in the numerical account even when coverage is marked unassessed.
+export function numericalSectionTopics(coverage = [], questions = [], routed = [], summary) {
+  const unassessed = ["not_assessed", "not_applicable", "not_evaluated"];
+  return unique(["setup", ...coverage.filter((entry) => !unassessed.includes(entry.status)).flatMap((entry) => coverageTopics(entry, questions, summary)), ...routed.map((entry) => entry.topic).filter((topic) => topic !== "other"), ...questions.filter((question) => !unassessed.includes(questionOutcome(question)) || ["failed", "cancelled"].includes(question.status)).map((question) => questionHomeTab(question, coverage))]);
 }
 export const exhibitKey = (exhibit) => JSON.stringify([exhibit.generation_ref?.run_id, exhibit.generation_ref?.package_id, exhibit.exhibit_id]);
 function mentionsExhibit(text, id) {
@@ -37,7 +52,7 @@ export const referencedCoverageExhibits = (entry, exhibits = [], summary) => exh
 // broad test/case relationship. Figures inherit only explicit data links.
 export function routeEmpiricalExhibits(exhibits = [], questions = [], coverage = [], summary) {
   const canonical = [...new Map(exhibits.map((exhibit) => [exhibitKey(exhibit), exhibit])).values()];
-  const entries = coverage.filter((entry) => coverageTab(entry.dimension) && coverageTab(entry.dimension) !== "actual_data");
+  const entries = coverage.filter((entry) => coverageHomeTab(entry, questions, summary));
   const routed = canonical.map((exhibit) => {
     const scopedEntries = !summary || sameEvaluation(summary, exhibit) ? entries : [];
     const direct = scopedEntries.find((entry) => ids(entry.exhibit_ids).includes(exhibit.exhibit_id));
@@ -48,7 +63,7 @@ export function routeEmpiricalExhibits(exhibits = [], questions = [], coverage =
     const relatedTopics = unique(related.flatMap((question) => questionTopics(question, coverage)));
     // A result explicitly cited by several questions lives with the first
     // authored question. The other questions navigate to that one saved result.
-    const topic = direct || mentioned ? coverageTab((direct || mentioned).dimension) : exactTopics.length ? exactTopics[0] : relatedTopics.length === 1 ? relatedTopics[0] : "other";
+    const topic = direct || mentioned ? coverageHomeTab(direct || mentioned, questions, summary) : exactTopics.length ? exactTopics[0] : relatedTopics.length === 1 ? relatedTopics[0] : "other";
     return { exhibit, key: exhibitKey(exhibit), topic, association: direct ? "coverage" : mentioned ? "coverage_reference" : exactQuestions.length ? "question" : related.length ? "related" : "unassigned" };
   });
   for (const entry of routed) {
@@ -96,7 +111,10 @@ export function questionDataOrigins(question = {}, cases = [], protocols = []) {
 }
 
 export function questionDataLabel(origins = []) {
-  return origins.length > 1 ? "Mixed" : DATA_VIEWS.find(([key]) => key === origins[0])?.[1] || "Other recorded evidence";
+  if (origins.length < 2) return DATA_VIEWS.find(([key]) => key === origins[0])?.[1] || "Other recorded evidence";
+  const labels = origins.map((origin) => ({ synthetic: "synthetic data", researcher_observed: "your data", external_data: "benchmark data", computational_check: "computational checks", other: "other recorded evidence" }[origin] || "other recorded evidence"));
+  const label = labels.length === 2 ? labels.join(" and ") : `${labels.slice(0, -1).join(", ")}, and ${labels.at(-1)}`;
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 export function availableDataViews(questions = [], cases = [], protocols = []) {

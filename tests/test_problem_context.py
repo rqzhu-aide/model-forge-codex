@@ -145,7 +145,7 @@ async def test_generic_context_api_cannot_edit_an_answer_mirror(direct_engine, r
         body["answer_refs"] = [{**reference, "answer_revision": 999}] if references == "forged" else [reference]
     before = {path: path.read_bytes() for path in (project / "researcher").glob("*.json")}
     app = create_app(data_root=engine.data_root, bridge=engine.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         response = await client.put("/api/v1/projects/project.direct/problem-context", json=body)
         assert response.status_code == 409, response.text
         assert "original question" in response.json()["detail"]
@@ -234,7 +234,7 @@ async def test_service_answer_projection_retains_only_exact_context_ownership(di
     third = save_scoped_answer(project, successor, "A successor answer.", expected_revision=0)
     before = engine.compute_basis("project.direct", "P2", "trunk", "p2.full_catalog")
     app = create_app(data_root=engine.data_root, bridge=engine.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         response = await client.get("/api/v1/projects/project.direct/decisions-pending")
         assert response.status_code == 200, response.text
     answers = response.json()["researcher_answers"]

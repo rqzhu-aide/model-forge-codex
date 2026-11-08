@@ -133,7 +133,7 @@ async def test_mixed_member_api_refresh_has_correct_public_provider_and_credenti
                      + custom(model="glm-test").replace("[provider]", "[members.research_lead]"))
     save(engine.data_root, configuration)
     app = create_app(engine.data_root, engine.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         response = await client.get("/api/v1/projects/project.test")
         members = response.json()["members"]
         assert "PRIVATE_PROVIDER_SECRET" not in response.text
@@ -201,7 +201,7 @@ async def test_api_refresh_and_soul_edits_show_effective_settings_without_persis
     original = read_json(stored_path)
     save(engine.data_root, custom() + '[members.theorist]\nmodel="specialist-model"\n')
     app = create_app(engine.data_root, engine.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         options = (await client.get("/api/v1/provider-options")).json()
         response = await client.get("/api/v1/projects/project.test")
         assert response.status_code == 200 and "PRIVATE_PROVIDER_SECRET" not in response.text
@@ -226,7 +226,7 @@ async def test_invalid_file_still_allows_project_read_but_refuses_new_run(workbe
     monkeypatch.delenv("MF_CODEX_READ_ONLY", raising=False)
     save(engine.data_root, '[provider]\ntype="custom"\napi_key="PRIVATE_MARKER"\n')
     app = create_app(engine.data_root, engine.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         response = await client.get("/api/v1/projects/project.test")
         assert response.status_code == 200 and response.json()["members"]
         assert response.json()["provider_config"]["error"]

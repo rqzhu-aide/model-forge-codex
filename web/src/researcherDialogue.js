@@ -9,7 +9,30 @@ export function answerContextOwner(item, answers = []) {
   return null;
 }
 
+// Confirmation accepts an account; it does not make the team its researcher
+// author. Match the confirmed revision so a later direct correction can retain
+// its own attribution. Citations and answer references alone do not name authors.
+export function contextAttribution(item, context) {
+  const confirmedProposal = context?.proposals?.some(proposal => proposal.status === "confirmed"
+    && proposal.item?.item_id === item?.item_id && proposal.confirmed_item_revision != null
+    && proposal.confirmed_item_revision === item?.revision);
+  if (confirmedProposal || ["evidence_supported", "proposed_assumption"].includes(item?.origin)) {
+    return { author: "team", confirmedByResearcher: Boolean(confirmedProposal) };
+  }
+  return { author: ["researcher_reported", "unknown"].includes(item?.origin) ? "researcher" : "unverified",
+    confirmedByResearcher: false };
+}
+
 // Scope follows exact identities, never model titles or a branch alone.
+export function contextScopeIdentity(scope) {
+  if (scope?.kind !== "model") return scope?.kind ? { kind: scope.kind } : null;
+  const model = scope.model_ref || {}, reference = model.identity || model;
+  const identity = ["stable_id", "version", "definition_sha256"].every(key => reference[key] != null)
+    ? { stable_id: reference.stable_id, version: reference.version, definition_sha256: reference.definition_sha256 }
+    : { generation_id: model.generation_id, sha256: model.sha256 || model.content_sha256 };
+  return { kind: "model", branch: scope.branch, model_ref: identity };
+}
+
 export function contextApplies(scope, branch, modelRef) {
   if (scope?.kind === "project") return true;
   if (scope?.kind !== "model" || scope.branch !== branch || !modelRef) return false;

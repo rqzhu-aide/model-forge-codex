@@ -49,13 +49,37 @@ test("P2 routes select the original proposal by producing run and model identity
   const ref = { ...source, phase: "P2", branch: "trunk", package_id: "package.original" };
   const original = { ...answer, question_ref: ref, attention: { ...issue, phase: "P2", branch: "trunk", explanation_target: ref,
     scope: { kind: "model", branch: "trunk", model_ref: { stable_id: "method.original", version: 1 } } } };
-  const proposal = (id, model, run = ref.run_id) => ({ proposal_id: id, generation_ref: { run_id: run, package_id: ref.package_id }, method: { identity: { stable_id: model } } });
+  const proposal = (id, model, run = ref.run_id) => ({ proposal_id: id, generation_ref: { run_id: run, package_id: ref.package_id }, method: { identity: { stable_id: model, version: 1 } } });
   const result = answerSourceNavigation({ projectId: "project.one", source: ref, answers: [original], proposals: [
     proposal("wrong-run", "method.original", "another.run"), proposal("wrong-model", "another.model"), proposal("original", "method.original"),
   ] });
   assert.deepEqual(result.change, { phase: "P2", p2ProposalKey: "run.original:original" });
   assert.equal(result.scope, "project.one:trunk:P2");
   assert.deepEqual(result.anchors, [phaseQuestionAnchor(original.attention)]);
+});
+
+test("synthesized saved snapshots land on the exact canonical row despite metadata order and prose changes", () => {
+  const canonical = { ...issue, scope: { kind: "project" }, title: "Canonical question", context_markdown: "Original scientific context." };
+  const snapshot = { ...canonical, title: "A shorter saved label", context_markdown: undefined, scope: { kind: "project", label: "Across models" },
+    explanation_target: { label: "Saved source metadata", ...Object.fromEntries(Object.entries(source).reverse()) } };
+  const saved = { ...answer, attention: snapshot, scope: canonical.scope };
+  const result = answerSourceNavigation({ projectId: "project.one", source: snapshot.explanation_target,
+    question: snapshot, questions: [canonical], answers: [saved] });
+  assert.deepEqual(result.anchors, [phaseQuestionAnchor(canonical)]);
+  assert.deepEqual(result.change, { phase: "P3", branch: "method.original" });
+  assert.equal(phaseQuestionAnchor(canonical), phaseQuestionAnchor(snapshot));
+});
+
+test("a linked historical snapshot follows its moved owner and retains its earlier exact-source anchor", () => {
+  const original = { ...issue, target_phase: "P4", scope: { kind: "project" } };
+  const current = { ...original, target_phase: "P3", explanation_target: { ...source, generation_id: "generation.current" } };
+  const route = answerSourceNavigation({ projectId: "project.one", source, question: original, questions: [current], answers: [{ ...answer, attention: original }] });
+  assert.deepEqual(route.change, { phase: "P3", branch: "method.original" });
+  assert.deepEqual(route.anchors, [phaseQuestionAnchor(original)]);
+  const published = { ...original, phase: "P2", branch: "trunk", target_phase: "P1", explanation_target: { ...source, phase: "P2", branch: "trunk" } };
+  const compactOwner = { ...published }; delete compactOwner.target_phase;
+  const compact = answerSourceNavigation({ projectId: "project.one", source: published.explanation_target, question: published, questions: [compactOwner] });
+  assert.deepEqual(compact.change, { phase: "P1" });
 });
 
 test("pause routes retain their individual source anchors without requiring a general question editor", () => {

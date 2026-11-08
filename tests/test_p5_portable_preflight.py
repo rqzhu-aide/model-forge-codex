@@ -37,8 +37,8 @@ def test_portable_dependency_check_follows_nested_support_and_uses_captured_capa
     findings = validate_scientific_outputs(reader, "P5", outputs, roots, frozen_basis=basis)
     assert [row.code for row in findings] == ["report.portable_unresolved"]
     assert findings[0].blocks_publication
-    assert "theory_candidate.json" in findings[0].message
-    assert "theory/theory.md" in findings[0].message
+    assert findings[0].details["linked_target"] == "theory_candidate.json"
+    assert findings[0].details["from_document"] == "theory/theory.md"
     assert "validate_artifacts" in findings[0].message
     assert report == before
 
@@ -53,7 +53,8 @@ def test_unlinked_declared_markdown_is_checked_for_separate_printing(scoped_repo
     assert validate_technical_report(outputs, basis, artifact_roots=roots) == []
     findings = validate_technical_report(outputs, basis, artifact_roots=roots, reader_report=True)
     assert [row.code for row in findings] == ["report.portable_unresolved"]
-    assert "unlinked.md" in findings[0].message and "missing.json" in findings[0].message
+    assert findings[0].details["from_document"] == "unlinked.md"
+    assert findings[0].details["linked_target"] == "missing.json"
 
 
 def test_reader_primary_math_is_checked_before_universal_newline_conversion(scoped_report):

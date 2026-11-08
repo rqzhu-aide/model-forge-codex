@@ -1,6 +1,8 @@
 # Phase 1: research setting and literature landscape
 
-Contract version: 3.9.1. Catalog: 1.30.1.
+Contract version: 3.9.7. Catalog: 1.31.13.
+
+Scientific accounts use standard statistical and machine-learning terminology for the source-defined target and quantities, preserving their definitions across summaries, comparisons, decisions and displays. The frozen [scientific-explanation reference](../references/research-presentation/scientific-explanation.md) governs this meaning; undefined measures stay unresolved rather than being renamed or calculated for presentation.
 
 ## Five-card reading contract
 
@@ -331,7 +333,7 @@ additional P2 input continues to go only to the Research Lead.
 ## Acceptance scenarios
 
 Under catalog 1.23.4, discovery collections use schema 1.2.0 and the Lead basis
-uses schema 1.3.0. Each collection may record consequential missing information
+uses schema 1.3.0. Each collection may record consequential modeling choices or missing study information
 in `proposed_questions`, with the affected point in `context_markdown`, its practical
 answer effect in `answer_consequences_markdown` and exact `source_refs`. Where
 mathematics distinguishes the proposed answers, include sufficient formulation and
@@ -413,9 +415,33 @@ The Data Analyst may inspect supplied accessible data read-only within P1 for ob
 
 ## Scientific meaning for the intended reader
 
+Also inspect the current findings and original goal for a consequential next choice the researcher owns, even when no member proposed it. In P1, this may concern the target, population, observation or information scope, or which literature-supported formulation direction to develop. Apply the same eligibility and saved-answer checks; do not select a candidate or ask prematurely for an estimator.
+
 Apply the [shared question-language guidance](researcher-question-language.md) within this phase's existing output ownership and interaction rules. It refines the existing question, context, option consequences and recommendation; it adds no artifact, questionnaire or question quota.
 
 In P1, connect a proposed question to the scientific objective, population, observation unit or intended interpretation. Do not ask for an estimator choice before the research goal calls for it.
+
+Discovery members identify literature-supported formulation alternatives before
+substantial development commits to one. The Lead considers the unit, horizon,
+outcome aggregation, information available at a decision and intended use. The
+Theorist explains definitions and structural assumptions that change the feasible
+model or policy class, target or type of result. The Data Analyst considers
+observation granularity, representation and feasible learning or estimation,
+separating unknown study facts from proposed development under a data scenario.
+Keep these proposals in the existing owned `proposed_questions`; literature
+support does not establish an unbuilt method's performance or feasibility.
+
+The synthesis Lead connects each consequential fork to the literature directions
+it changes. A choice remains eligible when every alternative fits the broad goal,
+all study facts are supplied and the team recommends one. Check instructions,
+applicable saved answers, sources and affordable analysis first. Retain distinct
+choices and facts; merge only when one answer settles both under the same target,
+population, timing, conditions and scope, preserving theoretical and computational
+consequences. Show the mathematical difference and its supplied-study meaning.
+Do not settle an unknown answer as consent or select an unbuilt candidate during
+synthesis. Continue only justified work under an explicit provisional team
+direction, within existing authority. Routine conventions remain team work;
+there is no question quota.
 
 ## Writing duties in existing outputs
 

@@ -42,6 +42,38 @@ def test_generic_supplements_preserve_verified_scoped_diagnostic_delivery():
     assert outputs == original
 
 
+def test_related_exact_tests_can_share_a_table_without_merging_result_identities():
+    catalog, outputs, _ = analyst_documents()
+    plan = outputs["p4.protocol"]
+    original_test = plan["claim_tests"][0]
+    related_test = copy.deepcopy(original_test)
+    related_test["test_id"] = "test.related_comparison"
+    plan["claim_tests"].append(related_test)
+    original_id, related_id = original_test["test_id"], related_test["test_id"]
+    for case in plan["cases"]:
+        if original_id in case["test_ids"]:
+            case["test_ids"].append(related_id)
+    for item in plan["work_items"]:
+        if original_id in item["question_ids"]:
+            item["question_ids"].append(related_id)
+    for item in [*outputs["p4.evidence"], *outputs["p4.exhibits"]]:
+        if original_id in item.get("test_ids", []):
+            item["test_ids"].append(related_id)
+    results = outputs["p4.analyst_synthesis"]["question_results"]
+    original_result = next(result for result in results if result["question_id"] == original_id)
+    related_result = copy.deepcopy(original_result)
+    related_result.update(question_id=related_id, test_ids=[related_id])
+    results.append(related_result)
+    assert original_result["exhibit_ids"] == related_result["exhibit_ids"]
+    assert not validate_scientific_outputs(catalog, "P4", outputs)
+
+    # Sharing the table does not permit collapsing the two exact test answers.
+    results.remove(related_result)
+    original_result["test_ids"].append(related_id)
+    findings = validate_scientific_outputs(catalog, "P4", outputs)
+    assert {"empirical.question_result_coverage", "empirical.question_scope"} <= {finding.code for finding in findings}
+
+
 @pytest.mark.parametrize("diagnostics", ["absent", "unrelated"])
 def test_generic_links_cannot_replace_the_comparison_questions_scoped_values(diagnostics):
     _, outputs, _ = analyst_documents()

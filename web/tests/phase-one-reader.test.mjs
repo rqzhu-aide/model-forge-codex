@@ -1,15 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { hasConciseP1Account, currentGoalSource, goalSource, goalSourceKey, goalContextTarget, goalCorrections } from "../src/phaseOneReader.js";
+import { currentGoalSource, goalSource, goalSourceKey, goalContextTarget, goalCorrections } from "../src/phaseOneReader.js";
 import { isConversationTarget, conversationDraftKey, conversationsForTarget, isEarlierConversation, assumptionSource } from "../src/assumptionConversations.js";
 
 const basis = { generation_ref: { branch: "trunk", phase: "P1", family: "research_basis", generation_id: "goal.one", sha256: "a".repeat(64), run_id: "run.one", package_id: "package.one" }, research_setting: { research_goal_markdown: "Estimate survival under each monitoring policy." } };
 const context = { dialogue_target: { kind: "project_context", project_id: "project.study", context_revision: 1, brief_revision: 1, sha256: "b".repeat(64) } };
-
-test("concise presentation follows the producing pin and never infers it from missing metadata", () => {
-  assert.equal(hasConciseP1Account({catalog_pin:{catalog_version:"1.23.0",catalog_manifest_sha256:"a".repeat(64)}}), true);
-  for (const record of [{}, {catalog_version:"1.23.0"}, {catalog_pin:{catalog_version:"1.22.2",catalog_manifest_sha256:"a".repeat(64)}}, {catalog_pin:{catalog_version:"1.23.0"}}]) assert.equal(hasConciseP1Account(record),false);
-});
 
 test("goal sources and drafts keep exact versions distinct from general context discussions", () => {
   const target = goalContextTarget(context,basis);

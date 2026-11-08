@@ -21,8 +21,8 @@ def declare(report, path, identifier, media):
 def test_export_handoff_stays_small_and_embeds_only_rendered_sources(report_case, monkeypatch):
     report, basis, roots, _ = report_case
     root = next(iter(roots.values()))
-    code = root / "source.bin"
-    code.write_bytes(bytes([0, 255, 65, 10]))
+    code = root / "source.py"
+    code.write_bytes(b"def estimate(values):\n    return sum(values) / len(values)\n")
     figure = root / "figure.svg"
     figure.write_bytes(b'<svg xmlns="http://www.w3.org/2000/svg"><text>Retained</text></svg>')
     huge = root / "unreferenced-log.bin"
@@ -31,7 +31,7 @@ def test_export_handoff_stays_small_and_embeds_only_rendered_sources(report_case
     declare(report, figure, "artifact.figure", "image/svg+xml")
     unused = declare(report, huge, "artifact.deep-log", "application/octet-stream")
     primary = root / "report.md"
-    primary.write_text(primary.read_text() + "\n\n[Source](source.bin) [Alias](artifact://artifact.source)\n\n"
+    primary.write_text(primary.read_text() + "\n\n[Source](source.py) [Alias](artifact://artifact.source)\n\n"
                        "![Retained figure](figure.svg)\n\n[Local deep logs](http://127.0.0.1:8766/api/log?path=deep&sha256=exact)\n",
                        encoding="utf-8")
     report["report_artifact"]["sha256"] = sha256_file(primary)
@@ -49,7 +49,7 @@ def test_export_handoff_stays_small_and_embeds_only_rendered_sources(report_case
         request = json.loads(kwargs["input"])
         requests.append(request)
         assert "assets" not in request
-        assert len(kwargs["input"]) < 10_000
+        assert len(kwargs["input"]) - len(request.get("reproduction_archive_base64", "")) < 10_000
         assert all(Path(source["path"]).is_absolute() and len(source["sha256"]) == 64
                    for source in request["asset_files"].values())
         return original_run([command[0], str(Path(__file__).resolve().parents[1] / "web/scripts/export-report.mjs")], **kwargs)
@@ -61,9 +61,10 @@ def test_export_handoff_stays_small_and_embeds_only_rendered_sources(report_case
         artifact_roots=roots, exported_at="2026-10-20T06:00:00Z").decode()
     assert unused["artifact_id"] in verified  # Unreferenced sources still undergo Python integrity checks.
     assert requests[0]["asset_files"][huge.name]["sha256"] == unused["sha256"]
-    assert html.count("data:application/octet-stream;base64," + base64.b64encode(code.read_bytes()).decode()) == 2
+    assert html.count("data:application/octet-stream;base64," + base64.b64encode(code.read_bytes()).decode()) == 3
     assert "data:image/svg+xml;base64," + base64.b64encode(figure.read_bytes()).decode() in html
-    assert 'href="http://127.0.0.1:8766/api/log?path=deep&amp;sha256=exact"' in html
+    assert 'Local deep logs (local source, unavailable in a shared report)' in html
+    assert 'http://127.0.0.1:8766/api/log' not in html
     assert 'class="katex"' in html and 'id="report-provenance"' in html
     assert "VU5SRUZFUkVOQ0VEX0RFRVBfTE9H" not in html
 

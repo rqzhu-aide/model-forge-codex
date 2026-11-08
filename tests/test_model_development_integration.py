@@ -61,7 +61,7 @@ async def test_early_dialogue_is_nonpublishing_and_visible_across_branches(devel
 async def test_api_direct_context_save_is_one_action_and_preserves_brief(development):
     engine, project = development
     app = create_app(data_root=engine.data_root, bridge=engine.bridge)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         before = (await client.get("/api/v1/projects/project.test/problem-context")).json()
         saved = await client.put("/api/v1/projects/project.test/problem-context", json={
             "expected_revision": before["revision"], "statement": "Visits repeat within person.",

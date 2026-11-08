@@ -1,10 +1,9 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { humanLabel, scoped } from "../research";
 import { citationLinks, filterLiterature } from "../researchContent";
-import { assessmentKey, entryIdentity, groupPaperSources, resolveLandscapeEntry } from "../literatureLandscape";
+import { assessmentKey, entryIdentity, groupPaperSources, paperReviewFindings, resolveLandscapeEntry } from "../literatureLandscape";
 import FrameworkLandscape, { ScientificReviewFindings } from "./FrameworkLandscape";
 import { Dialog, MathText, ResearchDocument, SourceRef } from "./Shared";
-import { hasConciseP1Account } from "../phaseOneReader";
 import { ActionButton, ActionIcon } from "./Visuals";
 import { landscapeRecords } from "../literatureLandscape";
 import { captureReadingPosition, restoreReadingPosition } from "../readingPosition";
@@ -13,6 +12,11 @@ import { availableFocusTarget } from "../dialogFocus";
 import { phaseInputStickyOffset } from "../phaseInputNavigation";
 import { hasSharedNotation } from "../sharedNotation";
 import { NotationContent } from "./SharedNotation";
+import { ReadingDocumentButton } from "./MethodReadingWindow";
+import { readingDocumentKey, useReadingHost } from "./ReadingHost";
+import { researchReadingSize } from "../readingSize";
+import { useReadingPosition } from "../readingWindowPosition";
+import ResearchCardLayout from "./ResearchCardLayout";
 
 const count = (value) => Array.isArray(value) ? value.length : Number.isFinite(value) ? value : null;
 export const perspective = (record) => ({ research_lead: "Research Lead", theorist: "Theorist", data_analyst: "Data Analyst" }[record.role] || { lead: "Research Lead", theory: "Theorist", empirical: "Data Analyst" }[record.family?.split(".").pop()?.split("_")[0]] || "Research assessment");
@@ -20,6 +24,70 @@ const assessmentNote = (card) => card?.assessment_predates_source_revision ? "Th
 const discoveryRoles = ["research_lead", "theorist", "data_analyst"];
 const updateDate = (record) => /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(record?.published_at || "") ? record.published_at.slice(0, 10) : null;
 const sourceMatches = (source, identity) => Boolean(source && [source.source_id, ...(source.source_ids || []), ...(source.source_aliases || [])].includes(identity));
+const frozenCopy = value => JSON.parse(JSON.stringify(value));
+const paperReference = card => ({ ...card.generation_ref, entry_pointer: card.entry_pointer, card_id: card.entry_pointer ? undefined : card.card_id });
+const historyReadingText = (source, selected, review) => [source.search_provenance?.map(search => [search.search_source, search.query, search.searched_at?.slice(0, 10)].filter(Boolean).join(" · ")), selected?.assessment_history?.map(card => [card.lead_revision?.correction?.reason_markdown, card.lead_revision?.correction?.evidence_locations, card.explanation_markdown, card.relevance_markdown, card.limitations_markdown, card.reading_extent, card.formulation_markdown, card.evidence_locations, paperReviewFindings(review, card).map(({ finding }) => [finding.assessment_markdown, finding.evidence_locations])])];
+
+function ExactCitedPaperDialog({ citation, source, onSource, onNavigate, onClose }) {
+  const host = useReadingHost(); const bodyRef = useRef(null);
+  const key = readingDocumentKey(host.scope, "exact-cited-paper", [citation.basis?.generation_ref, citation.entry_ref, citation.card.generation_ref]);
+  const { save } = useReadingPosition({ key, bodyRef });
+  return <Dialog title="Exact cited paper assessment" subtitle={citation.bibliography?.title} onClose={() => { save(); onClose(); }} returnFocus={citation.origin?.element} bodyRef={bodyRef} onBodyScroll={save}>
+    <SelectedPaper source={{ ...source, ...citation.bibliography, source_id: citation.canonical_source_id, cards: [citation.card] }} initialSelection={{ exactCard: citation.card }} review={citation.basis?.scientific_review} onSource={onSource} allowReaders={false} />
+    {onNavigate && <ActionButton action="details" onClick={() => onNavigate(citation, { ...citation.origin, basis: citation.basis })}>Open in Explore Individual Papers</ActionButton>}
+  </Dialog>;
+}
+
+function PaperHistory({ source, selected, review, onSource }) {
+  return <>{source.search_provenance?.map((search, i) => <p className="note" key={i}>{[search.search_source, search.query, search.searched_at?.slice(0, 10)].filter(Boolean).join(" · ")}</p>)}{selected?.assessment_history?.map((card, i) => <details key={i} className="research-details"><summary>{perspective(card)} · {card.lead_revision ? "earlier lead revision" : "original submission"}</summary><PaperAssessment card={card} review={review} onSource={onSource} allowReaders={false} /></details>)}</>;
+}
+
+function ApproachSupport({ basis, sources = [], record, itemId, onOpenCitation, onOpenEvidence }) {
+  const cited = (text, section) => <CitedResearchDocument {...{ basis, onOpenCitation, text, section }} />;
+  return <>{cited(record.formulation_markdown, `${itemId}:formulation`)}
+    {record.assumptions_markdown && <><h4>Assumptions</h4>{cited(record.assumptions_markdown, `${itemId}:assumptions`)}</>}
+    {record.limitations?.length > 0 && cited(record.limitations, `${itemId}:limits`)}
+    {(record.entry_refs || []).map((reference, index) => { const match = resolveLandscapeEntry(sources, reference); const citation = basis?.citations?.find(entry => Object.entries(reference).every(([key, value]) => entry.entry_ref?.[key] === value)); const anchor = `approach-evidence:${basis?.generation_ref?.generation_id}:${itemId}:${index}`; return citation ? <LiteratureCitation key={index} citation={citation} label={citation.bibliography?.title || "Supporting paper"} anchor={anchor} onOpen={(entry, origin) => onOpenCitation?.(entry, { ...origin, basis })} /> : match && onOpenEvidence ? <ActionButton key={index} action="source" data-reading-anchor={anchor} onClick={() => onOpenEvidence(match, { id: itemId, record, anchor })}>{match.source.title || "Supporting assessment"}</ActionButton> : <p key={index} className="note">Exact supporting assessment unavailable here. Inspect the complete source.</p>; })}
+  </>;
+}
+
+function CommonAssumptions({ basis, onOpenCitation }) {
+  const records = landscapeRecords(basis.landscape);
+  return basis.landscape.common_assumptions.map(item => <article className="overview-assumption" key={item.assumption_id}>
+    <h4>{item.title}</h4><CitedResearchDocument basis={basis} onOpenCitation={onOpenCitation} text={item.statement_markdown} section={`${item.assumption_id}:statement`} />
+    {item.landscape_item_ids?.length > 0 && <p className="note">Used by: {item.landscape_item_ids.map(key => records.find(entry => entry.id === key)?.record.title || "Unavailable formulation").join(", ")}</p>}
+    <CitedResearchDocument basis={basis} onOpenCitation={onOpenCitation} text={item.project_fit_markdown} section={`${item.assumption_id}:fit`} />
+    <div className="assumption-citations">{item.citation_ids?.map(sourceId => { const citation = basis.citations?.find(entry => entry.source_id === sourceId); const source = citation?.bibliography; return <LiteratureCitation key={sourceId} citation={citation} label={source ? `${source.authors?.[0] || source.title}, ${source.year || "date unavailable"}` : sourceId} anchor={`citation:${basis.generation_ref?.generation_id}:${item.assumption_id}:${sourceId}`} onOpen={(entry, origin) => onOpenCitation?.(entry, { ...origin, basis })} />; })}</div>
+  </article>);
+}
+
+// Each body owns its exact citation dialog. Following a citation leaves the
+// supporting document mounted, so closing the paper returns to the same text.
+export function LiteratureSupportingDocument({ document, onSource, onNavigate }) {
+  const [citation, setCitation] = useState(null);
+  const openCitation = (entry, origin) => setCitation({ ...entry, basis: origin.basis || document.basis, origin });
+  const { kind, card, basis, source, selected, review } = document;
+  let body;
+  if (kind === "paper-math") body = <>{card.reading_extent && <p className="note">Reading basis: {card.reading_extent}</p>}<ResearchDocument text={card.formulation_markdown} /><SourceRef reference={paperReference(card)} onOpen={onSource} label="Original member record" /></>;
+  else if (kind === "paper-evidence") body = <><ResearchDocument text={card.evidence_locations} /><SourceRef reference={paperReference(card)} onOpen={onSource} label="Original member record" /></>;
+  else if (kind === "paper-history") body = <PaperHistory {...{ source, selected, review, onSource }} />;
+  else if (kind === "approach") body = <ApproachSupport {...document} onOpenCitation={openCitation} onOpenEvidence={(match, origin) => openCitation({ status: "available", canonical_source_id: match.source.source_id, bibliography: match.card.source || match.source, card: match.card, entry_ref: entryIdentity(match.card) }, { ...origin, basis, paperMatch: match })} />;
+  else if (kind === "common-assumptions") body = <CommonAssumptions {...{ basis }} onOpenCitation={openCitation} />;
+  else body = <CitedResearchDocument {...{ basis }} text={basis.coverage_limits} section="coverage-limits" onOpenCitation={openCitation} />;
+  const citedSource = citation && (document.sources || []).find(item => sourceMatches(item, citation.canonical_source_id));
+  return <>{body}{citation && <ExactCitedPaperDialog {...{ citation, onSource, onNavigate }} source={citedSource} onClose={() => setCitation(null)} />}</>;
+}
+
+function openLiteratureReader(host, title, document, text, trigger, onSource, onNavigate) {
+  const frozen = frozenCopy(document);
+  const identity = card => card && [card.generation_ref, entryIdentity(card)];
+  const sources = [frozen.basis?.generation_ref, frozen.itemId, identity(frozen.card), identity(frozen.selected),
+    frozen.source?.source_id, frozen.source?.search_provenance, frozen.review, frozen.selected?.assessment_history?.map(identity),
+    frozen.sources?.map(source => [source.source_id, source.cards?.map(identity)])];
+  host.open({ key: readingDocumentKey(host.scope, document.kind, sources), title,
+    subtitle: document.card?.source?.title || document.source?.title || document.record?.title,
+    size: researchReadingSize(text), body: <LiteratureSupportingDocument document={frozen} onSource={onSource} onNavigate={onNavigate ? (entry, origin) => { host.close(); onNavigate(entry, origin); } : undefined} /> }, trigger);
+}
 
 function focusSelectedPaper(target) {
   if (!availableFocusTarget(target)) return;
@@ -79,22 +147,38 @@ export function LiteratureCoverage({ collections = [], onSource }) {
   </>;
 }
 
-export function PaperAssessment({ card, review, onSource }) {
-  const concise = hasConciseP1Account(card);
-  const explanation = <>{(card.explanation_markdown || card.innovation) && <><h4>Contribution, theory and computation</h4><ResearchDocument text={card.explanation_markdown || card.innovation} /></>}{card.relevance_markdown && <><h4>Relevance to this setting</h4><ResearchDocument text={card.relevance_markdown} /></>}{(card.limitations_markdown || card.evaluation) && <><h4>Strengths and limitations</h4><ResearchDocument text={card.limitations_markdown || card.evaluation} /></>}</>;
+function PaperSupportingReading({ card, onSource }) {
+  const host = useReadingHost();
+  const mathText = [card.reading_extent, card.formulation_markdown];
+  return <>
+    {(mathText.some(Boolean) || card.evidence_locations?.length > 0) && <div className="p2-reading-links">
+      {mathText.some(Boolean) && <ReadingDocumentButton title="Full mathematics and reading basis" size={researchReadingSize(mathText)} onClick={event => openLiteratureReader(host, "Full mathematics and reading basis", { kind: "paper-math", card }, mathText, event.currentTarget, onSource)} />}
+      {card.evidence_locations?.length > 0 && <ReadingDocumentButton title="Evidence locations" sizeLabel={`${card.evidence_locations.length} recorded ${card.evidence_locations.length === 1 ? "location" : "locations"}`} onClick={event => openLiteratureReader(host, "Evidence locations", { kind: "paper-evidence", card }, card.evidence_locations, event.currentTarget, onSource)} />}
+    </div>}
+    <SourceRef reference={card.generation_ref} onOpen={onSource ? (reference) => onSource({ ...reference, entry_pointer: card.entry_pointer, card_id: card.entry_pointer ? undefined : card.card_id }) : undefined} label="Original member record" />
+  </>;
+}
+
+export function PaperAssessment({ card, review, onSource, allowReaders = true, showResources = true }) {
+  const host = useReadingHost();
+  const readers = allowReaders && Boolean(host.scope.projectId);
+  const mathematics = card.formulation_markdown;
+  const explanation = <>{card.explanation_markdown && <><h4>Contribution, theory and computation</h4><ResearchDocument text={card.explanation_markdown} /></>}{card.relevance_markdown && <><h4>Relevance to this setting</h4><ResearchDocument text={card.relevance_markdown} /></>}{card.limitations_markdown && <><h4>Strengths and limitations</h4><ResearchDocument text={card.limitations_markdown} /></>}</>;
   return <div className="literature-assessment">
     {card.lead_revision && <div className="paper-revision"><p className="note">Originally authored by {perspective(card)} · Revised by Research Lead.</p><details className="research-details"><summary>Reason and source evidence for this revision</summary><ResearchDocument text={card.lead_revision.correction?.reason_markdown} />{card.lead_revision.correction?.evidence_locations?.length > 0 && <ResearchDocument text={card.lead_revision.correction.evidence_locations} />}<SourceRef reference={card.lead_revision.generation_ref} onOpen={onSource ? (reference) => onSource({ ...reference, entry_pointer: card.lead_revision.entry_pointer }) : undefined} label="Lead correction record" /></details></div>}
     {assessmentNote(card) && <p className="note warn">{assessmentNote(card)}</p>}
     {card.from_earlier_run && <p className="note">Recorded in an earlier literature update.</p>}
-    {concise ? explanation : <details className="research-details" data-reading-anchor={`legacy-assessment:${card.entry_sha256 || card.entry_id || card.card_id}`}><summary>Read the earlier member assessment</summary>{explanation}</details>}
-    <details className="research-details" data-reading-anchor={`paper-math:${card.entry_sha256 || card.entry_id || card.card_id}`}><summary>Full mathematics and reading basis</summary>{card.reading_extent && <p className="note">Reading basis: {card.reading_extent}</p>}{(card.formulation_markdown || card.definition) && <ResearchDocument text={card.formulation_markdown || card.definition} />}</details>
+    {explanation}
+    {readers && showResources && <PaperSupportingReading {...{ card, onSource }} />}
+    {!readers && (mathematics || card.reading_extent) && <details className="research-details" data-reading-anchor={`paper-math:${card.entry_sha256 || card.entry_id || card.card_id}`}><summary>Full mathematics and reading basis</summary>{card.reading_extent && <p className="note">Reading basis: {card.reading_extent}</p>}{mathematics && <ResearchDocument text={mathematics} />}</details>}
     <ScientificReviewFindings review={review} card={card} />
-    {card.evidence_locations?.length > 0 && <details className="research-details" data-reading-anchor={`assessment-evidence:${card.entry_sha256 || card.entry_id || card.card_id}`}><summary>Evidence locations</summary><ResearchDocument text={card.evidence_locations} /></details>}
-    <SourceRef reference={card.generation_ref} onOpen={onSource ? (reference) => onSource({ ...reference, entry_pointer: card.entry_pointer, card_id: card.entry_pointer ? undefined : card.card_id }) : undefined} label="Original member record" />
+    {!readers && card.evidence_locations?.length > 0 && <details className="research-details" data-reading-anchor={`assessment-evidence:${card.entry_sha256 || card.entry_id || card.card_id}`}><summary>Evidence locations</summary><ResearchDocument text={card.evidence_locations} /></details>}
+    {!readers && <SourceRef reference={card.generation_ref} onOpen={onSource ? (reference) => onSource({ ...reference, entry_pointer: card.entry_pointer, card_id: card.entry_pointer ? undefined : card.card_id }) : undefined} label="Original member record" />}
   </div>;
 }
 
-export function SelectedPaper({ source, review, initialSelection, focusRef, onSource, onSelection, readingId }) {
+export function SelectedPaper({ source, review, initialSelection, focusRef, onSource, onSelection, readingId, allowReaders = true }) {
+  const host = useReadingHost();
   const assessments = source.cards || (source.card ? [source.card] : []); const [member, setMember] = useState(initialSelection?.assessmentKey || ""); const id = useId();
   const resolvedMember = initialSelection?.assessmentKey;
   useEffect(() => { if (resolvedMember) setMember(resolvedMember); }, [resolvedMember]);
@@ -102,17 +186,25 @@ export function SelectedPaper({ source, review, initialSelection, focusRef, onSo
     || assessments.find((card) => card.role === initialSelection?.exactCard?.role) || assessments[0];
   const referencedHistory = selected && assessmentKey(selected) === initialSelection?.assessmentKey ? initialSelection.historyIndex : null;
   const exact = initialSelection?.exactCard || (referencedHistory != null ? selected?.assessment_history?.[referencedHistory] : selected);
+  const readers = allowReaders && Boolean(host.scope.projectId);
   const bibliography = exact?.source || source;
   const links = citationLinks(bibliography);
+  const paperLinks = links.length > 0 && <div className="btnrow">{links.map((link) => <a key={link.href} className="source-link ui-action" data-action="source" data-ui-role="system" href={link.href} target="_blank" rel="noreferrer"><ActionIcon name="source" />{link.label}</a>)}</div>;
+  const history = (source.search_provenance?.length > 0 || selected?.assessment_history?.length > 0) && (readers
+    ? <ReadingDocumentButton title="Original submissions, revision history and search provenance" size={researchReadingSize(historyReadingText(source, selected, review))} onClick={event => openLiteratureReader(host, "Original submissions, revision history and search provenance", { kind: "paper-history", source, selected, review }, historyReadingText(source, selected, review), event.currentTarget, onSource)} />
+    : <details className="research-details"><summary>Original submissions, revision history and search provenance</summary><PaperHistory {...{ source, selected, review, onSource }} /></details>);
+  const resources = readers && (paperLinks || exact || history) ? <section className="research-resource-group"><h3>Supporting reading</h3>{paperLinks}{exact && <PaperSupportingReading card={exact} onSource={onSource} />}{history}</section> : null;
   return <article className="literature-entry selected-paper" ref={focusRef} tabIndex={-1} data-reading-anchor={`paper:${readingId || source.source_id}`} aria-label={`Selected paper: ${bibliography.title || "Untitled source"}`}><div className="section-heading"><h3>{bibliography.title || "Untitled source"}</h3>{source.source_status && source.source_status !== "active" && <span className={`pill ${["withdrawn", "retracted"].includes(source.source_status) ? "fail" : "warn"}`}>{humanLabel(source.source_status)}</span>}</div>
     <p className="literature-citation">{[bibliography.authors?.join(", "), bibliography.year, bibliography.venue].filter(Boolean).join(" · ")}</p>
     {source.status_reason && <p className="note warn">{source.status_reason}</p>}
     {source.landscape_reason && <p className="note">{humanLabel(source.landscape_status)}: {source.landscape_reason}</p>}
-    <div className="btnrow">{links.map((link) => <a key={link.href} className="source-link ui-action" data-action="source" data-ui-role="system" href={link.href} target="_blank" rel="noreferrer"><ActionIcon name="source" />{link.label}</a>)}</div>
+    {!readers && paperLinks}
     {assessments.length > 1 ? <div className="field member-selector"><label htmlFor={`${id}-member`}>Member assessment</label><select id={`${id}-member`} value={assessmentKey(selected, 0)} onChange={(event) => { setMember(event.target.value); const card = assessments.find((item, i) => assessmentKey(item, i) === event.target.value); if (card) onSelection?.({ sourceId: source.source_id, reference: entryIdentity(card), memberKey: event.target.value }); }}>{assessments.map((card, i) => <option key={assessmentKey(card, i)} value={assessmentKey(card, i)}>{perspective(card)}{card.lead_revision ? " · Lead revised" : ""}</option>)}</select></div> : selected && <p className="note">{perspective(selected)}</p>}
     {(initialSelection?.exactCard || referencedHistory != null) && <div className="exact-assessment-note"><p className="note">Showing {perspective(exact)}'s exact assessment used by this literature finding.</p>{onSelection && selected && <ActionButton action="details" variant="link" onClick={() => onSelection({ sourceId: source.source_id, reference: entryIdentity(selected), memberKey: assessmentKey(selected) })}>Read current member assessment</ActionButton>}</div>}
-    {exact ? <PaperAssessment card={exact} review={review} onSource={onSource} /> : <p className="note">Bibliographic record retained; no member assessment is linked to this source.</p>}
-    {(source.search_provenance?.length > 0 || selected?.assessment_history?.length > 0) && <details className="research-details"><summary>Original submissions, revision history and search provenance</summary>{source.search_provenance?.map((search, i) => <p className="note" key={i}>{[search.search_source, search.query, search.searched_at?.slice(0, 10)].filter(Boolean).join(" · ")}</p>)}{selected?.assessment_history?.map((card, i) => <details key={i} className="research-details"><summary>{perspective(card)} · {card.lead_revision ? "earlier lead revision" : "original submission"}</summary><PaperAssessment card={card} review={review} onSource={onSource} /></details>)}</details>}
+    <ResearchCardLayout resources={resources} label="Selected paper supporting reading">
+      {exact ? <PaperAssessment card={exact} review={review} onSource={onSource} allowReaders={allowReaders} showResources={!readers} /> : <p className="note">Bibliographic record retained; no member assessment is linked to this source.</p>}
+      {!readers && history}
+    </ResearchCardLayout>
   </article>;
 }
 
@@ -127,37 +219,41 @@ export function LiteratureTabs({ id, selected, onSelect }) {
   return <div className="phase-reader-tabs p1-reader-tabs" role="tablist" aria-label="Literature sections">{literatureTabs.map(([key, label], index) => <button type="button" key={key} id={`${id}-tab-${key}`} role="tab" aria-selected={selected === key} aria-controls={`${id}-panel-${key}`} tabIndex={selected === key ? 0 : -1} onClick={() => onSelect(key)} onKeyDown={(event) => move(event, index)}>{label}</button>)}</div>;
 }
 
-export function MainFindings({ basis, onSource, onOpenCitation, embedded = false, children, sources = [], onOpenEvidence }) {
+export function MainFindings({ basis, onSource, onOpenCitation, embedded = false, children, sources = [], onOpenEvidence, onExplorePapers, onExploreFrameworks }) {
+  const host = useReadingHost();
   const id = useId(); const landscape = basis?.landscape || {}; const records = landscapeRecords(landscape);
   const approachScope = basis?.generation_ref?.generation_id || basis?.generation_ref?.package_id || basis?.generation_ref?.run_id || "unpublished";
   const selected = (landscape.overview_item_ids || []).map((key) => records.find((item) => item.id === key)).filter(Boolean);
   const Heading = embedded ? "h3" : "h2";
-  const concise = hasConciseP1Account(basis);
+  const readers = !embedded && Boolean(host.scope.projectId);
   const cited = (text, section) => <CitedResearchDocument {...{ basis, onOpenCitation, text, section }} />;
+  const approachReading = readers ? selected.filter(({ record }) => record.formulation_markdown || record.assumptions_markdown || record.limitations?.length || record.entry_refs?.length) : [];
+  const resources = !embedded && (basis?.generation_ref || approachReading?.length || readers && (landscape.common_assumptions?.length || basis?.coverage_limits?.length)) ? <section className="research-resource-group">
+    <h3>Supporting reading</h3>
+    {approachReading?.map(({ id: itemId, record }) => <section className="research-resource-group" key={`${approachScope}:${itemId}`}><h4>{record.title}</h4>
+      <ReadingDocumentButton title="Mathematics, assumptions and evidence" size={researchReadingSize([record.formulation_markdown, record.assumptions_markdown, record.limitations])} onClick={event => openLiteratureReader(host, "Mathematics, assumptions and evidence", { kind: "approach", basis, sources, record, itemId }, [record.formulation_markdown, record.assumptions_markdown, record.limitations], event.currentTarget, onSource, onOpenCitation)} />
+    </section>)}
+    {readers && landscape.common_assumptions?.length > 0 && <ReadingDocumentButton title="Common assumptions and project fit" size={researchReadingSize(landscape.common_assumptions.map(item => [item.title, item.statement_markdown, item.project_fit_markdown]))} onClick={event => openLiteratureReader(host, "Common assumptions and project fit", { kind: "common-assumptions", basis, sources }, landscape.common_assumptions.map(item => [item.title, item.statement_markdown, item.project_fit_markdown]), event.currentTarget, onSource, onOpenCitation)} />}
+    {readers && basis?.coverage_limits?.length > 0 && <ReadingDocumentButton title="Review scope and limits" size={researchReadingSize(basis.coverage_limits)} onClick={event => openLiteratureReader(host, "Review scope and limits", { kind: "coverage", basis, sources }, basis.coverage_limits, event.currentTarget, onSource, onOpenCitation)} />}
+    <SourceRef reference={basis?.generation_ref} onOpen={onSource} label="Research basis source" />
+  </section> : null;
+  const actions = !embedded && (onExplorePapers || onExploreFrameworks && basis?.landscape) ? <section><h3>Explore the literature</h3><div className="btnrow">{onExplorePapers && <ActionButton action="details" onClick={onExplorePapers}>Individual papers</ActionButton>}{onExploreFrameworks && basis?.landscape && <ActionButton action="details" onClick={onExploreFrameworks}>Framework map</ActionButton>}</div></section> : null;
+  const account = <>
+    {landscape.summary_markdown ? cited(landscape.summary_markdown, "summary") : <p className="note">The team's literature findings will appear here after publication.</p>}
+    {selected.length > 0 && <section className="scientific-passage"><h3>Relevant approaches</h3>{selected.map(({ id: itemId, record }) => <article key={`${approachScope}:${itemId}`} className={`overview-object relevance-${record.project_relevance || "unspecified"}`} data-reading-anchor={`approach:${approachScope}:${itemId}`}>
+      <details className="overview-approach" data-reading-anchor={`approach-account:${approachScope}:${itemId}`}>
+        <summary><h4>{record.title}{record.project_relevance && <span className="relevance-label">{({ direct: "Closely related", conditional: "Conditional fit", background: "Background" })[record.project_relevance]}</span>}</h4></summary>
+        {record.explanation_markdown && cited(record.explanation_markdown, `${itemId}:explanation`)}{record.relevance_reason_markdown && cited(record.relevance_reason_markdown, `${itemId}:fit`)}
+        {!readers && <details className="research-details" data-reading-anchor={`approach-detail:${approachScope}:${itemId}`}><summary>Mathematics, assumptions and evidence</summary><ApproachSupport {...{ basis, sources, record, itemId, onOpenCitation, onOpenEvidence }} /></details>}
+      </details>
+      {record.support_status && record.support_status !== "source_supported" && <p className="note overview-support">Source support: {humanLabel(record.support_status)}.</p>}
+    </article>)}</section>}
+    {!readers && landscape.common_assumptions?.length > 0 && <details className="research-details" data-reading-anchor="common-assumptions"><summary>Common assumptions and project fit</summary><CommonAssumptions {...{ basis, onOpenCitation }} /></details>}
+    {!readers && basis?.coverage_limits?.length > 0 && <details className="research-details" data-reading-anchor="coverage-limits"><summary>Review scope and limits</summary>{cited(basis.coverage_limits, "coverage-limits")}</details>}
+  </>;
   return <section className={embedded ? "historical-findings" : "card literature-overview-card"} data-card-role="summary" data-reading-anchor={embedded ? `findings:${basis?.generation_ref?.generation_id}` : "main-findings"} aria-labelledby={`${id}-overview`}>
-    <div className={embedded ? "section-heading" : "card-heading"}><Heading id={`${id}-overview`}>Main Findings</Heading>{basis && <SourceRef reference={basis.generation_ref} onOpen={onSource} label="Research basis source" />}</div><div className={embedded ? undefined : "body"}>
-      {landscape.summary_markdown ? concise || embedded ? cited(landscape.summary_markdown, "summary") : <details className="research-details" data-reading-anchor="earlier-synthesis"><summary>Read the earlier literature synthesis</summary>{cited(landscape.summary_markdown, "summary")}</details> : <p className="note">The team's literature findings will appear here after publication.</p>}
-      {selected.length > 0 && <section className="scientific-passage"><h3>Relevant approaches</h3>{selected.map(({ id: itemId, record }) => <article key={`${approachScope}:${itemId}`} className={`overview-object relevance-${record.project_relevance || "unspecified"}`} data-reading-anchor={`approach:${approachScope}:${itemId}`}>
-        <details className="overview-approach" data-reading-anchor={`approach-account:${approachScope}:${itemId}`}>
-          <summary><h4>{record.title}{record.project_relevance && <span className="relevance-label">{({ direct: "Closely related", conditional: "Conditional fit", background: "Background" })[record.project_relevance]}</span>}</h4></summary>
-        {concise && <>{record.explanation_markdown && cited(record.explanation_markdown, `${itemId}:explanation`)}{record.relevance_reason_markdown && cited(record.relevance_reason_markdown, `${itemId}:fit`)}</>}
-        <details className="research-details" data-reading-anchor={`approach-detail:${approachScope}:${itemId}`}><summary>{concise ? "Mathematics, assumptions and evidence" : "Read the earlier mathematical account"}</summary>
-          {cited(record.formulation_markdown, `${itemId}:formulation`)}{!concise && <>{cited(record.explanation_markdown, `${itemId}:explanation`)}{cited(record.relevance_reason_markdown, `${itemId}:fit`)}</>}
-          {record.assumptions_markdown && <><h4>Assumptions</h4>{cited(record.assumptions_markdown, `${itemId}:assumptions`)}</>}
-          {record.limitations?.length > 0 && cited(record.limitations, `${itemId}:limits`)}
-          {(record.entry_refs || []).map((reference, index) => { const match = resolveLandscapeEntry(sources, reference); const citation = basis?.citations?.find(entry => Object.entries(reference).every(([key,value]) => entry.entry_ref?.[key] === value)); const anchor = `approach-evidence:${basis?.generation_ref?.generation_id}:${itemId}:${index}`; return citation ? <LiteratureCitation key={index} citation={citation} label={citation.bibliography?.title || "Supporting paper"} anchor={anchor} onOpen={(entry, origin) => onOpenCitation?.(entry, { ...origin, basis })} /> : match && onOpenEvidence ? <ActionButton key={index} action="source" data-reading-anchor={anchor} onClick={() => onOpenEvidence(match, { id: itemId, record, anchor })}>{match.source.title || "Supporting assessment"}</ActionButton> : <p key={index} className="note">Exact supporting assessment unavailable here. Inspect the complete source.</p>; })}
-        </details>
-        </details>
-        {record.support_status && record.support_status !== "source_supported" && <p className="note overview-support">Source support: {humanLabel(record.support_status)}.</p>}
-      </article>)}</section>}
-      {landscape.common_assumptions?.length > 0 && <details className="research-details" data-reading-anchor="common-assumptions"><summary>Common assumptions and project fit</summary>{landscape.common_assumptions.map((item) => <article className="overview-assumption" key={item.assumption_id}>
-        <h4>{item.title}</h4><CitedResearchDocument basis={basis} onOpenCitation={onOpenCitation} text={item.statement_markdown} section={`${item.assumption_id}:statement`} />
-        {item.landscape_item_ids?.length > 0 && <p className="note">Used by: {item.landscape_item_ids.map((key) => records.find((entry) => entry.id === key)?.record.title || "Unavailable formulation").join(", ")}</p>}
-        <CitedResearchDocument basis={basis} onOpenCitation={onOpenCitation} text={item.project_fit_markdown} section={`${item.assumption_id}:fit`} />
-        <div className="assumption-citations">{item.citation_ids?.map((sourceId) => { const citation = basis?.citations?.find((entry) => entry.source_id === sourceId); const source = citation?.bibliography; return <LiteratureCitation key={sourceId} citation={citation} label={source ? `${source.authors?.[0] || source.title}, ${source.year || "date unavailable"}` : sourceId} anchor={`citation:${basis?.generation_ref?.generation_id}:${item.assumption_id}:${sourceId}`} onOpen={(entry, origin) => onOpenCitation?.(entry, { ...origin, basis })} />; })}</div>
-      </article>)}</details>}
-      {basis && !Object.hasOwn(landscape, "overview_item_ids") && <p className="note">This earlier account has no authored overview selection or shared-assumption summary. Its original mathematical records remain available below.</p>}
-      {basis?.coverage_limits?.length > 0 && <details className="research-details" data-reading-anchor="coverage-limits"><summary>Review scope and limits</summary>{cited(basis.coverage_limits, "coverage-limits")}</details>}
+    <div className={embedded ? "section-heading" : "card-heading"}><Heading id={`${id}-overview`}>Main Findings</Heading>{embedded && basis && <SourceRef reference={basis.generation_ref} onOpen={onSource} label="Research basis source" />}</div><div className={embedded ? undefined : "body"}>
+      {embedded ? account : <ResearchCardLayout actions={actions} actionsLabel="Literature findings actions" resources={resources} label="Literature findings supporting reading">{account}</ResearchCardLayout>}
       {children}
     </div>
   </section>;
@@ -249,6 +345,7 @@ export default function LiteratureWorkspace({ libraries = [], basis, bases = [],
     setOrigin(selection ? { id: selection.id, title: selection.record.title, ...(selection.anchor ? { anchor: selection.anchor } : {}), position: captureReadingPosition(root.current) } : null); setSelectionCount((value) => value + 1);
   };
   const openCitation = (entry, invocation) => {
+    if (invocation.paperMatch) { openEvidence(invocation.paperMatch, invocation); return; }
     const fromNotation = invocation.notation;
     setOrigin({ kind: "citation", id: entry.source_id, title: invocation.label, anchor: invocation.anchor,
       position: fromNotation ? notation.position : captureReadingPosition(root.current),
@@ -258,12 +355,14 @@ export default function LiteratureWorkspace({ libraries = [], basis, bases = [],
     setEntrySelection({ sourceId: entry.canonical_source_id, reference: entry.entry_ref, citationBasisId: invocation.basis?.generation_ref?.generation_id });
     setSelectionCount((value) => value + 1);
   };
+  const explorePapers = () => { const target = globalThis.document?.getElementById(`${id}-search`); if (target) { target.scrollIntoView({ block: "center" }); target.focus({ preventScroll: true }); } };
+  const exploreFrameworks = () => { setFrameworkExpanded(true); const summary = root.current?.querySelector('[data-reading-anchor="framework-map"] > summary'); if (summary) { summary.scrollIntoView({ block: "center" }); summary.focus({ preventScroll: true }); } };
   const renderDocument = (text, section) => <CitedResearchDocument {...{ text, section, basis, onOpenCitation: openCitation }} />;
   return <div className="literature-reading" ref={root}>
     {typeof setting === "function" ? setting({ renderDocument, onNotation: () => setNotation({ basis, position: captureReadingPosition(root.current) }) }) : setting}
-    <MainFindings {...{ basis, onSource, sources }} onOpenCitation={openCitation} onOpenEvidence={openEvidence}>
+    <MainFindings {...{ basis, onSource, sources }} onOpenCitation={openCitation} onOpenEvidence={openEvidence} onExplorePapers={explorePapers} onExploreFrameworks={exploreFrameworks}>
       {basis?.landscape && <details className="research-details" data-reading-anchor="framework-map" open={frameworkExpanded} onToggle={(event) => setFrameworkExpanded(event.currentTarget.open)}><summary>Explore mathematical frameworks and relationships</summary>
-        <FrameworkLandscape embedded basis={basis} sources={sources} onSource={onSource} selectedId={frameworkId} onSelect={setFrameworkId} focusRef={frameworkFocus} onEvidence={openEvidence} />
+        <FrameworkLandscape embedded basis={basis} sources={sources} onSource={onSource} selectedId={frameworkId} onSelect={setFrameworkId} focusRef={frameworkFocus} onEvidence={openEvidence} onOpenCitation={openCitation} />
       </details>}
     </MainFindings>
     {decisions}

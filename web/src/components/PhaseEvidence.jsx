@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import { ActionButton } from "./Visuals";
 import { fmt, fmtMs, humanLabel } from "../research";
-import { MathText, ResearchDocument, SourceRef } from "./Shared";
+import { MathText, ResearchDocument, ResearchInline, SourceRef } from "./Shared";
 import { OriginalTheoristAccount, TheorySupportBadge } from "./TheoryAssessment";
 
 /* Phase evidence panels (design/15 §5): structured diagnostics rendered from
@@ -10,61 +10,49 @@ import { OriginalTheoristAccount, TheorySupportBadge } from "./TheoryAssessment"
 
 const inScope = (x, branch) => x.branch === branch;
 
-/* D17: top-line rows + expander for the numbers. */
-function ShowAll({ n, open, onToggle }) {
-  if (n <= 5) return null;
-  return (
-    <ActionButton action="details" aria-expanded={open} onClick={onToggle}>
-      {open ? "Show first 5 rows" : `Show all ${n} rows`}
-    </ActionButton>
-  );
+// Native disclosures are captured with the reader's scroll position. Splitting
+// after the preview keeps every row once and restores expansion on reopen.
+function DiagnosticRows({ rows, renderTable }) {
+  return <>{renderTable(rows.slice(0, 5))}{rows.length > 5 && <details className="research-details diagnostic-row-expansion"><summary>Show all {rows.length} rows</summary>{renderTable(rows.slice(5))}</details>}</>;
 }
 
-function useRows(rows) {
-  const [open, setOpen] = useState(false);
-  return { shown: open ? rows : rows.slice(0, 5), open, setOpen, total: rows.length };
-}
-
-export function DiagnosticsTables({ d }) {
-  const headline = useRows(d.headline_numbers || []);
-  const stability = useRows(d.stability || []);
+export function DiagnosticsTables({ d, metrics = {} }) {
+  const metricLabel = row => metrics[row.metric_id || row.metric]?.name || d.metric_labels?.[row.metric_id || row.metric] || row.metric_id || row.metric || "Not recorded";
   return (
         <div style={{ marginBottom: 14 }}>
           <h3>Diagnostics</h3>
           {(d.headline_numbers?.length > 0) && (
             <>
-            <div className="table-scroll" tabIndex={0} role="region" aria-label="Diagnostic table, scroll to inspect all columns"><table>
+            <DiagnosticRows rows={d.headline_numbers} renderTable={(rows) => <div className="table-scroll" tabIndex={0} role="region" aria-label="Diagnostic table, scroll to inspect all columns"><table>
               <thead><tr><th>Case</th><th>Metric</th><th>Unit</th><th>Estimate</th><th>Uncertainty</th><th>Usable repetitions</th><th>Recorded interval</th><th>Interval level</th></tr></thead>
               <tbody>
-                {headline.shown.map((r, j) => (
+                {rows.map((r, j) => (
                   <tr key={j}>
-                    <td className="rid">{r.case_id}</td><td>{humanLabel(r.metric)}</td><td>{r.unit || "Not recorded"}</td>
-                    <td><b>{fmt(r.estimate, { uncertainty: r.mcse })}</b></td><td className="note">{r.uncertainty_kind === "not_applicable" ? "Not applicable" : r.uncertainty_kind === "custom" ? "See protocol" : typeof r.mcse === "number" ? `MCSE ${fmt(r.mcse)}` : "Not assessed"}</td>
+                    <td className="rid"><ResearchInline text={r.case_id} /></td><td><ResearchInline text={metricLabel(r)} /></td><td><ResearchInline text={r.unit || metrics[r.metric_id || r.metric]?.unit || metrics[r.metric_id || r.metric]?.units || "Not recorded"} /></td>
+                    <td><b>{fmt(r.estimate, { uncertainty: r.mcse })}</b></td><td className="note">{r.uncertainty_kind === "not_applicable" ? "Not applicable" : r.uncertainty_kind === "not_assessed" ? "Not assessed" : r.uncertainty_kind === "custom" ? "See protocol" : Number.isFinite(r.mcse) ? `MCSE ${fmt(r.mcse)}` : "Not assessed"}</td>
                     <td>{fmt(r.n_replicates, { kind: "count" })}</td><td className="note">{r.ci_lo != null && r.ci_hi != null ? `[${fmt(r.ci_lo)}, ${fmt(r.ci_hi)}]` : "Not recorded"}</td><td>{typeof r.confidence_level === "number" ? `${fmt(r.confidence_level * 100)}%` : "Not recorded"}</td>
                   </tr>
                 ))}
               </tbody>
-            </table></div>
-            <ShowAll n={headline.total} open={headline.open} onToggle={() => headline.setOpen(!headline.open)} />
+            </table></div>} />
             </>
           )}
           {d.stability?.length > 0 && (
             <>
               <h3 style={{ marginTop: 10 }}>Stability across seeds</h3>
-              <div className="table-scroll" tabIndex={0} role="region" aria-label="Diagnostic table, scroll to inspect all columns"><table>
+              <DiagnosticRows rows={d.stability} renderTable={(rows) => <div className="table-scroll" tabIndex={0} role="region" aria-label="Diagnostic table, scroll to inspect all columns"><table>
                 <thead><tr><th>Case</th><th>Metric</th><th>Mean ± sd</th><th>Seeds</th><th>Verdict flips?</th></tr></thead>
                 <tbody>
-                  {stability.shown.map((r, j) => (
+                  {rows.map((r, j) => (
                     <tr key={j}>
-                      <td className="rid">{r.case_id}</td><td>{humanLabel(r.metric)}</td>
+                      <td className="rid"><ResearchInline text={r.case_id} /></td><td><ResearchInline text={metricLabel(r)} /></td>
                       <td>{fmt(r.mean, { uncertainty: r.sd })} ± {fmt(r.sd)}</td>
                       <td className="note">{fmt(r.n_seeds, { kind: "count" })}</td>
                       <td><span className={`pill ${r.seed_flip === true ? "fail" : r.assessment === "not_applicable" || r.assessment === "not_assessed" || r.n_seeds < 2 || r.seed_flip == null ? "mut" : "ok"}`}>{r.assessment === "not_applicable" ? "Not applicable" : r.assessment === "not_assessed" ? "Not assessed" : r.seed_flip === true ? "Unstable" : r.n_seeds < 2 ? "Not repeated" : r.seed_flip == null ? "Not assessed" : "No recorded flip"}</span></td>
                     </tr>
                   ))}
                 </tbody>
-              </table></div>
-              <ShowAll n={stability.total} open={stability.open} onToggle={() => stability.setOpen(!stability.open)} />
+              </table></div>} />
             </>
           )}
           <div className="duo">
@@ -77,7 +65,7 @@ export function DiagnosticsTables({ d }) {
                   <tbody>
                     {d.solver_health.map((r, j) => (
                       <tr key={j}>
-                        <td>{r.regime}</td><td>{fmt(r.n_runs, { kind: "count" })}</td>
+                        <td><ResearchInline text={r.regime} /></td><td>{fmt(r.n_runs, { kind: "count" })}</td>
                         <td>{fmt(r.n_failures, { kind: "count" })}</td>
                         <td>{typeof r.failure_rate === "number" ? `${fmt(r.failure_rate * 100)}%` : "Not assessed"}</td>
                       </tr>
@@ -93,7 +81,7 @@ export function DiagnosticsTables({ d }) {
                   <thead><tr><th>Case</th><th>Mean</th><th>Max</th></tr></thead>
                   <tbody>
                     {(d.runtime.per_case || []).map((r, j) => (
-                      <tr key={j}><td className="rid">{r.case_id}</td><td>{fmtMs(r.mean_ms)}</td><td>{fmtMs(r.max_ms)}</td></tr>
+                      <tr key={j}><td className="rid"><ResearchInline text={r.case_id} /></td><td>{fmtMs(r.mean_ms)}</td><td>{fmtMs(r.max_ms)}</td></tr>
                     ))}
                     <tr><td><b>Sum of case times</b></td><td colSpan="2"><b>{fmtMs(d.runtime.total_ms)}</b></td></tr>
                   </tbody>

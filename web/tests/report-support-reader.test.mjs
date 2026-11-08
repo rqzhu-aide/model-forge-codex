@@ -34,7 +34,9 @@ function mount(Component, props, attach = noop) {
   const slots = []; let cursor = 0; let pending = []; let dirty = true; let tree;
   const state = (initial) => { const index = cursor++; if (!slots[index]) slots[index] = { value: typeof initial === "function" ? initial() : initial }; return [slots[index].value, (update) => { const next = typeof update === "function" ? update(slots[index].value) : update; if (!Object.is(next, slots[index].value)) { slots[index].value = next; dirty = true; } }]; };
   const effect = (run, dependencies) => { const index = cursor++; const old = slots[index]; if (!old || dependencies.some((value, offset) => !Object.is(value, old.dependencies?.[offset]))) { slots[index] = { dependencies, cleanup: old?.cleanup }; pending.push({ index, run }); } };
-  const hooks = { useState: state, useEffect: effect, useRef: (initial) => { const index = cursor++; return (slots[index] ||= { value: { current: initial } }).value; }, useId: () => { const index = cursor++; return (slots[index] ||= { value: "support:fixture" }).value; } };
+  const hooks = { useState: state, useEffect: effect, useLayoutEffect: effect,
+    useCallback: (callback, dependencies) => { const index = cursor++; const old = slots[index]; if (!old || dependencies.some((value, offset) => !Object.is(value, old.dependencies?.[offset]))) slots[index] = { value: callback, dependencies }; return slots[index].value; },
+    useRef: (initial) => { const index = cursor++; return (slots[index] ||= { value: { current: initial } }).value; }, useId: () => { const index = cursor++; return (slots[index] ||= { value: "support:fixture" }).value; } };
   const draw = () => { cursor = 0; pending = []; dirty = false; const previous = ui.dispatcher.current; try { ui.dispatcher.current = hooks; tree = Component(props); } finally { ui.dispatcher.current = previous; } attach(tree); for (const { index, run } of pending) { slots[index].cleanup?.(); slots[index].cleanup = run(); } };
   return { get tree() { return tree; }, update(changes) { props = { ...props, ...changes }; dirty = true; }, async settle() { for (let i = 0; i < 25; i++) { if (dirty) draw(); await new Promise((resolve) => setImmediate(resolve)); if (!dirty) return tree; } throw new Error("Reader did not settle."); }, unmount() { for (const slot of slots) slot?.cleanup?.(); } };
 }
@@ -76,6 +78,11 @@ test("main links open verified Markdown in a dialog while other exact files reta
   assert.equal(prevented, true); assert.equal(dialog.props.returnFocus, find(fixture.tree, (node) => node.type === "a").ref);
   fixture.update({ materials: structuredClone(materials) }); await fixture.settle();
   assert.ok(find(fixture.tree, (node) => node.type === ui.ReportMaterialDialog), "Polling retains the open reader.");
+  const replacement = { ...support, artifact_url: "/api/v1/new-support?sha256=b", sha256: "b".repeat(64) };
+  fixture.update({ material: replacement, materials: [replacement, figure, values] }); await fixture.settle();
+  const retained = find(fixture.tree, (node) => node.type === ui.ReportMaterialDialog);
+  assert.equal(retained.props.material.artifact_url, support.artifact_url);
+  assert.equal(retained.props.material.sha256, support.sha256, "An open material retains the exact version chosen before polling.");
   dialog.props.onClose(); await fixture.settle();
   assert.equal(find(fixture.tree, (node) => node.type === ui.ReportMaterialDialog), undefined);
   const html = ui.render(ui.TechnicalReportDocument, { document });
@@ -85,6 +92,80 @@ test("main links open verified Markdown in a dialog while other exact files reta
   const invalid = ui.render(ui.TechnicalReportDocument, { document: { ...document, report_materials: [{ ...support, source_verified: false }] } });
   assert.match(invalid, /Supporting model: The exact retained file is unavailable/);
   assert.deepEqual(document, before);
+}));
+
+test("Markdown material restores its exact loaded position and disclosures, with fragments taking precedence", async () => {
+  const oldFetch = globalThis.fetch;
+  const text = "## Supporting model\n\nA retained explanation.";
+  const material = { ...support, artifact_url: "/api/v1/markdown-position", sha256: "d".repeat(64), label: "Model derivation" };
+  const make = (fragment = "", source = material) => {
+    const detail = { open: false }, body = { scrollTop: 0, querySelectorAll: () => [detail] };
+    const anchor = { dataset: { materialAnchor: "model" }, scrollIntoView: () => { body.scrollTop = 45; }, focus: noop };
+    const root = { querySelectorAll: () => [anchor] };
+    const fixture = mount(ui.ReportMaterialDialog, { ...props, material: source, fragment }, tree => {
+      find(tree, node => node.type === ui.Dialog).props.bodyRef.current = body;
+      const content = find(tree, node => node.type === "div" && node.ref); if (content) content.ref.current = root;
+    });
+    return { fixture, body, detail };
+  };
+  const opened = [];
+  try {
+    globalThis.fetch = async () => ok(text);
+    const first = make(); opened.push(first.fixture); await first.fixture.settle();
+    assert.equal(find(first.fixture.tree, node => node.type === ui.Dialog).props.title, "Model derivation");
+    first.body.scrollTop = 370; first.detail.open = true; first.fixture.unmount();
+    const pending = deferred(); globalThis.fetch = () => pending.promise;
+    const second = make(); opened.push(second.fixture); await second.fixture.settle();
+    assert.equal(second.body.scrollTop, 0, "Loading UI must not consume the saved offset.");
+    pending.resolve(ok(text)); await second.fixture.settle();
+    assert.equal(second.body.scrollTop, 370); assert.equal(second.detail.open, true);
+    second.fixture.unmount();
+    globalThis.fetch = async () => ok(text);
+    const target = make("model"); opened.push(target.fixture); await target.fixture.settle();
+    assert.equal(target.body.scrollTop, 45, "A requested section wins over the saved reading position.");
+    target.fixture.unmount();
+    const revised = make("", { ...material, sha256: "e".repeat(64) }); opened.push(revised.fixture); await revised.fixture.settle();
+    assert.equal(revised.body.scrollTop, 0); assert.equal(revised.detail.open, false, "A different hash has its own position.");
+  } finally { for (const fixture of opened) fixture.unmount(); globalThis.fetch = oldFetch; }
+});
+
+test("HTML material restores frame scroll and disclosures after load without overriding explicit fragments", async () => withPortalBody(async () => {
+  const oldFetch = globalThis.fetch;
+  globalThis.document.createElement = () => ({ innerHTML: "", content: { querySelectorAll: () => [] } });
+  globalThis.fetch = async () => ok("<h1>Exact proof</h1>");
+  const material = { ...support, artifact_url: "/api/v1/html-position", sha256: "f".repeat(64), authored_path: "proof.html", media_type: "text/html", title: "Identification proof" };
+  const make = (fragment = "", source = material) => {
+    const events = new Map(), detail = { open: false };
+    const scrolling = { scrollTop: 0, querySelectorAll: () => [detail] };
+    const body = { setAttribute: noop, scrollIntoView: () => { scrolling.scrollTop = 0; }, focus: noop };
+    const anchor = { id: "proof", setAttribute: noop, scrollIntoView: () => { scrolling.scrollTop = 65; }, focus: noop };
+    const sourceDocument = { body, scrollingElement: scrolling, querySelectorAll: () => [anchor], addEventListener: (name, fn) => events.set(name, fn), removeEventListener: name => events.delete(name) };
+    const frame = { contentDocument: sourceDocument };
+    const fixture = mount(ui.ReportMaterialDialog, { ...props, material: source, fragment }, tree => {
+      const node = find(tree, node => node.type === "iframe"); if (node) node.ref.current = frame;
+    });
+    return { fixture, scrolling, detail, events };
+  };
+  const opened = [];
+  try {
+    const first = make(); opened.push(first.fixture); await first.fixture.settle();
+    const preview = find(first.fixture.tree, node => node.type === "iframe");
+    assert.equal(preview.props.title, "Identification proof retained HTML"); assert.equal(preview.props.sandbox, "allow-same-origin");
+    preview.props.onLoad(); first.scrolling.scrollTop = 420; first.detail.open = true;
+    first.events.get("scroll")(); first.fixture.unmount();
+    const second = make(); opened.push(second.fixture); await second.fixture.settle();
+    assert.equal(second.scrolling.scrollTop, 0);
+    find(second.fixture.tree, node => node.type === "iframe").props.onLoad();
+    assert.equal(second.scrolling.scrollTop, 420); assert.equal(second.detail.open, true);
+    second.fixture.unmount();
+    const target = make("proof"); opened.push(target.fixture); await target.fixture.settle();
+    find(target.fixture.tree, node => node.type === "iframe").props.onLoad();
+    assert.equal(target.scrolling.scrollTop, 65); assert.equal(target.detail.open, false);
+    target.fixture.unmount();
+    const revised = make("", { ...material, sha256: "0".repeat(64) }); opened.push(revised.fixture); await revised.fixture.settle();
+    find(revised.fixture.tree, node => node.type === "iframe").props.onLoad();
+    assert.equal(revised.scrolling.scrollTop, 0); assert.equal(revised.detail.open, false);
+  } finally { for (const fixture of opened) fixture.unmount(); globalThis.fetch = oldFetch; }
 }));
 
 test("loaded supporting detail renders LaTeX and nested exact files, focuses its fragment and retains position on polling", async () => {
@@ -148,6 +229,22 @@ test("an exact declared HTML proof opens its own reader without guessing a Markd
   assert.equal(projectedLink.props.material.sha256, html.sha256); assert.equal(projectedLink.props.material.artifact_url, html.artifact_url);
 });
 
+test("the report's standalone download targets its generation attachment and requires one verified Markdown companion", () => {
+  const html = { ...support, artifact_id: "artifact.proof-html", authored_path: "appendix.html", media_type: "text/html" };
+  const markdown = { ...support, artifact_id: "artifact.proof-md", authored_path: "appendix.md" };
+  const document = { kind: "technical_report", body_md: "# Report", report_materials: [html, markdown],
+    generation_ref: { branch: "method.example", phase: "P5", family: "technical_report", generation_id: "generation.exact", sha256: "c".repeat(64) },
+    portable_artifact_url: "/api/v1/report/generation.exact?view=portable" };
+  const tree = ui.TechnicalReportDocument({ document });
+  const download = find(tree, node => node.type === "a" && node.props["aria-label"]?.startsWith("Download standalone"));
+  assert.ok(download);
+  assert.equal(download.props.href, "/api/v1/report/generation.exact?view=attachment&material_id=artifact.proof-html");
+  assert.equal(download.props.download, "appendix.shareable.html");
+  for (const materials of [[html], [html, markdown, { ...markdown, artifact_id: "other" }], [html, { ...markdown, source_verified: false }]]) {
+    assert.equal(find(ui.TechnicalReportDocument({ document: { ...document, report_materials: materials } }), node => node.type === "a" && node.props["aria-label"]?.startsWith("Download standalone")), undefined);
+  }
+});
+
 test("HTML preview keeps scientific markup inert, blocks active/network content and controls every source link", () => {
   const node = (localName, attributes = {}) => ({ localName, values: { ...attributes }, removed: false,
     get attributes() { return Object.keys(this.values).map(name => ({ name })); },
@@ -196,7 +293,7 @@ test("loaded exact HTML uses a sandboxed in-dialog preview and opens declared ne
   const originalMaterial = structuredClone(html);
   globalThis.document.createElement = tag => { assert.equal(tag, "template"); return { innerHTML: "", content: { querySelectorAll: () => [] } }; };
   globalThis.fetch = async url => { reads.push(url); return ok(original); };
-  const events = new Map(); const body = { setAttribute: noop, scrollIntoView: noop, focus: noop };
+  const events = new Map(); const body = { setAttribute: noop, scrollIntoView: noop, focus: noop, scrollTop: 0, querySelectorAll: () => [] };
   const sourceDocument = { body, querySelectorAll: () => [], addEventListener: (name, handler) => events.set(name, handler), removeEventListener: name => events.delete(name) };
   const frame = { contentDocument: sourceDocument };
   const fixture = mount(ui.ReportMaterialDialog, { material: html, path: html.authored_path, materials: [html, support], onClose: noop }, tree => {

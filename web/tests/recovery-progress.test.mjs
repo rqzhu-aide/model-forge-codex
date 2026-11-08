@@ -22,6 +22,18 @@ const base = { run_id: "run.recovery", state: "awaiting_user", p4_progress: { pl
 const feedback = { accepted: false, operation: "run_batch", code: "invalid_arguments", json_pointer: "/timeout_seconds", error: "timeout_seconds is required", hint: "Provide the bounded time limit for the declared work item.", execution_state: "not_accepted" };
 const visible = (html) => html.replace(/<details\b[^>]*>[\s\S]*?<\/details>/g, "");
 
+test("activity disclosure names use the full phase label without adding live announcements", () => {
+  for (const [phase, name] of [["P1", "Phase 1 - Define and Explore"], ["P2", "Phase 2 - Propose Methods"], ["P3", "Phase 3 - Theory"], ["P4", "Phase 4 - Numerical Eval"], ["P5", "Phase 5 - Report"]]) {
+    const props = { phase, run: { run_id: "run.activity", phase, state: "running" } };
+    const first = render.work(props), poll = render.work({ ...props, run: structuredClone(props.run) });
+    assert.ok(first.includes(`aria-label="${name} latest update: Running. Activity details"`));
+    assert.equal(first, poll);
+    assert.equal((first.match(/role="status"/g) || []).length, 1);
+  }
+  assert.match(render.work({ run: { phase: "P3", state: "running" } }), /aria-label="Phase 3 - Theory latest update/);
+  assert.match(render.work({ run: { state: "running" } }), /aria-label="Research latest update/);
+});
+
 test("artifact repair preserves the saved message and exposes the existing review action", () => {
   for (const state of ["working", "stopped", "accepted"]) {
     const message = state === "working" ? "Correcting an artifact reference, attempt 1 of 2." : state === "stopped" ? "Automatic repair stopped because the same issue remained. Review the findings before requesting correction." : "Saved artifacts were accepted after repair.";

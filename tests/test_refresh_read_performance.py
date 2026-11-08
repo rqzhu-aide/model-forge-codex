@@ -64,7 +64,7 @@ async def api(workbench, monkeypatch):
     engine, project, branch = workbench
     app = service.create_app(data_root=engine.data_root, bridge=engine.bridge)
     configure_local_control(app, engine.data_root, 8766, lambda: None)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://localhost") as client:
         yield client, app.state.engine, project, branch
 
 
@@ -105,7 +105,7 @@ async def test_pending_actions_retain_exact_decision_sources_without_full_artifa
     assert all(item["generation_ref"]["generation_id"] == published["records"]["decision"]["generation_id"] for item in calls)
 
 
-@pytest.mark.parametrize("operation", ["artifacts", "readiness", "decisions-pending"])
+@pytest.mark.parametrize("operation", ["artifacts", "readiness", "decisions-pending", "document"])
 async def test_local_status_completes_while_expensive_refresh_read_is_in_progress(api, monkeypatch, operation):
     client, engine, _project, branch = api
     started, release = threading.Event(), threading.Event()
@@ -120,6 +120,12 @@ async def test_local_status_completes_while_expensive_refresh_read_is_in_progres
         original = engine.compute_basis
         monkeypatch.setattr(engine, "compute_basis", lambda *args: blocked(original(*args)))
         path = f"branches/{branch}/phases/P3/readiness"
+    elif operation == "document":
+        def read_document(_project, _branch, _phase, _family, _generation, *, artifact_ref, entry_pointer):
+            assert artifact_ref is None and entry_pointer is None
+            return blocked({"body_md": "Retained source"})
+        monkeypatch.setattr(research, "scientific_document_view", read_document)
+        path = f"branches/{branch}/phases/P5/records/technical_report/generation.saved?view=document"
     else:
         monkeypatch.setattr(service, "current_decisions_view", lambda *args: blocked([]))
         path = operation
@@ -132,4 +138,7 @@ async def test_local_status_completes_while_expensive_refresh_read_is_in_progres
         assert not read.done(), "Status was held until after the expensive read"
     finally:
         release.set()
-        await read
+        result = await read
+    assert result.status_code == 200
+    if operation == "document":
+        assert result.json() == {"body_md": "Retained source"}

@@ -12,19 +12,32 @@ import { activePhaseRun, scientificPhaseRuns } from "../src/phaseUiState.js";
 import { readDecisionDraft, saveDecisionDraft, decisionAnswerPayload } from "../src/empiricalProgress.js";
 import { adoptWorkflow } from "../src/workflowAdoption.js";
 import { GOAL_POINTER } from "../src/phaseOneReader.js";
+import { populationChoice } from "./fixtures/researcher-decisions.mjs";
 
 const require = createRequire(import.meta.url);
 const { build } = require(sharedPackage("vite", "node_modules/esbuild/lib/main.js"));
 const directory = fs.mkdtempSync(path.join(os.tmpdir(), "model-forge-dialogue-render-"));
 const bundle = path.join(directory, "render.cjs");
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src").replaceAll("\\", "/");
-await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Dialogue from '${src}/components/ResearcherDialogue.jsx'; import Issues from '${src}/components/IssuesCard.jsx'; import Pause from '${src}/components/ResearcherPause.jsx'; import Report, {TechnicalReportDocument} from '${src}/components/TechnicalReportReading.jsx'; import {WorkflowAdoptionReview} from '${src}/components/WorkflowAdoption.jsx'; const render=C=>p=>renderToStaticMarkup(React.createElement(C,p)); export const dialogue=render(Dialogue),issues=render(Issues),pause=render(Pause),report=render(Report),document=render(TechnicalReportDocument),workflowReview=WorkflowAdoptionReview;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
+await build({ stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import Dialogue from '${src}/components/ResearcherDialogue.jsx'; import Issues from '${src}/components/IssuesCard.jsx'; import Pause from '${src}/components/ResearcherPause.jsx'; import Report, {TechnicalReportDocument} from '${src}/components/TechnicalReportReading.jsx'; import {WorkflowAdoptionReview} from '${src}/components/WorkflowAdoption.jsx'; export {React, Dialogue}; export {api} from '${src}/api.js'; export {saveConversationDraft} from '${src}/assumptionConversations.js'; const render=C=>p=>renderToStaticMarkup(React.createElement(C,p)); export const dialogue=render(Dialogue),issues=render(Issues),pause=render(Pause),report=render(Report),document=render(TechnicalReportDocument),workflowReview=WorkflowAdoptionReview;`, resolveDir: src }, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", loader: { ".css": "empty" }, alias: { react: sharedPackage("react"), "react-dom": sharedPackage("react-dom"), katex: sharedPackage("katex") }, logLevel: "silent" });
 const render = require(bundle); fs.unlinkSync(bundle); fs.rmdirSync(directory);
 const noop = () => {};
 const target = { kind: "project_context", project_id: "project.dialogue", context_revision: 2, brief_revision: 1, sha256: "a".repeat(64), phase: "P1", branch: "trunk" };
 const context = { revision: 2, dialogue_target: target, items: [{ item_id: "context.collection", statement: "Visits occur when the patient feels worse.", origin: "researcher_reported", scope: { kind: "project" }, revision: 1, status: "confirmed" }], proposals: [] };
 const ref = { branch: "method.mean", phase: "P5", family: "technical_report", generation_id: "report.1", sha256: "b".repeat(64) };
 const offeredWorkflow = { version: "1.15.0", available_version: "1.16.0", upgrade_available: true, can_adopt: true, blocked_runs: [] };
+const nodes = tree => Array.isArray(tree) ? tree.flatMap(nodes) : tree?.props ? [tree, ...nodes(tree.props.children)] : [];
+const nodeText = tree => Array.isArray(tree) ? tree.map(nodeText).join("") : tree?.props ? nodeText(tree.props.children) : String(tree ?? "");
+function hookHarness(Component) {
+  const slots = []; let cursor = 0;
+  const internals = render.React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+  const dispatcher = {
+    useState(initial) { const index = cursor++; if (!Object.hasOwn(slots, index)) slots[index] = typeof initial === "function" ? initial() : initial; return [slots[index], value => { slots[index] = typeof value === "function" ? value(slots[index]) : value; }]; },
+    useRef(initial) { const index = cursor++; return slots[index] ||= { current: initial }; },
+    useId() { return `dialogue-${cursor++}`; }, useEffect() { cursor++; }, useCallback(callback) { cursor++; return callback; },
+  };
+  return props => { cursor = 0; const previous = internals.ReactCurrentDispatcher.current; internals.ReactCurrentDispatcher.current = dispatcher; try { return Component(props); } finally { internals.ReactCurrentDispatcher.current = previous; } };
+}
 
 test("goal correction labels distinguish exact current, replaced, and unavailable published sources on any branch", () => {
   const source = { branch: "trunk", phase: "P1", family: "research_basis", generation_id: "goal.one", sha256: "c".repeat(64), run_id: "run.goal", package_id: "package.goal", kind: "research_goal", entry_pointer: GOAL_POINTER };
@@ -202,8 +215,223 @@ test("P4 keeps its decisions title with or without problem context and all exist
 test("authored question keeps consequence, checkability, uncertainty and answer separate", () => {
   const issue = { attention_id: "question.visits", phase: "P1", branch: "trunk", kind: "researcher_decision", title: "Why does a visit enter the data?", scope: { kind: "project" }, why_it_matters: "Visit selection changes the population interpretation.", checkability: "Collection records may describe the visit rule.", information_limits: "A diagnostic cannot establish an unobserved selection mechanism." };
   const html = render.dialogue({ projectId: target.project_id, phase: "P1", branch: "trunk", problemContext: context, attention: [issue], onDiscuss: noop });
-  for (const text of [issue.title, "Why your answer matters", issue.why_it_matters, "How this could be checked", issue.checkability, "What remains unknown", issue.information_limits, "Other information you gave me", context.items[0].statement]) assert.ok(html.includes(text), text);
+  for (const text of [issue.title, "Why your answer matters", issue.why_it_matters, "How this could be checked", issue.checkability, "What remains unknown", issue.information_limits, "Your saved input", context.items[0].statement]) assert.ok(html.includes(text), text);
   assert.match(html, /Your answer/); assert.doesNotMatch(html, /Your direction for further work/);
+});
+
+test("the opening decision line follows current actions and authoritative loading state", () => {
+  const props = { projectId: target.project_id, phase: "P4", branch: "method.mean", problemContext: context, onDiscuss: noop };
+  const task = { attention_id: "task.current", phase: "P4", branch: "method.mean", kind: "research_task", question: "Check the numerical boundary.", scope: { kind: "project" } };
+  const complete = render.dialogue({ ...props, decisionDataState: "ready", attention: [task] });
+  assert.match(complete, /No Phase 4 question needs your answer\./);
+  assert.match(complete, /Work the team is carrying forward/);
+  assert.doesNotMatch(complete, /Open scientific work remains for the team/);
+  for (const state of ["unavailable", "partial"]) {
+    const html = render.dialogue({ ...props, decisionDataState: state });
+    assert.doesNotMatch(html, /No Phase 4 question needs your answer/);
+    assert.match(html, state === "partial" ? /Decision information is incomplete/ : /Decision information is unavailable/);
+  }
+  const invitation = { ...task, attention_id: "question.current", kind: "researcher_decision" };
+  const open = render.dialogue({ ...props, decisionDataState: "ready", attention: [invitation] });
+  assert.match(open, />1 open question</); assert.doesNotMatch(open, /Work is paused|for your answer/);
+  const pause = render.dialogue({ ...props, activePause: true, pause: "Pause editor" });
+  assert.match(pause, /Work is paused\./); assert.doesNotMatch(pause, /for your answer/);
+  const answeredPause = render.dialogue({ ...props, activePause: true, pause: "Continue work" });
+  assert.match(answeredPause, /Work is paused\./); assert.doesNotMatch(answeredPause, /for your answer/);
+  const refreshing = render.dialogue({ ...props, decisionDataState: "refreshing" });
+  assert.match(refreshing, /Showing the last available decision information/);
+  assert.match(refreshing, /The last available update had no open Phase 4 questions/);
+  const failed = render.dialogue({ ...props, decisionDataState: "refresh-failed" });
+  assert.match(failed, /Updates could not be loaded/); assert.doesNotMatch(failed, /No Phase 4 question needs your answer/);
+  const noMethod = render.dialogue({ ...props, decisionScope: "unselected-method" });
+  assert.match(noMethod, /Choose a method to see its questions/);
+  const sharedOverview = render.dialogue({ ...props, phase: "P2", decisionDataState: "ready", decisionScope: "shared-overview" });
+  assert.match(sharedOverview, /No open questions shared across methods\. Select a method to see its questions/);
+});
+
+test("the footer keeps saved input collapsed, preserves original sources and follows current controls", () => {
+  const source = { kind: "phase_issue", branch: "trunk", phase: "P2", family: "attention_items", generation_id: "generation.recorded", run_id: "run.recorded", package_id: "package.recorded", sha256: "d".repeat(64), object_id: "question.goal", entry_pointer: "/items/0" };
+  const issue = { attention_id: "question.goal", kind: "researcher_decision", phase: "P2", target_phase: "P1", branch: "trunk", scope: { kind: "project" }, question: "Which population should the result cover?", explanation_target: source };
+  const answer = { attention_id: issue.attention_id, attention: issue, question_ref: source, note: "The prospective population is still unknown.", revision: 2, origin: "unknown", scope: issue.scope, context_ref: { item_id: "context.answer.goal", revision: 1 } };
+  const copy = { ...context.items[0], item_id: "context.answer.goal", statement: answer.note, answer_refs: [{ kind: "researcher_answer", attention_id: issue.attention_id, question_ref: source, answer_revision: 2 }] };
+  const goal = { ...context.items[0], item_id: "context.goal", statement: "Preserve $J(\\pi)=\\mathbb E[R]$.", topic: "research_goal", source_refs: [{ ...source, phase: "P1", kind: "research_goal" }] };
+  const html = render.dialogue({ projectId: target.project_id, phase: "P4", branch: "method.mean", decisionDataState: "ready", answers: [answer], problemContext: { ...context, items: [copy, goal] }, onDiscuss: noop, onSource: noop, corrections: "Current correction controls" });
+  assert.match(html, /<summary>Phase 1 · 1 answer, 1 goal correction<\/summary>/);
+  assert.equal((html.match(/The prospective population is still unknown\./g) || []).length, 1);
+  assert.match(html, /Saved · still unknown/);
+  assert.match(html, /data-phase-input-origin="saved-input-review:/);
+  assert.match(html, /Review at original question/);
+  assert.match(html, /title="Attention items · generation\.recorded"/);
+  assert.match(html, /class="katex/);
+  assert.doesNotMatch(html, /class="saved-input-(?:group|item)"[^>]*\bopen=/);
+  assert.ok(html.indexOf("Current correction controls") < html.indexOf("Your saved input"));
+  assert.ok(html.indexOf("Your saved answer") < html.indexOf("Original question and sources"));
+  assert.doesNotMatch(html, /Edit your answer|View the saved copy|What you told me/);
+});
+
+test("a retained answer interpretation is not counted as an actionable confirmation", () => {
+  const issue = { attention_id: "question.saved", phase: "P1", branch: "trunk", kind: "researcher_decision", scope: { kind: "project" }, question: "Which target is useful?" };
+  const answer = { attention_id: issue.attention_id, attention: issue, revision: 1, note: "A population mean.", scope: issue.scope, context_ref: { item_id: "context.mirror", revision: 1 } };
+  const proposal = { amendment_id: "proposal.mirror", status: "pending", item: { item_id: "context.mirror", statement: answer.note, scope: issue.scope } };
+  const html = render.dialogue({ projectId: target.project_id, phase: "P4", branch: "method.mean", decisionDataState: "ready", contextAnswers: [answer], problemContext: { ...context, items: [], proposals: [proposal] }, onDiscuss: noop });
+  assert.match(html, /No Phase 4 question needs your answer\./);
+  assert.match(html, /This earlier interpretation concerns a saved answer/);
+  assert.doesNotMatch(html, /interpretation awaiting your review|Confirm interpretation/);
+});
+
+test("historical generic drafts retain separate anchors and never replace the current composer target", () => {
+  const targets = [1, 2].map(value => ({ ...target, context_revision: 1, brief_revision: value }));
+  const keys = targets.map(original => `problem-response:${conversationDraftKey(target.project_id, original)}`);
+  try {
+    keys.forEach((key, index) => render.saveConversationDraft(key, { text: `Earlier draft ${index + 1}.`, projectId: target.project_id, target: targets[index] }));
+    const html = render.dialogue({ projectId: target.project_id, phase: "P4", branch: "method.mean", problemContext: context, onDiscuss: noop });
+    assert.equal((html.match(/data-reading-anchor="researcher-dialogue"/g) || []).length, 1);
+    assert.match(html, /Unsent responses to earlier context \(2\)/);
+    assert.match(html, /Earlier draft 1\./); assert.match(html, /Earlier draft 2\./);
+    const anchors = [...html.matchAll(/data-reading-anchor="(problem-draft:[^"]+)"/g)].map(match => match[1]);
+    assert.equal(anchors.length, 2); assert.equal(new Set(anchors).size, 2);
+    assert.ok(html.indexOf("Unsent responses") < html.indexOf("Your saved input"));
+  } finally { keys.forEach(key => render.saveConversationDraft(key, null)); }
+});
+
+test("polling a changed saved note keeps its draft and original save revision", async () => {
+  const projectId = "project.note-polling";
+  const note = context.items[0];
+  const props = { projectId, phase: "P4", branch: "method.mean", problemContext: context, onDiscuss: noop };
+  const renderDialogue = hookHarness(render.Dialogue);
+  const dialogue = renderDialogue(props);
+  const footer = nodes(dialogue).find(node => node.props.footer).props.footer;
+  const noteElement = nodes(footer.type(footer.props)).find(node => node.props.item === note);
+  const renderNote = hookHarness(noteElement.type);
+  const initial = renderNote(noteElement.props);
+  nodes(initial).find(node => node.props.onClick && nodeText(node) === "Edit your note").props.onClick();
+  const opened = renderNote(noteElement.props);
+  const originalForm = nodes(opened).find(node => node.props.item === note);
+  const renderForm = hookHarness(originalForm.type);
+  let formTree = renderForm(originalForm.props);
+  nodes(formTree).find(node => node.type === "textarea").props.onChange({ target: { value: "My unsaved correction." } });
+  const polledDialogue = renderDialogue({ ...props, problemContext: { ...context, revision: 3, dialogue_target: { ...target, context_revision: 3 } } });
+  assert.doesNotMatch(nodeText(nodes(polledDialogue).find(node => node.props.intro).props.intro), /Unsent responses to earlier context/, "The active note draft has one editor after polling.");
+  const latest = renderNote({ ...noteElement.props, item: { ...note, revision: 2, statement: "A separately saved account." }, context: { ...context, revision: 3 }, target: { ...target, context_revision: 3 } });
+  const retainedForm = nodes(latest).find(node => node.props.item === note);
+  assert.equal(retainedForm.type, originalForm.type); assert.equal(retainedForm.key, originalForm.key);
+  assert.equal(retainedForm.props.context.revision, 2); assert.equal(retainedForm.props.target.context_revision, 2);
+  assert.match(nodeText(latest), /Your saved note changed while you were editing/);
+  formTree = renderForm(retainedForm.props);
+  assert.equal(nodes(formTree).find(node => node.type === "textarea").props.value, "My unsaved correction.");
+  const originalSave = render.api.saveProblemContext;
+  let payload;
+  render.api.saveProblemContext = async (_, next) => { payload = next; throw new Error("The saved context changed."); };
+  try {
+    await nodes(formTree).find(node => node.type === "form").props.onSubmit({ preventDefault() {} });
+    assert.equal(payload.expected_revision, 2); assert.equal(payload.statement, "My unsaved correction.");
+    formTree = renderForm(retainedForm.props);
+    assert.equal(nodes(formTree).find(node => node.type === "textarea").props.value, "My unsaved correction.");
+    assert.match(nodeText(formTree), /Your draft is retained/);
+  } finally {
+    render.api.saveProblemContext = originalSave;
+    render.saveConversationDraft(`problem-response:${conversationDraftKey(projectId, retainedForm.props.target)}`, null);
+  }
+});
+
+test("team context stays separate from researcher input across phases and retains source access", () => {
+  const modelRef = { stable_id: "method.mean", version: 1, definition_sha256: "d".repeat(64) };
+  const source = { branch: "method.mean", phase: "P3", family: "theory_record", generation_id: "generation.team", sha256: "c".repeat(64) };
+  const teamItem = { ...context.items[0], item_id: "team.evidence", origin: "evidence_supported", statement: "The bound requires an independent sample.",
+    scope: { kind: "model", branch: "method.mean", model_ref: modelRef }, source_refs: [source] };
+  const accepted = { ...context.items[0], item_id: "team.accepted", statement: "The team interprets the target as a donor average." };
+  const problemContext = { ...context, items: [context.items[0], teamItem, accepted], proposals: [
+    { status: "confirmed", item: { ...accepted, status: "proposed" }, confirmed_item_revision: accepted.revision },
+  ] };
+  for (const phase of ["P1", "P2", "P3", "P4", "P5"]) {
+    const html = render.dialogue({ projectId: target.project_id, phase, branch: "method.mean", modelRef, problemContext, onSource: noop, onDiscuss: noop });
+    const team = html.slice(html.indexOf('class="recorded-context-footer"'), html.indexOf('class="saved-input-footer"'));
+    const researcher = html.slice(html.indexOf('class="saved-input-footer"'));
+    assert.match(team, /Research team context/);
+    assert.match(team, /Research team account/);
+    assert.match(team, /Evidence supported · This model only/);
+    assert.match(team, /Team interpretation · confirmed by you · Across models/);
+    assert.match(team, /title="Theory record · generation\.team"/);
+    assert.match(team, /data-reading-anchor="problem-context:team\.evidence:1"/);
+    assert.equal((team.match(/>Correct this account</g) || []).length, 2);
+    assert.doesNotMatch(team, /Edit your note|contribution-surface|Saved · still unknown/);
+    assert.match(researcher, /Visits occur when the patient feels worse/);
+    assert.match(researcher, /Project notes · 1 note/);
+    assert.doesNotMatch(researcher, /The bound requires|The team interprets/);
+  }
+});
+
+test("a team account correction keeps its original scope, sources and draft while polling", async () => {
+  const projectId = "project.team-correction";
+  const source = { branch: "trunk", phase: "P1", family: "research_basis", generation_id: "generation.context", sha256: "d".repeat(64) };
+  const item = { ...context.items[0], item_id: "team.correction", origin: "evidence_supported", source_refs: [source] };
+  const renderDialogue = hookHarness(render.Dialogue);
+  const dialogue = renderDialogue({ projectId, phase: "P4", branch: "method.mean", problemContext: { ...context, items: [item] }, onDiscuss: noop });
+  const footer = nodes(dialogue).find(node => node.props.footer).props.footer;
+  const noteElement = nodes(footer.type(footer.props)).find(node => node.props.item === item);
+  const renderNote = hookHarness(noteElement.type);
+  let noteTree = renderNote(noteElement.props);
+  nodes(noteTree).find(node => node.props.onClick && nodeText(node) === "Correct this account").props.onClick();
+  noteTree = renderNote(noteElement.props);
+  const editor = nodes(noteTree).find(node => node.props.item === item);
+  assert.equal(editor.props.correction, true);
+  const renderForm = hookHarness(editor.type);
+  let formTree = renderForm(editor.props);
+  assert.match(nodeText(formTree), /Your correction to this account/);
+  assert.match(nodeText(formTree), /Save records your correction as researcher input, with the original sources retained/);
+  assert.ok(nodes(formTree).find(node => node.type === "label" && nodeText(node) === "Your correction"));
+  assert.equal(nodes(formTree).find(node => nodeText(node) === "Save your correction").props.disabled, true, "Untouched team prose cannot be adopted as researcher input by saving the correction editor.");
+  const save = render.api.saveProblemContext;
+  render.api.saveProblemContext = async () => assert.fail("The unchanged team account must not be saved as researcher input.");
+  try { await nodes(formTree).find(node => node.type === "form").props.onSubmit({ preventDefault() {} }); }
+  finally { render.api.saveProblemContext = save; }
+  nodes(formTree).find(node => node.type === "input" && node.props.type === "checkbox").props.onChange({ target: { checked: true } });
+  formTree = renderForm(editor.props);
+  assert.equal(nodes(formTree).find(node => nodeText(node) === "Save your correction").props.disabled, false, "An explicit unknown response is a researcher correction even when its words are unchanged.");
+  nodes(formTree).find(node => node.type === "input" && node.props.type === "checkbox").props.onChange({ target: { checked: false } });
+  formTree = renderForm(editor.props);
+  assert.equal(nodes(formTree).find(node => nodeText(node) === "Save your correction").props.disabled, true, "Returning to the untouched baseline restores its team attribution.");
+  nodes(formTree).find(node => node.type === "textarea").props.onChange({ target: { value: "My correction preserves the study's uncertainty." } });
+  const polled = renderNote({ ...noteElement.props, item: { ...item, revision: 2, statement: "An updated team account." }, context: { ...context, revision: 3 } });
+  assert.match(nodeText(polled), /This account changed while you were editing/);
+  const retained = nodes(polled).find(node => node.props.item === item);
+  formTree = renderForm(retained.props);
+  assert.equal(nodes(formTree).find(node => node.type === "textarea").props.value, "My correction preserves the study's uncertainty.");
+  assert.equal(nodes(formTree).find(node => nodeText(node) === "Save your correction").props.disabled, false);
+  let payload;
+  render.api.saveProblemContext = async (_, next) => { payload = next; };
+  try {
+    await nodes(formTree).find(node => node.type === "form").props.onSubmit({ preventDefault() {} });
+    assert.equal(payload.origin, "researcher_reported");
+    assert.equal(payload.expected_revision, context.revision);
+    assert.deepEqual(payload.scope, item.scope);
+    assert.deepEqual(payload.source_refs, item.source_refs);
+  } finally {
+    render.api.saveProblemContext = save;
+    render.saveConversationDraft(`problem-response:${conversationDraftKey(projectId, retained.props.target)}`, null);
+  }
+});
+
+test("dialogue presents typed decisions through the shared layout without mixing the answer into its rail", () => {
+  for (const phase of ["P1", "P2", "P3", "P4"]) {
+    const source = { ...populationChoice.generation_ref, phase };
+    const issue = { ...populationChoice, phase, target_phase: phase, generation_ref: source, explanation_target: source };
+    const before = JSON.stringify(issue);
+    const html = render.dialogue({ projectId: target.project_id, phase, branch: "trunk", attention: [issue], onExplain: noop, onSource: noop });
+    const split = html.indexOf('class="research-card-layout has-rail has-actions"');
+    assert.ok(split >= 0, phase);
+    const row = html.slice(split, html.indexOf('<div class="researcher-dialogue"', split) < 0 ? undefined : html.indexOf('<div class="researcher-dialogue"', split));
+    const sourceTitle = phase === "P4" ? "View original request" : "View scientific sources";
+    const order = ['class="research-card-actions"', '>Discuss</button>', 'class="research-card-account"', "Why this matters", 'class="research-card-resources"', "From Research lead", "Applies across models.", sourceTitle, '<form class="issue-instruction-editor'].map(value => {
+      const index = row.indexOf(value); assert.ok(index >= 0, `${phase}: ${value}`); return index;
+    });
+    assert.deepEqual(order, [...order].sort((a, b) => a - b), phase);
+    assert.equal((row.match(/<form\b/g) || []).length, 1, phase);
+    assert.equal((row.match(/<textarea\b/g) || []).length, 1, phase);
+    assert.match(row, /aria-label="Question supporting reading"/);
+    assert.doesNotMatch(row, /<aside\b|issue-decision-layout|issue-team-split/);
+    assert.equal(JSON.stringify(issue), before, phase);
+  }
 });
 
 test("context scope cannot follow a stable branch into a different model version", () => {
@@ -236,15 +464,19 @@ test("published P2 dialogue separates independent findings and includes exact tr
   const previous = { ...own, attention_id: "question.old-version", question: "Old version question must stay hidden", scope: { ...own.scope, model_ref: { ...identity, version: 0 } } };
   const input = { projectId: target.project_id, phase: "P2", branch: identity.stable_id, methodId: identity.stable_id, modelRef: identity, problemContext: context, issues: [finding], attention: [own, shared, task, other, previous], onDiscuss: noop, onSource: noop };
   const before = JSON.stringify(input); const html = render.dialogue(input);
-  assert.match(html, /2 unanswered questions/);
+  assert.match(html, /2 open questions/);
   assert.match(html, /Is monthly clinical history available/);
   assert.match(html, /Which report target is useful/);
   assert.match(html, /Applies only to this exact model version.*Version 1/); assert.match(html, /Applies across models/);
-  assert.match(html, /<summary>What you told me<\/summary>/);
+  assert.match(html, /<summary>Add a note or ask a question<\/summary>/);
+  assert.match(html, /<summary>Project notes · 1 note<\/summary>/);
+  assert.doesNotMatch(html, /What you told me/);
   assert.equal((html.match(/<summary>Context and sources<\/summary>/g) || []).length, 2);
   assert.doesNotMatch(html, /Other questions and saved responses|Theorist&#x27;s exact support concern|Investigate this exact support rule/);
   const work = render.issues({ ...input, embedded: true, workOnly: true, title: "Team work" });
-  assert.match(work, /Theorist&#x27;s exact support concern/); assert.match(work, /Read the scientific context/);
+  assert.match(work, /Theorist&#x27;s exact support concern/);
+  assert.equal((work.match(/View scientific sources/g) || []).length, 2, "Each team-work row opens its source in the reader.");
+  assert.doesNotMatch(work, /<summary>Context and sources<\/summary>/);
   assert.match(work, /Investigate this exact support rule/);
   assert.doesNotMatch(work, /Is monthly clinical history available|Which report target is useful|Other model question must stay hidden|Old version question must stay hidden/);
   assert.doesNotMatch(html, /Other model question must stay hidden|Old version question must stay hidden/);
@@ -348,9 +580,9 @@ test("report reader renders mathematics and real offline exports with completion
 test("historical manuscripts never occupy the current technical-report slot", () => {
   const document = { kind: "manuscript", title: "Historical article", structured: { venue_length: "conference" }, generation_ref: { ...ref, family: "manuscript" }, body_md: "Saved article prose." };
   const report = render.report({ documents: [document], onSource: noop });
-  assert.match(report, /No technical report has been assembled/); assert.match(report, /Historical manuscripts/); assert.doesNotMatch(report, /Saved article prose/);
-  const history = render.report({ documents: [document], initialTab: "manuscripts", onSource: noop });
-  assert.match(history, /Conference paper/); assert.match(history, /Saved article prose/); assert.match(history, /not the current technical report/);
+  assert.match(report, /No technical report has been assembled/); assert.doesNotMatch(report, /Saved article prose|Historical manuscripts|Manuscripts</);
+  const evidence = render.report({ documents: [document], initialTab: "evidence", onSource: noop });
+  assert.match(evidence, /<h3>Supporting documents<\/h3>/); assert.match(evidence, /class="p2-reading-label"><span>Historical article<\/span>/); assert.doesNotMatch(evidence, /Saved article prose/);
 });
 
 test("report figures and reading anchors resolve only through exact declared materials", () => {

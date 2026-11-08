@@ -9,6 +9,11 @@ import { methodStartingPointSource } from "../methodSeed";
 import { ActionButton, ActionIcon, EmptyState } from "./Visuals";
 import { phaseInputStickyOffset } from "../phaseInputNavigation";
 import { NotationLookup } from "./SharedNotation";
+import { hasSharedNotation } from "../sharedNotation";
+import { formatReadingSize, plainReadingSize, researchReadingSize } from "../readingSize";
+import { MethodReadingWindow, ReadingDocumentButton, methodReadingKey } from "./MethodReadingWindow";
+import ResearchCardLayout from "./ResearchCardLayout";
+import { formatPublicationDate } from "../publicationDate";
 
 export function proposalReviews(proposal, reviews) {
   const runId = proposal.generation_ref?.run_id;
@@ -51,24 +56,81 @@ function overviewForDisplay(text) {
   return parts.join("").trim();
 }
 
-function MethodComparison({ comparison, proposals, reviews = [], onSource }) {
+export function comparisonReadingDocuments({ comparison, proposals = [], reviews = [] }, onSource) {
+  if (!comparison) return [];
+  const documents = [];
+  const full = comparison.comparison_markdown;
+  if (comparison.overview_markdown?.trim() && full?.trim() && full.trim() !== comparison.overview_markdown.trim()) {
+    documents.push({ name: "comparison", title: "Full comparison", size: researchReadingSize(full), body: <>
+      <ResearchDocument text={full} renderInternalLink={exactResearchLink(comparison, proposals, reviews, onSource)} />
+      <SourceRef reference={comparison.generation_ref} onOpen={onSource} label="Full comparison source" />
+    </> });
+  }
   const excluded = comparisonCandidates(comparison, proposals, "exclude");
+  if (excluded.length) {
+    const text = excluded.map(({ disposition, proposal }) => [proposal.method?.title || disposition.proposal_id,
+      disposition.rationale || disposition.rationale_markdown || disposition.reason_markdown]);
+    documents.push({ name: "excluded", title: "Reasons for excluding alternatives", size: researchReadingSize(text), body: <>
+      {excluded.map(({ disposition, proposal }) => <section className="p2-reader-section" key={proposalKey(proposal)}>
+        <h3>{proposal.method?.title || disposition.proposal_id}</h3><p className="note">{perspective(proposal)}</p>
+        <ResearchDocument text={disposition.rationale || disposition.rationale_markdown || disposition.reason_markdown || "No reason was recorded for this alternative."} />
+        <SourceRef reference={proposal.generation_ref} onOpen={onSource} label="Original proposal" />
+      </section>)}
+      <SourceRef reference={comparison.generation_ref} onOpen={onSource} label="Lead assessment source" />
+    </> });
+  }
+  const published = formatPublicationDate(comparison.published_at);
+  const subtitle = [comparison.title, "Research Lead · Phase 2", published && `Published ${published}`].filter(Boolean).join(" · ");
+  return documents.map((document) => ({ ...document, subtitle, body: <>{document.body}
+    {comparison.published_at && <details className="research-details"><summary>Source details</summary><dl>
+      <div><dt>Recorded publication timestamp</dt><dd className="identity-line">{comparison.published_at}</dd></div>
+    </dl></details>}
+  </> }));
+}
+
+function MethodComparison({ comparison, proposals, reviews = [], projectId, onSource }) {
+  const [reader, setReader] = useState(null);
+  const root = useRef(null);
+  useEffect(() => setReader(null), [projectId]);
   // The overview is prose. Internal records remain in the selected method's
   // review details; only publication citations should act as links here.
   const renderInternalLink = (_href, label) => <span>{label}</span>;
-  if (!comparison) return null;
-  const overview = overviewForDisplay(comparison.overview_markdown || comparison.comparison_markdown);
-  return <div className="p2-comparison" data-reading-anchor="p2-comparison">
-      <p className="note">Research Lead's comparison of the proposed methods</p>
-      {overview && <ResearchDocument text={overview} renderInternalLink={renderInternalLink} />}
-      <NotationLookup record={comparison} onSource={onSource} label="Notation for all methods" />
-      {excluded.length > 0 && <details className="research-details"><summary>Not retained in this catalog update ({excluded.length})</summary>
-        {excluded.map(({ disposition, proposal }) => <div key={proposalKey(proposal)}>
-          <h4>{proposal.method?.title || disposition.proposal_id} · {perspective(proposal)}</h4>
-          <ResearchDocument text={disposition.rationale || disposition.rationale_markdown || disposition.reason_markdown} />
-        </div>)}
-      </details>}
-  </div>;
+  const overview = overviewForDisplay(comparison?.overview_markdown?.trim() ? comparison.overview_markdown : comparison?.comparison_markdown);
+  const documents = comparisonReadingDocuments({ comparison, proposals, reviews }, onSource);
+  const hasSupportingReading = documents.length > 0 || hasSharedNotation(comparison);
+  const open = (name, trigger) => {
+    const run = comparison.generation_ref?.run_id;
+    const input = structuredClone({ comparison, proposals: proposals.filter(p => !run || p.generation_ref?.run_id === run), reviews: reviews.filter(r => !run || r.generation_ref?.run_id === run) });
+    const item = comparisonReadingDocuments(input, onSource).find(item => item.name === name);
+    if (!item) return;
+    setReader({ ...item, trigger,
+      key: JSON.stringify([projectId, "phase-comparison", name, input.comparison.generation_ref || input.comparison, input.proposals.map(p => p.generation_ref || p), input.reviews.map(r => r.generation_ref || r)]) });
+  };
+  return <><div ref={root} tabIndex={-1} className="p2-comparison" data-reading-anchor="p2-comparison">
+      {comparison && <ResearchCardLayout label="Comparison supporting reading" resources={hasSupportingReading ? <>
+        {hasSharedNotation(comparison) && <section>
+          <h3>Notation</h3>
+          <NotationLookup record={comparison} onSource={onSource} label="Shared notation" />
+          <p className="note">Symbols and definitions used in this comparison.</p>
+        </section>}
+        {documents.length > 0 && <section>
+          <h3>Supporting reading</h3>
+          <div className="p2-comparison-tools">
+            {documents.filter(item => item.name === "comparison").map(item => <div key={item.name} className="p2-comparison-resource">
+              <ReadingDocumentButton title={item.title} size={item.size} onClick={event => open(item.name, event.currentTarget)} />
+              <p className="note">Detailed reasoning, qualifications and disagreements.</p>
+            </div>)}
+            {documents.filter(item => item.name !== "comparison").map(item => <div key={item.name} className="p2-comparison-resource">
+              <ReadingDocumentButton title={item.title} size={item.size} onClick={event => open(item.name, event.currentTarget)} />
+              <p className="note">Why the Lead set these proposals aside.</p>
+            </div>)}
+          </div>
+        </section>}
+      </> : null}>
+        <h3>How the methods compare</h3>
+        {overview && <ResearchDocument text={overview} renderInternalLink={renderInternalLink} />}
+      </ResearchCardLayout>}
+  </div>{reader && <MethodReadingWindow key={reader.key} snapshot={reader} onClose={() => setReader(null)} returnFocus={() => reader.trigger?.isConnected ? reader.trigger : root.current} />}</>;
 }
 
 // The dropdown is a plain form control: choosing a method only changes what the
@@ -85,9 +147,9 @@ export function MethodPicker({ id, describedBy, controls, proposals, methods = [
       const retained = catalogMethodForProposal(proposal, methods);
       const successor = retained ? null : successorMethodForProposal(proposal, methods);
       const successorVersion = (successor?.identity || successor?.current_identity)?.version;
-      label.push(retained ? `${proposal.published_at?.slice(0, 10) || "Earlier run"} · current catalog definition`
+      label.push(retained ? `${formatPublicationDate(proposal.published_at) || "Earlier run"} · current catalog definition`
         : successor ? `Superseded${successorVersion != null ? ` by version ${successorVersion}` : ""}`
-        : proposal.published_at?.slice(0, 10) || "Earlier run");
+        : formatPublicationDate(proposal.published_at) || "Earlier run");
     }
     return <option key={proposalKey(proposal)} value={proposalKey(proposal)}>{label.join(" · ")}</option>;
   };
@@ -144,12 +206,6 @@ function MethodAudits({ proposal, reviews, onSource }) {
 
 const methodPhases = ["P2", "P3", "P4", "P5"];
 
-export function MethodReaderDisclosure({ name, title, modelKey, open, onToggle, children }) {
-  return <details className="research-details p2-reader-disclosure" data-reading-anchor={`p2-model:${modelKey}:${name}`} open={open} onToggle={(event) => {
-    if (event.currentTarget.open !== Boolean(open)) onToggle?.(event.currentTarget.open);
-  }}><summary>{title}</summary><div className="p2-reader-panel">{children}</div></details>;
-}
-
 function ReaderSection({ title, author, className = "", children }) {
   return <section className={`p2-reader-section${className ? ` ${className}` : ""}`}><h3>{title}</h3>{author && <p className="note p2-section-author">{author}</p>}{children}</section>;
 }
@@ -177,13 +233,85 @@ function CompleteFormulation({ definition }) {
   </details>}</>;
 }
 
+
+// A single content projection supplies both the reading windows and their sizes.
+// Clone its input at open so publication polling cannot replace what is being read.
+export function methodReadingDocuments({ selected, catalogMethod, method, reviewed, reviews = [], proposals = [], literatureSources = [] }, onSource) {
+  const source = selected?.generation_ref || catalogMethod?.source_ref;
+  const author = selected ? perspective(selected) : "Published catalog definition";
+  const startingPoint = methodStartingPointSource(selected?.researcher_origin);
+  const conciseLead = Boolean(reviewed?.disposition.method_summary_markdown && hasConciseP2Account(reviewed.comparison));
+  const leadInternalLink = exactResearchLink(reviewed?.comparison, proposals, reviews, onSource);
+  const leadSummarySource = selected && proposalSectionSource(reviewed?.comparison, selected.proposal_id, "method_dispositions", "method_summary_markdown");
+  const leadReviewField = ["rationale", "rationale_markdown", "reason_markdown"].find((field) => reviewed?.disposition[field]);
+  const leadReviewSource = selected && proposalSectionSource(reviewed?.comparison, selected.proposal_id, "method_dispositions", leadReviewField);
+  const profile = selected?.computational_profile;
+  const audits = selected ? proposalReviews(selected, reviews) : [];
+  const specialists = audits.filter((audit) => ["theorist", "data_analyst"].includes(audit.role) && audit.applicability_markdown);
+  const documents = [
+    { name: "assumptions", title: "Assumptions and limitations", body: <>
+          {specialists.length > 0 && <ReaderSection title="When this model applies">{specialists.map((audit, index) => <section className="p2-specialist-applicability" key={index}><h4>{perspective(audit)}</h4><ResearchDocument text={audit.applicability_markdown} /><div className="p2-reader-sources"><SourceRef reference={audit.applicability_ref} onOpen={onSource} label={`${perspective(audit)} applicability source`} /></div></section>)}</ReaderSection>}
+          <ReaderSection title="Original assumptions and limitations" author={author}><ResearchDocument text={{ assumptions: method.assumptions, limitations: method.limitations }} /><SourceRef reference={source} onOpen={onSource} label="Original assumptions source" /></ReaderSection>
+    </> },
+    { name: "computation", title: "Computation and formulation", body: <>
+          <p className="note">These are proposed computational requirements. Measured performance belongs to computational evaluation.</p>
+          <ReaderSection title="Computational profile" author={author}>{profile ? <>
+            {profile.per_iteration_markdown && <><h4>Cost per iteration</h4><ResearchDocument text={profile.per_iteration_markdown} /></>}
+            {profile.memory_markdown && <><h4>Memory footprint</h4><ResearchDocument text={profile.memory_markdown} /></>}
+            {profile.scaling_markdown && <><h4>Scaling with problem size</h4><ResearchDocument text={profile.scaling_markdown} /></>}
+            {!profile.per_iteration_markdown && !profile.memory_markdown && !profile.scaling_markdown && <p className="note">The recorded computational profile has no readable entries.</p>}
+            <SourceRef reference={source} onOpen={onSource} label="Computational profile source" />
+          </> : <p className="note">No computational profile was recorded for this {selected ? "proposal" : "catalog definition"}.</p>}</ReaderSection>
+          {selected && <ReaderSection title="Data requirements" author={author}>{selected.data_requirements_markdown ? <ResearchDocument text={selected.data_requirements_markdown} /> : <p className="note">No separate data requirements were recorded.</p>}</ReaderSection>}
+          <ReaderSection title="Full original formulation and algorithm" author={author}>
+            <NotationLookup record={selected || catalogMethod} methodScope={method.identity} onSource={onSource} />
+            <ResearchDocument text={method.scientific_question} /><CompleteFormulation definition={method.mathematical_definition} /><SourceRef reference={source} onOpen={onSource} label="Original formulation source" />
+          </ReaderSection>
+          {selected?.researcher_origin && <ReaderSection title={startingPoint ? "Selected model starting point and source" : "Your supplied method and source"} className={startingPoint ? "" : "contribution-surface"}>
+            {startingPoint ? <><p className="note">Version {startingPoint.method_identity?.version} supplied the lead's starting point. Its original authorship and definition remain in the recorded sources.</p>
+              <details className="research-details"><summary>Original starting formulation</summary><ResearchDocument text={selected.researcher_origin.specification_markdown || selected.researcher_origin.original_text || selected.researcher_origin} /></details>
+              <SourceRef reference={startingPoint.catalog_ref} onOpen={onSource} label="Starting catalog definition source" /><SourceRef reference={startingPoint.proposal_ref} onOpen={onSource} label="Starting original proposal source" />
+            </> : <ResearchDocument text={selected.researcher_origin.specification_markdown || selected.researcher_origin.original_text || selected.researcher_origin} />}
+            {selected.researcher_origin.source_reference && <details className="research-details"><summary>Supplied source reference</summary><p className="note">{selected.researcher_origin.source_reference}</p></details>}
+          </ReaderSection>}
+    </> },
+    { name: "review", title: "Reviews and sources", body: <>
+          <div className="p2-reader-sources"><SourceRef reference={conciseLead ? leadSummarySource : source} onOpen={onSource} label="Source of the method summary" /></div>
+          {!conciseLead && reviewed?.disposition.method_summary_markdown && <details className="research-details p2-historical-account"><summary>Full historical Lead procedural account</summary><p className="note">This account retains the writing contract of its original producing run.</p><ResearchDocument text={summaryForDisplay(reviewed.disposition.method_summary_markdown)} renderInternalLink={leadInternalLink} /><SourceRef reference={leadSummarySource} onOpen={onSource} label="Historical Lead account source" /></details>}
+          {conciseLead && method.summary && <ReaderSection title="Proposer's original summary" author={author}><ResearchDocument text={summaryForDisplay(method.summary)} /><SourceRef reference={source} onOpen={onSource} label="Original proposal summary source" /></ReaderSection>}
+          {selected && <ReaderSection title="Rationale and critical assessment" author="Research Lead">{reviewed ? <><ResearchDocument text={reviewed.disposition.rationale || reviewed.disposition.rationale_markdown || reviewed.disposition.reason_markdown} /><SourceRef reference={leadReviewSource || reviewed.comparison.generation_ref} onOpen={onSource} label="Lead assessment source" /></> : <p className="note">No lead assessment is linked to this exact proposal run.</p>}</ReaderSection>}
+          {selected && <ReaderSection title={`Specialist reviews (${audits.length})`}><MethodAudits proposal={selected} reviews={reviews} onSource={onSource} /></ReaderSection>}
+          {method.rationale && <ReaderSection title="Proposer rationale" author={author}><ResearchDocument text={method.rationale} /></ReaderSection>}
+          {method.literature_provenance?.length > 0 && <ReaderSection title="Relation to the literature" author={author}>{method.literature_provenance.map((entry, i) => {
+            const citation = literatureSources.find((source) => source.source_id === entry.citation_id || source.source_aliases?.includes(entry.citation_id) || source.source_ids?.includes(entry.citation_id));
+            return <section key={i}><h4>{citation?.title || entry.citation_id || "Referenced publication"}</h4><p className="note">{humanLabel(entry.relation)}</p><ResearchDocument text={entry.contribution} />{citation && <div className="p2-reader-sources">{citationLinks(citation).map((link) => <a key={link.href} className="source-link ui-action" data-action="source" data-ui-role="system" href={link.href} target="_blank" rel="noreferrer"><ActionIcon name="source" />{link.label}</a>)}</div>}</section>;
+          })}<SourceRef reference={source} onOpen={onSource} label="Scientific source record" /></ReaderSection>}
+    </> },
+  ];
+  return documents.map((item) => ({ ...item, size: methodDocumentSize(item.body) }));
+}
+
+export function methodDocumentSize(node) {
+  if (!node || typeof node === "boolean") return { words: 0, equations: 0 };
+  if (Array.isArray(node)) return node.reduce((sum, child) => {
+    const size = methodDocumentSize(child);
+    return { words: sum.words + size.words, equations: sum.equations + size.equations };
+  }, { words: 0, equations: 0 });
+  if (!React.isValidElement(node)) return { words: 0, equations: 0 };
+  if (node.type === ResearchDocument) return researchReadingSize(node.props.text);
+  if (node.type === CompleteFormulation || node.type === MethodAudits) return methodDocumentSize(node.type(node.props));
+  if (node.type === "pre") return plainReadingSize(node.props.children);
+  // Controls, source destinations, metadata and UI headings are not authored prose.
+  if (node.type === SourceRef || node.type === NotationLookup || ["button", "a"].includes(node.type)) return { words: 0, equations: 0 };
+  return methodDocumentSize(node.props.children);
+}
+
 // One exact selection is shared with both follow-up cards. Publication refreshes
 // retain that selection and its drafts until the researcher chooses another model.
-function ExploreMethod({ methods = [], cards = [], proposals = [], reviews = [], comparisons = [], comparison, literatureSources = [], projectId, attentionItems = [], researcherAnswers = [], busy, onContinue, onResolved, onSource, initialPick, initialSharedPreparation, onPreparationScopeChange, onPick, modelHistory, issues, furtherWork, progress, reading = {}, onReadingChange }) {
+function ExploreMethod({ methods = [], cards = [], proposals = [], reviews = [], comparisons = [], comparison, literatureSources = [], projectId, attentionItems = [], researcherAnswers = [], busy, onContinue, onResolved, onSource, initialPick, initialSharedPreparation, onPreparationScopeChange, onPick, modelHistory, issues, furtherWork, history, progress, reading = {}, onReadingChange }) {
   const id = useId(); const [pick, setPick] = useState(initialPick || "");
-  const [disclosures, setDisclosures] = useState(reading.modelDisclosures || {});
+  const [reader, setReader] = useState(null);
   const [savedAnswers, setSavedAnswers] = useState({});
-  const readingChange = useRef(onReadingChange); readingChange.current = onReadingChange;
   const clarificationDrafts = useRef(new Map());
   const current = orderedProposals(proposals.filter((proposal) => proposal.is_current_package !== false));
   const earlier = proposals.filter((proposal) => proposal.is_current_package === false);
@@ -222,24 +350,19 @@ function ExploreMethod({ methods = [], cards = [], proposals = [], reviews = [],
     if (!selectedKey || selectedKey === pick) return;
     setPick(selectedKey); selectionChange.current?.(selectedKey);
   }, [selectedKey, pick]);
-  const legacySelection = useRef(selectedKey);
-  const legacyTab = useRef(!reading.modelDisclosures && ["assumptions", "computation", "review"].includes(reading.tab) ? reading.tab : null);
-  const openSections = disclosures[selectedKey] || (selectedKey === legacySelection.current && legacyTab.current ? { [legacyTab.current]: true } : {});
-  const toggleSection = (name, open) => setDisclosures((saved) => ({ ...saved, [selectedKey]: { ...openSections, [name]: open } }));
-  useEffect(() => {
-    if (selectedKey) readingChange.current?.({ modelDisclosures: { ...disclosures, [selectedKey]: openSections } });
-  }, [disclosures, selectedKey]);
+  const readerWindow = reader && <MethodReadingWindow key={reader.key} snapshot={reader} onClose={() => setReader(null)}
+    returnFocus={() => reader.trigger?.isConnected ? reader.trigger : document.getElementById(`${id}-models`) || document.getElementById(`${id}-landscape`)} />;
   if (!selected && !catalogMethod) {
     const context = { proposal: null, method: null, methodId: null, methodBranch: "trunk", catalogMethod: null, reviewed: null,
       requests: attentionItems, answers: researcherAnswers, phases: methodPhases, emptyState: !cards.length, sharedPreparation: true, modelHistory };
     // Keep the same sibling slots as the populated reader so first publication
     // preserves the mounted preparation form, its disclosure and its focus.
-    return <><section className="card p2-landscape p2-models-card" data-card-role="research"><div className="card-heading"><h2>Proposed Methods</h2></div><div className="body">
-      <MethodComparison comparison={comparison} proposals={[]} reviews={reviews} onSource={onSource} />{progress}
+    return <><section className="card p2-landscape p2-models-card" data-card-role="research"><div className="card-heading"><h2 id={`${id}-landscape`} tabIndex={-1}>Proposed Methods</h2></div><div className="body">
+      <MethodComparison comparison={comparison} proposals={[]} reviews={reviews} projectId={projectId} onSource={onSource} />{progress}
       {!cards.length && <EmptyState><p>Published proposals will appear here after the team completes its review.</p></EmptyState>}
     </div></section>
       {cards.length > 0 && <section className="card p2-models-card" data-card-role="research"><div className="card-heading"><h2>Select a Method to Explore</h2></div><div className="body"><CatalogRecords cards={cards} onSource={onSource} /></div></section>}
-      {renderSlot(issues, context)}{renderSlot(furtherWork, context)}
+      {renderSlot(issues, context)}{renderSlot(furtherWork, context)}{renderSlot(history, context)}{readerWindow}
     </>;
   }
   const definition = catalogMethod?.definition || {};
@@ -248,24 +371,17 @@ function ExploreMethod({ methods = [], cards = [], proposals = [], reviews = [],
   const author = selected ? perspective(selected) : "Published catalog definition";
   const methodId = selected ? methodIdOf(selected) : method.identity?.stable_id || catalogMethod.method_id;
   const startingPoint = methodStartingPointSource(selected?.researcher_origin);
-  const canonical = method.mathematical_definition?.canonical_definition;
   const reviewed = selected ? comparisonForProposal(selected, comparisons) : null;
   const conciseLead = Boolean(reviewed?.disposition.method_summary_markdown && hasConciseP2Account(reviewed.comparison));
   const leadInternalLink = exactResearchLink(reviewed?.comparison, proposals, reviews, onSource);
-  const leadSummarySource = selected && proposalSectionSource(reviewed?.comparison, selected.proposal_id, "method_dispositions", "method_summary_markdown");
-  const leadReviewField = ["rationale", "rationale_markdown", "reason_markdown"].find((field) => reviewed?.disposition[field]);
-  const leadReviewSource = selected && proposalSectionSource(reviewed?.comparison, selected.proposal_id, "method_dispositions", leadReviewField);
   const successor = selected && !catalogMethod ? successorMethodForProposal(selected, methods) : null;
   const currentProposal = successor ? proposals.find((proposal) => sameMethodIdentity(proposal.method?.identity, successor.identity || successor.current_identity)) : null;
   const methodBranch = catalogMethod?.branch_id || methodId;
   const requests = methodRequests(attentionItems, methodId, methodBranch, { modelRef: method.identity });
   const answers = methodAnswers([...researcherAnswers, ...Object.values(savedAnswers)], methodId, methodBranch, { modelRef: method.identity });
-  const profile = selected?.computational_profile;
   const options = selected ? modificationOptionsFor(reviewed?.comparison, selected.proposal_id) : [];
-  const audits = selected ? proposalReviews(selected, reviews) : [];
-  const specialists = audits.filter((audit) => ["theorist", "data_analyst"].includes(audit.role) && audit.applicability_markdown);
   const staleOutputs = (catalogMethod?.dependent_outputs || []).filter((output) => output.status && output.status !== "current");
-  const choose = (key) => { if (proposals.some((proposal) => proposalKey(proposal) === key) || catalogOnly.some((method) => catalogSelectionKey(method) === key)) { setPick(key); setSharedPreparation(false); onPick?.(key); } };
+  const choose = (key) => { if (proposals.some((proposal) => proposalKey(proposal) === key) || catalogOnly.some((method) => catalogSelectionKey(method) === key)) { setPick(key); setSharedPreparation(false); onPick?.(key, { explicit: true }); } };
   const viewCurrent = successor ? () => choose(currentProposal ? proposalKey(currentProposal) : catalogSelectionKey(successor)) : null;
   const statusNote = reviewed?.disposition.status === "retain" ? "Retained candidate" : reviewed?.disposition.status === "exclude" ? "Excluded from this catalog update" : selected ? "Proposed model" : humanLabel(catalogMethod.status || "Recorded model");
   const proposedWork = selected && <ReaderSection title="Proposed theory and experiment work" author={author}><p className="note">These are proposed steps, not completed proofs or simulations.</p><ResearchDocument text={selected.proposed_evaluation_markdown} /><div className="p2-reader-sources"><SourceRef reference={source} onOpen={onSource} label="Proposed work source" /></div></ReaderSection>;
@@ -281,71 +397,61 @@ function ExploreMethod({ methods = [], cards = [], proposals = [], reviews = [],
       : <p className="note">The lead recorded no modification options for this proposal.</p>}
   </ReaderSection>;
   const context = { proposal: selected, method, methodId, methodBranch, catalogMethod, reviewed, requests, answers, projectId, phases: methodPhases, emptyState: false, sharedPreparation,
-    draftStore: clarificationDrafts.current, onResolved, onAnswerSaved: (answer) => setSavedAnswers((currentAnswers) => ({ ...currentAnswers, [answer.attention_id || answer.attention.attention_id]: answer })), proposedWork, modificationOptions, modelHistory };
-  const disclosure = (name, title, children) => <MethodReaderDisclosure name={name} title={title} modelKey={selectedKey} open={Boolean(openSections[name])} onToggle={(open) => toggleSection(name, open)}>{children}</MethodReaderDisclosure>;
+    draftStore: clarificationDrafts.current, onResolved, onAnswerSaved: (answer) => setSavedAnswers((currentAnswers) => ({ ...currentAnswers, [answer.attention_id || answer.attention.attention_id]: answer })), proposedWork, modificationOptions, modelHistory,
+    preparationDocumentInput: { selected, method, reviewed } };
+  const documentInput = { selected, catalogMethod, method, reviewed, reviews: reviews.filter((item) => item.generation_ref?.run_id === selected?.generation_ref?.run_id),
+    proposals: proposals.filter((item) => item.generation_ref?.run_id === reviewed?.comparison?.generation_ref?.run_id),
+    literatureSources: literatureSources.filter((item) => method.literature_provenance?.some((entry) => item.source_id === entry.citation_id || item.source_aliases?.includes(entry.citation_id) || item.source_ids?.includes(entry.citation_id))) };
+  const documents = methodReadingDocuments(documentInput, onSource);
+  const openDocument = (name, trigger) => {
+    const frozen = structuredClone(documentInput);
+    const document = methodReadingDocuments(frozen, onSource).find((item) => item.name === name);
+    setReader({ ...document, key: methodReadingKey(projectId, selectedKey, name, frozen), methodTitle: method.title, version: method.identity?.version, trigger });
+  };
+  const notationRecord = conciseLead ? reviewed.comparison : selected || catalogMethod;
+  const actions = staleOutputs.length || (onContinue && catalogMethod) || (sharedPreparation && catalogMethod) ? <>
+    {staleOutputs.map((output) => <div className="method-dependent-status" key={output.phase}><p className="note">{phaseLabel(output.phase)} results for this method</p><MethodStatusNote status={output} onOpen={onSource} /></div>)}
+    <ExploreActions catalogMethod={catalogMethod} busy={busy} onContinue={onContinue} />
+    {sharedPreparation && catalogMethod && <div className="btnrow"><ActionButton action="edit" uiRole="research" onClick={() => { focusPreparation.current = true; choose(selectedKey); }}>Prepare work on this method</ActionButton><span className="note">Shared proposal instructions remain below until you choose a method for this work.</span></div>}
+  </> : null;
+  const resources = <>
+    <section aria-labelledby={`${id}-notation`}>
+      <h3 id={`${id}-notation`}>Notation</h3>
+      {hasSharedNotation(notationRecord) ? <><p className="note">Not sure what a symbol means? Open the notation table.</p>
+        <NotationLookup record={notationRecord} methodScope={method.identity} onSource={onSource} label="View notation table" /></>
+        : <p className="note">A notation table is not available for this version. Check Computation and formulation for any recorded definitions.</p>}
+    </section>
+    <section aria-labelledby={`${id}-details`}>
+      <h3 id={`${id}-details`}>Supporting reading</h3>
+      <div className="p2-reading-links">{documents.map((item) => <ActionButton key={item.name} className="p2-reading-button" action="source" aria-haspopup="dialog" onClick={(event) => openDocument(item.name, event.currentTarget)}>
+        <span className="p2-reading-label"><span>{item.title}</span><span className="p2-reading-estimate">{formatReadingSize(item.size)}</span></span>
+      </ActionButton>)}</div>
+    </section>
+  </>;
   return <><section className="card p2-landscape p2-models-card" data-card-role="research" aria-labelledby={`${id}-landscape`}>
     <div className="card-heading"><h2 id={`${id}-landscape`}>Proposed Methods</h2></div><div className="body">
-      <MethodComparison comparison={comparison} proposals={proposals} reviews={reviews} onSource={onSource} />{progress}
+      <MethodComparison comparison={comparison} proposals={proposals} reviews={reviews} projectId={projectId} onSource={onSource} />{progress}
     </div>
   </section><section className="card p2-models-card" data-card-role="research" aria-labelledby={`${id}-models`}>
-    <div className="card-heading"><h2 id={`${id}-models`}>Select a Method to Explore</h2></div><div className="body">
+    <div className="card-heading"><h2 id={`${id}-models`} tabIndex={-1}>Select a Method to Explore</h2></div><div className="body">
       <MethodPicker id={`${id}-method`} describedBy={`${id}-branch-note`} controls={`${id}-explore`} proposals={proposals} methods={methods} comparisons={comparisons} value={selectedKey} onSelect={choose} />
       <p className="note" id={`${id}-branch-note`}>Choose a method to read its exact version. Its questions and further work follow below.</p>
-      {sharedPreparation && catalogMethod && <div className="btnrow"><ActionButton action="edit" uiRole="research" onClick={() => { focusPreparation.current = true; choose(selectedKey); }}>Prepare work on this method</ActionButton><span className="note">Shared proposal instructions remain below until you choose a method for this work.</span></div>}
       <div className="p2-deep-dive" id={`${id}-explore`} key={selectedKey} data-reading-anchor="p2-selected-model" tabIndex={-1}>
-        <header className="p2-method-heading"><div><h3>{method.title}</h3>
+        <ResearchCardLayout actions={actions} resources={resources} actionsLabel="Method actions" label="Method supporting reading"><header className="p2-method-heading"><div><h3>{method.title}</h3>
           <p className="note">{selected ? `Proposed by ${author}` : author}{selected?.researcher_origin && (startingPoint ? " · From a selected model starting point" : " · From your idea")}{catalogMethod?.registered && " · Selected"}</p>
           <p className="note">{statusNote}{method.identity?.version != null && ` · Version ${method.identity.version}`}{selected?.is_current_package === false && (catalogMethod ? " · Retained from an earlier run" : successor ? " · Superseded version" : " · Earlier proposal")}</p>
-        </div><div className="p2-model-continuation"><ExploreActions catalogMethod={catalogMethod} busy={busy} onContinue={onContinue} /></div></header>
+        </div></header>
         {successor && <SupersededNote successor={successor} onViewCurrent={viewCurrent} />}
         {selected && !catalogMethod && !successor && <p className="note context-note">{reviewed?.disposition.status === "exclude" ? "The lead did not retain this proposal in the catalog, so it cannot be selected for further work. It remains readable here as proposed." : "This exact proposal is not the current catalog definition. Explore the current retained definition to answer questions or continue this model."}</p>}
-        {staleOutputs.map((output) => <div className="method-dependent-status" key={output.phase}><p className="note">{phaseLabel(output.phase)} results for this method</p><MethodStatusNote status={output} onOpen={onSource} /></div>)}
         <ReaderSection title="Methodological account" author={conciseLead ? "Research Lead" : author}>
           <ResearchDocument text={summaryForDisplay(conciseLead ? reviewed.disposition.method_summary_markdown : method.summary || method.scientific_question || method.rationale)} renderInternalLink={conciseLead ? leadInternalLink : undefined} />
-          <NotationLookup record={conciseLead ? reviewed.comparison : selected || catalogMethod} methodScope={method.identity} onSource={onSource} />
-          {!conciseLead && selected && <p className="note">The original proposal summary is shown in full. This saved record has no verified concise Lead account. Read its complete mathematics under Computation and full formulation.</p>}
-          <div className="p2-reader-sources"><SourceRef reference={conciseLead ? leadSummarySource : source} onOpen={onSource} label={conciseLead ? "Lead methodological account source" : selected ? "Original proposal summary source" : "Catalog definition source"} /></div>
+          {!conciseLead && selected && <p className="note">The original proposal summary is shown in full. This saved record has no verified concise Lead account. Open Computation and formulation for the complete mathematics.</p>}
         </ReaderSection>
-        {disclosure("assumptions", "Assumptions and limitations", <>
-          {specialists.length > 0 && <ReaderSection title="When this model applies">{specialists.map((audit, index) => <section className="p2-specialist-applicability" key={index}><h4>{perspective(audit)}</h4><ResearchDocument text={audit.applicability_markdown} /><div className="p2-reader-sources"><SourceRef reference={audit.applicability_ref} onOpen={onSource} label={`${perspective(audit)} applicability source`} /></div></section>)}</ReaderSection>}
-          <ReaderSection title="Original assumptions and limitations" author={author}><ResearchDocument text={{ assumptions: method.assumptions, limitations: method.limitations }} /><SourceRef reference={source} onOpen={onSource} label="Original assumptions source" /></ReaderSection>
-        </>)}
-        {disclosure("computation", "Computation and full formulation", <>
-          <p className="note">These are proposed computational requirements. Measured performance belongs to computational evaluation.</p>
-          <ReaderSection title="Computational profile" author={author}>{profile ? <>
-            {profile.per_iteration_markdown && <><h4>Cost per iteration</h4><ResearchDocument text={profile.per_iteration_markdown} /></>}
-            {profile.memory_markdown && <><h4>Memory footprint</h4><ResearchDocument text={profile.memory_markdown} /></>}
-            {profile.scaling_markdown && <><h4>Scaling with problem size</h4><ResearchDocument text={profile.scaling_markdown} /></>}
-            {!profile.per_iteration_markdown && !profile.memory_markdown && !profile.scaling_markdown && <p className="note">The recorded computational profile has no readable entries.</p>}
-            <SourceRef reference={source} onOpen={onSource} label="Computational profile source" />
-          </> : <p className="note">No computational profile was recorded for this {selected ? "proposal" : "catalog definition"}.</p>}</ReaderSection>
-          {selected && <ReaderSection title="Data requirements" author={author}>{selected.data_requirements_markdown ? <ResearchDocument text={selected.data_requirements_markdown} /> : <p className="note">No separate data requirements were recorded.</p>}</ReaderSection>}
-          <ReaderSection title="Full original formulation and algorithm" author={author}>
-            <NotationLookup record={selected || catalogMethod} methodScope={method.identity} onSource={onSource} />
-            <ResearchDocument text={method.scientific_question} /><CompleteFormulation definition={method.mathematical_definition} /><SourceRef reference={source} onOpen={onSource} label="Original formulation source" />
-          </ReaderSection>
-          {selected?.researcher_origin && <ReaderSection title={startingPoint ? "Selected model starting point and source" : "Your supplied method and source"} className={startingPoint ? "" : "contribution-surface"}>
-            {startingPoint ? <><p className="note">Version {startingPoint.method_identity?.version} supplied the lead's starting point. Its original authorship and definition remain in the recorded sources.</p>
-              <details className="research-details"><summary>Original starting formulation</summary><ResearchDocument text={selected.researcher_origin.specification_markdown || selected.researcher_origin.original_text || selected.researcher_origin} /></details>
-              <SourceRef reference={startingPoint.catalog_ref} onOpen={onSource} label="Starting catalog definition source" /><SourceRef reference={startingPoint.proposal_ref} onOpen={onSource} label="Starting original proposal source" />
-            </> : <ResearchDocument text={selected.researcher_origin.specification_markdown || selected.researcher_origin.original_text || selected.researcher_origin} />}
-            {selected.researcher_origin.source_reference && <details className="research-details"><summary>Supplied source reference</summary><p className="note">{selected.researcher_origin.source_reference}</p></details>}
-          </ReaderSection>}
-        </>)}
-        {disclosure("review", "Reviews and scientific sources", <>
-          {!conciseLead && reviewed?.disposition.method_summary_markdown && <details className="research-details p2-historical-account"><summary>Full historical Lead procedural account</summary><p className="note">This account retains the writing contract of its original producing run.</p><ResearchDocument text={summaryForDisplay(reviewed.disposition.method_summary_markdown)} renderInternalLink={leadInternalLink} /><SourceRef reference={leadSummarySource} onOpen={onSource} label="Historical Lead account source" /></details>}
-          {conciseLead && method.summary && <ReaderSection title="Proposer's original summary" author={author}><ResearchDocument text={summaryForDisplay(method.summary)} /><SourceRef reference={source} onOpen={onSource} label="Original proposal summary source" /></ReaderSection>}
-          {selected && <ReaderSection title="Rationale and critical assessment" author="Research Lead">{reviewed ? <><ResearchDocument text={reviewed.disposition.rationale || reviewed.disposition.rationale_markdown || reviewed.disposition.reason_markdown} /><SourceRef reference={leadReviewSource || reviewed.comparison.generation_ref} onOpen={onSource} label="Lead assessment source" /></> : <p className="note">No lead assessment is linked to this exact proposal run.</p>}</ReaderSection>}
-          {selected && <ReaderSection title={`Specialist reviews (${audits.length})`}><MethodAudits proposal={selected} reviews={reviews} onSource={onSource} /></ReaderSection>}
-          {method.rationale && <ReaderSection title="Proposer rationale" author={author}><ResearchDocument text={method.rationale} /></ReaderSection>}
-          {method.literature_provenance?.length > 0 && <ReaderSection title="Relation to the literature" author={author}>{method.literature_provenance.map((entry, i) => {
-            const citation = literatureSources.find((source) => source.source_id === entry.citation_id || source.source_aliases?.includes(entry.citation_id) || source.source_ids?.includes(entry.citation_id));
-            return <section key={i}><h4>{citation?.title || entry.citation_id || "Referenced publication"}</h4><p className="note">{humanLabel(entry.relation)}</p><ResearchDocument text={entry.contribution} />{citation && <div className="p2-reader-sources">{citationLinks(citation).map((link) => <a key={link.href} className="source-link ui-action" data-action="source" data-ui-role="system" href={link.href} target="_blank" rel="noreferrer"><ActionIcon name="source" />{link.label}</a>)}</div>}</section>;
-          })}<SourceRef reference={source} onOpen={onSource} label="Scientific source record" /></ReaderSection>}
-        </>)}
+        </ResearchCardLayout>
       </div>
     </div>
-  </section>{renderSlot(issues, context)}{renderSlot(furtherWork, context)}</>;
+  </section>{renderSlot(issues, context)}{renderSlot(furtherWork, context)}{renderSlot(history, context)}
+    {readerWindow}</>;
 }
 
 function CatalogDiagnostics({ diagnostics = [], onSource }) {
@@ -386,15 +492,16 @@ function MethodHistory({ methods = [], cards = [], proposals = [], leadResponses
   if (!comparison?.overview_markdown && !diagnostics.length && !selections.length && !leadResponses.length && !earlierComparisons.length && !legacyScores.length && !retained.length && !cards.length && !publicationHistory.length) return null;
   return <section className="p2-history" aria-label="Model versions and comparisons"><h3>Model versions and comparisons</h3>
     <p className="note">Earlier runs, original records, identifiers and catalog checks.</p>
-    {comparison?.overview_markdown && <section><h4>Lead's full comparison</h4><ResearchDocument text={comparison.comparison_markdown} /><SourceRef reference={comparison.generation_ref} onOpen={onSource} label="Full comparison source" /></section>}
+    {comparison?.generation_ref && <SourceRef reference={comparison.generation_ref} onOpen={onSource} label="Current comparison source" />}
     {publicationHistory.length > 0 && <section aria-label="Publication history">
       <h4>Publication history</h4>
       <p className="note">These counts describe artifact checks and corrections before publication, not scientific validation.</p>
       {publicationHistory.map((item, index) => <div key={item.package_id || item.run_id || index}>
-        <p className="note"><b>{item.is_current_package ? "Current publication" : "Earlier publication"}</b>{item.published_at && ` · ${item.published_at.slice(0, 16).replace("T", " ")}`}
+        <p className="note"><b>{item.is_current_package ? "Current publication" : "Earlier publication"}</b>{formatPublicationDate(item.published_at) && ` · ${formatPublicationDate(item.published_at)}`}
           {` · Mechanical repair rounds: ${item.mechanical_repair_rounds ?? "unavailable"} · Researcher-authorized correction attempts: ${item.researcher_correction_attempts ?? "unavailable"}`}</p>
         <p className="note">Receipt: {item.receipt_id ? <span className="identity-line">{item.receipt_id}</span> : "unavailable"}
           {item.run_id && onOpenRun && <> · <ActionButton action="details" variant="link" data-run-origin={`MethodProposals:${item.package_id || item.receipt_id || index}:${item.run_id}`} onClick={(event) => onOpenRun(item.run_id, event.currentTarget)}>Open producing run</ActionButton></>}</p>
+        {item.published_at && <details className="research-details"><summary>Source details</summary><dl><div><dt>Recorded publication timestamp</dt><dd className="identity-line">{item.published_at}</dd></div></dl></details>}
       </div>)}
     </section>}
     <CatalogDiagnostics diagnostics={diagnostics} onSource={onSource} />

@@ -129,7 +129,15 @@ class RunEngine(P4LifecycleMixin):
     def project_dir(self, project_id: str) -> Path:
         if not _IDENT_RE.fullmatch(project_id):
             raise RunError("Invalid project identifier")
-        return self.data_root / "projects" / project_id
+        directory = self.data_root / "projects" / project_id
+        from .migration import recover_catalog_upgrade
+        try:
+            recover_catalog_upgrade(directory)
+        except ValueError as exc:
+            raise RunError(str(exc)) from exc
+        except OSError as exc:
+            raise RunError("Workflow recovery could not finish. Check the project folder and its permissions, then reopen it.") from exc
+        return directory
 
     def run_dir(self, project_id: str, run_id: str) -> Path:
         if not _IDENT_RE.fullmatch(run_id):
@@ -330,6 +338,8 @@ class RunEngine(P4LifecycleMixin):
             if current.state in TERMINAL_STATES:
                 raise RunError(f"run is already {current.state}")
             current.state = to
+            if to in (RunState.PUBLISHED, RunState.ASSESSED) and current.correction_attempts:
+                current.terminal_reason = None
             if to in (RunState.CANCELLED, RunState.FAILED):
                 for stage_id, status in current.stage_states.items():
                     if status in ("running", "correcting"):
@@ -619,8 +629,19 @@ class RunEngine(P4LifecycleMixin):
         projects = self.data_root / "projects"
         if not projects.is_dir():
             return recovered
+        from .migration import recover_catalog_upgrade
+        unavailable_projects = set()
+        for directory in projects.iterdir():
+            try:
+                recover_catalog_upgrade(directory)
+            except (OSError, ValueError):
+                # A damaged project's normal access reports its own failure;
+                # it must not prevent other projects from opening on restart.
+                unavailable_projects.add(directory.name)
         terminal = {s.value for s in TERMINAL_STATES}
         for run_json in sorted(projects.glob("*/runs/*/run.json")):
+            if run_json.parent.parent.parent.name in unavailable_projects:
+                continue
             doc = read_json(run_json)
             if not doc or doc.get("state") in terminal:
                 continue
@@ -1157,14 +1178,16 @@ class RunEngine(P4LifecycleMixin):
                 except ArtifactError as exc:
                     basis["unavailable_artifacts"].append({"family": ref["family"], "artifact": artifact, "reason": str(exc)})
                     continue
-                destination = run_dir / "inputs" / "artifacts" / (sha256_file(original) + "-" + original.name)
+                digest_prefix = identity[1] + "-"
+                retained_name = original.name if original.name.startswith(digest_prefix) else digest_prefix + original.name
+                destination = run_dir / "inputs" / "artifacts" / retained_name
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_bytes(original.read_bytes())
                 copied_artifacts.add(identity)
                 basis["artifacts"].append({"family": ref["family"], "phase": ref["phase"],
                     "generation_id": ref.get("generation_id"), "producing_run_id": origin.get("run_id"), "artifact_id": artifact.get("artifact_id"),
                     "content_sha256": sha256_file(destination), "path": str(destination),
-                    "original_path": artifact.get("path") or artifact.get("artifact_path")})
+                    "original_path": artifact.get("path") or artifact.get("artifact_path") or artifact.get("uri")})
         # Historical predecessor material is frozen and digest-verified the same
         # way, under its own clearly labeled directory — never into records.
         for ref in (basis.get("predecessor_material") or {}).get("materials", {}).values():
@@ -1265,7 +1288,8 @@ class RunEngine(P4LifecycleMixin):
     @staticmethod
     def _artifact_pointers(document):
         if isinstance(document, dict):
-            if (document.get("path") or document.get("artifact_path")) and (document.get("sha256") or document.get("artifact_sha256")):
+            if (document.get("path") or document.get("artifact_path")
+                    or str(document.get("uri") or "").startswith("run://")) and (document.get("sha256") or document.get("artifact_sha256")):
                 yield document
             for value in document.values():
                 yield from RunEngine._artifact_pointers(value)
@@ -2617,6 +2641,12 @@ class RunEngine(P4LifecycleMixin):
                             source_documents)
                     except ArtifactError:
                         continue  # Report the exact source/scope error through normal repair feedback.
+                    # Other records can cite this account's exact authored bytes.
+                    # Retain the workspace source, including before any P5 report
+                    # enrichment, alongside the derived formal notation account.
+                    authored_account = working_dir / account_path.name
+                    authored_account.write_bytes((workspace / account_path.name).read_bytes())
+                    collected.append(authored_account)
                     write_json_atomic(account_path, generated)
                     collected.extend(support)
             # A6: harness-owned stamping (design/05 §6) — digest-seal the
@@ -3113,8 +3143,8 @@ class RunEngine(P4LifecycleMixin):
                   "Preserve the researcher's intended claim, including requested inferential evidence; a prediction goal does not waive valid uncertainty or censoring justification. "
                   "A researcher preference cannot establish a statistical assumption. Unknown and no-data answers remain legitimate; "
                   "synthetic settings do not become study facts. Keep interpretations proposed until adopted. "
-                + ("In P1-P4, an unresolved consequential preference remains eligible for a useful nonblocking invitation even when conditional work can proceed. "
-                   "Use exact applicable saved answers, and keep a team-proposed conditional direction distinct from an adopted researcher choice. "
+                + ("Apply the stage's inquiry instructions to any new invitation. Use exact applicable saved answers, "
+                   "and keep a team-proposed conditional direction distinct from an adopted researcher choice. "
                    if record.phase in {"P1", "P2", "P3", "P4"} and record.intent != "assessment" else "")
                 + "\n\n")
         project_instruction_section = f"## Project instructions (verbatim)\n\n{instructions}\n\n" if instructions else ""
@@ -3200,7 +3230,26 @@ class RunEngine(P4LifecycleMixin):
                     "Return assessment_markdown and exact evidence_refs for sources actually used. ")
             if (record.assessment_purpose in ("issue_explanation", "issue_suggestions", "model_dialogue", "project_context")
                     and (record.target or {}).get("kind") not in {"report_section", "notation_entry"}):
+                focused_account = "research_account_focus_v1" in (
+                    read_json(catalog.root / "contracts" / "phases" / f"{record.phase}.json") or {}
+                ).get("capabilities", [])
                 objective += (
+                    "Answer the exact question first. Where relevant, explain the source-backed mathematical distinction and its practical consequence, "
+                    "then the next justified step and consequential unknown. This is not a mandatory template for every reply. "
+                    "Stop when that question is answered; link the full mechanism "
+                    "instead of replaying the method or prior answers. Requested derivations may need more detail; inquiry word ceilings "
+                    "do not apply to requested discussion. "
+                    "When alternatives differ mathematically, show the changed formulation in the frozen notation, defining shared symbols once, "
+                    "and explain each option's meaning, benefit and limitation in the supplied study. Use the exact source formulation, "
+                    "including its conditioning and policy or sampling law; do not invent an equation, quantity or guarantee to make an answer look mathematical. "
+                    "Plain factual requests need no artificial equation. Distinguish the scientific objective, a strategy for estimating or "
+                    "optimizing it, and an additional guarantee. A conservative strategy does not by itself change the objective. "
+                    "State what supports advice or what evidence would change it. Unknown to the researcher does not establish absence "
+                    "from the data; preserve applicable saved answers and unsaved drafts without turning advice into a saved preference. "
+                    "Routine choices and unambiguous proof or coding repairs remain team work. Use the frozen user-inquiry reference "
+                    "for any consequential follow-up within this discussion's authority; no follow-up question is required. "
+                    "Adopting an assumption does not verify it, and changing the method requires upstream revision. "
+                    if focused_account else
                     "When a consequential choice has a mathematical distinction, or the researcher requests a mathematical comparison, "
                     "state the affected target, model, constraint, assumption or guarantee in assessment_markdown with sufficient mathematical formulation. "
                     "Use the frozen source's notation where available, defining symbols and any shared objective once. "
@@ -3211,8 +3260,10 @@ class RunEngine(P4LifecycleMixin):
                     "Keep the comparison concise without repeating full derivations or source accounts, and do not invent quantities or established guarantees. "
                     "Plain study facts, budgets and choices without a mathematical distinction need no artificial equation. "
                     "The Lead owns routine scientific choices within the agreed goal and budget; explaining alternatives does not make them researcher decisions. "
-                    "Ask a new follow-up only for unresolved preferences or unavailable facts that materially affect interpretation, inferential validity, data applicability or a meaningful resource compromise. "
-                    "Reuse applicable saved answers, preserve unknowns and unsaved drafts, and do not ask the researcher to resolve a proof or implementation defect. "
+                    "For a new follow-up, apply the supplied frozen user-inquiry reference within this discussion's existing authority. "
+                    "Check original instructions, saved answers, literature and affordable analysis first; explain the defensible alternatives and their material scientific or practical tradeoff. "
+                    "Request unavailable study facts separately. Reuse applicable saved answers, preserve unknowns and unsaved drafts, and keep proof errors and unambiguous coding corrections with the team. "
+                    "An assumption may be adopted for development without being verified; a different method requires upstream revision. "
                     "No follow-up question is required. "
                 )
                 if record.assessment_purpose in ("project_context", "model_dialogue"):
@@ -4161,6 +4212,8 @@ class RunEngine(P4LifecycleMixin):
                 raise RunError(reason)
             record.correction_attempts += 1
             record.state = RunState.CORRECTING
+            previous_reason = record.terminal_reason
+            record.terminal_reason = None
             record.correction_note = note
             declared = {o for s in self._stages(record) for o in s.writes}
             record.correction_scope = sorted({f["object_id"] for f in record.findings_history[-1]
@@ -4169,7 +4222,7 @@ class RunEngine(P4LifecycleMixin):
                 raise RunError("These findings have no bounded output correction; start a new scientific run")
             record.updated_at = _now()
             self._save_run(record)
-        self._event(record, "run.correcting", "Correction turn authorized.")
+        self._event(record, "run.correcting", "Correction turn authorized.", previous_reason=previous_reason)
         if self.shutting_down:
             raise RunError("The local service is shutting down; request correction after it restarts.")
         task = asyncio.create_task(self._drive_correction(record))

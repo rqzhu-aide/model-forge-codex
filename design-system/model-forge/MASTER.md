@@ -206,9 +206,12 @@ tables and inline code. Discussion and further-research entry points use orange
 before expansion, so researcher attention is visible immediately. Their team
 explanations and recommendations remain blue. System activity keeps system
 styling and history sits on library parchment, including when nested in a
-research-request card. Every card has a solid
+research-request card. Most cards have a solid
 white body (charcoal in dark mode) and a neutral heading band; the role shows
-as the dot and label beside the title. Orange denotes researcher interaction; urgency and execution status
+as the dot and label beside the title. Decisions to Discuss instead uses the
+warm contribution surface, stronger peach heading band and orange outline in
+both themes, while nested team content retains its blue research surface.
+Revision summaries retain violet and history retains parchment. Orange denotes researcher interaction; urgency and execution status
 use separate labeled indicators. This corrects the earlier exception that
 misclassified discussion shells as system UI.
 

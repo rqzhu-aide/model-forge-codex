@@ -6,10 +6,33 @@ import { createRequire } from "node:module";
 import { sharedPackage } from "../scripts/shared-deps.mjs";
 import { reportAssetInput } from "../scripts/report-assets.mjs";
 import { renderReport } from "../scripts/report-renderer.mjs";
+import { restoreStandaloneHtml } from "../scripts/report-downloads.mjs";
 
 const katex = createRequire(import.meta.url)(sharedPackage("katex"));
 const digest = bytes => createHash("sha256").update(bytes).digest("hex");
 const descriptor = (name, bytes, media_type) => ({ path: path.resolve(name), sha256: digest(bytes), media_type });
+function standaloneEditions(rendered) {
+  const bundle = JSON.parse(/<script type="application\/json" id="report-offline-downloads">([\s\S]*?)<\/script>/.exec(rendered.html)[1]);
+  const sourceHtml = rendered.html.split('<script type="application/json" id="report-offline-downloads">')[0];
+  const sources = [...sourceHtml.matchAll(/<(?:a|img)\b[^>]*>/g)]
+    .map(match => /\b(href|src)="([^"]*)"/.exec(match[0])).filter(Boolean);
+  const assets = bundle.assets.map(asset => typeof asset === "string" ? asset : sources[asset.element][2].split("#")[0]);
+  return bundle.editions.map(edition => ({ ...edition, html: restoreStandaloneHtml(edition.parts, assets, rendered.css) }));
+}
+
+test("standalone CSS uses HTML-normalized newlines before computing its exact download hash", () => {
+  const markdown = Buffer.from('# Exact proof\n\n$X=1$.');
+  const html = Buffer.from('<html>Private original</html>');
+  const files = { "appendix.md": { ...descriptor("appendix.md", markdown, "text/markdown"), artifact_id: "artifact.proof.md", authored_path: "appendix.md" },
+    "appendix.html": { ...descriptor("appendix.html", html, "text/html"), artifact_id: "artifact.proof.html", authored_path: "appendix.html" } };
+  const prepared = reportAssetInput({ markdown: '# Report\n\n[Proof](appendix.html)', shareable_export: true, asset_files: files }, filename => filename === files["appendix.md"].path ? markdown : html);
+  const output = renderReport(katex, 'body{color:black}\r\n.katex{color:navy}\r\n', prepared);
+  assert.equal(output.css, 'body{color:black}\n.katex{color:navy}\n');
+  const edition = standaloneEditions(output)[0];
+  assert.equal(digest(Buffer.from(edition.html)), output.derived_materials[0].export_sha256);
+  assert.ok(edition.html.includes('<style>' + output.css));
+  assert.doesNotMatch(edition.html, /\r/);
+});
 
 test("rendered references read exact bytes once per file/media while unreferenced large logs stay unread", () => {
   const code = Buffer.from([0, 255, 65, 10]);
@@ -135,16 +158,16 @@ test("exact Markdown print scopes exclude other support while all linked documen
   }));
   assert.equal(reads.length, 2);
   assert.match(rendered.html, /id="report-support-1-print" checked/);
-  assert.match(rendered.html, /id="report-print-main"><label/);
+  assert.match(rendered.html, /<label class="report-print-option" for="report-print-main"><input[^>]*id="report-print-main">Report<\/label>/);
   assert.match(rendered.html, /href="#report-support-1-proof"/);
   assert.match(rendered.html, /href="#report-support-2-notes"/);
   assert.match(rendered.html, /href="#problem"/);
   assert.match(rendered.html, /id="report-support-1-document" data-report-material="artifact.appendix"/);
   assert.equal((rendered.html.match(/class="report-supplement"/g) || []).length, 2);
   assert.match(rendered.html, /class="katex"/);
-  assert.match(rendered.print_css, /\.report-supplement\{display:none!important\}/);
-  assert.match(rendered.print_css, /#report-support-1-print:checked~\.report-primary\{display:none!important\}/);
-  assert.match(rendered.print_css, /#report-support-1-print:checked~#report-support-1-document\{display:block!important/);
+  assert.match(rendered.print_css, /\.report-material\{display:none!important\}/);
+  assert.match(rendered.print_css, /:has\(#report-support-1-print:checked\) \.report-primary\{display:none!important\}/);
+  assert.match(rendered.print_css, /:has\(#report-support-1-print:checked\) #report-support-1-document\{display:block!important/);
   assert.equal(rendered.print_scopes.find(scope => scope.material_id === "artifact.appendix").region_id, "report-support-1-document");
   assert.equal(JSON.stringify(input), original);
 });
@@ -182,7 +205,7 @@ test("artifact-ID appendix links retain the canonical authored base for nested r
   assert.match(rendered.html, /data:image\/svg\+xml;base64,/);
   assert.match(rendered.html, /href="#report-support-2-entry"/);
   assert.match(rendered.html, /href="#report-support-1-document"/);
-  assert.match(rendered.html, /Supporting document: details\/proofs\/appendix.md/);
+  assert.match(rendered.html, /<summary>Proof<\/summary><section class="report-supplement"/);
 });
 
 test("a historical plain-text Markdown path stays readable without advertising an ineligible print scope", () => {
@@ -229,4 +252,169 @@ test("hosted HTML proof links use the verified generation attachment while retai
   assert.doesNotMatch(rendered.html, /data:text\/html/);
   assert.deepEqual(Buffer.from(prepared.assets["artifact.proof-html"].split(",")[1], "base64"), bytes);
   assert.throws(() => renderReport(katex, "", reportAssetInput(source, () => Buffer.from("changed proof"))), /changed after source verification/);
+});
+
+test("shareable source descriptors use only their verified projected bytes for tables and named downloads", () => {
+  const projected = Buffer.from(JSON.stringify({ columns: ["Method", "Issued / attempted", "Risk"], rows: [{ Method: "Example", "Issued / attempted": "18/60", Risk: 0.04133735 }] }));
+  const file = { ...descriptor("retained-results.json", projected, "application/json"), authored_path: "support/results.json",
+    content_base64: projected.toString("base64"), source_sha256: "a".repeat(64), export_filename: "results.shareable.json" };
+  const prepared = reportAssetInput({ markdown: "[Result table](support/results.json)", shareable_export: true,
+    asset_files: { "support/results.json": file } }, () => { throw new Error("Private source bytes must not be downloaded"); });
+  const html = renderReport(katex, "", prepared).html;
+  assert.match(html, /href="#report-evidence-1">Result table/);
+  assert.match(html, /id="report-evidence-1" tabindex="-1"/);
+  assert.match(html, /role="region" aria-labelledby="report-evidence-1-caption"/);
+  assert.match(html, /<caption id="report-evidence-1-caption">Result table<\/caption>/);
+  assert.match(html, /<th scope="col" class="report-number">Issued \/ attempted<\/th>/);
+  assert.match(html, /<td class="report-number">18\/60<\/td><td class="report-number">0\.04133735<\/td>/);
+  assert.match(html, /download="results.shareable.json"/);
+  assert.deepEqual(Buffer.from(prepared.assets["support/results.json"].split(",")[1], "base64"), projected);
+  assert.throws(() => reportAssetInput({ asset_files: { changed: { ...file, content_base64: Buffer.from("private").toString("base64") } } }).assets.changed, /changed after source verification/);
+});
+
+test("portable JSON tables retain authored column metadata, notation, captions and undefined states", () => {
+  const table = { caption: "No returned output makes quality undefined in this synthetic comparison.", columns: [
+    { key: "J_R", label: "J_R" }, { key: "quality", label: "$J_R(\\pi)$", unit: "$\\mathrm{mg}$" }, { key: "count", label: "Returned / attempted" },
+  ], rows: [{ J_R: "RL-LPM1", quality: "Undefined (no output)", count: "0 / 60" }, { J_R: "$\\alpha=0.05$", quality: null, count: "<script>unsafe</script>" }] };
+  const projected = Buffer.from(JSON.stringify(table));
+  const file = { ...descriptor("retained-results.json", projected, "application/json"), authored_path: "support/results.json", content_base64: projected.toString("base64") };
+  const input = { markdown: "[Result table](support/results.json)", shareable_export: true, asset_files: { "support/results.json": file } };
+  const before = structuredClone(input); const prepared = reportAssetInput(input);
+  const html = renderReport(katex, "", prepared).html;
+  assert.match(html, /<th scope="col">J_R<\/th>/);
+  assert.match(html, /application\/x-tex">J_R\(\\pi\)/);
+  assert.match(html, /application\/x-tex">\\mathrm\{mg\}/);
+  assert.match(html, /<caption id="report-evidence-1-caption">No returned output makes quality undefined in this synthetic comparison\.<\/caption>/);
+  assert.match(html, /<td>RL-LPM1<\/td><td>Undefined \(no output\)<\/td><td>0 \/ 60<\/td>/);
+  assert.match(html, /application\/x-tex">\\alpha=0\.05/);
+  assert.match(html, /<td>Not recorded<\/td><td>&lt;script&gt;unsafe&lt;\/script&gt;<\/td>/);
+  assert.doesNotMatch(html, /J R|RL LPM1|<script>/);
+  assert.deepEqual(Buffer.from(prepared.assets["support/results.json"].split(",")[1], "base64"), projected);
+  assert.deepEqual(input, before);
+});
+
+test("scientific table source links keep relative supporting documents reachable in the offline edition", () => {
+  const values = Buffer.from(JSON.stringify({ columns: ["Metric", { key: "definition", label: "$R_{\\alpha}$ definition" }], rows: [{ Metric: "Risk", definition: "[Definition](notes.md#definition)" }], caption: "[Scope](notes.md#definition) remains conditional." }));
+  const notes = Buffer.from('<a id="definition"></a>\n# Definition\n\nThe synthetic measure is defined only for returned outputs. [Values](results.json)');
+  const table = { ...descriptor("retained-values.json", values, "application/json"), authored_path: "support/results.json", content_base64: values.toString("base64") };
+  const note = { ...descriptor("retained-notes.md", notes, "text/markdown"), authored_path: "support/notes.md", content_base64: notes.toString("base64") };
+  const html = renderReport(katex, "", reportAssetInput({ markdown: "[Results](support/results.json)", shareable_export: true, asset_files: { "support/results.json": table, "support/notes.md": note } })).html;
+  assert.match(html, /href="#report-support-1-definition">Definition<\/a>/);
+  assert.match(html, /href="#report-support-1-definition">Scope<\/a>/);
+  assert.match(html, /id="report-support-1-definition"/);
+  assert.match(html, /The synthetic measure is defined only for returned outputs/);
+  assert.equal((html.match(/id="report-evidence-1"/g) || []).length, 1);
+  assert.equal((html.match(/<summary>Definition<\/summary>/g) || []).length, 1);
+});
+
+test("shareable appendix download includes its rendered proof, report citations and source navigation without sibling files", () => {
+  const main = Buffer.from('<a id="justification"></a>\n# Main scientific account\n\nThe theorem is conditional. [Proof](appendix.html#p1) [Results](support/results.json)');
+  const appendix = Buffer.from('# Proof appendix\n\n[Return to report](report.html#justification) [Source](support/theory.md#lemma)\n\n<a id="p1"></a>\n## Conditional proof\n\n$X=1$.');
+  const theory = Buffer.from('<a id="lemma"></a>\n# Retained lemma\n\n[Proof](../appendix.html#p1)');
+  const results = Buffer.from('{"columns":["Attempted"],"rows":[{"Attempted":60}]}');
+  const html = Buffer.from('<html><link rel="stylesheet" href="missing.css"><p>unpublished assembly candidate PRIVATE ORIGINAL</p></html>');
+  const script = Buffer.from('print("retained implementation")\n');
+  const files = Object.fromEntries([
+    ["report.md", main, "text/markdown"], ["report.html", html, "text/html"], ["appendix.md", appendix, "text/markdown"],
+    ["appendix.html", html, "text/html"], ["support/theory.md", theory, "text/markdown"], ["support/results.json", results, "application/json"],
+    ["support/run.py", script, "text/x-python"],
+  ].map(([name, bytes, media_type]) => [name, { ...descriptor(name, bytes, media_type), authored_path: name, artifact_id: `artifact.${name}` }]));
+  const content = new Map([[files["report.md"].path, main], [files["report.html"].path, html], [files["appendix.md"].path, appendix],
+    [files["appendix.html"].path, html], [files["support/theory.md"].path, theory], [files["support/results.json"].path, results], [files["support/run.py"].path, script]]);
+  const input = { markdown: main.toString() + '\n\n[Same proof](appendix.html#p1)', primary_path: "report.md", primary_paths: ["report.md"], shareable_export: true, asset_files: files,
+    reproduction_archive_base64: Buffer.from("504b0506000000000000000000000000000000000000", "hex").toString("base64") };
+  const prepared = reportAssetInput(input, filename => content.get(filename));
+  const rendered = renderReport(katex, "embedded-math-css", prepared);
+  const editions = standaloneEditions(rendered);
+  assert.equal(editions.length, 1, "Repeated proof citations share one standalone download");
+  assert.match(rendered.html, /data-report-download="0"/);
+  assert.doesNotMatch(rendered.html, /href="data:text\/html;base64,/);
+  assert.ok((rendered.html.match(/href="#report-support-1-p1"/g) || []).length >= 2);
+  const standalone = editions[0].html;
+  assert.equal(rendered.derived_materials.find(material => material.artifact_id === "artifact.appendix.html").export_sha256, digest(Buffer.from(standalone)));
+  assert.match(standalone, /embedded-math-css/);
+  assert.match(standalone, /class="katex"/);
+  assert.match(standalone, /id="p1"/);
+  assert.match(standalone, /href="#report-support-1-justification"/);
+  assert.match(standalone, /id="report-support-1-justification"/);
+  assert.match(standalone, /href="#report-support-2-lemma"/);
+  assert.match(standalone, /id="report-support-2-lemma"/);
+  assert.match(standalone, /id="report-evidence-1"/);
+  assert.doesNotMatch(standalone, /download="run.py"/, "Unlinked reproduction files are not copied into an appendix");
+  assert.doesNotMatch(standalone, /PRIVATE ORIGINAL|unpublished assembly candidate|href="(?:report|appendix)\.html|src="(?!data:)|<link|<script/);
+  assert.doesNotMatch(standalone, /data:application\/zip/, "The proof retains its scientific sources without duplicating the full reproduction package");
+  for (const [, fragment] of standalone.matchAll(/href="#([^"]+)"/g)) assert.ok(standalone.includes(`id="${fragment}"`), fragment);
+  const direct = renderReport(katex, "embedded-math-css", { ...prepared, standalone_material_id: "artifact.appendix.html" });
+  assert.match(direct.html, /<h1[^>]*>Proof appendix<\/h1>/);
+  assert.match(direct.html, /id="report-support-1-justification"/);
+  assert.doesNotMatch(direct.html, /PRIVATE ORIGINAL/);
+  assert.throws(() => renderReport(katex, "", { ...prepared, documentForHtml: () => undefined, standalone_material_id: "artifact.appendix.html" }), /one declared Markdown companion/);
+});
+
+test("shareable links and images cannot smuggle authored data URLs around the retained asset boundary", () => {
+  for (const markdown of ['[Source](data:application/json;base64,e30=)', '![Figure](data:image/svg+xml;base64,PHN2Zy8+)']) {
+    assert.throws(() => renderReport(katex, "", reportAssetInput({ markdown, shareable_export: true })), /must use declared retained assets/);
+  }
+});
+
+test("proof and method-detail standalone editions use their own verified headings and distinct named downloads", () => {
+  const rawHtml = Buffer.from('<title>Unretained display title</title>');
+  const sources = [
+    ["report.md", '<a id="question"></a>\n# Scientific report\n\n[Proof](appendix.html#proof) [Details](method-details.html#algorithm) [Proof again](appendix.html#proof)', "text/markdown"],
+    ["report.html", rawHtml, "text/html"],
+    ["appendix.md", '# Proof appendix: safety argument\n\n<a id="proof"></a>\n$X=1$. [Report](report.html#question) [Algorithm](method-details.html#algorithm)', "text/markdown"],
+    ["appendix.html", rawHtml, "text/html"],
+    ["method-details.md", '# Method details: policy selection\n\n<a id="algorithm"></a>\nRetained algorithm. [Report](report.html#question) [Argument](appendix.html#proof)', "text/markdown"],
+    ["method-details.html", rawHtml, "text/html"],
+  ];
+  const files = {}; const bytes = new Map();
+  for (const [name, content, media] of sources) {
+    const value = Buffer.isBuffer(content) ? content : Buffer.from(content);
+    files[name] = { ...descriptor(name, value, media), authored_path: name, artifact_id: `artifact.${name}`,
+      ...(media === "text/html" ? { export_filename: name.replace(".html", ".shareable.html") } : {}) };
+    bytes.set(files[name].path, value);
+  }
+  const prepared = reportAssetInput({ markdown: sources[0][1], primary_path: "report.md", primary_paths: ["report.md"],
+    shareable_export: true, asset_files: files }, filename => bytes.get(filename));
+  const output = renderReport(katex, "math-css", prepared);
+  const downloads = standaloneEditions(output);
+  assert.equal(downloads.length, 2, "Repeated citations do not duplicate either standalone payload");
+  const expected = new Map([["appendix.shareable.html", "Proof appendix: safety argument"], ["method-details.shareable.html", "Method details: policy selection"]]);
+  for (const { html, filename } of downloads) {
+    const title = expected.get(filename); assert.ok(title, filename);
+    assert.equal(/<title>([^<]+)<\/title>/.exec(html)[1], title);
+    assert.match(html, new RegExp(`<h1[^>]*>${title}</h1>`));
+    assert.match(html, /<summary>About this standalone edition<\/summary>/);
+    assert.ok(output.html.includes(`Download standalone ${title} (HTML)`));
+    assert.doesNotMatch(html, /href="data:text\/html|Unretained display title|href="(?:report|appendix|method-details)\.html/);
+    for (const [, fragment] of html.matchAll(/href="#([^"]+)"/g)) assert.ok(html.includes(`id="${fragment}"`), `${filename}: ${fragment}`);
+  }
+  for (const [filename, title] of expected) {
+    const originalName = filename.replace(".shareable.html", ".html");
+    assert.equal(renderReport(katex, "math-css", { ...prepared, standalone_material_id: `artifact.${originalName}` }).title, title);
+  }
+});
+
+test("hosted and offline editions expose one named projected reproduction ZIP without requiring folder-by-folder downloads", () => {
+  const archive = Buffer.from("504b0506000000000000000000000000000000000000", "hex");
+  const input = { markdown: "# Recorded evaluation", shareable_export: true,
+    reproduction_archive_base64: archive.toString("base64"), reproduction_filename: "report-reproduction.shareable.zip" };
+  const offline = renderReport(katex, "", reportAssetInput(input)).html;
+  const link = /href="data:application\/zip;base64,([^"]+)" download="report-reproduction.shareable.zip"/.exec(offline);
+  assert.ok(link); assert.deepEqual(Buffer.from(link[1], "base64"), archive);
+  assert.equal((offline.match(/Download shareable reproduction package \(ZIP\)/g) || []).length, 1);
+  assert.match(offline, /does not establish a new successful reproduction/);
+  assert.match(offline, /manifest lists included files, source and export hashes, and omitted materials/);
+  const hosted = renderReport(katex, "", reportAssetInput({ ...input, reproduction_download_url: "/api/v1/exact-shareable-package" })).html;
+  assert.match(hosted, /href="\/api\/v1\/exact-shareable-package" download="report-reproduction.shareable.zip"/);
+  assert.doesNotMatch(hosted, /data:application\/zip/);
+});
+
+test("shareable reports retain literature links and explain local workbench sources without exposing their URLs", () => {
+  const markdown = '[Retained logs](http://127.0.0.1:8766/api/private-log?source=run) [Local](http://localhost/api/source) [IPv6](http://[::1]:8766/api/source) [Literature](https://example.org/paper)';
+  const html = renderReport(katex, "", reportAssetInput({ markdown, shareable_export: true })).html;
+  assert.match(html, /Retained logs \(local source, unavailable in a shared report\)/);
+  assert.equal((html.match(/local source, unavailable in a shared report/g) || []).length, 3);
+  assert.doesNotMatch(html, /127\.0\.0\.1|localhost|\[::1\]|private-log|source=run/);
+  assert.match(html, /href="https:\/\/example\.org\/paper"/);
 });
